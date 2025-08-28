@@ -2,6 +2,7 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { json, urlencoded } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
@@ -21,6 +22,14 @@ async function bootstrap() {
   app.use(json({ limit: '100mb' }));
   app.use(urlencoded({ extended: true, limit: '100mb' }));
   app.set('trust proxy', 1);
+
+  const config = new DocumentBuilder()
+    .setTitle('Tec-Shop API')
+    .setDescription('The Tec-Shop API description')
+    .setVersion('1.0')
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
 
   app.use("/", createProxyMiddleware({
     target: 'http://localhost:6001',
