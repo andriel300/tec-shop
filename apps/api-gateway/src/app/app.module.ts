@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { AllExceptionsFilter, LoggerMiddleware } from '@tec-shop/common'
+import { AuthController } from './auth.controller';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { AllExceptionsFilter, LoggerMiddleware } from '@tec-shop/common'
       limit: 10,
     }])
   ],
-  controllers: [AppController],
+  controllers: [AppController, AuthController],
   providers: [
     AppService,
     {
