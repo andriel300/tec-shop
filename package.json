@@ -13,9 +13,11 @@
     "@nestjs/platform-express": "^11.0.0",
     "@nestjs/swagger": "^11.2.0",
     "@nestjs/throttler": "^6.4.0",
+    "@prisma/client": "^6.15.0",
     "axios": "^1.11.0",
     "cookie-parser": "^1.4.7",
     "http-proxy-middleware": "^3.0.5",
+    "prisma": "^6.15.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0"
   },
