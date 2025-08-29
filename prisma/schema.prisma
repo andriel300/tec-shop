@@ -32,16 +32,21 @@ model images {
 // The main User model. Each field here becomes a property in the
 // 'users' collection in MongoDB.
 model users {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  name      String
-  email     String   @unique // Ensures no two users can have the same email
-  password  String?  // Optional because users might sign in with OAuth (e.g., Google)
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  email           String   @unique // Ensures no two users can have the same email
+  password        String   // The user's hashed password. Required for our email/password auth.
+
+  // Flag to check if the user has verified their email via OTP.
+  // Defaults to false for new users.
+  isEmailVerified Boolean  @default(false)
+
   // An array of User IDs. This is how you represent a 'followers' or
   // 'following' list in a NoSQL database like MongoDB.
-  following String[]
+  following       String[]
   // The optional relation to the user's avatar image.
   // This is the other side of the one-to-one relationship defined in the images model.
-  avatar    images?
-  createdAt DateTime @default(now()) // Automatically set when a user is created
-  updatedAt DateTime @updatedAt // Automatically updated whenever the user record changes
+  avatar          images?
+  createdAt       DateTime @default(now()) // Automatically set when a user is created
+  updatedAt       DateTime @updatedAt // Automatically updated whenever the user record changes
 }
