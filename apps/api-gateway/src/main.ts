@@ -37,7 +37,6 @@ async function bootstrap() {
     .setVersion('1.0')
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  // Makes the interactive docs available at the '/api/docs' endpoint
   SwaggerModule.setup('api/docs', app, document);
 
   // Sets up a proxy to forward any unmatched requests to another service.
