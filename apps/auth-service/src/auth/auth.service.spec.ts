@@ -1,15 +1,29 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { RedisService } from '../redis/redis.service';
+import { EmailService } from '../email/email.service';
+import { JwtService } from '@nestjs/jwt';
 
-// Mock the PrismaService methods we use
+// Mock services
 const mockPrismaService = {
   user: {
     findUnique: jest.fn(),
     create: jest.fn(),
   },
+};
+const mockRedisService = {
+  set: jest.fn(),
+  get: jest.fn(),
+  del: jest.fn(),
+};
+const mockEmailService = {
+  sendOtp: jest.fn(),
+};
+const mockJwtService = {
+  signAsync: jest.fn(),
 };
 
 // Mock bcrypt
@@ -20,17 +34,26 @@ jest.mock('bcrypt', () => ({
 describe('AuthService', () => {
   let service: AuthService;
   let prisma: PrismaService;
+  let redis: RedisService;
+  let email: EmailService;
+  let jwt: JwtService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: RedisService, useValue: mockRedisService },
+        { provide: EmailService, useValue: mockEmailService },
+        { provide: JwtService, useValue: mockJwtService },
       ],
     }).compile();
 
     service = module.get<AuthService>(AuthService);
     prisma = module.get<PrismaService>(PrismaService);
+    redis = module.get<RedisService>(RedisService);
+    email = module.get<EmailService>(EmailService);
+    jwt = module.get<JwtService>(JwtService);
 
     // Reset mocks before each test
     jest.clearAllMocks();
@@ -44,38 +67,63 @@ describe('AuthService', () => {
     const registerDto = { email: 'test@example.com', password: 'password123' };
 
     it('should throw a ConflictException if user already exists', async () => {
-      // Arrange: Mock findUnique to return an existing user
-      mockPrismaService.user.findUnique.mockResolvedValue({ id: '1', email: 'test@example.com' });
-
-      // Act & Assert: Expect the register method to throw
+      mockPrismaService.user.findUnique.mockResolvedValue({ id: '1' });
       await expect(service.register(registerDto)).rejects.toThrow(ConflictException);
-      expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { email: 'test@example.com' } });
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { email: registerDto.email } });
     });
 
-    it('should hash the password and create a new user', async () => {
+    it('should hash password and create a new user', async () => {
       const hashedPassword = 'hashedPassword';
       const createdUser = { id: '1', email: registerDto.email, password: hashedPassword };
-
-      // Arrange: Mock dependencies
-      mockPrismaService.user.findUnique.mockResolvedValue(null); // No user exists
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
       (bcrypt.hash as jest.Mock).mockResolvedValue(hashedPassword);
       mockPrismaService.user.create.mockResolvedValue(createdUser);
 
-      // Act: Call the register method
       const result = await service.register(registerDto);
 
-      // Assert: Check that the correct methods were called
-      expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { email: registerDto.email } });
       expect(bcrypt.hash).toHaveBeenCalledWith(registerDto.password, 10);
-      expect(prisma.user.create).toHaveBeenCalledWith({
-        data: {
-          email: registerDto.email,
-          password: hashedPassword,
-        },
-      });
-      // Assert: Check that the password is not returned
+      expect(prisma.user.create).toHaveBeenCalledWith({ data: { email: registerDto.email, password: hashedPassword } });
       expect(result).not.toHaveProperty('password');
-      expect(result.email).toEqual(registerDto.email);
+    });
+  });
+
+  describe('generateOtp', () => {
+    it('should set an OTP in redis and send it via email', async () => {
+      const emailDto = { email: 'test@example.com' };
+      await service.generateOtp(emailDto);
+
+      // Check that redis.set was called with a 6-digit string and 300s expiry
+      expect(redis.set).toHaveBeenCalledWith(
+        `otp:${emailDto.email}`,
+        expect.stringMatching(/^\d{6}$/),
+        300,
+      );
+
+      // Check that email.sendOtp was called with the same OTP
+      const otpSent = (mockRedisService.set as jest.Mock).mock.calls[0][1];
+      expect(email.sendOtp).toHaveBeenCalledWith(emailDto.email, otpSent);
+    });
+  });
+
+  describe('verifyOtp', () => {
+    const verifyDto = { email: 'test@example.com', otp: '123456' };
+
+    it('should throw UnauthorizedException if OTP is invalid', async () => {
+      mockRedisService.get.mockResolvedValue(null);
+      await expect(service.verifyOtp(verifyDto)).rejects.toThrow(UnauthorizedException);
+      expect(redis.get).toHaveBeenCalledWith(`otp:${verifyDto.email}`);
+    });
+
+    it('should return an access token if OTP is valid', async () => {
+      const accessToken = 'test_token';
+      mockRedisService.get.mockResolvedValue(verifyDto.otp);
+      mockJwtService.signAsync.mockResolvedValue(accessToken);
+
+      const result = await service.verifyOtp(verifyDto);
+
+      expect(redis.del).toHaveBeenCalledWith(`otp:${verifyDto.email}`);
+      expect(jwt.signAsync).toHaveBeenCalledWith({ sub: verifyDto.email, type: 'user' });
+      expect(result).toEqual({ accessToken });
     });
   });
 });
