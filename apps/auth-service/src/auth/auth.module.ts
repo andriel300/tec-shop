@@ -3,11 +3,12 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
-import { RedisModule } from '../redis/redis.module';
-import { EmailModule } from '../email/email.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { PrismaModule } from '../app/prisma/prisma.module';
+import { OtpService } from './otp.service';
+import { RedisModule } from '../redis/redis.module';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
@@ -22,12 +23,13 @@ import { PrismaModule } from '../app/prisma/prisma.module';
       }),
       inject: [ConfigService],
     }),
+    ConfigModule,
     RedisModule,
     EmailModule,
     PrismaModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [PassportModule, AuthService],
+  providers: [AuthService, JwtStrategy, OtpService],
+  exports: [PassportModule, AuthService, OtpService],
 })
 export class AuthModule {}
