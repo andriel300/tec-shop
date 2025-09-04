@@ -1,19 +1,21 @@
 import {
+  Body,
   Controller,
   Get,
-  UseGuards,
-  Request,
   Post,
-  Body,
   HttpCode,
   HttpStatus,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
-import { JwtAuthGuard } from './jwt-auth.guard';
-import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
-import { GenerateOtpDto } from './dto/generate-otp.dto';
-import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from './dto/register-user.dto';
+import { GenerateOtpDto } from './dto/generate-otp.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -82,5 +84,38 @@ export class AuthController {
     @Body() body: VerifyOtpDto
   ): Promise<{ accessToken: string }> {
     return this.authService.verifyOtp(body);
+  }
+
+  // --- Password Reset Flow ---
+
+  @Post('request-password-reset')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Request a password reset link' })
+  @ApiBody({ type: RequestPasswordResetDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Password reset link sent if email exists.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request (e.g., invalid email).',
+  })
+  async requestPasswordReset(
+    @Body() body: RequestPasswordResetDto
+  ): Promise<{ message: string }> {
+    return this.authService.requestPasswordReset(body);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset password using a token' })
+  @ApiBody({ type: ResetPasswordDto })
+  @ApiResponse({ status: 200, description: 'Password has been reset successfully.' })
+  @ApiResponse({ status: 400, description: 'Bad Request (e.g., invalid input).', })
+  @ApiResponse({ status: 401, description: 'Unauthorized (e.g., invalid or expired token).', })
+  async resetPassword(
+    @Body() body: ResetPasswordDto
+  ): Promise<{ message: string }> {
+    return this.authService.resetPassword(body);
   }
 }

@@ -21,4 +21,24 @@ export class EmailService {
       `,
     });
   }
+
+  async sendPasswordResetLink(to: string, resetLink: string): Promise<void> {
+    await this.mailerService.sendMail({
+      to,
+      subject: 'Tec-Shop Password Reset Request',
+      html: `
+        <div style="font-family: sans-serif; text-align: center; padding: 20px;">
+          <h2>Password Reset Request</h2>
+          <p>You have requested to reset your password for Tec-Shop.</p>
+          <p>Please click the link below to reset your password:</p>
+          <p style="margin: 20px;">
+            <a href="${resetLink}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+              Reset Password
+            </a>
+          </p>
+          <p>If you did not request a password reset, please ignore this email.</p>
+        </div>
+      `,
+    });
+  }
 }
