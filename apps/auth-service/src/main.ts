@@ -8,13 +8,13 @@ async function bootstrap() {
   const globalPrefix = 'api';
 
   app.enableCors({
-    origin: ["http://localhost:3000"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    origin: ['http://localhost:3000'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   });
 
   app.setGlobalPrefix(globalPrefix);
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
 
   // Swagger Setup
   const config = new DocumentBuilder()
@@ -30,7 +30,9 @@ async function bootstrap() {
 
   await app.listen(port);
 
-  Logger.log(`🚀 Auth service is running on: http://localhost:${port}/${globalPrefix}`);
+  Logger.log(
+    `🚀 Auth service is running on: http://localhost:${port}/${globalPrefix}`
+  );
   Logger.log(`📚 Swagger docs available at: http://localhost:${port}/api/docs`);
 }
 
