@@ -31,7 +31,10 @@ describe('AuthController', () => {
 
   describe('register', () => {
     it('should call authService.register', async () => {
-      const dto: RegisterUserDto = { email: 'test@example.com', password: 'password' };
+      const dto: RegisterUserDto = {
+        email: 'test@example.com',
+        password: 'password',
+      };
       await controller.register(dto);
       expect(authService.register).toHaveBeenCalledWith(dto);
     });
