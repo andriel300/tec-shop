@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../app/prisma/prisma.service';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { RedisService } from '../redis/redis.service';
 import { EmailService } from '../email/email.service';
 import { JwtService } from '@nestjs/jwt';
 
 // Mock services
 const mockPrismaService = {
-  user: {
+  users: {
     findUnique: jest.fn(),
     create: jest.fn(),
   },
@@ -27,9 +27,7 @@ const mockJwtService = {
 };
 
 // Mock bcrypt
-jest.mock('bcrypt', () => ({
-  hash: jest.fn(),
-}));
+jest.mock('bcryptjs');
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -64,25 +62,35 @@ describe('AuthService', () => {
   });
 
   describe('register', () => {
-    const registerDto = { email: 'test@example.com', password: 'password123' };
+    const registerDto = { name: 'Test User', email: 'test@example.com', password: 'password123' };
 
     it('should throw a ConflictException if user already exists', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue({ id: '1' });
-      await expect(service.register(registerDto)).rejects.toThrow(ConflictException);
-      expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { email: registerDto.email } });
+      mockPrismaService.users.findUnique.mockResolvedValue({ id: '1' });
+      await expect(service.register(registerDto)).rejects.toThrow(
+        ConflictException
+      );
+      expect(prisma.users.findUnique).toHaveBeenCalledWith({
+        where: { email: registerDto.email },
+      });
     });
 
     it('should hash password and create a new user', async () => {
       const hashedPassword = 'hashedPassword';
-      const createdUser = { id: '1', email: registerDto.email, password: hashedPassword };
-      mockPrismaService.user.findUnique.mockResolvedValue(null);
+      const createdUser = {
+        id: '1',
+        email: registerDto.email,
+        password: hashedPassword,
+      };
+      mockPrismaService.users.findUnique.mockResolvedValue(null);
       (bcrypt.hash as jest.Mock).mockResolvedValue(hashedPassword);
-      mockPrismaService.user.create.mockResolvedValue(createdUser);
+      mockPrismaService.users.create.mockResolvedValue(createdUser);
 
       const result = await service.register(registerDto);
 
       expect(bcrypt.hash).toHaveBeenCalledWith(registerDto.password, 10);
-      expect(prisma.user.create).toHaveBeenCalledWith({ data: { email: registerDto.email, password: hashedPassword } });
+      expect(prisma.users.create).toHaveBeenCalledWith({
+        data: { name: registerDto.name, email: registerDto.email, password: hashedPassword },
+      });
       expect(result).not.toHaveProperty('password');
     });
   });
@@ -96,7 +104,7 @@ describe('AuthService', () => {
       expect(redis.set).toHaveBeenCalledWith(
         `otp:${emailDto.email}`,
         expect.stringMatching(/^\d{6}$/),
-        300,
+        300
       );
 
       // Check that email.sendOtp was called with the same OTP
@@ -110,7 +118,9 @@ describe('AuthService', () => {
 
     it('should throw UnauthorizedException if OTP is invalid', async () => {
       mockRedisService.get.mockResolvedValue(null);
-      await expect(service.verifyOtp(verifyDto)).rejects.toThrow(UnauthorizedException);
+      await expect(service.verifyOtp(verifyDto)).rejects.toThrow(
+        UnauthorizedException
+      );
       expect(redis.get).toHaveBeenCalledWith(`otp:${verifyDto.email}`);
     });
 
@@ -122,7 +132,10 @@ describe('AuthService', () => {
       const result = await service.verifyOtp(verifyDto);
 
       expect(redis.del).toHaveBeenCalledWith(`otp:${verifyDto.email}`);
-      expect(jwt.signAsync).toHaveBeenCalledWith({ sub: verifyDto.email, type: 'user' });
+      expect(jwt.signAsync).toHaveBeenCalledWith({
+        sub: verifyDto.email,
+        type: 'user',
+      });
       expect(result).toEqual({ accessToken });
     });
   });
