@@ -31,7 +31,9 @@ export class AuthController {
 
   @Get()
   getHelloApi(): { message: string } {
-    return { message: 'Hello andriel hehe just testing this new api right? hehe' };
+    return {
+      message: 'Hello andriel hehe just testing this new api right? hehe',
+    };
   }
 
   @Get('profile')
@@ -50,8 +52,13 @@ export class AuthController {
   @ApiOperation({ summary: 'Generate a One-Time Password (OTP)' })
   @ApiBody({ type: GenerateOtpDto })
   @ApiResponse({ status: 200, description: 'OTP sent successfully.' })
-  @ApiResponse({ status: 400, description: 'Bad Request (e.g., invalid email).' })
-  async generateOtp(@Body() body: GenerateOtpDto): Promise<{ message: string }> {
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request (e.g., invalid email).',
+  })
+  async generateOtp(
+    @Body() body: GenerateOtpDto
+  ): Promise<{ message: string }> {
     return this.authService.generateOtp(body);
   }
 
@@ -59,10 +66,21 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verify OTP and get access token' })
   @ApiBody({ type: VerifyOtpDto })
-  @ApiResponse({ status: 200, description: 'OTP verified, access token returned.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized (e.g., invalid or expired OTP).' })
-  @ApiResponse({ status: 400, description: 'Bad Request (e.g., invalid input).' })
-  async verifyOtp(@Body() body: VerifyOtpDto): Promise<{ accessToken: string }> {
+  @ApiResponse({
+    status: 200,
+    description: 'OTP verified, access token returned.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized (e.g., invalid or expired OTP).',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request (e.g., invalid input).',
+  })
+  async verifyOtp(
+    @Body() body: VerifyOtpDto
+  ): Promise<{ accessToken: string }> {
     return this.authService.verifyOtp(body);
   }
 }
