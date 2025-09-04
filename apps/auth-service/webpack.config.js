@@ -29,4 +29,7 @@ module.exports = {
       sourceMaps: true,
     })
   ],
+  externals: {
+    '@prisma/client/runtime/library': 'commonjs @prisma/client/runtime/library',
+  },
 };
