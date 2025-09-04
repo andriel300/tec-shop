@@ -1,9 +1,6 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "paths": {
-      "@generated/prisma": ["generated/prisma"]
-    },
     "composite": true,
     "declarationMap": true,
     "emitDeclarationOnly": true,

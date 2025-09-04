@@ -1,4 +1,9 @@
-import { Module, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
+import {
+  Module,
+  MiddlewareConsumer,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -8,7 +13,6 @@ import { RedisModule } from '../redis/redis.module';
 import { EmailModule } from '../email/email.module';
 import { AllExceptionsFilter, LoggerMiddleware } from '@tec-shop/common';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
   imports: [
@@ -22,7 +26,6 @@ import { PrismaModule } from '../prisma/prisma.module';
       isGlobal: true, // Makes the ConfigService available throughout the app
       envFilePath: './apps/auth-service/.env', // Path to your .env file
     }),
-    PrismaModule,
     AuthModule,
     RedisModule,
     EmailModule,
@@ -42,6 +45,8 @@ import { PrismaModule } from '../prisma/prisma.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(LoggerMiddleware).forRoutes({ path: '*', method: RequestMethod.ALL });
+    consumer
+      .apply(LoggerMiddleware)
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
   }
 }
