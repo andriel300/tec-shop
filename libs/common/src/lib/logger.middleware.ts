@@ -18,11 +18,12 @@ export class LoggerMiddleware implements NestMiddleware {
     // the entire request/response cycle is complete, including the time it
     // takes for the route handler to do its job. This gives us the full picture.
     res.on('finish', () => {
-      // Calculates the total duration from request start to response end.
       const duration = Date.now() - start;
 
       // This simple line is a goldmine for performance monitoring and debugging weird issues.
-      console.log(`[${method}] ${originalUrl} - ${res.statusCode} - ${duration}ms`);
+      console.log(
+        `[${method}] ${originalUrl} - ${res.statusCode} - ${duration}ms`
+      );
     });
 
     // This is critical! It passes the request to the next middleware
