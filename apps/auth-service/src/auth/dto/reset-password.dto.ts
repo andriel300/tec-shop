@@ -7,14 +7,14 @@ export class ResetPasswordDto {
     description: "User's email address",
   })
   @IsEmail()
-  email: string;
+  email!: string;
 
   @ApiProperty({
     example: 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6',
     description: 'Password reset token',
   })
   @IsString()
-  token: string;
+  token!: string;
 
   @ApiProperty({
     example: 'NewSecurePassword123',
@@ -22,5 +22,5 @@ export class ResetPasswordDto {
   })
   @IsString()
   @MinLength(8)
-  newPassword: string;
+  newPassword!: string;
 }

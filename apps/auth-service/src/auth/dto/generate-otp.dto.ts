@@ -7,5 +7,5 @@ export class GenerateOtpDto {
     description: 'The email address to which the OTP will be sent.',
   })
   @IsEmail()
-  email: string;
+  email!: string;
 }

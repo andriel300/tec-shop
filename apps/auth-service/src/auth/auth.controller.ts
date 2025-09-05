@@ -5,9 +5,10 @@ import {
   Post,
   HttpCode,
   HttpStatus,
-  Request,
   UseGuards,
+  Request as Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from './dto/register-user.dto';
@@ -43,7 +44,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Get user profile (Auth0 JWT required)' })
   @ApiResponse({ status: 200, description: 'User profile retrieved.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  getProfile(@Request() req) {
+  getProfile(@Req() req: Request) {
     return req.user;
   }
 
