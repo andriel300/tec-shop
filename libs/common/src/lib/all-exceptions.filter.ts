@@ -3,7 +3,6 @@ import {
   HttpException,
   HttpStatus,
   Logger,
-  BadRequestException,
 } from '@nestjs/common';
 import { PrismaClientValidationError } from '@prisma/client/runtime/library';
 import { BaseExceptionFilter } from '@nestjs/core';
@@ -18,7 +17,7 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
     super();
   }
 
-  catch(exception: unknown, host: ArgumentsHost) {
+  override catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
@@ -33,7 +32,7 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
       status = HttpStatus.BAD_REQUEST;
       clientMessage = 'Invalid data provided to the database.';
       this.logger.warn(
-        `Prisma Validation Error on ${request.method} ${request.url}: ${exception.message}`,
+        `Prisma Validation Error on ${request.method} ${request.url}: ${exception.message}`
       );
     } else if (exception instanceof Error) {
       // Generic error handling for other Error types
@@ -41,9 +40,10 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
     }
 
     // For logging, we want the REAL error. We log the message and the stack trace.
+    // I'm tired of seing bullshit log errors that I can't understand anything.
     this.logger.error(
       `Error on ${request.method} ${request.url}`,
-      exception instanceof Error ? exception.stack : JSON.stringify(exception),
+      exception instanceof Error ? exception.stack : JSON.stringify(exception)
     );
 
     response.status(status).json({
