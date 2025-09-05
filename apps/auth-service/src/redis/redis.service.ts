@@ -4,13 +4,16 @@ import Redis from 'ioredis';
 
 @Injectable()
 export class RedisService implements OnModuleInit, OnModuleDestroy {
-  private client: Redis;
+  private client!: Redis;
 
   constructor(private configService: ConfigService) {}
 
   onModuleInit() {
     // Using a single URL is preferred for services like Upstash
     const redisUrl = this.configService.get<string>('REDIS_URL');
+    if (!redisUrl) {
+      throw new Error('REDIS_URL environment variable is not set.');
+    }
     this.client = new Redis(redisUrl);
 
     this.client.on('connect', () => console.log('Connected to Redis'));

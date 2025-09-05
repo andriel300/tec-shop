@@ -7,5 +7,5 @@ export class RequestPasswordResetDto {
     description: "User's email address",
   })
   @IsEmail()
-  email: string;
+  email!: string;
 }

@@ -46,10 +46,6 @@ jest.mock('bcryptjs');
 describe('AuthService', () => {
   let service: AuthService;
   let prisma: PrismaService;
-  let otpService: OtpService;
-  let configService: ConfigService;
-  let emailService: EmailService;
-  let redisService: RedisService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -65,10 +61,6 @@ describe('AuthService', () => {
 
     service = module.get<AuthService>(AuthService);
     prisma = module.get<PrismaService>(PrismaService);
-    otpService = module.get<OtpService>(OtpService);
-    configService = module.get<ConfigService>(ConfigService);
-    emailService = module.get<EmailService>(EmailService);
-    redisService = module.get<RedisService>(RedisService);
 
     // Reset mocks before each test
     jest.clearAllMocks();
