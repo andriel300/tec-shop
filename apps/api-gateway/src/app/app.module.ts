@@ -42,6 +42,6 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(LoggerMiddleware) // Applies our custom logging to every single incoming request
-      .forRoutes('*');         // The asterisk wildcard means "for all routes without exception"
+      .forRoutes('*path');         // The asterisk wildcard means "for all routes without exception"
   }
 }
