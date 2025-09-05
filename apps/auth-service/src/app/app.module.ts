@@ -43,6 +43,8 @@ import { ConfigModule } from '@nestjs/config';
     },
   ],
 })
+
+// Applying of middleware of my entire auth-service API
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
