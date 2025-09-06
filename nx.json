@@ -29,10 +29,7 @@
           "watchDepsName": "watch-deps"
         }
       },
-      "exclude": [
-        "libs/shared/exceptions/*",
-        "libs/shared/middleware/*"
-      ]
+      "exclude": ["libs/shared/exceptions/*", "libs/shared/middleware/*"]
     },
     {
       "plugin": "@nx/webpack/plugin",
@@ -67,10 +64,7 @@
     },
     {
       "plugin": "@nx/js/typescript",
-      "include": [
-        "libs/shared/exceptions/*",
-        "libs/shared/middleware/*"
-      ],
+      "include": ["libs/shared/exceptions/*", "libs/shared/middleware/*"],
       "options": {
         "typecheck": {
           "targetName": "typecheck"
@@ -81,6 +75,28 @@
   "targetDefaults": {
     "test": {
       "dependsOn": ["^build"]
+    }
+  },
+  "release": {
+    "projects": [
+      "api-gateway",
+      "auth-service",
+      "shared-exceptions",
+      "shared-middleware"
+    ],
+    "changelog": {
+      "projectChangelogs": {
+        "renderOptions": {
+          "authors": true,
+          "applyUsernameToAuthors": true,
+          "commitReferences": true,
+          "versionTitleDate": true
+        }
+      },
+      "workspaceChangelog": false
+    },
+    "version": {
+      "conventionalCommits": true
     }
   }
 }
