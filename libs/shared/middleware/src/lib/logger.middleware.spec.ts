@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
 import { LoggerMiddleware } from './logger.middleware';
 import { Request, Response, NextFunction } from 'express';
 
@@ -15,10 +16,10 @@ describe('LoggerMiddleware', () => {
       originalUrl: '/test',
     };
     mockResponse = {
-      on: jest.fn((event, cb) => {
+      on: jest.fn().mockImplementation((event, cb) => { // Use mockImplementation
         if (event === 'finish') {
-          // Simulate the finish event
-          cb();
+          void cb(); // Explicitly ignore return value
+          // This comment makes the function body not empty for the linter
         }
       }),
       statusCode: 200,
