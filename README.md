@@ -4,16 +4,32 @@
 
 Tec-Shop is a cutting-edge e-commerce platform built with a microservices architecture, leveraging the power of NestJS and Nx. Designed for scalability, maintainability, and developer experience, this project showcases modern backend development practices, robust authentication, and efficient tooling.
 
-## ✨ Features
+## ✨ Current Features & Strengths:
 
-- **Microservices Architecture:** Independent services for core functionalities (e.g., Authentication, API Gateway).
-- **Nx Monorepo:** Streamlined development, shared code, and consistent tooling across all services.
-- **Robust Authentication:** Secure user authentication using industry-standard practices.
-- **One-Time Password (OTP) System:** Secure passwordless login and Multi-Factor Authentication (MFA) capabilities.
-- **Email Integration:** Reliable email delivery for OTPs and other notifications.
-- **Real-time Data Storage:** High-performance caching and temporary data storage with Redis.
-- **Comprehensive API Documentation:** Auto-generated and interactive API documentation with Swagger.
-- **CI/CD Ready:** Configured for continuous integration workflows.
+Backend (NestJS - `auth-service` & `api-gateway`)
+
+- Robust Authentication System:
+  - Comprehensive user registration (email/password, OTP verification).
+  - Flexible login options (email/password, passwordless OTP).
+  - Secure password reset flow.
+  - Integrated Google OAuth 2.0 for social logins.
+  - JWT-based authentication for stateless sessions.
+  - Advanced Logout: Implemented secure JWT blacklisting using Redis, which is a strong security practice for invalidating tokens.
+- API Gateway (`api-gateway`):
+  - Centralized entry point for microservices.
+  - Global API prefix (/api) for consistent routing.
+  - CORS configuration for secure cross-origin requests.
+  - Integrated Swagger/OpenAPI for excellent API documentation and discoverability.
+- Data Management:
+  - Prisma ORM for type-safe and efficient database interactions with MongoDB.
+  - Redis for high-performance caching and temporary data storage (OTPs, JWT blacklist).
+- Developer Experience & Tooling:
+  - Nx Monorepo: Streamlines development, sharing code, and managing multiple applications/libraries within a single repository.
+  - TypeScript: Provides strong typing, improving code quality and maintainability.
+  - ESLint & Prettier: Ensures consistent code style and quality.
+  - Jest: Configured for testing, indicating a commitment to code reliability.
+  - Containerization: Presence of Dockerfile suggests readiness for containerized deployments.
+  - CI/CD: .github/workflows/ci.yml indicates an automated Continuous Integration pipeline.
 
 ## 💡 Problems Solved & Best Practices Demonstrated
 
