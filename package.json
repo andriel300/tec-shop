@@ -82,6 +82,7 @@
   "workspaces": [
     "apps/*",
     "common",
-    "libs/*"
+    "libs/*",
+    "libs/shared/*"
   ]
 }

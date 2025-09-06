@@ -29,7 +29,11 @@
           "watchDepsName": "watch-deps"
         }
       },
-      "exclude": ["common/*", "libs/common/*"]
+      "exclude": [
+        "libs/shared/util/*",
+        "libs/shared/exceptions/*",
+        "libs/shared/middleware/*"
+      ]
     },
     {
       "plugin": "@nx/webpack/plugin",
@@ -64,7 +68,11 @@
     },
     {
       "plugin": "@nx/js/typescript",
-      "include": ["common/*", "libs/common/*"],
+      "include": [
+        "libs/shared/util/*",
+        "libs/shared/exceptions/*",
+        "libs/shared/middleware/*"
+      ],
       "options": {
         "typecheck": {
           "targetName": "typecheck"
