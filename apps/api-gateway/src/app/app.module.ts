@@ -3,7 +3,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
-import { AllExceptionsFilter, LoggerMiddleware } from '@tec-shop/common'
+import { AllExceptionsFilter } from '@tec-shop/exceptions';
+import { LoggerMiddleware } from '@tec-shop/middleware';
 import { AuthController } from './auth.controller';
 
 @Module({
