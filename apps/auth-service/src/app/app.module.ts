@@ -11,7 +11,8 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { AuthModule } from '../auth/auth.module';
 import { RedisModule } from '../redis/redis.module';
 import { EmailModule } from '../email/email.module';
-import { AllExceptionsFilter, LoggerMiddleware } from '@tec-shop/common';
+import { LoggerMiddleware } from '@tec-shop/middleware';
+import { AllExceptionsFilter } from '@tec-shop/exceptions';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
