@@ -1,27 +1,30 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { passportJwtSecret } from 'jwks-rsa';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly redisService: RedisService,
+  ) {
     super({
-      secretOrKeyProvider: passportJwtSecret({
-        cache: true,
-        rateLimit: true,
-        jwksRequestsPerMinute: 5,
-        jwksUri: `${configService.get('AUTH0_DOMAIN')}.well-known/jwks.json`,
-      }),
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      audience: configService.get('AUTH0_AUDIENCE'),
-      issuer: configService.get('AUTH0_DOMAIN'),
-      algorithms: ['RS256'],
+      ignoreExpiration: false,
+      secretOrKey: configService.get<string>('JWT_SECRET').trim(),
     });
   }
 
-  validate(payload: unknown): unknown {
-    return payload;
+  async validate(payload: { sub: string; email: string; jti: string }): Promise<any> {
+    const isBlacklisted = await this.redisService.get(`blacklist:${payload.jti}`);
+
+    if (isBlacklisted) {
+      throw new UnauthorizedException('Token has been blacklisted.');
+    }
+
+    // The user object will be attached to the request
+    return { id: payload.sub, email: payload.email };
   }
 }
