@@ -9,9 +9,6 @@ import { AuthController } from './auth.controller';
 
 @Module({
   imports: [
-    // Sets up a global rate limiter to protect against brute-force attacks
-    // and API abuse. This configuration allows a maximum of 10 requests
-    // from a single IP address per minute (60,000 milliseconds).
     ThrottlerModule.forRoot([{
       ttl: 60000,
       limit: 10,
