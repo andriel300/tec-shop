@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { v4 as uuidv4 } from 'uuid';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { RedisService } from '../redis/redis.service';
@@ -31,22 +32,31 @@ export class OtpService {
     };
   }
 
+  async validateOtp(email: string, otp: string): Promise<boolean> {
+    const otpKey = `otp:${email}`;
+    const storedOtp = await this.redisService.get(otpKey);
+    return storedOtp === otp;
+  }
+
+  async finalizeOtp(email: string): Promise<{ accessToken: string }> {
+    const otpKey = `otp:${email}`;
+    await this.redisService.del(otpKey);
+
+    const payload = { sub: email, type: 'user', jti: uuidv4() };
+    const accessToken = await this.jwtService.signAsync(payload);
+
+    return { accessToken };
+  }
+
   async verifyOtp(
     verifyOtpDto: VerifyOtpDto
   ): Promise<{ accessToken: string }> {
     const { email, otp } = verifyOtpDto;
-    const otpKey = `otp:${email}`;
-    const storedOtp = await this.redisService.get(otpKey);
 
-    if (!storedOtp || storedOtp !== otp) {
+    if (!await this.validateOtp(email, otp)) {
       throw new UnauthorizedException('Invalid or expired OTP.');
     }
 
-    await this.redisService.del(otpKey);
-
-    const payload = { sub: email, type: 'user' };
-    const accessToken = await this.jwtService.signAsync(payload);
-
-    return { accessToken };
+    return this.finalizeOtp(email);
   }
 }
