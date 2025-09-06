@@ -62,7 +62,7 @@ export class AuthService {
     return this.otpService.finalizeOtp(email);
   }
 
-  async login(loginDto: LoginDto): Promise<{ accessToken: string }> {
+  async login(loginDto: LoginDto): Promise<{ accessToken: string; refreshToken: string }> {
     const { email, password } = loginDto;
 
     const user = await this.prisma.users.findUnique({ where: { email } });
@@ -81,10 +81,18 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials.');
     }
 
-    const payload = { sub: user.id, email: user.email, jti: uuidv4() };
-    const accessToken = await this.jwtService.signAsync(payload);
+    const accessTokenPayload = { sub: user.id, email: user.email, jti: uuidv4() };
+    const accessToken = await this.jwtService.signAsync(accessTokenPayload, { expiresIn: '15m' }); // Short-lived access token
 
-    return { accessToken };
+    const refreshTokenPayload = { sub: user.id, jti: uuidv4() };
+    const refreshToken = await this.jwtService.signAsync(refreshTokenPayload, { expiresIn: '7d' }); // Long-lived refresh token
+
+    await this.prisma.users.update({
+      where: { id: user.id },
+      data: { refreshToken: refreshToken },
+    });
+
+    return { accessToken, refreshToken };
   }
 
   async logout(token: string): Promise<{ message: string }> {
@@ -112,7 +120,35 @@ export class AuthService {
     }
   }
 
-  async googleLogin(user: any): Promise<{ accessToken: string }> {
+  async refreshTokens(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
+    try {
+      const decoded = this.jwtService.verify(refreshToken);
+      const userId = decoded.sub;
+
+      const user = await this.prisma.users.findUnique({ where: { id: userId } });
+
+      if (!user || user.refreshToken !== refreshToken) {
+        throw new UnauthorizedException('Invalid or expired refresh token.');
+      }
+
+      const accessTokenPayload = { sub: user.id, email: user.email, jti: uuidv4() };
+      const newAccessToken = await this.jwtService.signAsync(accessTokenPayload, { expiresIn: '15m' });
+
+      const refreshTokenPayload = { sub: user.id, jti: uuidv4() };
+      const newRefreshToken = await this.jwtService.signAsync(refreshTokenPayload, { expiresIn: '7d' });
+
+      await this.prisma.users.update({
+        where: { id: user.id },
+        data: { refreshToken: newRefreshToken },
+      });
+
+      return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+    } catch (error) {
+      throw new UnauthorizedException('Invalid or expired refresh token.');
+    }
+  }
+
+  async googleLogin(user: any): Promise<{ accessToken: string; refreshToken: string }> {
     if (!user) {
       throw new UnauthorizedException('No user from Google.');
     }
@@ -144,10 +180,18 @@ export class AuthService {
       }
     }
 
-    const payload = { sub: existingUser.id, email: existingUser.email, jti: uuidv4() };
-    const accessToken = await this.jwtService.signAsync(payload);
+    const accessTokenPayload = { sub: existingUser.id, email: existingUser.email, jti: uuidv4() };
+    const accessToken = await this.jwtService.signAsync(accessTokenPayload, { expiresIn: '15m' }); // Short-lived access token
 
-    return { accessToken };
+    const refreshTokenPayload = { sub: existingUser.id, jti: uuidv4() };
+    const refreshToken = await this.jwtService.signAsync(refreshTokenPayload, { expiresIn: '7d' }); // Long-lived refresh token
+
+    await this.prisma.users.update({
+      where: { id: existingUser.id },
+      data: { refreshToken: refreshToken },
+    });
+
+    return { accessToken, refreshToken };
   }
 
   async generateOtp(generateOtpDto: GenerateOtpDto): Promise<{ message: string }> {
