@@ -9,6 +9,7 @@ import {
   Request as Req,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from './dto/register-user.dto';
@@ -19,12 +20,14 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { LoginDto } from './dto/login.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Throttle({ limit: 3, ttl: 60000 })
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
   @ApiBody({ type: RegisterUserDto })
@@ -56,7 +59,8 @@ export class AuthController {
     return this.authService.verifyEmail(body);
   }
 
-  @Post('login')
+  @Throttle({ limit: 3, ttl: 60000 })
+  @Post('login/email')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Log in with email and password' })
   @ApiBody({ type: LoginDto })
@@ -68,8 +72,18 @@ export class AuthController {
     status: 401,
     description: 'Unauthorized (e.g., invalid credentials).',
   })
-  async login(@Body() loginDto: LoginDto): Promise<{ accessToken: string }> {
+  async login(@Body() loginDto: LoginDto): Promise<{ accessToken: string; refreshToken: string }> {
     return this.authService.login(loginDto);
+  }
+
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Refresh access token using refresh token' })
+  @ApiBody({ type: RefreshTokenDto })
+  @ApiResponse({ status: 200, description: 'Access token and refresh token refreshed successfully.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized (e.g., invalid or expired refresh token).', })
+  async refresh(@Body() body: RefreshTokenDto): Promise<{ accessToken: string; refreshToken: string }> {
+    return this.authService.refreshTokens(body.refreshToken);
   }
 
   @Post('logout')
@@ -90,7 +104,7 @@ export class AuthController {
     };
   }
 
-  @Get('profile')
+  @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get user profile (Auth0 JWT required)' })
   @ApiResponse({ status: 200, description: 'User profile retrieved.' })
@@ -101,7 +115,7 @@ export class AuthController {
 
   // --- Google OAuth Flow ---
 
-  @Get('google')
+  @Get('login/google')
   @UseGuards(AuthGuard('google'))
   @ApiOperation({ summary: 'Initiate Google OAuth2 login flow' })
   @ApiResponse({ status: 302, description: 'Redirects to Google for authentication.' })
@@ -117,7 +131,8 @@ export class AuthController {
 
   // --- OTP Login Flow ---
 
-  @Post('generate-otp')
+  @Throttle({ limit: 3, ttl: 60000 })
+  @Post('otp/generate')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Generate a One-Time Password (OTP)' })
   @ApiBody({ type: GenerateOtpDto })
@@ -132,7 +147,7 @@ export class AuthController {
     return this.authService.generateOtp(body);
   }
 
-  @Post('verify-otp')
+  @Post('otp/verify')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verify OTP and get access token' })
   @ApiBody({ type: VerifyOtpDto })
@@ -156,7 +171,8 @@ export class AuthController {
 
   // --- Password Reset Flow ---
 
-  @Post('request-password-reset')
+  @Throttle({ limit: 3, ttl: 60000 })
+  @Post('password/request-reset')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request a password reset link' })
   @ApiBody({ type: RequestPasswordResetDto })
@@ -174,7 +190,7 @@ export class AuthController {
     return this.authService.requestPasswordReset(body);
   }
 
-  @Post('reset-password')
+  @Post('password/reset')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reset password using a token' })
   @ApiBody({ type: ResetPasswordDto })

@@ -5,13 +5,14 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { json, urlencoded } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import helmet from 'helmet';
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {
   // Creates the core NestJS application and explicitly types it to use
   // Express under the hood, giving us access to the raw Express instance.
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  const globalPrefix = 'api';
+  const globalPrefix = 'api/v1';
 
   // Defines which front-end origins are allowed to talk to this API.
   // This is our first line of defense against cross-site request forgery (CSRF).
@@ -21,6 +22,8 @@ async function bootstrap() {
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   });
+
+  app.use(helmet()); // Use Helmet to secure HTTP headers
 
   // Middleware stack: These are like security guards and bouncers for incoming requests.
   // They process every single request before it even reaches our controllers.
