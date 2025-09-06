@@ -8,8 +8,8 @@ import {
   UseGuards,
   Request as Req,
 } from '@nestjs/common';
-import type { Request } from 'express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { GenerateOtpDto } from './dto/generate-otp.dto';
@@ -17,6 +17,8 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { VerifyEmailDto } from './dto/verify-email.dto';
+import { LoginDto } from './dto/login.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -26,10 +28,59 @@ export class AuthController {
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
   @ApiBody({ type: RegisterUserDto })
-  @ApiResponse({ status: 201, description: 'User registered successfully.' })
+  @ApiResponse({ status: 201, description: 'An OTP has been sent to your email. Please verify to complete registration.' })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
   async register(@Body() registerUserDto: RegisterUserDto) {
     return this.authService.register(registerUserDto);
+  }
+
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify email and create user' })
+  @ApiBody({ type: VerifyEmailDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Email verified, user created, access token returned.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized (e.g., invalid or expired OTP).',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request (e.g., invalid input).',
+  })
+  async verifyEmail(
+    @Body() body: VerifyEmailDto
+  ): Promise<{ accessToken: string }> {
+    return this.authService.verifyEmail(body);
+  }
+
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Log in with email and password' })
+  @ApiBody({ type: LoginDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Login successful, access token returned.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized (e.g., invalid credentials).',
+  })
+  async login(@Body() loginDto: LoginDto): Promise<{ accessToken: string }> {
+    return this.authService.login(loginDto);
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Log out' })
+  @ApiResponse({ status: 200, description: 'Successfully logged out.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  async logout(@Req() req: Request): Promise<{ message: string }> {
+    const token = req.headers.authorization?.split(' ')[1];
+    return this.authService.logout(token);
   }
 
   @Get()
@@ -46,6 +97,22 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   getProfile(@Req() req: Request) {
     return req.user;
+  }
+
+  // --- Google OAuth Flow ---
+
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  @ApiOperation({ summary: 'Initiate Google OAuth2 login flow' })
+  @ApiResponse({ status: 302, description: 'Redirects to Google for authentication.' })
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  async googleAuth() {}
+
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  @ApiExcludeEndpoint()
+  async googleAuthRedirect(@Req() req: any) {
+    return this.authService.googleLogin(req.user);
   }
 
   // --- OTP Login Flow ---

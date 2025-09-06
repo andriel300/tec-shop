@@ -1,4 +1,6 @@
 import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { LoginDto } from './dto/login.dto';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { PrismaService } from '../app/prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
@@ -11,6 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
 import { RedisService } from '../redis/redis.service';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 
 @Injectable()
 export class AuthService {
@@ -20,14 +23,29 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
     private readonly redisService: RedisService,
+    private readonly jwtService: JwtService,
   ) {}
 
   async register(registerUserDto: RegisterUserDto): Promise<{ message: string }> {
-    const { name, email, password } = registerUserDto;
+    const { email } = registerUserDto;
 
     const existingUser = await this.prisma.users.findUnique({ where: { email } });
     if (existingUser) {
       throw new ConflictException('User with this email already exists.');
+    }
+
+    // Instead of creating the user, we generate and send an OTP
+    await this.otpService.generateOtp({ email });
+
+    return { message: `An OTP has been sent to ${email}. Please verify to complete registration.` };
+  }
+
+  async verifyEmail(verifyEmailDto: VerifyEmailDto): Promise<{ accessToken: string }> {
+    const { name, email, password, otp } = verifyEmailDto;
+
+    const isValid = await this.otpService.validateOtp(email, otp);
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid or expired OTP.');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -37,10 +55,99 @@ export class AuthService {
         name,
         email,
         password: hashedPassword,
+        isEmailVerified: true,
       },
     });
 
-    return { message: 'User registered successfully.' };
+    return this.otpService.finalizeOtp(email);
+  }
+
+  async login(loginDto: LoginDto): Promise<{ accessToken: string }> {
+    const { email, password } = loginDto;
+
+    const user = await this.prisma.users.findUnique({ where: { email } });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials.');
+    }
+
+    if (!user.isEmailVerified) {
+      throw new UnauthorizedException('Email not verified. Please verify your email first.');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials.');
+    }
+
+    const payload = { sub: user.id, email: user.email, jti: uuidv4() };
+    const accessToken = await this.jwtService.signAsync(payload);
+
+    return { accessToken };
+  }
+
+  async logout(token: string): Promise<{ message: string }> {
+    if (!token) {
+      throw new UnauthorizedException('No token provided.');
+    }
+
+    try {
+      const decoded = this.jwtService.decode(token) as { jti: string; exp: number };
+      if (!decoded || !decoded.jti || !decoded.exp) {
+        throw new UnauthorizedException('Invalid token.');
+      }
+
+      const { jti, exp } = decoded;
+      const expiry = exp - Math.floor(Date.now() / 1000);
+
+      if (expiry > 0) {
+        const blacklistKey = `blacklist:${jti}`;
+        await this.redisService.set(blacklistKey, 'true', expiry);
+      }
+
+      return { message: 'Successfully logged out.' };
+    } catch (error) {
+      throw new UnauthorizedException('Invalid token.');
+    }
+  }
+
+  async googleLogin(user: any): Promise<{ accessToken: string }> {
+    if (!user) {
+      throw new UnauthorizedException('No user from Google.');
+    }
+
+    let existingUser = await this.prisma.users.findUnique({ where: { googleId: user.googleId } });
+
+    if (!existingUser) {
+      // Check if a user with this email already exists (e.g., local registration)
+      existingUser = await this.prisma.users.findUnique({ where: { email: user.email } });
+
+      if (existingUser) {
+        // Link existing local account to Google account
+        await this.prisma.users.update({
+          where: { id: existingUser.id },
+          data: { googleId: user.googleId, provider: 'google' },
+        });
+      } else {
+        // Create new user
+        existingUser = await this.prisma.users.create({
+          data: {
+            email: user.email,
+            name: user.name,
+            googleId: user.googleId,
+            isEmailVerified: true, // Google verifies email
+            provider: 'google',
+            password: null, // No password for OAuth users
+          },
+        });
+      }
+    }
+
+    const payload = { sub: existingUser.id, email: existingUser.email, jti: uuidv4() };
+    const accessToken = await this.jwtService.signAsync(payload);
+
+    return { accessToken };
   }
 
   async generateOtp(generateOtpDto: GenerateOtpDto): Promise<{ message: string }> {
