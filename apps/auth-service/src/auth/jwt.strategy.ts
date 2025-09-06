@@ -7,13 +7,13 @@ import { RedisService } from '../redis/redis.service';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
-    private readonly configService: ConfigService,
+    configService: ConfigService,
     private readonly redisService: RedisService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET').trim(),
+      secretOrKey: configService.get<string>('JWT_SECRET') || 'supersecret', // Provide a default or throw an error
     });
   }
 

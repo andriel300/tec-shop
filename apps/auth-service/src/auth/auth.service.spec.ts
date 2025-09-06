@@ -7,6 +7,7 @@ import { OtpService } from './otp.service';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
 import { RedisService } from '../redis/redis.service';
+import { JwtService } from '@nestjs/jwt';
 
 // Mock services
 const mockPrismaService = {
@@ -20,6 +21,8 @@ const mockPrismaService = {
 const mockOtpService = {
   generateOtp: jest.fn(),
   verifyOtp: jest.fn(),
+  validateOtp: jest.fn(),
+  finalizeOtp: jest.fn(),
 };
 
 const mockConfigService = {
@@ -40,12 +43,18 @@ const mockRedisService = {
   del: jest.fn(),
 };
 
+const mockJwtService = {
+  signAsync: jest.fn(),
+  verify: jest.fn(),
+  decode: jest.fn(),
+};
+
 // Mock bcrypt
 jest.mock('bcryptjs');
 
 describe('AuthService', () => {
   let service: AuthService;
-  let prisma: PrismaService;
+  // let prisma: PrismaService; // Removed
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -56,11 +65,12 @@ describe('AuthService', () => {
         { provide: ConfigService, useValue: mockConfigService },
         { provide: EmailService, useValue: mockEmailService },
         { provide: RedisService, useValue: mockRedisService },
+        { provide: JwtService, useValue: mockJwtService },
       ],
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    prisma = module.get<PrismaService>(PrismaService);
+    // prisma = module.get<PrismaService>(PrismaService); // Removed
 
     // Reset mocks before each test
     jest.clearAllMocks();
@@ -78,29 +88,56 @@ describe('AuthService', () => {
       await expect(service.register(registerDto)).rejects.toThrow(
         ConflictException
       );
-      expect(prisma.users.findUnique).toHaveBeenCalledWith({
+      expect(mockPrismaService.users.findUnique).toHaveBeenCalledWith({
         where: { email: registerDto.email },
       });
     });
 
-    it('should hash password and create a new user', async () => {
-      const hashedPassword = 'hashedPassword';
-      const createdUser = {
-        id: '1',
-        email: registerDto.email,
-        password: hashedPassword,
-      };
+    it('should generate and send an OTP if user does not exist', async () => {
       mockPrismaService.users.findUnique.mockResolvedValue(null);
-      (bcrypt.hash as jest.Mock).mockResolvedValue(hashedPassword);
-      mockPrismaService.users.create.mockResolvedValue(createdUser);
+      mockOtpService.generateOtp.mockResolvedValue({ message: 'OTP sent.' });
 
       const result = await service.register(registerDto);
 
-      expect(bcrypt.hash).toHaveBeenCalledWith(registerDto.password, 10);
-      expect(prisma.users.create).toHaveBeenCalledWith({
-        data: { name: registerDto.name, email: registerDto.email, password: hashedPassword },
+      expect(mockPrismaService.users.findUnique).toHaveBeenCalledWith({
+        where: { email: registerDto.email },
       });
-      expect(result).toEqual({ message: 'User registered successfully.' });
+      expect(mockOtpService.generateOtp).toHaveBeenCalledWith({ email: registerDto.email });
+      expect(result).toEqual({ message: `An OTP has been sent to ${registerDto.email}. Please verify to complete registration.` });
+    });
+  });
+
+  describe('verifyEmail', () => {
+    const verifyEmailDto = { name: 'Test User', email: 'test@example.com', password: 'password123', otp: '123456' };
+
+    it('should throw UnauthorizedException if OTP is invalid or expired', async () => {
+      mockOtpService.validateOtp.mockResolvedValue(false);
+      await expect(service.verifyEmail(verifyEmailDto)).rejects.toThrow(UnauthorizedException);
+      expect(mockOtpService.validateOtp).toHaveBeenCalledWith(verifyEmailDto.email, verifyEmailDto.otp);
+    });
+
+    it('should hash password, create user, and return access token if OTP is valid', async () => {
+      mockOtpService.validateOtp.mockResolvedValue(true);
+      const hashedPassword = 'hashedPassword';
+      (bcrypt.hash as jest.Mock).mockResolvedValue(hashedPassword);
+      const createdUser = { id: 'user-id', email: verifyEmailDto.email, password: hashedPassword, isEmailVerified: true };
+      mockPrismaService.users.create.mockResolvedValue(createdUser);
+      mockOtpService.finalizeOtp.mockResolvedValue({ accessToken: 'new_access_token' });
+
+      const result = await service.verifyEmail(verifyEmailDto);
+
+      expect(mockOtpService.validateOtp).toHaveBeenCalledWith(verifyEmailDto.email, verifyEmailDto.otp);
+      expect(bcrypt.hash).toHaveBeenCalledWith(verifyEmailDto.password, 10);
+      expect(mockPrismaService.users.create).toHaveBeenCalledWith({
+        data: {
+          name: verifyEmailDto.name,
+          email: verifyEmailDto.email,
+          password: hashedPassword,
+          isEmailVerified: true,
+        },
+      });
+      expect(mockOtpService.finalizeOtp).toHaveBeenCalledWith(verifyEmailDto.email);
+      expect(result).toEqual({ accessToken: 'new_access_token' });
     });
   });
 
