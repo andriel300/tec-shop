@@ -7,14 +7,14 @@ export class VerifyEmailDto {
     description: 'The name of the user',
   })
   @IsString()
-  name: string;
+  name!: string;
 
   @ApiProperty({
     example: 'user@example.com',
     description: 'The email address used to request the OTP.',
   })
   @IsEmail()
-  email: string;
+  email!: string;
 
   @ApiProperty({
     example: '123456',
@@ -24,7 +24,7 @@ export class VerifyEmailDto {
   })
   @IsString()
   @Length(6, 6)
-  otp: string;
+  otp!: string;
 
   @ApiProperty({
     example: 'Str0ngP@ssw0rd!',
@@ -33,5 +33,5 @@ export class VerifyEmailDto {
   })
   @IsString()
   @MinLength(8)
-  password: string;
+  password!: string;
 }

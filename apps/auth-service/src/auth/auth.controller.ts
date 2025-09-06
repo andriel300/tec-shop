@@ -6,10 +6,11 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
-  Request as Req,
+  Req,
 } from '@nestjs/common';
+import type { Request as ExpressRequest } from 'express';
 import { AuthGuard } from '@nestjs/passport';
-import { Throttle } from '@nestjs/throttler';
+import { Throttle, ThrottlerOptions } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from './dto/register-user.dto';
@@ -22,12 +23,17 @@ import { VerifyEmailDto } from './dto/verify-email.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 
+const registerThrottleOptions: ThrottlerOptions = { limit: 3, ttl: 60000 };
+const loginThrottleOptions: ThrottlerOptions = { limit: 3, ttl: 60000 };
+const generateOtpThrottleOptions: ThrottlerOptions = { limit: 3, ttl: 60000 };
+const requestPasswordResetThrottleOptions: ThrottlerOptions = { limit: 3, ttl: 60000 };
+
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Throttle({ limit: 3, ttl: 60000 })
+  @Throttle(registerThrottleOptions as any)
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
   @ApiBody({ type: RegisterUserDto })
@@ -59,7 +65,7 @@ export class AuthController {
     return this.authService.verifyEmail(body);
   }
 
-  @Throttle({ limit: 3, ttl: 60000 })
+  @Throttle(loginThrottleOptions as any)
   @Post('login/email')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Log in with email and password' })
@@ -92,9 +98,9 @@ export class AuthController {
   @ApiOperation({ summary: 'Log out' })
   @ApiResponse({ status: 200, description: 'Successfully logged out.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async logout(@Req() req: Request): Promise<{ message: string }> {
-    const token = req.headers.authorization?.split(' ')[1];
-    return this.authService.logout(token);
+  async logout(@Req() req: ExpressRequest): Promise<{ message: string }> {
+    const token = req.headers.authorization ? req.headers.authorization.split(' ')[1] : undefined;
+            return this.authService.logout(token as string); // Explicitly cast to string
   }
 
   @Get()
@@ -109,7 +115,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Get user profile (Auth0 JWT required)' })
   @ApiResponse({ status: 200, description: 'User profile retrieved.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  getProfile(@Req() req: Request) {
+  getProfile(@Req() req: ExpressRequest) {
     return req.user;
   }
 
@@ -131,7 +137,7 @@ export class AuthController {
 
   // --- OTP Login Flow ---
 
-  @Throttle({ limit: 3, ttl: 60000 })
+  @Throttle(generateOtpThrottleOptions as any)
   @Post('otp/generate')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Generate a One-Time Password (OTP)' })
@@ -171,7 +177,7 @@ export class AuthController {
 
   // --- Password Reset Flow ---
 
-  @Throttle({ limit: 3, ttl: 60000 })
+  @Throttle(requestPasswordResetThrottleOptions as any)
   @Post('password/request-reset')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request a password reset link' })
