@@ -30,7 +30,6 @@
         }
       },
       "exclude": [
-        "libs/shared/util/*",
         "libs/shared/exceptions/*",
         "libs/shared/middleware/*"
       ]
@@ -69,7 +68,6 @@
     {
       "plugin": "@nx/js/typescript",
       "include": [
-        "libs/shared/util/*",
         "libs/shared/exceptions/*",
         "libs/shared/middleware/*"
       ],

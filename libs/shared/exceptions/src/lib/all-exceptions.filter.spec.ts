@@ -44,7 +44,7 @@ describe('AllExceptionsFilter', () => {
   it('should catch PrismaClientValidationError and return BAD_REQUEST', () => {
     // Create a mock PrismaClientValidationError instance
     class MockPrismaClientValidationError extends Error {
-      name = 'PrismaClientValidationError';
+      override name = 'PrismaClientValidationError';
       constructor(message: string) {
         super(message);
       }
@@ -68,7 +68,9 @@ describe('AllExceptionsFilter', () => {
     const exception = new Error('Something went wrong');
     filter.catch(exception, mockArgumentsHost);
 
-    expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
+    expect(mockResponse.status).toHaveBeenCalledWith(
+      HttpStatus.INTERNAL_SERVER_ERROR
+    );
     expect(mockResponse.json).toHaveBeenCalledWith(
       expect.objectContaining({
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -82,7 +84,9 @@ describe('AllExceptionsFilter', () => {
     const exception = 'Unknown error type';
     filter.catch(exception, mockArgumentsHost);
 
-    expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
+    expect(mockResponse.status).toHaveBeenCalledWith(
+      HttpStatus.INTERNAL_SERVER_ERROR
+    );
     expect(mockResponse.json).toHaveBeenCalledWith(
       expect.objectContaining({
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,

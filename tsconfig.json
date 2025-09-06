@@ -16,9 +16,7 @@
       "path": "./apps/api-gateway"
     },
     
-    {
-      "path": "./libs/shared/util"
-    },
+    
     {
       "path": "./libs/shared/exceptions"
     },
