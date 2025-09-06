@@ -73,9 +73,13 @@ export class OtpService {
       const newAttempts = currentAttempts + 1;
       await this.setFailedAttempts(email, newAttempts, otpLockDurationSeconds); // Reset expiry on each failed attempt
 
+      const attemptsLeft = otpMaxAttempts - newAttempts;
+
       if (newAttempts >= otpMaxAttempts) {
         await this.lockEmail(email, otpLockDurationSeconds);
-        throw new UnauthorizedException('Too many failed OTP attempts. This email has been temporarily locked.');
+        throw new UnauthorizedException('Too many failed OTP attempts. This email has been temporarily locked. Please try again after 30 minutes.');
+      } else {
+        throw new UnauthorizedException(`Incorrect OTP. You have ${attemptsLeft} attempt(s) left.`);
       }
     } else {
       // Reset failed attempts on successful validation
