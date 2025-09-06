@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -14,18 +14,35 @@ export class OtpService {
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
-  ) {}
+    private readonly logger: Logger, // Added
+  ) {
+    this.logger = new Logger(OtpService.name); // Initialize logger
+  }
 
   async generateOtp(
     generateOtpDto: GenerateOtpDto
   ): Promise<{ message: string }> {
     const { email } = generateOtpDto;
+
+    const otpResendCooldownSeconds = this.configService.get<number>('OTP_RESEND_COOLDOWN_SECONDS', 60);
+    const cooldownKey = `otp_cooldown:${email}`;
+
+    // Check if email is in cooldown
+    if (await this.redisService.get(cooldownKey)) {
+      this.logger.warn(`OTP generation denied for ${email} due to cooldown.`); // Log cooldown denial
+      throw new UnauthorizedException(`Please wait before requesting another OTP. Try again in ${otpResendCooldownSeconds} seconds.`);
+    }
+
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpKey = `otp:${email}`;
     const otpExpirySeconds = this.configService.get<number>('OTP_EXPIRY_SECONDS', 300);
 
     await this.redisService.set(otpKey, otp, otpExpirySeconds);
     await this.emailService.sendOtp(email, otp);
+    this.logger.log(`OTP generated and sent to ${email}.`); // Log OTP generation
+
+    // Set cooldown after sending OTP
+    await this.redisService.set(cooldownKey, 'true', otpResendCooldownSeconds);
 
     return {
       message: `An OTP has been sent to ${email}. It will expire in ${otpExpirySeconds / 60} minutes.`,
@@ -58,6 +75,7 @@ export class OtpService {
   async validateOtp(email: string, otp: string): Promise<boolean> {
     // Check if email is locked
     if (await this.isEmailLocked(email)) {
+      this.logger.warn(`OTP verification denied for ${email} due to account lock.`); // Log lock denial
       throw new UnauthorizedException('Too many failed OTP attempts. Please try again later.');
     }
 
@@ -77,11 +95,14 @@ export class OtpService {
 
       if (newAttempts >= otpMaxAttempts) {
         await this.lockEmail(email, otpLockDurationSeconds);
+        this.logger.error(`Account for ${email} locked due to too many failed OTP attempts.`); // Log account locked
         throw new UnauthorizedException('Too many failed OTP attempts. This email has been temporarily locked. Please try again after 30 minutes.');
       } else {
+        this.logger.warn(`Incorrect OTP for ${email}. ${attemptsLeft} attempt(s) left.`); // Log incorrect OTP
         throw new UnauthorizedException(`Incorrect OTP. You have ${attemptsLeft} attempt(s) left.`);
       }
     } else {
+      this.logger.log(`OTP successfully validated for ${email}.`); // Log successful validation
       // Reset failed attempts on successful validation
       await this.redisService.del(`otp_failed_attempts:${email}`);
     }
