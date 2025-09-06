@@ -32,10 +32,57 @@ export class OtpService {
     };
   }
 
+  // New methods for OTP attempt limiting and account locking
+  private async getFailedAttempts(email: string): Promise<number> {
+    const key = `otp_failed_attempts:${email}`;
+    const attempts = await this.redisService.get(key);
+    return attempts ? parseInt(attempts, 10) : 0;
+  }
+
+  private async setFailedAttempts(email: string, attempts: number, expirySeconds: number): Promise<void> {
+    const key = `otp_failed_attempts:${email}`;
+    await this.redisService.set(key, attempts.toString(), expirySeconds);
+  }
+
+  private async lockEmail(email: string, lockDurationSeconds: number): Promise<void> {
+    const key = `otp_locked:${email}`;
+    await this.redisService.set(key, 'true', lockDurationSeconds);
+  }
+
+  private async isEmailLocked(email: string): Promise<boolean> {
+    const key = `otp_locked:${email}`;
+    const locked = await this.redisService.get(key);
+    return locked === 'true';
+  }
+
   async validateOtp(email: string, otp: string): Promise<boolean> {
+    // Check if email is locked
+    if (await this.isEmailLocked(email)) {
+      throw new UnauthorizedException('Too many failed OTP attempts. Please try again later.');
+    }
+
     const otpKey = `otp:${email}`;
     const storedOtp = await this.redisService.get(otpKey);
-    return storedOtp === otp;
+    const isValid = storedOtp === otp;
+
+    const otpMaxAttempts = this.configService.get<number>('OTP_MAX_ATTEMPTS', 3);
+    const otpLockDurationSeconds = this.configService.get<number>('OTP_LOCK_DURATION_SECONDS', 1800); // 30 minutes
+
+    if (!isValid) {
+      const currentAttempts = await this.getFailedAttempts(email);
+      const newAttempts = currentAttempts + 1;
+      await this.setFailedAttempts(email, newAttempts, otpLockDurationSeconds); // Reset expiry on each failed attempt
+
+      if (newAttempts >= otpMaxAttempts) {
+        await this.lockEmail(email, otpLockDurationSeconds);
+        throw new UnauthorizedException('Too many failed OTP attempts. This email has been temporarily locked.');
+      }
+    } else {
+      // Reset failed attempts on successful validation
+      await this.redisService.del(`otp_failed_attempts:${email}`);
+    }
+
+    return isValid;
   }
 
   async finalizeOtp(email: string): Promise<{ accessToken: string }> {
