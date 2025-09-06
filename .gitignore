@@ -45,10 +45,10 @@ Thumbs.db
 
 test-output
 
-/generated/prisma
-
 # local env files
 .env*.local
 .env
 
+# Prisma generated client files
 /generated/prisma
+apps/*/prisma/generated/
