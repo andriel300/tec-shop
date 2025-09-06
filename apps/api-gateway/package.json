@@ -79,5 +79,8 @@
   },
   "dependencies": {
     "helmet": "^7.1.0"
+  },
+  "devDependencies": {
+    "@nx/jest": "^21.4.1"
   }
 }
