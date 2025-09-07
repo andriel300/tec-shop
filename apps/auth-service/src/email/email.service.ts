@@ -41,4 +41,18 @@ export class EmailService {
       `,
     });
   }
+
+  async sendPasswordChangedNotification(to: string): Promise<void> {
+    await this.mailerService.sendMail({
+      to,
+      subject: 'Your Tec-Shop Password Has Been Changed',
+      html: `
+        <div style="font-family: sans-serif; text-align: center; padding: 20px;">
+          <h2>Password Changed Successfully</h2>
+          <p>This is to inform you that your Tec-Shop account password has been successfully changed.</p>
+          <p>If you did not make this change, please contact our support team immediately.</p>
+        </div>
+      `,
+    });
+  }
 }

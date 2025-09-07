@@ -38,6 +38,7 @@ const mockConfigService = {
 
 const mockEmailService = {
   sendPasswordResetLink: jest.fn(),
+  sendPasswordChangedNotification: jest.fn(),
 };
 
 const mockRedisService = {

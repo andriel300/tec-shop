@@ -94,10 +94,11 @@ export class AuthService {
 
     const refreshTokenPayload = { sub: user.id, jti: uuidv4() };
     const refreshToken = await this.jwtService.signAsync(refreshTokenPayload, { expiresIn: '7d' }); // Long-lived refresh token
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10); // Hash the refresh token
 
     await this.prisma.users.update({
       where: { id: user.id },
-      data: { refreshToken: refreshToken },
+      data: { refreshToken: hashedRefreshToken }, // Store the hashed refresh token
     });
 
     return { accessToken, refreshToken };
@@ -109,7 +110,7 @@ export class AuthService {
     }
 
     try {
-      const decoded = this.jwtService.decode(token) as { jti: string; exp: number };
+      const decoded = this.jwtService.decode(token) as { sub: string; jti: string; exp: number };
       if (!decoded || !decoded.jti || !decoded.exp) {
         throw new UnauthorizedException('Invalid token.');
       }
@@ -120,6 +121,15 @@ export class AuthService {
       if (expiry > 0) {
         const blacklistKey = `blacklist:${jti}`;
         await this.redisService.set(blacklistKey, 'true', expiry);
+      }
+
+      // Clear the refresh token from the user in the database
+      const user = await this.prisma.users.findUnique({ where: { id: decoded.sub } });
+      if (user) {
+        await this.prisma.users.update({
+          where: { id: user.id },
+          data: { refreshToken: null },
+        });
       }
 
       return { message: 'Successfully logged out.' };
@@ -135,7 +145,12 @@ export class AuthService {
 
       const user = await this.prisma.users.findUnique({ where: { id: userId } });
 
-      if (!user || user.refreshToken !== refreshToken) {
+      if (!user || !user.refreshToken) {
+        throw new UnauthorizedException('Invalid or expired refresh token.');
+      }
+
+      const isRefreshTokenValid = await bcrypt.compare(refreshToken, user.refreshToken);
+      if (!isRefreshTokenValid) {
         throw new UnauthorizedException('Invalid or expired refresh token.');
       }
 
@@ -144,10 +159,11 @@ export class AuthService {
 
       const refreshTokenPayload = { sub: user.id, jti: uuidv4() };
       const newRefreshToken = await this.jwtService.signAsync(refreshTokenPayload, { expiresIn: '7d' });
+      const hashedNewRefreshToken = await bcrypt.hash(newRefreshToken, 10); // Hash the new refresh token
 
       await this.prisma.users.update({
         where: { id: user.id },
-        data: { refreshToken: newRefreshToken },
+        data: { refreshToken: hashedNewRefreshToken }, // Store the hashed new refresh token
       });
 
       return { accessToken: newAccessToken, refreshToken: newRefreshToken };
@@ -202,9 +218,10 @@ export class AuthService {
     const refreshTokenPayload = { sub: existingUser.id, jti: uuidv4() };
     const refreshToken = await this.jwtService.signAsync(refreshTokenPayload, { expiresIn: '7d' }); // Long-lived refresh token
 
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10); // Hash the refresh token
     await this.prisma.users.update({
       where: { id: existingUser.id },
-      data: { refreshToken: refreshToken },
+      data: { refreshToken: hashedRefreshToken }, // Store the hashed refresh token
     });
 
     return { accessToken, refreshToken };
@@ -265,6 +282,9 @@ export class AuthService {
     });
 
     await this.redisService.del(resetLinkKey);
+
+    // Send notification email
+    await this.emailService.sendPasswordChangedNotification(user.email);
 
     return { message: 'Password has been reset successfully.' };
   }

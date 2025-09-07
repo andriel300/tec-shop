@@ -7,11 +7,18 @@ import {
   HttpStatus,
   UseGuards,
   Req,
+  Res,
 } from '@nestjs/common';
-import type { Request as ExpressRequest } from 'express';
+import type { Request as ExpressRequest, Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { Throttle, ThrottlerOptions } from '@nestjs/throttler';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiExcludeEndpoint } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiExcludeEndpoint,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { GenerateOtpDto } from './dto/generate-otp.dto';
@@ -28,7 +35,10 @@ import { RolesGuard } from './roles.guard';
 const registerThrottleOptions: ThrottlerOptions = { limit: 3, ttl: 60000 };
 const loginThrottleOptions: ThrottlerOptions = { limit: 3, ttl: 60000 };
 const generateOtpThrottleOptions: ThrottlerOptions = { limit: 3, ttl: 60000 };
-const requestPasswordResetThrottleOptions: ThrottlerOptions = { limit: 3, ttl: 60000 };
+const requestPasswordResetThrottleOptions: ThrottlerOptions = {
+  limit: 3,
+  ttl: 60000,
+};
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -39,7 +49,11 @@ export class AuthController {
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
   @ApiBody({ type: RegisterUserDto })
-  @ApiResponse({ status: 201, description: 'An OTP has been sent to your email. Please verify to complete registration.' })
+  @ApiResponse({
+    status: 201,
+    description:
+      'An OTP has been sent to your email. Please verify to complete registration.',
+  })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
   async register(@Body() registerUserDto: RegisterUserDto) {
     return this.authService.register(registerUserDto);
@@ -80,18 +94,70 @@ export class AuthController {
     status: 401,
     description: 'Unauthorized (e.g., invalid credentials).',
   })
-  async login(@Body() loginDto: LoginDto): Promise<{ accessToken: string; refreshToken: string }> {
-    return this.authService.login(loginDto);
+  async login(
+    @Body() loginDto: LoginDto,
+    @Res({ passthrough: true }) res: Response
+  ): Promise<{ message: string }> {
+    const { accessToken, refreshToken } = await this.authService.login(
+      loginDto
+    );
+
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // Use secure in production
+      sameSite: 'lax', // Or 'Strict'
+      expires: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+      path: '/',
+    });
+
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // Use secure in production
+      sameSite: 'lax', // Or 'Strict'
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      path: '/',
+    });
+
+    return { message: 'Login successful!' };
   }
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token using refresh token' })
   @ApiBody({ type: RefreshTokenDto })
-  @ApiResponse({ status: 200, description: 'Access token and refresh token refreshed successfully.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized (e.g., invalid or expired refresh token).', })
-  async refresh(@Body() body: RefreshTokenDto): Promise<{ accessToken: string; refreshToken: string }> {
-    return this.authService.refreshTokens(body.refreshToken);
+  @ApiResponse({
+    status: 200,
+    description: 'Access token and refresh token refreshed successfully.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized (e.g., invalid or expired refresh token).',
+  })
+  async refresh(
+    @Body() body: RefreshTokenDto,
+    @Res({ passthrough: true }) res: Response
+  ): Promise<{ message: string }> {
+    const { accessToken, refreshToken } = await this.authService.refreshTokens(
+      body.refreshToken
+    );
+
+    res.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      expires: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+      path: '/',
+    });
+
+    res.cookie('refresh_token', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      path: '/',
+    });
+
+    return { message: 'Tokens refreshed successfully.' };
   }
 
   @Post('logout')
@@ -100,9 +166,29 @@ export class AuthController {
   @ApiOperation({ summary: 'Log out' })
   @ApiResponse({ status: 200, description: 'Successfully logged out.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async logout(@Req() req: ExpressRequest): Promise<{ message: string }> {
-    const token = req.headers.authorization ? req.headers.authorization.split(' ')[1] : undefined;
-            return this.authService.logout(token as string); // Explicitly cast to string
+  async logout(
+    @Req() req: ExpressRequest,
+    @Res({ passthrough: true }) res: Response
+  ): Promise<{ message: string }> {
+    const token = req.headers.authorization
+      ? req.headers.authorization.split(' ')[1]
+      : undefined;
+    const result = await this.authService.logout(token as string); // Explicitly cast to string
+
+    res.clearCookie('access_token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    });
+    res.clearCookie('refresh_token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    });
+
+    return result;
   }
 
   @Get()
@@ -126,7 +212,10 @@ export class AuthController {
   @Get('login/google')
   @UseGuards(AuthGuard('google'))
   @ApiOperation({ summary: 'Initiate Google OAuth2 login flow' })
-  @ApiResponse({ status: 302, description: 'Redirects to Google for authentication.' })
+  @ApiResponse({
+    status: 302,
+    description: 'Redirects to Google for authentication.',
+  })
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   async googleAuth() {}
 
@@ -202,9 +291,18 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reset password using a token' })
   @ApiBody({ type: ResetPasswordDto })
-  @ApiResponse({ status: 200, description: 'Password has been reset successfully.' })
-  @ApiResponse({ status: 400, description: 'Bad Request (e.g., invalid input).', })
-  @ApiResponse({ status: 401, description: 'Unauthorized (e.g., invalid or expired token).', })
+  @ApiResponse({
+    status: 200,
+    description: 'Password has been reset successfully.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request (e.g., invalid input).',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized (e.g., invalid or expired token).',
+  })
   async resetPassword(
     @Body() body: ResetPasswordDto
   ): Promise<{ message: string }> {
