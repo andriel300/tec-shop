@@ -59,7 +59,7 @@ export class AuthService {
       },
     });
 
-    return this.otpService.finalizeOtp(email);
+    return this.otpService.issueSessionToken(email);
   }
 
   async login(loginDto: LoginDto): Promise<{ accessToken: string; refreshToken: string }> {

@@ -167,7 +167,7 @@ export class OtpService {
     return isValid;
   }
 
-  private async issueSessionToken(
+  async issueSessionToken(
     email: string
   ): Promise<{ accessToken: string }> {
     const payload = { sub: email, type: 'user', jti: uuidv4() };
