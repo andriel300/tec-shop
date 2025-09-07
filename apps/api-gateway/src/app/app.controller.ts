@@ -1,6 +1,7 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Req } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AppService } from './app.service';
+import { Request } from 'express'; // Added
 
 @ApiTags('Default')
 @Controller()
@@ -13,5 +14,15 @@ export class AppController {
   @ApiOperation({ summary: 'Get a welcome message' })
   getData() {
     return this.appService.getData();
+  }
+
+  @Get('csrf-token')
+  @ApiOperation({ summary: 'Get CSRF token' })
+  getCsrfToken(@Req() req: Request): { csrfToken: string } {
+    // The csrf-csrf middleware attaches the token to req.csrfToken()
+    // or req.doubleCsrfToken() depending on its configuration.
+    // Let's assume req.csrfToken() for now, as it's common.
+    // If it doesn't work, we might need to adjust based on csrf-csrf docs.
+    return { csrfToken: req.csrfToken() as string };
   }
 }
