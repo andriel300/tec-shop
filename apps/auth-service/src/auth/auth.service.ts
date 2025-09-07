@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDto } from './dto/login.dto';
 import { RegisterUserDto } from './dto/register-user.dto';
@@ -272,6 +272,11 @@ export class AuthService {
 
     if (!user || user.email !== email) {
       throw new UnauthorizedException('Invalid password reset token or email.');
+    }
+
+    // Check if the new password is the same as the old password
+    if (user.password && await bcrypt.compare(newPassword, user.password)) {
+      throw new BadRequestException('New password cannot be the same as the old password.');
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
