@@ -50,12 +50,20 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    const newTenant = await this.prisma.tenant.create({
+      data: {
+        name: `${name}'s Store`,
+      },
+    });
+
     await this.prisma.users.create({
       data: {
         name,
         email,
         password: hashedPassword,
         isEmailVerified: true,
+        tenantId: newTenant.id,
+        roles: ['owner'],
       },
     });
 
@@ -81,7 +89,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials.');
     }
 
-    const accessTokenPayload = { sub: user.id, email: user.email, jti: uuidv4() };
+    const accessTokenPayload = { sub: user.id, email: user.email, jti: uuidv4(), tenantId: user.tenantId, roles: user.roles };
     const accessToken = await this.jwtService.signAsync(accessTokenPayload, { expiresIn: '15m' }); // Short-lived access token
 
     const refreshTokenPayload = { sub: user.id, jti: uuidv4() };
@@ -131,7 +139,7 @@ export class AuthService {
         throw new UnauthorizedException('Invalid or expired refresh token.');
       }
 
-      const accessTokenPayload = { sub: user.id, email: user.email, jti: uuidv4() };
+      const accessTokenPayload = { sub: user.id, email: user.email, jti: uuidv4(), tenantId: user.tenantId, roles: user.roles };
       const newAccessToken = await this.jwtService.signAsync(accessTokenPayload, { expiresIn: '15m' });
 
       const refreshTokenPayload = { sub: user.id, jti: uuidv4() };
@@ -166,7 +174,13 @@ export class AuthService {
           data: { googleId: user.googleId, provider: 'google' },
         });
       } else {
-        // Create new user
+        // Create new user and a new tenant
+        const newTenant = await this.prisma.tenant.create({
+          data: {
+            name: `${user.name}'s Store`,
+          },
+        });
+
         existingUser = await this.prisma.users.create({
           data: {
             email: user.email,
@@ -175,12 +189,14 @@ export class AuthService {
             isEmailVerified: true, // Google verifies email
             provider: 'google',
             password: null, // No password for OAuth users
+            tenantId: newTenant.id,
+            roles: ['owner'],
           },
         });
       }
     }
 
-    const accessTokenPayload = { sub: existingUser.id, email: existingUser.email, jti: uuidv4() };
+    const accessTokenPayload = { sub: existingUser.id, email: existingUser.email, jti: uuidv4(), tenantId: existingUser.tenantId, roles: existingUser.roles };
     const accessToken = await this.jwtService.signAsync(accessTokenPayload, { expiresIn: '15m' }); // Short-lived access token
 
     const refreshTokenPayload = { sub: existingUser.id, jti: uuidv4() };
