@@ -1,7 +1,7 @@
 import { Controller, Get, Req } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AppService } from './app.service';
-import type { Request } from 'express'; // Added
+import type { Request } from 'express';
 
 @ApiTags('Default')
 @Controller()
@@ -22,7 +22,9 @@ export class AppController {
     // The csrf-csrf middleware attaches the token to req.csrfToken()
     // or req.doubleCsrfToken() depending on its configuration.
     // We'll check for both, as req.csrfToken() might be undefined if not explicitly set by the middleware.
-    const csrfToken = (req as any).csrfToken ? (req as any).csrfToken() : (req as any).doubleCsrfToken();
+    const csrfToken = (req as any).csrfToken
+      ? (req as any).csrfToken()
+      : (req as any).doubleCsrfToken();
     if (!csrfToken) {
       // This should ideally not happen if middleware is configured correctly
       throw new Error('CSRF token not available on request.');
