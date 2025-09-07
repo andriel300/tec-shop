@@ -16,13 +16,16 @@ const mockPrismaService = {
     create: jest.fn(),
     update: jest.fn(),
   },
+  tenant: {
+    create: jest.fn(),
+  },
 };
 
 const mockOtpService = {
   generateOtp: jest.fn(),
   verifyOtp: jest.fn(),
   validateOtp: jest.fn(),
-  finalizeOtp: jest.fn(),
+  issueSessionToken: jest.fn(),
 };
 
 const mockConfigService = {
@@ -120,9 +123,10 @@ describe('AuthService', () => {
       mockOtpService.validateOtp.mockResolvedValue(true);
       const hashedPassword = 'hashedPassword';
       (bcrypt.hash as jest.Mock).mockResolvedValue(hashedPassword);
+      mockPrismaService.tenant.create.mockResolvedValue({ id: 'tenant-id' }); // Mock the tenant creation
       const createdUser = { id: 'user-id', email: verifyEmailDto.email, password: hashedPassword, isEmailVerified: true };
       mockPrismaService.users.create.mockResolvedValue(createdUser);
-      mockOtpService.finalizeOtp.mockResolvedValue({ accessToken: 'new_access_token' });
+      mockOtpService.issueSessionToken.mockResolvedValue({ accessToken: 'new_access_token' });
 
       const result = await service.verifyEmail(verifyEmailDto);
 
@@ -134,9 +138,11 @@ describe('AuthService', () => {
           email: verifyEmailDto.email,
           password: hashedPassword,
           isEmailVerified: true,
+          tenantId: 'tenant-id',
+          roles: ['owner'],
         },
       });
-      expect(mockOtpService.finalizeOtp).toHaveBeenCalledWith(verifyEmailDto.email);
+      expect(mockOtpService.issueSessionToken).toHaveBeenCalledWith(verifyEmailDto.email);
       expect(result).toEqual({ accessToken: 'new_access_token' });
     });
   });

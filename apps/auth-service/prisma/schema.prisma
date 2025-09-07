@@ -13,6 +13,18 @@ datasource db {
   url      = env("DATABASE_URL") // The secret connection string, kept safe in a .env file
 }
 
+// Represents a tenant in the multi-vendor platform. Each tenant is a vendor
+// with its own set of users and resources.
+model Tenant {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  users       users[] // A tenant can have multiple users
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+
 // Represents profile images for users. This is a separate collection
 // in MongoDB, allowing for a one-to-one relationship with a user.
 model images {
@@ -50,4 +62,9 @@ model users {
   createdAt       DateTime  @default(now())
   refreshToken    String?   @unique
   updatedAt       DateTime  @updatedAt
+
+  // --- Multi-tenancy and RBAC ---
+  tenantId        String?   @db.ObjectId
+  tenant          Tenant?   @relation(fields: [tenantId], references: [id])
+  roles           String[]  // e.g., ["vendor-admin", "customer"]
 }

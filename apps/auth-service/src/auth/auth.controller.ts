@@ -22,6 +22,8 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { Roles } from './roles.decorator';
+import { RolesGuard } from './roles.guard';
 
 const registerThrottleOptions: ThrottlerOptions = { limit: 3, ttl: 60000 };
 const loginThrottleOptions: ThrottlerOptions = { limit: 3, ttl: 60000 };
@@ -207,5 +209,15 @@ export class AuthController {
     @Body() body: ResetPasswordDto
   ): Promise<{ message: string }> {
     return this.authService.resetPassword(body);
+  }
+
+  @Get('admin-only')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Admin-only endpoint' })
+  @ApiResponse({ status: 200, description: 'Access granted to admin.' })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
+  getAdminData(@Req() req: ExpressRequest) {
+    return { message: 'Welcome, admin!', user: req.user };
   }
 }
