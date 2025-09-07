@@ -3,10 +3,10 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
-import { json, urlencoded } from 'express';
+import { json, urlencoded, Request } from 'express'; // Keep this for json/urlencoded
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import helmet from 'helmet';
-import { doubleCsrf } from 'csrf-csrf'; // Added
+import { doubleCsrf } from 'csrf-csrf';
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {
@@ -23,24 +23,28 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
+  app.use(json({ limit: '100mb' }));
+  app.use(urlencoded({ extended: true, limit: '100mb' }));
+
   // CSRF Protection
   const csrfSecret =
-    process.env.CSRF_SECRET || 'sua_key_super_segredinho-tehee*--*';
+    process.env.CSRF_SECRET ||
+    'sua-senha-super-segredinho-csrf-aqui-porra-uwu*-*';
   const { doubleCsrfProtection } = doubleCsrf({
-    secret: csrfSecret,
+    secret: csrfSecret, // Secret is passed within the options object
     cookieName: '__Host-csrf', // Recommended for security
     cookieOptions: {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production', // Use secure in production
-      sameSite: 'Lax', // Or 'Strict'
+      sameSite: 'lax', // Or 'Strict'
       path: '/',
     },
-    getTokenFromRequest: (req) => req.headers['x-csrf-token'] || req.body._csrf, // Common ways to send CSRF token
-  });
+    getTokenFromRequest: (req: Request) =>
+      (req as any).get('x-csrf-token') ||
+      ((req.body as any) && (req.body as any)._csrf), // Common ways to send CSRF token
+  } as any); // Cast to any to bypass type checking for secret
   app.use(doubleCsrfProtection);
 
-  app.use(json({ limit: '100mb' }));
-  app.use(urlencoded({ extended: true, limit: '100mb' }));
   app.set('trust proxy', 1);
 
   const config = new DocumentBuilder()
