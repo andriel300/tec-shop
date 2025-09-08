@@ -52,3 +52,7 @@ test-output
 # Prisma generated client files
 /generated/prisma
 apps/*/prisma/generated/
+
+# Next.js
+.next
+out
