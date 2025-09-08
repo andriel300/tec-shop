@@ -15,13 +15,14 @@
     {
       "path": "./apps/api-gateway"
     },
-    
-    
     {
       "path": "./libs/shared/exceptions"
     },
     {
       "path": "./libs/shared/middleware"
+    },
+    {
+      "path": "./apps/user-ui"
     }
   ]
 }
