@@ -1,10 +1,7 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "namedInputs": {
-    "default": [
-      "{projectRoot}/**/*",
-      "sharedGlobals"
-    ],
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
     "production": [
       "default",
       "!{projectRoot}/.eslintrc.json",
@@ -15,9 +12,7 @@
       "!{projectRoot}/src/test-setup.[jt]s",
       "!{projectRoot}/test-setup.[jt]s"
     ],
-    "sharedGlobals": [
-      "{workspaceRoot}/.github/workflows/ci.yml"
-    ]
+    "sharedGlobals": ["{workspaceRoot}/.github/workflows/ci.yml"]
   },
   "nxCloudId": "68ae07ebbd49776c13e123bf",
   "plugins": [
@@ -34,10 +29,7 @@
           "watchDepsName": "watch-deps"
         }
       },
-      "exclude": [
-        "libs/shared/exceptions/*",
-        "libs/shared/middleware/*"
-      ]
+      "exclude": ["libs/shared/exceptions/*", "libs/shared/middleware/*"]
     },
     {
       "plugin": "@nx/webpack/plugin",
@@ -61,10 +53,7 @@
       "options": {
         "targetName": "test"
       },
-      "exclude": [
-        "apps/auth-service-e2e/**/*",
-        "apps/api-gateway-e2e/**/*"
-      ]
+      "exclude": ["apps/auth-service-e2e/**/*", "apps/api-gateway-e2e/**/*"]
     },
     {
       "plugin": "@nx/docker",
@@ -75,10 +64,7 @@
     },
     {
       "plugin": "@nx/js/typescript",
-      "include": [
-        "libs/shared/exceptions/*",
-        "libs/shared/middleware/*"
-      ],
+      "include": ["libs/shared/exceptions/*", "libs/shared/middleware/*"],
       "options": {
         "typecheck": {
           "targetName": "typecheck"
@@ -99,9 +85,7 @@
   ],
   "targetDefaults": {
     "test": {
-      "dependsOn": [
-        "^build"
-      ]
+      "dependsOn": ["^build"]
     }
   },
   "release": {
@@ -124,6 +108,14 @@
     },
     "version": {
       "conventionalCommits": true
+    }
+  },
+  "generators": {
+    "@nx/next": {
+      "application": {
+        "style": "tailwind",
+        "linter": "eslint"
+      }
     }
   }
 }
