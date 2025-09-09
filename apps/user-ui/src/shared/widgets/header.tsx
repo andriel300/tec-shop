@@ -4,6 +4,7 @@ import { Search } from 'lucide-react';
 import ProfileIcon from '../../assets/svgs/profile-icon';
 import HeartIcon from '../../assets/svgs/heart-icon';
 import CartIcon from '../../assets/svgs/cart-icon';
+import HeaderBottom from './header-bottom';
 
 const Header = () => {
   return (
@@ -52,6 +53,7 @@ const Header = () => {
                 </span>
               </div>
             </Link>
+
             {/* Wishlist Icon */}
             <Link
               href={'/wishlist'}
@@ -62,6 +64,8 @@ const Header = () => {
                 <span className="text-white font-medium text-sm">0</span>
               </div>
             </Link>
+
+            {/* Cart Icon */}
             <Link
               href={'/cart'}
               className="relative p-2 hover:bg-ui-muted rounded-full transition-colors"
@@ -74,6 +78,7 @@ const Header = () => {
           </div>
         </div>
       </div>
+      <HeaderBottom />
     </div>
   );
 };
