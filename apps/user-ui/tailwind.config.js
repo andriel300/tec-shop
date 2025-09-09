@@ -1,14 +1,3 @@
-// const { createGlobPatternsForDependencies } = require('@nx/next/tailwind');
-
-// The above utility import will not work if you are using Next.js' --turbo.
-// Instead you will have to manually add the dependent paths to be included.
-// For example
-// ../libs/buttons/**/*.{ts,tsx,js,jsx,html}',                 <--- Adding a shared lib
-// !../libs/buttons/**/*.{stories,spec}.{ts,tsx,js,jsx,html}', <--- Skip adding spec/stories files from shared lib
-
-// If you are **not** using `--turbo` you can uncomment both lines 1 & 19.
-// A discussion of the issue can be found: https://github.com/nrwl/nx/issues/26510
-
 /** @type {import('tailwindcss').Config} */
 
 const plugin = require('tailwindcss/plugin');
@@ -127,16 +116,16 @@ module.exports = {
       // typography & fonts
       fontFamily: {
         sans: [
-          'Inter',
+          'var(--font-inter)',
           'ui-sans-serif',
           'system-ui',
-          ' -apple-system',
+          '-apple-system',
           'Segoe UI',
           'Roboto',
           'Helvetica Neue',
           'Arial',
         ],
-        heading: ['Poppins', 'Inter', 'ui-sans-serif'],
+        heading: ['var(--font-poppins)', 'var(--font-inter)', 'ui-sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
 
