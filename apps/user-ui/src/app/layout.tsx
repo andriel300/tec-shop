@@ -1,6 +1,7 @@
 import Header from '../shared/widgets/header';
 import './global.css';
 import { Inter, Poppins, Roboto } from 'next/font/google';
+import { Providers } from './providers';
 
 // Configure your fonts
 const inter = Inter({
@@ -40,8 +41,10 @@ export default function RootLayout({
       className={`${inter.variable} ${poppins.variable} ${roboto.variable}`}
     >
       <body>
-        <Header />
-        {children}
+        <Providers>
+          <Header />
+          {children}
+        </Providers>
       </body>
     </html>
   );
