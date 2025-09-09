@@ -3,6 +3,7 @@ import React from 'react';
 import { Search } from 'lucide-react';
 import ProfileIcon from '../../assets/svgs/profile-icon';
 import HeartIcon from '../../assets/svgs/heart-icon';
+import CartIcon from '../../assets/svgs/cart-icon';
 
 const Header = () => {
   return (
@@ -57,6 +58,15 @@ const Header = () => {
               className="relative p-2 hover:bg-ui-muted rounded-full transition-colors"
             >
               <HeartIcon className="w-7 h-7 text-text-primary" />
+              <div className="w-6 h-6 border-2 border-white bg-red-500 rounded-full flex item-center justify-center absolute top-[-5px] right-[-5px] text-text-primary">
+                <span className="text-white font-medium text-sm">0</span>
+              </div>
+            </Link>
+            <Link
+              href={'/cart'}
+              className="relative p-2 hover:bg-ui-muted rounded-full transition-colors"
+            >
+              <CartIcon className="w-7 h-7 text-text-primary" />
               <div className="w-6 h-6 border-2 border-white bg-red-500 rounded-full flex item-center justify-center absolute top-[-5px] right-[-5px] text-text-primary">
                 <span className="text-white font-medium text-sm">0</span>
               </div>
