@@ -21,14 +21,14 @@ export function OtpForm({ email: initialEmail, name, password, flow }: OtpFormPr
   const [canResend, setCanResend] = useState(false);
   const queryClient = useQueryClient();
   const router = useRouter();
-  const otpInputRef = useRef<HTMLInputElement>(null);
+  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const generateOtpMutation = useMutation({
     mutationFn: generateOtp,
     onSuccess: (data, variables) => {
       setEmail(variables.email);
       setFormStage('verify');
-      toast.info(data.message || 'An OTP has been sent to your email.');
+      toast.info(data?.message || 'An OTP has been sent to your email.');
     },
     onError: (error) => {
       toast.error(error.message);
@@ -49,8 +49,8 @@ export function OtpForm({ email: initialEmail, name, password, flow }: OtpFormPr
 
   const resendOtpMutation = useMutation({
     mutationFn: registerUser,
-    onSuccess: () => {
-      toast.info('A new OTP has been sent to your email.');
+    onSuccess: (data) => {
+      toast.info(data?.message || 'A new OTP has been sent to your email.');
       setTimer(60);
       setCanResend(false);
     },
@@ -89,7 +89,7 @@ export function OtpForm({ email: initialEmail, name, password, flow }: OtpFormPr
 
   useEffect(() => {
     if (formStage === 'verify') {
-      otpInputRef.current?.focus();
+      inputRefs.current[0]?.focus();
       setTimer(60);
       setCanResend(false);
     }
@@ -145,37 +145,86 @@ export function OtpForm({ email: initialEmail, name, password, flow }: OtpFormPr
         <verifyForm.Field
           name="otp"
           validators={{
-            onChange: ({ value }) => (!value ? 'OTP is required' : undefined),
+            onChange: ({ value }) => {
+              if (!value) return 'OTP is required';
+              if (value.length < 6) return 'OTP must be 6 digits';
+              return undefined;
+            },
           }}
         >
-          {(field) => (
-            <div>
-              <label
-                htmlFor={field.name}
-                className="block text-sm font-medium text-text-secondary"
-              >
-                One-Time Password
-              </label>
-              <input
-                ref={otpInputRef}
-                id={field.name}
-                name={field.name}
-                type="tel"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                className="w-full px-3 py-2 mt-1 border rounded-md border-ui-divider focus:ring-brand-primary focus:border-brand-primary"
-                placeholder="123456"
-              />
-              {field.state.meta.errors.length > 0 ? (
-                <em className="text-sm text-feedback-error">
-                  {field.state.meta.errors[0]}
-                </em>
-              ) : null}
-            </div>
-          )}
+          {(field) => {
+            const handleKeyDown = (
+              e: React.KeyboardEvent<HTMLInputElement>,
+              index: number
+            ) => {
+              if (e.key === 'Backspace' && !field.state.value[index] && index > 0) {
+                inputRefs.current[index - 1]?.focus();
+              }
+            };
+
+            const handleInputChange = (
+              e: React.ChangeEvent<HTMLInputElement>,
+              index: number
+            ) => {
+              const { value } = e.target;
+              const otp = field.state.value.split('');
+              otp[index] = value;
+              field.handleChange(otp.join(''));
+
+              if (value && index < 5) {
+                inputRefs.current[index + 1]?.focus();
+              }
+            };
+
+            const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+              const paste = e.clipboardData.getData('text');
+              if (paste.length === 6 && /\d{6}/.test(paste)) {
+                field.handleChange(paste);
+                inputRefs.current.forEach((ref, i) => {
+                  if (ref) {
+                    ref.value = paste[i];
+                  }
+                });
+                inputRefs.current[5]?.focus();
+              }
+            };
+
+            return (
+              <div>
+                <label
+                  htmlFor={field.name}
+                  className="block text-sm font-medium text-text-secondary"
+                >
+                  One-Time Password
+                </label>
+                <div className="flex justify-center gap-2" onPaste={handlePaste}>
+                  {Array(6)
+                    .fill(null)
+                    .map((_, i) => (
+                      <input
+                        key={i}
+                        ref={(el) => (inputRefs.current[i] = el)}
+                        id={`${field.name}-${i}`}
+                        name={`${field.name}-${i}`}
+                        type="tel"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={field.state.value[i] || ''}
+                        onChange={(e) => handleInputChange(e, i)}
+                        onKeyDown={(e) => handleKeyDown(e, i)}
+                        onFocus={(e) => e.target.select()}
+                        className="w-12 h-12 text-center border rounded-md border-ui-divider focus:ring-brand-primary focus:border-brand-primary"
+                      />
+                    ))}
+                </div>
+                {field.state.meta.errors.length > 0 ? (
+                  <em className="text-sm text-feedback-error">
+                    {field.state.meta.errors[0]}
+                  </em>
+                ) : null}
+              </div>
+            );
+          }}
         </verifyForm.Field>
         {(verifyOtpMutation.error || verifyEmailMutation.error) && (
           <div className="p-3 text-sm text-center text-white bg-feedback-error rounded-md">
