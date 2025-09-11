@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-const ProfileIcon = (props: any) => {
+const ProfileIcon = (props: React.SVGProps<SVGSVGElement>) => {
   return (
     <svg
       viewBox="0 0 24 24"

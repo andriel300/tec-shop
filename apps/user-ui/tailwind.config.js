@@ -166,9 +166,7 @@ module.exports = {
     require('@tailwindcss/aspect-ratio'),
 
     // Small plugin: expose tokens as CSS variables for use in non-Tailwind CSS
-    plugin(function ({ addBase, theme }) {
-      const t = theme('colors');
-
+    plugin(function ({ addBase }) {
       addBase({
         ':root': {
           // Brand

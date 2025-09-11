@@ -1,48 +1,31 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-
-// API helper to request an OTP
-async function generateOtp(values) {
-  const res = await fetch('http://localhost:4000/api/v1/auth/otp/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(values),
-  });
-  if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.message || 'Failed to send OTP.');
-  }
-  return res.json();
-}
-
-// API helper to verify the OTP and log in
-async function verifyOtp(values) {
-  const res = await fetch('http://localhost:4000/api/v1/auth/otp/verify', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(values),
-  });
-  if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.message || 'Invalid OTP.');
-  }
-  return res.json();
-}
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
+import { generateOtp, verifyOtp } from '../../lib/api/auth';
 
 export function OtpForm() {
   const [email, setEmail] = useState('');
   const [formStage, setFormStage] = useState('generate'); // 'generate' or 'verify'
+  const [timer, setTimer] = useState(0);
+  const [canResend, setCanResend] = useState(false);
+  const RESEND_COOLDOWN_SECONDS = 60;
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const otpInputRef = useRef<HTMLInputElement>(null);
 
   const generateOtpMutation = useMutation({
     mutationFn: generateOtp,
     onSuccess: (data, variables) => {
       setEmail(variables.email);
       setFormStage('verify');
-      alert(data.message || 'An OTP has been sent to your email.');
+      toast.info(data.message || 'An OTP has been sent to your email.');
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 
@@ -50,7 +33,11 @@ export function OtpForm() {
     mutationFn: verifyOtp,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user'] });
-      alert('Login successful!');
+      toast.success('Login successful!');
+      router.push('/'); // Redirect to dashboard or home
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 
@@ -64,6 +51,25 @@ export function OtpForm() {
     onSubmit: async ({ value }) =>
       verifyOtpMutation.mutate({ ...value, email }),
   });
+
+  useEffect(() => {
+    if (formStage === 'verify') {
+      otpInputRef.current?.focus();
+      setTimer(RESEND_COOLDOWN_SECONDS);
+      setCanResend(false);
+    }
+  }, [formStage, email]); // Restart timer if email changes or stage becomes verify
+
+  useEffect(() => {
+    if (timer > 0 && !canResend) {
+      const countdown = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+      return () => clearInterval(countdown);
+    } else if (timer === 0) {
+      setCanResend(true);
+    }
+  }, [timer, canResend]);
 
   if (formStage === 'verify') {
     return (
@@ -79,6 +85,23 @@ export function OtpForm() {
           An OTP has been sent to <strong>{email}</strong>. Please enter it
           below.
         </p>
+        <div className="flex justify-between items-center text-sm text-text-secondary">
+          <span>
+            Resend in: {Math.floor(timer / 60)}:{('0' + (timer % 60)).slice(-2)}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              generateOtpMutation.mutate({ email });
+              setCanResend(false);
+              setTimer(RESEND_COOLDOWN_SECONDS);
+            }}
+            disabled={!canResend || generateOtpMutation.isPending}
+            className="font-medium text-brand-primary hover:underline disabled:text-text-muted disabled:no-underline"
+          >
+            Resend OTP
+          </button>
+        </div>
         <verifyForm.Field
           name="otp"
           validators={{
@@ -94,18 +117,21 @@ export function OtpForm() {
                 One-Time Password
               </label>
               <input
+                ref={otpInputRef}
                 id={field.name}
                 name={field.name}
-                type="text"
+                type="tel"
+                inputMode="numeric"
+                autoComplete="one-time-code"
                 value={field.state.value}
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
                 className="w-full px-3 py-2 mt-1 border rounded-md border-ui-divider focus:ring-brand-primary focus:border-brand-primary"
                 placeholder="123456"
               />
-              {field.state.meta.touchedErrors ? (
+              {field.state.meta.errors.length > 0 ? (
                 <em className="text-sm text-feedback-error">
-                  {field.state.meta.touchedErrors}
+                  {field.state.meta.errors[0]}
                 </em>
               ) : null}
             </div>
@@ -119,9 +145,42 @@ export function OtpForm() {
         <button
           type="submit"
           disabled={verifyOtpMutation.isPending}
-          className="w-full py-2 text-white transition-colors rounded-md bg-brand-primary hover:bg-brand-primary-800 disabled:bg-gray-400"
+          className="w-full py-2 text-white transition-colors rounded-md bg-brand-primary hover:bg-brand-primary-800 disabled:bg-gray-400 flex items-center justify-center"
         >
-          {verifyOtpMutation.isPending ? 'Verifying...' : 'Sign In with OTP'}
+          {verifyOtpMutation.isPending ? (
+            <>
+              <svg
+                className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              Verifying...
+            </>
+          ) : (
+            'Sign In with OTP'
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={() => setFormStage('generate')}
+          className="w-full py-2 text-brand-primary hover:underline text-sm"
+        >
+          Change Email
         </button>
       </form>
     );
@@ -160,10 +219,11 @@ export function OtpForm() {
               onChange={(e) => field.handleChange(e.target.value)}
               className="w-full px-3 py-2 mt-1 border rounded-md border-ui-divider focus:ring-brand-primary focus:border-brand-primary"
               placeholder="you@example.com"
+              autoFocus
             />
-            {field.state.meta.touchedErrors ? (
+            {field.state.meta.errors.length > 0 ? (
               <em className="text-sm text-feedback-error">
-                {field.state.meta.touchedErrors}
+                {field.state.meta.errors[0]}
               </em>
             ) : null}
           </div>
@@ -177,9 +237,35 @@ export function OtpForm() {
       <button
         type="submit"
         disabled={generateOtpMutation.isPending}
-        className="w-full py-2 text-white transition-colors rounded-md bg-brand-primary hover:bg-brand-primary-800 disabled:bg-gray-400"
+        className="w-full py-2 text-white transition-colors rounded-md bg-brand-primary hover:bg-brand-primary-800 disabled:bg-gray-400 flex items-center justify-center"
       >
-        {generateOtpMutation.isPending ? 'Sending OTP...' : 'Send OTP'}
+        {generateOtpMutation.isPending ? (
+          <>
+            <svg
+              className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            Sending OTP...
+          </>
+        ) : (
+          'Send OTP'
+        )}
       </button>
     </form>
   );

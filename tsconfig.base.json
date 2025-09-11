@@ -17,6 +17,11 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "es2022",
-    "customConditions": ["development"]
+    "customConditions": ["development"],
+    "paths": {
+      "@tec-shop/shared/exceptions": ["libs/shared/exceptions/src/index.ts"],
+      "@tec-shop/shared/middleware": ["libs/shared/middleware/src/index.ts"],
+      "@tec-shop/user-ui/*": ["apps/user-ui/src/*"]
+    }
   }
 }

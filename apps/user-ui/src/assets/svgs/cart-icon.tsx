@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-const CartIcon = (props: any) => {
+const CartIcon = (props: React.SVGProps<SVGSVGElement>) => {
   return (
     <svg viewBox="0 -2.55 20.094 20.094" fill="currentColor" {...props}>
       <path
