@@ -3,6 +3,7 @@ import {
   MiddlewareConsumer,
   NestModule,
   RequestMethod,
+  Logger,
 } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -14,6 +15,7 @@ import { EmailModule } from '../email/email.module';
 import { LoggerMiddleware } from '@tec-shop/middleware';
 import { AllExceptionsFilter } from '@tec-shop/exceptions';
 import { ConfigModule } from '@nestjs/config';
+import { RequestLoggerMiddleware } from '../common/middleware/request-logger.middleware';
 
 @Module({
   imports: [
@@ -49,7 +51,11 @@ import { ConfigModule } from '@nestjs/config';
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(LoggerMiddleware)
+      .apply(LoggerMiddleware) // Keep the existing LoggerMiddleware
       .forRoutes({ path: '*path', method: RequestMethod.ALL });
+
+    consumer
+      .apply(RequestLoggerMiddleware) // Apply the custom logger
+      .forRoutes({ path: '*path', method: RequestMethod.ALL }); // Apply to all routes
   }
 }

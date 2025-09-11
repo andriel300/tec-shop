@@ -60,7 +60,7 @@ model users {
   // This is the other side of the one-to-one relationship defined in the images model.
   avatar          images?
   createdAt       DateTime  @default(now())
-  refreshToken    String?   @unique
+  refreshToken    String?
   updatedAt       DateTime  @updatedAt
 
   // --- Multi-tenancy and RBAC ---

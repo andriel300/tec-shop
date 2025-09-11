@@ -71,7 +71,7 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto): Promise<{ accessToken: string; refreshToken: string }> {
-    const { email, password } = loginDto;
+    const { email, password, rememberMe } = loginDto;
 
     const user = await this.prisma.users.findUnique({ where: { email } });
 
@@ -90,10 +90,11 @@ export class AuthService {
     }
 
     const accessTokenPayload = { sub: user.id, email: user.email, jti: uuidv4(), tenantId: user.tenantId, roles: user.roles };
-    const accessToken = await this.jwtService.signAsync(accessTokenPayload, { expiresIn: '15m' }); // Short-lived access token
+    const accessToken = await this.jwtService.signAsync(accessTokenPayload, { expiresIn: this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRATION', '15m') }); // Short-lived access token
 
+    const refreshTokenExpiry = rememberMe ? this.configService.get<string>('JWT_REFRESH_TOKEN_REMEMBER_ME_EXPIRATION', '30d') : this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION', '7d'); // Adjust refresh token expiry based on rememberMe
     const refreshTokenPayload = { sub: user.id, jti: uuidv4() };
-    const refreshToken = await this.jwtService.signAsync(refreshTokenPayload, { expiresIn: '7d' }); // Long-lived refresh token
+    const refreshToken = await this.jwtService.signAsync(refreshTokenPayload, { expiresIn: refreshTokenExpiry }); // Long-lived refresh token
     const hashedRefreshToken = await bcrypt.hash(refreshToken, 10); // Hash the refresh token
 
     await this.prisma.users.update({
@@ -155,10 +156,10 @@ export class AuthService {
       }
 
       const accessTokenPayload = { sub: user.id, email: user.email, jti: uuidv4(), tenantId: user.tenantId, roles: user.roles };
-      const newAccessToken = await this.jwtService.signAsync(accessTokenPayload, { expiresIn: '15m' });
+      const newAccessToken = await this.jwtService.signAsync(accessTokenPayload, { expiresIn: this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRATION', '15m') });
 
       const refreshTokenPayload = { sub: user.id, jti: uuidv4() };
-      const newRefreshToken = await this.jwtService.signAsync(refreshTokenPayload, { expiresIn: '7d' });
+      const newRefreshToken = await this.jwtService.signAsync(refreshTokenPayload, { expiresIn: this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION', '7d') });
       const hashedNewRefreshToken = await bcrypt.hash(newRefreshToken, 10); // Hash the new refresh token
 
       await this.prisma.users.update({
@@ -213,10 +214,10 @@ export class AuthService {
     }
 
     const accessTokenPayload = { sub: existingUser.id, email: existingUser.email, jti: uuidv4(), tenantId: existingUser.tenantId, roles: existingUser.roles };
-    const accessToken = await this.jwtService.signAsync(accessTokenPayload, { expiresIn: '15m' }); // Short-lived access token
+    const accessToken = await this.jwtService.signAsync(accessTokenPayload, { expiresIn: this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRATION', '15m') }); // Short-lived access token
 
     const refreshTokenPayload = { sub: existingUser.id, jti: uuidv4() };
-    const refreshToken = await this.jwtService.signAsync(refreshTokenPayload, { expiresIn: '7d' }); // Long-lived refresh token
+    const refreshToken = await this.jwtService.signAsync(refreshTokenPayload, { expiresIn: this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRATION', '7d') }); // Long-lived refresh token
 
     const hashedRefreshToken = await bcrypt.hash(refreshToken, 10); // Hash the refresh token
     await this.prisma.users.update({
