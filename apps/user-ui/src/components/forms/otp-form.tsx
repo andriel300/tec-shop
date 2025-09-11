@@ -5,14 +5,20 @@ import { useForm } from '@tanstack/react-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { generateOtp, verifyOtp } from '../../lib/api/auth';
+import { generateOtp, verifyOtp, verifyEmail, registerUser } from '../../lib/api/auth';
 
-export function OtpForm() {
-  const [email, setEmail] = useState('');
-  const [formStage, setFormStage] = useState('generate'); // 'generate' or 'verify'
-  const [timer, setTimer] = useState(0);
+interface OtpFormProps {
+  email?: string;
+  name?: string;
+  password?: string;
+  flow: 'login' | 'signup';
+}
+
+export function OtpForm({ email: initialEmail, name, password, flow }: OtpFormProps) {
+  const [email, setEmail] = useState(initialEmail || '');
+  const [formStage, setFormStage] = useState(flow === 'login' ? 'generate' : 'verify');
+  const [timer, setTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
-  const RESEND_COOLDOWN_SECONDS = 60;
   const queryClient = useQueryClient();
   const router = useRouter();
   const otpInputRef = useRef<HTMLInputElement>(null);
@@ -34,7 +40,31 @@ export function OtpForm() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user'] });
       toast.success('Login successful!');
-      router.push('/'); // Redirect to dashboard or home
+      router.push('/');
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const resendOtpMutation = useMutation({
+    mutationFn: registerUser,
+    onSuccess: () => {
+      toast.info('A new OTP has been sent to your email.');
+      setTimer(60);
+      setCanResend(false);
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const verifyEmailMutation = useMutation({
+    mutationFn: verifyEmail,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+      toast.success('Account created successfully!');
+      router.push('/');
     },
     onError: (error) => {
       toast.error(error.message);
@@ -47,29 +77,44 @@ export function OtpForm() {
   });
 
   const verifyForm = useForm({
-    defaultValues: { email: email, otp: '' },
-    onSubmit: async ({ value }) =>
-      verifyOtpMutation.mutate({ ...value, email }),
+    defaultValues: { otp: '' },
+    onSubmit: async ({ value }) => {
+      if (flow === 'login') {
+        verifyOtpMutation.mutate({ email, otp: value.otp });
+      } else {
+        verifyEmailMutation.mutate({ email, name: name || '', password: password || '', otp: value.otp });
+      }
+    },
   });
 
   useEffect(() => {
     if (formStage === 'verify') {
       otpInputRef.current?.focus();
-      setTimer(RESEND_COOLDOWN_SECONDS);
+      setTimer(60);
       setCanResend(false);
     }
-  }, [formStage, email]); // Restart timer if email changes or stage becomes verify
+  }, [formStage, email]);
 
   useEffect(() => {
-    if (timer > 0 && !canResend) {
+    if (timer > 0) {
       const countdown = setInterval(() => {
         setTimer((prev) => prev - 1);
       }, 1000);
       return () => clearInterval(countdown);
-    } else if (timer === 0) {
+    } else {
       setCanResend(true);
     }
-  }, [timer, canResend]);
+  }, [timer]);
+
+  const handleResend = () => {
+    if (canResend) {
+      if (flow === 'login') {
+        generateOtpMutation.mutate({ email });
+      } else {
+        resendOtpMutation.mutate({ email, name: name || '', password: password || '' });
+      }
+    }
+  };
 
   if (formStage === 'verify') {
     return (
@@ -82,8 +127,7 @@ export function OtpForm() {
         className="space-y-4"
       >
         <p className="text-sm text-center text-text-secondary">
-          An OTP has been sent to <strong>{email}</strong>. Please enter it
-          below.
+          An OTP has been sent to <strong>{email}</strong>. Please enter it below.
         </p>
         <div className="flex justify-between items-center text-sm text-text-secondary">
           <span>
@@ -91,12 +135,8 @@ export function OtpForm() {
           </span>
           <button
             type="button"
-            onClick={() => {
-              generateOtpMutation.mutate({ email });
-              setCanResend(false);
-              setTimer(RESEND_COOLDOWN_SECONDS);
-            }}
-            disabled={!canResend || generateOtpMutation.isPending}
+            onClick={handleResend}
+            disabled={!canResend || generateOtpMutation.isPending || resendOtpMutation.isPending}
             className="font-medium text-brand-primary hover:underline disabled:text-text-muted disabled:no-underline"
           >
             Resend OTP
@@ -137,17 +177,17 @@ export function OtpForm() {
             </div>
           )}
         </verifyForm.Field>
-        {verifyOtpMutation.error && (
+        {(verifyOtpMutation.error || verifyEmailMutation.error) && (
           <div className="p-3 text-sm text-center text-white bg-feedback-error rounded-md">
-            {verifyOtpMutation.error.message}
+            {verifyOtpMutation.error?.message || verifyEmailMutation.error?.message}
           </div>
         )}
         <button
           type="submit"
-          disabled={verifyOtpMutation.isPending}
+          disabled={verifyOtpMutation.isPending || verifyEmailMutation.isPending}
           className="w-full py-2 text-white transition-colors rounded-md bg-brand-primary hover:bg-brand-primary-800 disabled:bg-gray-400 flex items-center justify-center"
         >
-          {verifyOtpMutation.isPending ? (
+          {verifyOtpMutation.isPending || verifyEmailMutation.isPending ? (
             <>
               <svg
                 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
@@ -172,16 +212,18 @@ export function OtpForm() {
               Verifying...
             </>
           ) : (
-            'Sign In with OTP'
+            flow === 'login' ? 'Sign In with OTP' : 'Verify & Create Account'
           )}
         </button>
-        <button
-          type="button"
-          onClick={() => setFormStage('generate')}
-          className="w-full py-2 text-brand-primary hover:underline text-sm"
-        >
-          Change Email
-        </button>
+        {flow === 'login' && (
+          <button
+            type="button"
+            onClick={() => setFormStage('generate')}
+            className="w-full py-2 text-brand-primary hover:underline text-sm"
+          >
+            Change Email
+          </button>
+        )}
       </form>
     );
   }
@@ -259,8 +301,8 @@ export function OtpForm() {
                 className="opacity-75"
                 fill="currentColor"
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
+                ></path>
+              </svg>
             Sending OTP...
           </>
         ) : (

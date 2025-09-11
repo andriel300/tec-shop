@@ -24,7 +24,7 @@ const Header = () => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Search for products ..."
+              placeholder="Search for anything..."
               className="w-full px-4 font-sans border-2 border-brand-primary rounded-md outline-none h-[55px]"
             />
             <button className="w-[60px] cursor-pointer flex items-center justify-center h-[55px] bg-brand-primary rounded-r-md absolute top-0 right-0 hover:bg-brand-primary-800 transition-colors">

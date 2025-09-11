@@ -70,3 +70,56 @@ export async function verifyOtp(values: VerifyOtpValues) {
   }
   return res.json();
 }
+
+interface RegisterUserValues {
+  name: string;
+  email: string;
+  password?: string;
+}
+
+// Helper function to call the register API
+export async function registerUser(values: RegisterUserValues) {
+  const res = await fetch(`${API_BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(values),
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(
+      errorData.message || 'Registration failed. Please try again.'
+    );
+  }
+
+  return res.json();
+}
+
+interface VerifyEmailValues {
+  name: string;
+  email: string;
+  otp: string;
+  password?: string;
+}
+
+// API helper to verify the email and create user
+export async function verifyEmail(values: VerifyEmailValues) {
+  const res = await fetch(`${API_BASE_URL}/auth/verify-email`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(values),
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || 'Invalid OTP.');
+  }
+
+  return res.json();
+}

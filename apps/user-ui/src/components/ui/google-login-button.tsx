@@ -10,7 +10,7 @@ export const GoogleLoginButton = () => {
       className="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-text-primary bg-brand-primary-50 border rounded-md shadow-sm border-ui-divider hover:bg-ui-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary"
     >
       <GoogleIcon />
-      <span className="ml-3">Sign in with Google</span>
+      <span className="ml-3"></span>
     </a>
   );
 };
