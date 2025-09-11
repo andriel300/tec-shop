@@ -3,68 +3,78 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { GoogleLoginButton } from '../../../components/ui/google-login-button';
-import { LoginForm } from '../../../components/forms/login-form';
+import { SignUpForm } from '../../../components/forms/signup-form';
 import { OtpForm } from '../../../components/forms/otp-form';
 
-type AuthView = 'password' | 'otp';
-
 export default function RegisterPage() {
-  const [view, setView] = useState<AuthView>('password');
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
+  const [showOtp, setShowOtp] = useState(false);
+
+  const handleSuccess = (email: string, name: string, pass: string) => {
+    setEmail(email);
+    setName(name);
+    setPassword(pass);
+    setShowOtp(true);
+  };
 
   return (
     <main className="flex items-center justify-center min-h-[calc(100vh-200px)] bg-ui-muted/50 py-12 px-4">
       <div className="w-full max-w-md p-8 space-y-6 bg-ui-muted rounded-lg shadow-elev-lg border border-ui-divider">
         <div>
           <h1 className="text-2xl font-bold text-center font-heading text-text-primary">
-            Register to your account
+            {showOtp ? 'Verify your email' : 'Sign up'}
           </h1>
           <p className="mt-2 text-sm text-center text-text-secondary">
-            Or{' '}
-            <Link
-              href="/login"
-              className="font-medium text-brand-primary hover:underline"
-            >
-              Login to your account
-            </Link>
+            {showOtp ? (
+              `An OTP has been sent to ${email}`
+            ) : (
+              'Join the largest online community of technology on the Marketplace'
+            )}
+          </p>
+          <p className="mt-2 text-sm text-center text-text-secondary">
+            <>
+              Already have an account?{' '}
+              <Link
+                href="/login"
+                className="font-medium text-brand-primary hover:underline"
+              >
+                Log in
+              </Link>
+            </>
           </p>
         </div>
+        {!showOtp && (
+          <>
+            <div className="flex items-center">
+              <div className="flex-grow border-t border-ui-divider"></div>
+              <span className="px-2 text-xs text-text-muted">OR SIGN UP WITH</span>
+              <div className="flex-grow border-t border-ui-divider"></div>
+            </div>
+            <div className="space-y-4">
+              <GoogleLoginButton />
+            </div>
+            <div className="flex items-center">
+              <div className="flex-grow border-t border-ui-divider"></div>
+              <span className="px-2 text-xs text-text-muted">OR SIGN UP WITH EMAIL</span>
+              <div className="flex-grow border-t border-ui-divider"></div>
+            </div>
+          </>
+        )}
 
-        <div className="space-y-4">
-          <GoogleLoginButton />
+        <div>
+          {showOtp ? (
+            <OtpForm
+              flow="signup"
+              email={email}
+              name={name}
+              password={password}
+            />
+          ) : (
+            <SignUpForm onSuccess={handleSuccess} />
+          )}
         </div>
-
-        <div className="flex items-center">
-          <div className="flex-grow border-t border-ui-divider"></div>
-          <span className="px-2 text-xs text-text-muted">OR CONTINUE WITH</span>
-          <div className="flex-grow border-t border-ui-divider"></div>
-        </div>
-
-        {/* Toggle Buttons */}
-        <div className="grid grid-cols-2 gap-2 p-1 rounded-md bg-ui-muted">
-          <button
-            onClick={() => setView('password')}
-            className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
-              view === 'password'
-                ? 'bg-white text-brand-primary shadow-sm'
-                : 'text-text-secondary hover:bg-ui-surface hover:text-text-primary'
-            }`}
-          >
-            Password
-          </button>
-          <button
-            onClick={() => setView('otp')}
-            className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
-              view === 'otp'
-                ? 'bg-white text-brand-primary shadow-sm'
-                : 'text-text-secondary hover:bg-ui-surface hover:text-text-primary'
-            }`}
-          >
-            Sign in with Email
-          </button>
-        </div>
-
-        {/* Conditional Form */}
-        <div>{view === 'password' ? <LoginForm /> : <OtpForm />}</div>
       </div>
     </main>
   );

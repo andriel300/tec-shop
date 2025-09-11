@@ -15,16 +15,16 @@ export default function LoginPage() {
     <main className="flex items-center justify-center min-h-[calc(100vh-200px)] bg-ui-muted/50 py-12 px-4">
       <div className="w-full max-w-md p-8 space-y-6 bg-ui-muted rounded-lg shadow-elev-lg border border-ui-divider">
         <div>
-          <h1 className="text-2xl font-bold text-center font-heading text-text-primary">
-            Sign in to your account
+          <h1 className="text-2xl font-bold text-center font- text-text-primary">
+            Log in to TecShop
           </h1>
           <p className="mt-2 text-sm text-center text-text-secondary">
-            Or{' '}
+            New to TecShop?{' '}
             <Link
               href="/signup"
               className="font-medium text-brand-primary hover:underline"
             >
-              create an account
+              Sign up
             </Link>
           </p>
         </div>
@@ -64,7 +64,9 @@ export default function LoginPage() {
         </div>
 
         {/* Conditional Form */}
-        <div>{view === 'password' ? <LoginForm /> : <OtpForm />}</div>
+        <div>
+          {view === 'password' ? <LoginForm /> : <OtpForm flow="login" />}
+        </div>
       </div>
     </main>
   );
