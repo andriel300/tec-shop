@@ -3,15 +3,24 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { ConfigModule } from '@nestjs/config';
 import { AllExceptionsFilter } from '@tec-shop/exceptions';
 import { LoggerMiddleware } from '@tec-shop/middleware';
+import { HttpModule } from '@nestjs/axios';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: './.env',
+    }),
     ThrottlerModule.forRoot([{
       ttl: 60000,
       limit: 10,
-    }])
+    }]),
+    HttpModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [

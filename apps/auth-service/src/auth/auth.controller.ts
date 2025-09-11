@@ -8,8 +8,10 @@ import {
   UseGuards,
   Req,
   Res,
+  Response,
+  Headers,
 } from '@nestjs/common';
-import type { Request as ExpressRequest, Response } from 'express';
+
 import { AuthGuard } from '@nestjs/passport';
 import { Throttle, ThrottlerOptions } from '@nestjs/throttler';
 import {
@@ -31,6 +33,7 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { Roles } from './roles.decorator';
 import { RolesGuard } from './roles.guard';
+import { GoogleUser } from './interfaces/user.interface';
 
 const registerThrottleOptions: ThrottlerOptions = { limit: 3, ttl: 60000 };
 const loginThrottleOptions: ThrottlerOptions = { limit: 3, ttl: 60000 };
@@ -167,12 +170,10 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Successfully logged out.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async logout(
-    @Req() req: ExpressRequest,
+    @Headers('authorization') authorization: string,
     @Res({ passthrough: true }) res: Response
   ): Promise<{ message: string }> {
-    const token = req.headers.authorization
-      ? req.headers.authorization.split(' ')[1]
-      : undefined;
+    const token = authorization ? authorization.split(' ')[1] : undefined;
     const result = await this.authService.logout(token as string); // Explicitly cast to string
 
     res.clearCookie('access_token', {
@@ -203,7 +204,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Get user profile (Auth0 JWT required)' })
   @ApiResponse({ status: 200, description: 'User profile retrieved.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  getProfile(@Req() req: ExpressRequest) {
+  getProfile(@Req() req: Request) {
     return req.user;
   }
 
@@ -222,7 +223,7 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   @ApiExcludeEndpoint()
-  async googleAuthRedirect(@Req() req: any) {
+  async googleAuthRedirect(@Req() req: { user: GoogleUser }) {
     return this.authService.googleLogin(req.user);
   }
 
