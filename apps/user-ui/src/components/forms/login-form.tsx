@@ -1,36 +1,30 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-
-// Helper function to call the login API
-async function loginUser(values) {
-  const res = await fetch('http://localhost:4000/api/v1/auth/login/email', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(values),
-  });
-
-  if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(
-      errorData.message || 'Login failed. Please check your credentials.'
-    );
-  }
-
-  return res.json();
-}
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
+import { loginUser } from '../../lib/api/auth';
+import { Button } from '../ui/core/Button';
+import { Input } from '../ui/core/Input';
+import { Eye, EyeOff } from 'lucide-react';
 
 export function LoginForm() {
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: loginUser,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user'] });
-      alert('Login successful!');
+      toast.success('Login successful!');
+      router.push('/'); // Redirect to dashboard or home
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 
@@ -41,8 +35,6 @@ export function LoginForm() {
       rememberMe: false,
     },
     onSubmit: async ({ value }) => {
-      // NOTE: To make "Remember Me" fully functional, the backend would need to accept
-      // the `rememberMe` flag and adjust the refresh token's expiry accordingly.
       mutate(value);
     },
   });
@@ -67,23 +59,23 @@ export function LoginForm() {
           <div>
             <label
               htmlFor={field.name}
-              className="block text-sm font-medium text-text-secondary"
+              className="block py-2 text-sm font-medium text-text-secondary"
             >
               Email Address
             </label>
-            <input
+            <Input
               id={field.name}
               name={field.name}
               type="email"
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={(e) => field.handleChange(e.target.value)}
-              className="w-full px-3 py-2 mt-1 border rounded-md border-ui-divider focus:ring-brand-primary focus:border-brand-primary"
               placeholder="you@example.com"
+              autoFocus
             />
-            {field.state.meta.touchedErrors ? (
+            {field.state.meta.errors.length > 0 ? (
               <em className="text-sm text-feedback-error">
-                {field.state.meta.touchedErrors}
+                {field.state.meta.errors[0]}
               </em>
             ) : null}
           </div>
@@ -101,23 +93,32 @@ export function LoginForm() {
           <div>
             <label
               htmlFor={field.name}
-              className="block text-sm font-medium text-text-secondary"
+              className="block py-2 text-sm font-medium text-text-secondary"
             >
               Password
             </label>
-            <input
-              id={field.name}
-              name={field.name}
-              type="password"
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={(e) => field.handleChange(e.target.value)}
-              className="w-full px-3 py-2 mt-1 border rounded-md border-ui-divider focus:ring-brand-primary focus:border-brand-primary"
-              placeholder="••••••••"
-            />
-            {field.state.meta.touchedErrors ? (
+            <div className="relative">
+              <Input
+                id={field.name}
+                name={field.name}
+                type={showPassword ? 'text' : 'password'}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+                placeholder="••••••••"
+                className="pr-10" // Add padding for the toggle button
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5 text-text-muted focus:outline-none"
+              >
+                {showPassword ? <Eye /> : <EyeOff />}
+              </button>
+            </div>
+            {field.state.meta.errors.length > 0 ? (
               <em className="text-sm text-feedback-error">
-                {field.state.meta.touchedErrors}
+                {field.state.meta.errors[0]}
               </em>
             ) : null}
           </div>
@@ -135,7 +136,7 @@ export function LoginForm() {
                 checked={field.state.value}
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.checked)}
-                className="w-4 h-4 rounded border-ui-divider text-brand-primary focus:ring-brand-primary"
+                className="w-4 h-4 rounded border-ui-surface-dark text-brand-primary focus:ring-brand-primary"
               />
               <label
                 htmlFor={field.name}
@@ -167,13 +168,40 @@ export function LoginForm() {
           selector={(state) => [state.canSubmit, state.isSubmitting]}
         >
           {([canSubmit, isSubmitting]) => (
-            <button
+            <Button
+              variant="default"
               type="submit"
-              disabled={!canSubmit || isSubmitting}
-              className="w-full py-2 text-white transition-colors rounded-md bg-brand-primary hover:bg-brand-primary-800 disabled:bg-gray-400"
+              disabled={!canSubmit || isSubmitting || isPending}
+              className="w-full"
             >
-              {isSubmitting || isPending ? 'Signing In...' : 'Sign In'}
-            </button>
+              {isSubmitting || isPending ? (
+                <>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Signing In...
+                </>
+              ) : (
+                'Sign In'
+              )}
+            </Button>
           )}
         </form.Subscribe>
       </div>

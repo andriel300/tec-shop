@@ -8,7 +8,7 @@ import { OtpForm } from '../../../components/forms/otp-form';
 
 type AuthView = 'password' | 'otp';
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [view, setView] = useState<AuthView>('password');
 
   return (
@@ -16,15 +16,15 @@ export default function LoginPage() {
       <div className="w-full max-w-md p-8 space-y-6 bg-ui-muted rounded-lg shadow-elev-lg border border-ui-divider">
         <div>
           <h1 className="text-2xl font-bold text-center font-heading text-text-primary">
-            Sign in to your account
+            Register to your account
           </h1>
           <p className="mt-2 text-sm text-center text-text-secondary">
             Or{' '}
             <Link
-              href="/signup"
+              href="/login"
               className="font-medium text-brand-primary hover:underline"
             >
-              create an account
+              Login to your account
             </Link>
           </p>
         </div>
