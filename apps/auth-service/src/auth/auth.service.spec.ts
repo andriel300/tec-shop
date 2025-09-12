@@ -84,16 +84,16 @@ describe('AuthService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('register', () => {
-    const registerDto = { name: 'Test User', email: 'test@example.com', password: 'password123' };
+  describe('signup', () => {
+    const signupDto = { name: 'Test User', email: 'test@example.com', password: 'password123' };
 
     it('should throw a ConflictException if user already exists', async () => {
       mockPrismaService.users.findUnique.mockResolvedValue({ id: '1' });
-      await expect(service.register(registerDto)).rejects.toThrow(
+      await expect(service.signup(signupDto)).rejects.toThrow(
         ConflictException
       );
       expect(mockPrismaService.users.findUnique).toHaveBeenCalledWith({
-        where: { email: registerDto.email },
+        where: { email: signupDto.email },
       });
     });
 
@@ -101,13 +101,13 @@ describe('AuthService', () => {
       mockPrismaService.users.findUnique.mockResolvedValue(null);
       mockOtpService.generateOtp.mockResolvedValue({ message: 'OTP sent.' });
 
-      const result = await service.register(registerDto);
+      const result = await service.signup(signupDto);
 
       expect(mockPrismaService.users.findUnique).toHaveBeenCalledWith({
-        where: { email: registerDto.email },
+        where: { email: signupDto.email },
       });
-      expect(mockOtpService.generateOtp).toHaveBeenCalledWith({ email: registerDto.email });
-      expect(result).toEqual({ message: `An OTP has been sent to ${registerDto.email}. Please verify to complete registration.` });
+      expect(mockOtpService.generateOtp).toHaveBeenCalledWith({ email: signupDto.email });
+      expect(result).toEqual({ message: `An OTP has been sent to ${signupDto.email}. Please verify to complete registration.` });
     });
   });
 
