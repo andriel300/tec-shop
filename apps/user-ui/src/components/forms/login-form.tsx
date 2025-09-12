@@ -98,7 +98,7 @@ export function LoginForm() {
                 value={field.state.value}
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="you@example.com"
+                placeholder="Enter your Email"
                 autoFocus
               />
               {field.state.meta.errors.length > 0 ? (
@@ -133,7 +133,7 @@ export function LoginForm() {
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="Enter your password"
                   className="pr-10" // Add padding for the toggle button
                 />
                 <button
@@ -235,19 +235,6 @@ export function LoginForm() {
           </form.Subscribe>
         </div>
       </form>
-
-      {/* Sign up link outside the form */}
-      <div className="text-center">
-        <p className="text-sm text-text-secondary">
-          Don't have an account?{' '}
-          <Link
-            href="/signup"
-            className="font-medium text-brand-primary hover:underline"
-          >
-            Sign up here
-          </Link>
-        </p>
-      </div>
     </div>
   );
 }

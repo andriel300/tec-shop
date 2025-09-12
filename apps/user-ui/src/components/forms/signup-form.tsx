@@ -4,10 +4,12 @@ import React, { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { registerUser } from '../../lib/api/auth';
+import { signupUser, API_BASE_URL } from '../../lib/api/auth';
 import { Button } from '../ui/core/Button';
 import { Input } from '../ui/core/Input';
+import { Checkbox } from '../ui/core/Checkbox';
 import { Eye, EyeOff } from 'lucide-react';
+import Link from 'next/link';
 
 interface SignUpFormProps {
   onSuccess: (email: string, name: string, pass: string) => void;
@@ -18,7 +20,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const { mutate, isPending, error } = useMutation({
-    mutationFn: registerUser,
+    mutationFn: signupUser,
     onSuccess: (data, variables) => {
       toast.success('OTP sent to your email!');
       onSuccess(variables.email, variables.name, variables.password || '');
@@ -34,8 +36,14 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
       email: '',
       password: '',
       confirmPassword: '',
+      termsAccepted: false,
     },
     onSubmit: async ({ value }) => {
+      console.log(
+        'NEXT_PUBLIC_BACKEND_URL:',
+        process.env.NEXT_PUBLIC_BACKEND_URL
+      );
+      console.log('API_BASE_URL (from auth.ts):', API_BASE_URL);
       mutate(value);
     },
   });
@@ -69,7 +77,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={(e) => field.handleChange(e.target.value)}
-              placeholder="Your name"
+              placeholder="Enter your name"
               autoFocus
             />
             {field.state.meta.errors.length > 0 ? (
@@ -103,7 +111,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
               value={field.state.value}
               onBlur={field.handleBlur}
               onChange={(e) => field.handleChange(e.target.value)}
-              placeholder="you@example.com"
+              placeholder="Enter your Email"
             />
             {field.state.meta.errors.length > 0 ? (
               <em className="text-sm text-feedback-error">
@@ -149,7 +157,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
                 value={field.state.value}
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="••••••••"
+                placeholder="Enter your Password"
                 className="pr-10"
               />
               <button
@@ -214,6 +222,51 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
         )}
       </form.Field>
 
+      <form.Field
+        name="termsAccepted"
+        validators={{
+          onChange: ({ value }) =>
+            !value ? 'You must accept the terms and conditions' : undefined,
+        }}
+      >
+        {(field) => (
+          <div className="flex flex-col items-center">
+            <div className="flex items-center">
+              <Checkbox
+                id={field.name}
+                name={field.name}
+                checked={field.state.value}
+                onCheckedChange={(value) => field.handleChange(value)}
+                onBlur={field.handleBlur}
+              />
+              <div className="ml-3 text-sm">
+                <label htmlFor={field.name} className="text-text-secondary">
+                  I agree to the{' '}
+                  <Link
+                    href="/terms"
+                    className="text-brand-primary hover:underline"
+                  >
+                    Terms of Service
+                  </Link>{' '}
+                  and{' '}
+                  <Link
+                    href="/privacy"
+                    className="text-brand-primary hover:underline"
+                  >
+                    Privacy Policy
+                  </Link>
+                </label>
+              </div>
+            </div>
+            {field.state.meta.errors.length > 0 ? (
+              <em className="text-sm text-feedback-error">
+                {field.state.meta.errors[0]}
+              </em>
+            ) : null}
+          </div>
+        )}
+      </form.Field>
+
       {error && (
         <div className="p-3 text-sm text-center text-white bg-feedback-error rounded-md">
           {error.message}
@@ -253,10 +306,10 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
                   </svg>
-                  Registering...
+                  Signing up...
                 </>
               ) : (
-                'Register'
+                'Sign up'
               )}
             </Button>
           )}

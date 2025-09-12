@@ -1,5 +1,5 @@
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1';
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080/api';
 
 interface LoginUserValues {
   email: string;
@@ -217,16 +217,16 @@ export async function verifyOtp(values: VerifyOtpValues) {
   }
 }
 
-interface RegisterUserValues {
+interface SignupUserValues {
   name: string;
   email: string;
   password?: string;
 }
 
-// Helper function to call the register API
-export async function registerUser(values: RegisterUserValues) {
+// Helper function to call the signup API
+export async function signupUser(values: SignupUserValues) {
   try {
-    const res = await fetch(`${API_BASE_URL}/auth/register`, {
+    const res = await fetch(`${API_BASE_URL}/auth/signup`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
