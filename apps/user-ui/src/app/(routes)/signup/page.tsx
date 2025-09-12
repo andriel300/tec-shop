@@ -6,7 +6,7 @@ import { GoogleLoginButton } from '../../../components/ui/google-login-button';
 import { SignUpForm } from '../../../components/forms/signup-form';
 import { OtpForm } from '../../../components/forms/otp-form';
 
-export default function RegisterPage() {
+export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
@@ -27,38 +27,22 @@ export default function RegisterPage() {
             {showOtp ? 'Verify your email' : 'Sign up'}
           </h1>
           <p className="mt-2 text-sm text-center text-text-secondary">
-            {showOtp ? (
-              `An OTP has been sent to ${email}`
-            ) : (
-              'Join the largest online community of technology on the Marketplace'
-            )}
-          </p>
-          <p className="mt-2 text-sm text-center text-text-secondary">
-            <>
-              Already have an account?{' '}
-              <Link
-                href="/login"
-                className="font-medium text-brand-primary hover:underline"
-              >
-                Log in
-              </Link>
-            </>
+            {showOtp
+              ? `An OTP has been sent to ${email}`
+              : 'Join the largest online community of technology on the Marketplace'}
           </p>
         </div>
         {!showOtp && (
           <>
             <div className="flex items-center">
               <div className="flex-grow border-t border-ui-divider"></div>
-              <span className="px-2 text-xs text-text-muted">OR SIGN UP WITH</span>
+              <span className="px-2 text-xs text-text-muted">
+                OR SIGN UP WITH
+              </span>
               <div className="flex-grow border-t border-ui-divider"></div>
             </div>
             <div className="space-y-4">
-              <GoogleLoginButton />
-            </div>
-            <div className="flex items-center">
-              <div className="flex-grow border-t border-ui-divider"></div>
-              <span className="px-2 text-xs text-text-muted">OR SIGN UP WITH EMAIL</span>
-              <div className="flex-grow border-t border-ui-divider"></div>
+              <GoogleLoginButton buttonText="Sign up with Google" />
             </div>
           </>
         )}
@@ -72,9 +56,22 @@ export default function RegisterPage() {
               password={password}
             />
           ) : (
-            <SignUpForm onSuccess={handleSuccess} />
+            <>
+              <SignUpForm onSuccess={handleSuccess} />
+            </>
           )}
         </div>
+        <p className="mt-2 text-sm text-center text-text-secondary">
+          <>
+            Already have an account?{' '}
+            <Link
+              href="/login"
+              className="font-medium text-brand-primary hover:underline"
+            >
+              Log in
+            </Link>
+          </>
+        </p>
       </div>
     </main>
   );

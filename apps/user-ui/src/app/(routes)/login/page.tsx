@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { GoogleLoginButton } from '../../../components/ui/google-login-button';
 import { LoginForm } from '../../../components/forms/login-form';
 import { OtpForm } from '../../../components/forms/otp-form';
+import { Mail } from 'lucide-react';
 
 type AuthView = 'password' | 'otp';
 
@@ -29,43 +30,27 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="space-y-4">
-          <GoogleLoginButton />
-        </div>
+        {/* Toggle Buttons */}
+        <div className="grid grid-cols-2 gap-2 p-1 rounded-md bg-ui-muted"></div>
 
+        {/* Conditional Form */}
+        <div>
+          {view === 'password' ? <LoginForm /> : <OtpForm flow="login" />}
+        </div>
         <div className="flex items-center">
           <div className="flex-grow border-t border-ui-divider"></div>
           <span className="px-2 text-xs text-text-muted">OR CONTINUE WITH</span>
           <div className="flex-grow border-t border-ui-divider"></div>
         </div>
-
-        {/* Toggle Buttons */}
-        <div className="grid grid-cols-2 gap-2 p-1 rounded-md bg-ui-muted">
-          <button
-            onClick={() => setView('password')}
-            className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
-              view === 'password'
-                ? 'bg-white text-brand-primary shadow-sm'
-                : 'text-text-secondary hover:bg-ui-surface hover:text-text-primary'
-            }`}
-          >
-            Password
-          </button>
+        <div className="space-y-4">
+          <GoogleLoginButton />
           <button
             onClick={() => setView('otp')}
-            className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${
-              view === 'otp'
-                ? 'bg-white text-brand-primary shadow-sm'
-                : 'text-text-secondary hover:bg-ui-surface hover:text-text-primary'
-            }`}
+            className="flex bg-brand-primary-50 items-center justify-center w-full px-4 py-2 text-sm font-semibold rounded-md transition-colors text-text-primary hover:bg-ui-surface hover:text-text-primary border border-ui-divider"
           >
-            Sign in with Email
+            <Mail className="h-4 w-4 mr-2" />
+            <span>Continue with Email</span>
           </button>
-        </div>
-
-        {/* Conditional Form */}
-        <div>
-          {view === 'password' ? <LoginForm /> : <OtpForm flow="login" />}
         </div>
       </div>
     </main>

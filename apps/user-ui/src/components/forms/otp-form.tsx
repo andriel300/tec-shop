@@ -5,7 +5,7 @@ import { useForm } from '@tanstack/react-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { generateOtp, verifyOtp, verifyEmail, registerUser } from '../../lib/api/auth';
+import { generateOtp, verifyOtp, verifyEmail, signupUser } from '../../lib/api/auth';
 
 interface OtpFormProps {
   email?: string;
@@ -48,7 +48,7 @@ export function OtpForm({ email: initialEmail, name, password, flow }: OtpFormPr
   });
 
   const resendOtpMutation = useMutation({
-    mutationFn: registerUser,
+    mutationFn: signupUser,
     onSuccess: (data) => {
       toast.info(data?.message || 'A new OTP has been sent to your email.');
       setTimer(60);
