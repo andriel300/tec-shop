@@ -2,6 +2,7 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
+import { AxiosError } from 'axios';
 
 @Injectable()
 export class AuthService {
@@ -26,13 +27,17 @@ export class AuthService {
         }),
       );
       return response.data;
-    } catch (error) {
-      if (error.response) {
-        throw new HttpException(error.response.data, error.response.status);
-      } else if (error.request) {
-        throw new HttpException('No response received from auth service', HttpStatus.SERVICE_UNAVAILABLE);
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        if (error.response) {
+          throw new HttpException(error.response.data, error.response.status);
+        } else if (error.request) {
+          throw new HttpException('No response received from auth service', HttpStatus.SERVICE_UNAVAILABLE);
+        } else {
+          throw new HttpException('Error setting up request to auth service', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
       } else {
-        throw new HttpException('Error setting up request to auth service', HttpStatus.INTERNAL_SERVER_ERROR);
+        throw new HttpException('An unexpected error occurred', HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
   }

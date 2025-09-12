@@ -8,7 +8,7 @@ interface LoginUserValues {
 }
 
 // Helper function to extract error message from API response
-function getErrorMessage(errorData: any): string {
+function getErrorMessage(errorData: unknown): string {
   // Handle nested message object from api-gateway
   if (errorData && typeof errorData.message === 'object' && errorData.message !== null) {
     return getErrorMessage(errorData.message);
@@ -42,7 +42,7 @@ function getErrorMessage(errorData: any): string {
     // If we have errors array (common in validation responses)
     if (errorData.errors && Array.isArray(errorData.errors)) {
       return errorData.errors
-        .map((err: any) =>
+        .map((err: string | { message?: string; msg?: string }) =>
           typeof err === 'string'
             ? err
             : err.message || err.msg || 'Unknown error'
@@ -67,7 +67,7 @@ export async function loginUser(values: LoginUserValues) {
     });
 
     if (!res.ok) {
-      let errorData;
+      let errorData: unknown;
       let message = 'Login failed. Please check your credentials.';
 
       try {
@@ -137,7 +137,7 @@ export async function generateOtp(values: GenerateOtpValues) {
     });
 
     if (!res.ok) {
-      let errorData;
+      let errorData: unknown;
       let message = 'Failed to send OTP.';
 
       try {
@@ -186,7 +186,7 @@ export async function verifyOtp(values: VerifyOtpValues) {
     });
 
     if (!res.ok) {
-      let errorData;
+      let errorData: unknown;
       let message = 'Invalid OTP.';
 
       try {
@@ -236,7 +236,7 @@ export async function signupUser(values: SignupUserValues) {
     });
 
     if (!res.ok) {
-      let errorData;
+      let errorData: unknown;
       let message = 'Registration failed. Please try again.';
 
       try {
@@ -287,8 +287,104 @@ export async function verifyEmail(values: VerifyEmailValues) {
     });
 
     if (!res.ok) {
-      let errorData;
+      let errorData: unknown;
       let message = 'Invalid OTP.';
+
+      try {
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          errorData = await res.json();
+          message = getErrorMessage(errorData);
+        } else {
+          const textResponse = await res.text();
+          message = textResponse || `HTTP ${res.status}: ${res.statusText}`;
+        }
+      } catch (parseError) {
+        console.error('Error parsing error response:', parseError);
+        message = `Request failed with status ${res.status}`;
+      }
+
+      throw new Error(message);
+    }
+
+    return res.json();
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(
+      'Network error. Please check your connection and try again.'
+    );
+  }
+}
+
+interface RequestPasswordResetValues {
+  email: string;
+}
+
+export async function requestPasswordReset(values: RequestPasswordResetValues) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/password/request-reset`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(values),
+      credentials: 'include',
+    });
+
+    if (!res.ok) {
+      let errorData: unknown;
+      let message = 'Failed to request password reset.';
+
+      try {
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          errorData = await res.json();
+          message = getErrorMessage(errorData);
+        } else {
+          const textResponse = await res.text();
+          message = textResponse || `HTTP ${res.status}: ${res.statusText}`;
+        }
+      } catch (parseError) {
+        console.error('Error parsing error response:', parseError);
+        message = `Request failed with status ${res.status}`;
+      }
+
+      throw new Error(message);
+    }
+
+    return res.json();
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(
+      'Network error. Please check your connection and try again.'
+    );
+  }
+}
+
+interface ResetPasswordValues {
+  email: string;
+  token: string;
+  newPassword: string;
+}
+
+export async function resetPassword(values: ResetPasswordValues) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/password/reset`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(values),
+      credentials: 'include',
+    });
+
+    if (!res.ok) {
+      let errorData: unknown;
+      let message = 'Failed to reset password.';
 
       try {
         const contentType = res.headers.get('content-type');

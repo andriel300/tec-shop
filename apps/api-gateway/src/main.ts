@@ -4,11 +4,9 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
-import { json, Request, urlencoded } from 'express'; // Keep this for json/urlencoded
+import { json, urlencoded } from 'express'; // Keep this for json/urlencoded
 import helmet from 'helmet';
-import { createProxyMiddleware } from 'http-proxy-middleware';
 import { AppModule } from './app/app.module';
-import * as crypto from 'crypto';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {

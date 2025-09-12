@@ -58,6 +58,7 @@ model users {
   // --- OAuth Fields ---
   googleId        String?   @unique // Unique ID from Google
   provider        String    @default("local") // "local", "google", etc.
+  picture         String? // Profile picture URL from OAuth providers
 
   // An array of User IDs. This is how you represent a 'followers' or
   // 'following' list in a NoSQL database like MongoDB.

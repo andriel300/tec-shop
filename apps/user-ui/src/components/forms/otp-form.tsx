@@ -103,6 +103,7 @@ export function OtpForm({ email: initialEmail, name, password, flow }: OtpFormPr
       return () => clearInterval(countdown);
     } else {
       setCanResend(true);
+      return; // Explicitly return nothing
     }
   }, [timer]);
 
@@ -203,7 +204,9 @@ export function OtpForm({ email: initialEmail, name, password, flow }: OtpFormPr
                     .map((_, i) => (
                       <input
                         key={i}
-                        ref={(el) => (inputRefs.current[i] = el)}
+                        ref={(el) => {
+                          inputRefs.current[i] = el;
+                        }}
                         id={`${field.name}-${i}`}
                         name={`${field.name}-${i}`}
                         type="tel"

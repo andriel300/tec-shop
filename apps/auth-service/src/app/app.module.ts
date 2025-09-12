@@ -3,7 +3,6 @@ import {
   MiddlewareConsumer,
   NestModule,
   RequestMethod,
-  Logger,
 } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
