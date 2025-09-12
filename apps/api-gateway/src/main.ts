@@ -15,7 +15,7 @@ async function bootstrap() {
     bufferLogs: true,
   });
 
-  const globalPrefix = 'api/v1';
+  const globalPrefix = 'api';
 
   const configService = app.get(ConfigService);
 
@@ -73,8 +73,6 @@ async function bootstrap() {
   app.use(urlencoded({ extended: true, limit: '100mb' }));
 
   app.set('trust proxy', 1);
-
-  
 
   const config = new DocumentBuilder()
     .setTitle('Tec-Shop API')

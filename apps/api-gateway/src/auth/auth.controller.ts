@@ -1,5 +1,14 @@
 /* eslint-disable no-useless-catch */
-import { Controller, All, Req, Res, Body, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Req,
+  Res,
+  Body,
+  HttpStatus,
+  Post,
+  Get,
+  Headers,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Request, Response } from 'express';
 
@@ -7,52 +16,174 @@ import { Request, Response } from 'express';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @All('*') // Catch all HTTP methods and paths under /auth
-  async proxyAuthRequests(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-    @Body() body: any
-  ) {
-    const method = req.method;
-    const headers = req.headers;
+  private setAuthCookies(res: Response, result: any) {
+    if (result && result.accessToken) {
+      res.cookie('access_token', result.accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        expires: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+        path: '/',
+      });
+    }
+    if (result && result.refreshToken) {
+      res.cookie('refresh_token', result.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        path: '/',
+      });
+    }
+  }
 
-    // Remove host and connection headers as they are handled by httpService
-    delete headers['host'];
-    delete headers['connection'];
+  private clearAuthCookies(res: Response) {
+    res.clearCookie('access_token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    });
+    res.clearCookie('refresh_token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    });
+  }
 
+  @Post('register')
+  async register(@Body() body: any, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     try {
-      const result = await this.authService.proxyRequest(
-        method,
-        req.url, // Use the full incoming URL as the path for the auth-service
-        body,
-        headers
-      );
-
-      // This part is specific to login/token endpoints.
-      // If you have other endpoints that don't return tokens,
-      // you might need more sophisticated logic or separate controllers.
-      if (result && result.accessToken) {
-        res.cookie('access_token', result.accessToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          expires: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
-          path: '/',
-        });
-      }
-      if (result && result.refreshToken) {
-        res.cookie('refresh_token', result.refreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-          path: '/',
-        });
-      }
-
+      const result = await this.authService.proxyRequest(req.method, req.url, body, req.headers);
       return result;
     } catch (error) {
-      // Re-throw the HttpException from AuthService to maintain status codes
+      throw error;
+    }
+  }
+
+  @Post('verify-email')
+  async verifyEmail(@Body() body: any, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    try {
+      const result = await this.authService.proxyRequest(req.method, req.url, body, req.headers);
+      this.setAuthCookies(res, result);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Post('login/email')
+  async login(@Body() body: any, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    try {
+      const result = await this.authService.proxyRequest(req.method, req.url, body, req.headers);
+      this.setAuthCookies(res, result);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Post('refresh')
+  async refresh(@Body() body: any, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    try {
+      const result = await this.authService.proxyRequest(req.method, req.url, body, req.headers);
+      this.setAuthCookies(res, result);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Post('logout')
+  async logout(@Headers('authorization') authorization: string, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    try {
+      const result = await this.authService.proxyRequest(req.method, req.url, {}, req.headers);
+      this.clearAuthCookies(res);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Get('me')
+  async getMe(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    try {
+      const result = await this.authService.proxyRequest(req.method, req.url, {}, req.headers);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Get('login/google')
+  async googleLogin(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    try {
+      const result = await this.authService.proxyRequest(req.method, req.url, {}, req.headers);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Get('google/callback')
+  async googleCallback(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    try {
+      const result = await this.authService.proxyRequest(req.method, req.url, {}, req.headers);
+      this.setAuthCookies(res, result);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Post('otp/generate')
+  async generateOtp(@Body() body: any, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    try {
+      const result = await this.authService.proxyRequest(req.method, req.url, body, req.headers);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Post('otp/verify')
+  async verifyOtp(@Body() body: any, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    try {
+      const result = await this.authService.proxyRequest(req.method, req.url, body, req.headers);
+      this.setAuthCookies(res, result);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Post('password/request-reset')
+  async requestPasswordReset(@Body() body: any, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    try {
+      const result = await this.authService.proxyRequest(req.method, req.url, body, req.headers);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Post('password/reset')
+  async resetPassword(@Body() body: any, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    try {
+      const result = await this.authService.proxyRequest(req.method, req.url, body, req.headers);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  @Get('admin-only')
+  async adminOnly(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    try {
+      const result = await this.authService.proxyRequest(req.method, req.url, {}, req.headers);
+      return result;
+    } catch (error) {
       throw error;
     }
   }

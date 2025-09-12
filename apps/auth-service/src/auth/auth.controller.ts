@@ -22,18 +22,18 @@ import {
   ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { RegisterUserDto } from './dto/register-user.dto';
+import { SignupUserDto } from './dto/signup-user.dto';
 import { GenerateOtpDto } from './dto/generate-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { JwtAuthGuard } from './jwt-auth.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { Roles } from './roles.decorator';
-import { RolesGuard } from './roles.guard';
-import { GoogleUser } from './interfaces/user.interface';
+import { RolesGuard } from './guards/roles.guard';
+import { ConfigService } from '@nestjs/config';
 
 const registerThrottleOptions: ThrottlerOptions = { limit: 3, ttl: 60000 };
 const loginThrottleOptions: ThrottlerOptions = { limit: 3, ttl: 60000 };
@@ -49,17 +49,17 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Throttle(registerThrottleOptions as any)
-  @Post('register')
-  @ApiOperation({ summary: 'Register a new user' })
-  @ApiBody({ type: RegisterUserDto })
+    @Post('signup')
+  @ApiOperation({ summary: 'Sign up a new user' })
+  @ApiBody({ type: SignupUserDto })
   @ApiResponse({
     status: 201,
     description:
       'An OTP has been sent to your email. Please verify to complete registration.',
   })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
-  async register(@Body() registerUserDto: RegisterUserDto) {
-    return this.authService.register(registerUserDto);
+  async signup(@Body() signupUserDto: SignupUserDto) {
+    return this.authService.signup(signupUserDto);
   }
 
   @Post('verify-email')
@@ -192,11 +192,11 @@ export class AuthController {
     return result;
   }
 
-  @Get()
-  getHelloApi(): { message: string } {
-    return {
-      message: 'Hello andriel hehe just testing this new api right? hehe',
-    };
+  @Get('health')
+  @ApiOperation({ summary: 'Health check endpoint' })
+  @ApiResponse({ status: 200, description: 'Auth service is healthy.' })
+  getHealth(): { status: string } {
+    return { status: 'Auth service is healthy' };
   }
 
   @Get('me')
@@ -223,11 +223,69 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   @ApiExcludeEndpoint()
-  async googleAuthRedirect(@Req() req: { user: GoogleUser }) {
-    return this.authService.googleLogin(req.user);
-  }
+  async googleAuthRedirect(@Req() req: { user: any }, @Res() res: Response) {
+    try {
+      // Generate tokens for the Google user
+      const accessTokenPayload = {
+        sub: req.user.id,
+        email: req.user.email,
+        jti: uuidv4(),
+        tenantId: req.user.tenantId,
+        roles: req.user.roles,
+      };
 
-  // --- OTP Login Flow ---
+      const accessToken = await this.jwtService.signAsync(accessTokenPayload, {
+        expiresIn: this.configService.get<string>(
+          'JWT_ACCESS_TOKEN_EXPIRATION',
+          '15m'
+        ),
+      });
+
+      const refreshTokenPayload = { sub: req.user.id, jti: uuidv4() };
+      const refreshToken = await this.jwtService.signAsync(
+        refreshTokenPayload,
+        {
+          expiresIn: this.configService.get<string>(
+            'JWT_REFRESH_TOKEN_EXPIRATION',
+            '7d'
+          ),
+        }
+      );
+
+      const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+
+      // Store refresh token in database
+      await this.prisma.users.update({
+        where: { id: req.user.id },
+        data: { refreshToken: hashedRefreshToken },
+      });
+
+      // Set cookies
+      res.cookie('access_token', accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        expires: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+        path: '/',
+      });
+
+      res.cookie('refresh_token', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        path: '/',
+      });
+
+      // Redirect to frontend success page
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+      res.redirect(`${frontendUrl}/auth/success?provider=google`);
+    } catch (error) {
+      // Redirect to frontend error page
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+      res.redirect(`${frontendUrl}/auth/error?error=oauth_failed`);
+    }
+  } // --- OTP Login Flow ---
 
   @Throttle(generateOtpThrottleOptions as any)
   @Post('otp/generate')

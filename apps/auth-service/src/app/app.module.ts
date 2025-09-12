@@ -27,7 +27,7 @@ import { RequestLoggerMiddleware } from '../common/middleware/request-logger.mid
     ]),
     ConfigModule.forRoot({
       isGlobal: true, // Makes the ConfigService available throughout the app
-      envFilePath: './apps/auth-service/.env', // Path to your .env file
+      envFilePath: '../../../../.env', // Path to your .env file at the project root
     }),
     AuthModule,
     RedisModule,

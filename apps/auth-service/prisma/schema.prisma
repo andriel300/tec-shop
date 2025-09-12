@@ -6,6 +6,12 @@ generator client {
   // This keeps it separate from your source code.
 }
 
+generator dbml {
+  provider = "prisma-dbml-generator"
+  output   = "../dbml"
+  outputname = "tecshop.dbml"
+}
+
 // Defines the connection to your database. The `env()` function pulls
 // the connection string from an environment variable for security.
 datasource db {

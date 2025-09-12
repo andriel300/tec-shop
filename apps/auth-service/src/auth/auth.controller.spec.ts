@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { RegisterUserDto } from './dto/register-user.dto';
+import { SignupUserDto } from './dto/signup-user.dto';
 import { GenerateOtpDto } from './dto/generate-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 
@@ -10,7 +10,7 @@ describe('AuthController', () => {
   let authService: AuthService;
 
   const mockAuthService = {
-    register: jest.fn(),
+    signup: jest.fn(),
     generateOtp: jest.fn(),
     verifyOtp: jest.fn(),
   };
@@ -29,15 +29,15 @@ describe('AuthController', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('register', () => {
-    it('should call authService.register', async () => {
-      const dto: RegisterUserDto = {
+  describe('signup', () => {
+    it('should call authService.signup', async () => {
+      const dto: SignupUserDto = {
         name: 'Test User',
         email: 'test@example.com',
         password: 'password',
       };
-      await controller.register(dto);
-      expect(authService.register).toHaveBeenCalledWith(dto);
+      await controller.signup(dto);
+      expect(authService.signup).toHaveBeenCalledWith(dto);
     });
   });
 
