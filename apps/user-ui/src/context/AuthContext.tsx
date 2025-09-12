@@ -6,6 +6,7 @@ import React, {
   useState,
   useEffect,
   ReactNode,
+  useCallback,
 } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -48,11 +49,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const BACKEND_URL =
     process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080';
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       const response = await fetch(`${BACKEND_URL}/auth/me`, {
         method: 'GET',
@@ -74,7 +71,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     setLoading(false);
-  };
+  }, [BACKEND_URL, setUser, setLoading]);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   const login = () => {
     window.location.href = `${BACKEND_URL}/auth/login/google`;

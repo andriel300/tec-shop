@@ -23,7 +23,7 @@ export function LoginForm() {
       toast.success('Login successful!');
       router.push('/'); // Redirect to dashboard or home
     },
-    onError: (error: any) => {
+    onError: (error: Error | { message: string } | string) => {
       console.error('Login error:', error); // Add debugging
 
       let message = 'An unknown error occurred.';

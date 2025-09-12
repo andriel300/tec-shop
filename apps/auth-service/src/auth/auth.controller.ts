@@ -8,10 +8,10 @@ import {
   UseGuards,
   Req,
   Res,
-  Response,
   Headers,
 } from '@nestjs/common';
 
+import type { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { Throttle, ThrottlerOptions } from '@nestjs/throttler';
 import {
@@ -34,6 +34,17 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { Roles } from './roles.decorator';
 import { RolesGuard } from './guards/roles.guard';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { PrismaService } from '../app/prisma/prisma.service';
+import { v4 as uuidv4 } from 'uuid';
+import * as bcrypt from 'bcrypt';
+import { AuthUser } from './interfaces/user.interface';
+
+declare module 'express' {
+  interface Request {
+    user?: AuthUser;
+  }
+}
 
 const registerThrottleOptions: ThrottlerOptions = { limit: 3, ttl: 60000 };
 const loginThrottleOptions: ThrottlerOptions = { limit: 3, ttl: 60000 };
@@ -46,7 +57,12 @@ const requestPasswordResetThrottleOptions: ThrottlerOptions = {
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Throttle(registerThrottleOptions as any)
     @Post('signup')
@@ -99,7 +115,7 @@ export class AuthController {
   })
   async login(
     @Body() loginDto: LoginDto,
-    @Res({ passthrough: true }) res: Response
+    @Res({ passthrough: true }) res: ExpressResponse
   ): Promise<{ message: string }> {
     const { accessToken, refreshToken } = await this.authService.login(
       loginDto
@@ -138,7 +154,7 @@ export class AuthController {
   })
   async refresh(
     @Body() body: RefreshTokenDto,
-    @Res({ passthrough: true }) res: Response
+    @Res({ passthrough: true }) res: ExpressResponse
   ): Promise<{ message: string }> {
     const { accessToken, refreshToken } = await this.authService.refreshTokens(
       body.refreshToken
@@ -171,7 +187,7 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async logout(
     @Headers('authorization') authorization: string,
-    @Res({ passthrough: true }) res: Response
+    @Res({ passthrough: true }) res: ExpressResponse
   ): Promise<{ message: string }> {
     const token = authorization ? authorization.split(' ')[1] : undefined;
     const result = await this.authService.logout(token as string); // Explicitly cast to string
@@ -204,7 +220,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Get user profile (Auth0 JWT required)' })
   @ApiResponse({ status: 200, description: 'User profile retrieved.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  getProfile(@Req() req: Request) {
+  getProfile(@Req() req: ExpressRequest) {
     return req.user;
   }
 
@@ -223,15 +239,15 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   @ApiExcludeEndpoint()
-  async googleAuthRedirect(@Req() req: { user: any }, @Res() res: Response) {
+  async googleAuthRedirect(@Req() req: ExpressRequest, @Res() res: ExpressResponse) {
     try {
       // Generate tokens for the Google user
       const accessTokenPayload = {
-        sub: req.user.id,
-        email: req.user.email,
+        sub: req.user!.id,
+        email: req.user!.email,
         jti: uuidv4(),
-        tenantId: req.user.tenantId,
-        roles: req.user.roles,
+        tenantId: req.user!.tenantId,
+        roles: req.user!.roles,
       };
 
       const accessToken = await this.jwtService.signAsync(accessTokenPayload, {
@@ -241,7 +257,7 @@ export class AuthController {
         ),
       });
 
-      const refreshTokenPayload = { sub: req.user.id, jti: uuidv4() };
+      const refreshTokenPayload = { sub: req.user!.id, jti: uuidv4() };
       const refreshToken = await this.jwtService.signAsync(
         refreshTokenPayload,
         {
@@ -256,7 +272,7 @@ export class AuthController {
 
       // Store refresh token in database
       await this.prisma.users.update({
-        where: { id: req.user.id },
+        where: { id: req.user!.id },
         data: { refreshToken: hashedRefreshToken },
       });
 
@@ -292,7 +308,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Generate a One-Time Password (OTP)' })
   @ApiBody({ type: GenerateOtpDto })
-  @ApiResponse({ status: 200, description: 'OTP sent successfully.' })
+  @ApiResponse({
+    status: 200,
+    description:
+      'OTP sent successfully.',
+  })
   @ApiResponse({
     status: 400,
     description: 'Bad Request (e.g., invalid email).',

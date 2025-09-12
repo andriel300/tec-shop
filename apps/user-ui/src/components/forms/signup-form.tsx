@@ -236,7 +236,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
                 id={field.name}
                 name={field.name}
                 checked={field.state.value}
-                onCheckedChange={(value) => field.handleChange(value)}
+                onCheckedChange={(value) => field.handleChange(!!value)}
                 onBlur={field.handleBlur}
               />
               <div className="ml-3 text-sm">

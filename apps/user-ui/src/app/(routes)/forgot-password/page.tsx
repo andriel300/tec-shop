@@ -40,7 +40,7 @@ export default function ForgotPasswordPage() {
             Forgot your password?
           </h1>
           <p className="mt-2 text-sm text-center text-text-secondary">
-            Enter your email address and we'll send you a link to reset your
+            Enter your email address and we&apos;ll send you a link to reset your
             password.
           </p>
         </div>
