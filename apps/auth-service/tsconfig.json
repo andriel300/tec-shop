@@ -4,12 +4,6 @@
   "include": [],
   "references": [
     {
-      "path": "../../libs/shared/exceptions"
-    },
-    {
-      "path": "../../libs/shared/middleware"
-    },
-    {
       "path": "./tsconfig.app.json"
     },
     {

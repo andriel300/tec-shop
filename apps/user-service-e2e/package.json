@@ -1,0 +1,26 @@
+{
+  "name": "@tec-shop/user-service-e2e",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "implicitDependencies": [
+      "@tec-shop/user-service"
+    ],
+    "targets": {
+      "e2e": {
+        "executor": "@nx/jest:jest",
+        "outputs": [
+          "{projectRoot}/test-output/jest/coverage"
+        ],
+        "options": {
+          "jestConfig": "apps/user-service-e2e/jest.config.ts",
+          "passWithNoTests": true
+        },
+        "dependsOn": [
+          "@tec-shop/user-service:build",
+          "@tec-shop/user-service:serve"
+        ]
+      }
+    }
+  }
+}

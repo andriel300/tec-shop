@@ -1,5 +1,5 @@
 {
-  "name": "@tec-shop/auth-service",
+  "name": "@tec-shop/user-service",
   "version": "0.0.1",
   "private": true,
   "nx": {
@@ -11,7 +11,7 @@
           "args": [
             "--node-env=production"
           ],
-          "cwd": "apps/auth-service"
+          "cwd": "apps/user-service"
         },
         "configurations": {
           "development": {
@@ -28,8 +28,8 @@
         "cache": true,
         "executor": "@nx/js:prune-lockfile",
         "outputs": [
-          "{workspaceRoot}/apps/auth-service/dist/package.json",
-          "{workspaceRoot}/apps/auth-service/dist/package-lock.json"
+          "{workspaceRoot}/apps/user-service/dist/package.json",
+          "{workspaceRoot}/apps/user-service/dist/package-lock.json"
         ],
         "options": {
           "buildTarget": "build"
@@ -41,7 +41,7 @@
         ],
         "cache": true,
         "outputs": [
-          "{workspaceRoot}/apps/auth-service/dist/workspace_modules"
+          "{workspaceRoot}/apps/user-service/dist/workspace_modules"
         ],
         "executor": "@nx/js:copy-workspace-modules",
         "options": {
@@ -63,15 +63,15 @@
           "build"
         ],
         "options": {
-          "buildTarget": "@tec-shop/auth-service:build",
+          "buildTarget": "@tec-shop/user-service:build",
           "runBuildTargetDependencies": false
         },
         "configurations": {
           "development": {
-            "buildTarget": "@tec-shop/auth-service:build:development"
+            "buildTarget": "@tec-shop/user-service:build:development"
           },
           "production": {
-            "buildTarget": "@tec-shop/auth-service:build:production"
+            "buildTarget": "@tec-shop/user-service:build:production"
           }
         }
       },

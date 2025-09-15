@@ -10,7 +10,7 @@ const swcJestConfig = JSON.parse(
 swcJestConfig.swcrc = false;
 
 export default {
-  displayName: '@tec-shop/api-gateway',
+  displayName: '@tec-shop/user-service',
   preset: '../../jest.preset.js',
   testEnvironment: 'node',
   transform: {
