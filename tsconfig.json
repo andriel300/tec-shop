@@ -16,13 +16,13 @@
       "path": "./apps/api-gateway"
     },
     {
-      "path": "./libs/shared/exceptions"
-    },
-    {
-      "path": "./libs/shared/middleware"
-    },
-    {
       "path": "./apps/user-ui"
+    },
+    {
+      "path": "./apps/user-service-e2e"
+    },
+    {
+      "path": "./apps/user-service"
     }
   ]
 }

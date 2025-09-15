@@ -12,10 +12,9 @@ swcJestConfig.swcrc = false;
 export default {
   displayName: '@tec-shop/auth-service',
   preset: '../../jest.preset.js',
-  setupFilesAfterEnv: ['<rootDir>/src/jest-setup.ts'],
   testEnvironment: 'node',
   transform: {
-    '^.+\.[tj]s$': ['@swc/jest', swcJestConfig],
+    '^.+\\.[tj]s$': ['@swc/jest', swcJestConfig],
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
   coverageDirectory: 'test-output/jest/coverage',
