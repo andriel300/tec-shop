@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model images {
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
+  file_id String
+  url     String
+  userId  String? @unique @db.ObjectId
+  users   users?  @relation(fields: [userId], references: [id])
+}
+
+model users {
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  email           String    @unique
+  password        String?
+  bio             String?
+  isEmailVerified Boolean   @default(false)
+  googleId        String?   @unique
+  provider        String    @default("local")
+  picture         String?
+  following       String[]
+  avatar          images?
+  createdAt       DateTime  @default(now())
+  refreshToken    String?
+  updatedAt       DateTime  @updatedAt
+}

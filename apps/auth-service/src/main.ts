@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { AppModule } from './app/app.module';
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
@@ -14,6 +14,7 @@ async function bootstrap() {
       },
     }
   );
+  app.useGlobalPipes(new ValidationPipe());
   await app.listen();
   Logger.log('🚀 Application auth-service is running on TCP port 6001');
 }

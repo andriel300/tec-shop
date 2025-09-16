@@ -2,6 +2,9 @@
   "name": "@tec-shop/user-service",
   "version": "0.0.1",
   "private": true,
+  "scripts": {
+    "prisma:generate": "npx prisma generate --schema=./prisma/schema.prisma"
+  },
   "nx": {
     "targets": {
       "build": {
@@ -82,5 +85,10 @@
       }
     }
   },
-  "dependencies": {}
+  "devDependencies": {
+    "prisma": "^6.16.2"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.16.2"
+  }
 }

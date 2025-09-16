@@ -2,6 +2,9 @@
   "name": "@tec-shop/auth-service",
   "version": "0.0.1",
   "private": true,
+  "scripts": {
+    "prisma:generate": "npx prisma generate --schema=./prisma/schema.prisma"
+  },
   "nx": {
     "targets": {
       "build": {
