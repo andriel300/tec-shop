@@ -92,6 +92,17 @@
   "targetDefaults": {
     "test": {
       "dependsOn": ["^build"]
+    },
+    "build": {
+      "options": {
+        "assets": [
+          {
+            "glob": "*",
+            "input": "certs",
+            "output": "certs"
+          }
+        ]
+      }
     }
   },
   "release": {

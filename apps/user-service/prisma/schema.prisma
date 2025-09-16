@@ -16,10 +16,9 @@ model images {
 }
 
 model users {
-  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  id              String    @id @map("_id")
   name            String
   email           String    @unique
-  password        String?
   bio             String?
   isEmailVerified Boolean   @default(false)
   googleId        String?   @unique
