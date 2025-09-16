@@ -1,0 +1,30 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table images {
+  id String [pk]
+  file_id String [not null]
+  url String [not null]
+  userId String [unique]
+  users users
+}
+
+Table users {
+  id String [pk]
+  name String [not null]
+  email String [unique, not null]
+  password String
+  bio String
+  isEmailVerified Boolean [not null, default: false]
+  googleId String [unique]
+  provider String [not null, default: 'local']
+  picture String
+  following String[] [not null]
+  avatar images
+  createdAt DateTime [default: `now()`, not null]
+  refreshToken String
+  updatedAt DateTime [not null]
+}
+
+Ref: images.userId - users.id
