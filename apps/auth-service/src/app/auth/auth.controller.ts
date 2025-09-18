@@ -2,6 +2,7 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { LoginDto } from '../dto/login.dto';
 import { SignupDto } from '../dto/signup.dto';
+import { VerifyEmailDto } from '../dto/verify-email.dto';
 import { AuthService } from './auth.service';
 
 @Controller()
@@ -11,6 +12,11 @@ export class AuthController {
   @MessagePattern('auth-signup')
   async signup(@Payload() signupDto: SignupDto) {
     return this.authService.signup(signupDto);
+  }
+
+  @MessagePattern('auth-verify-email')
+  async verifyEmail(@Payload() verifyEmailDto: VerifyEmailDto) {
+    return this.authService.verifyEmail(verifyEmailDto);
   }
 
   @MessagePattern('auth-login')
