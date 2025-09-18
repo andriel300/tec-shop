@@ -3,7 +3,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { UserController } from './user.controller';
 import { AuthModule } from '../auth/auth.module';
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
-import { readFileSync } from 'fs';
+// import { readFileSync } from 'fs';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
@@ -18,13 +18,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
           options: {
             host: configService.get<string>('USER_SERVICE_HOST'),
             port: configService.get<number>('USER_SERVICE_PORT'),
-            tlsOptions: {
-              key: readFileSync('./certs/client.key'),
-              cert: readFileSync('./certs/client.crt'),
-              ca: readFileSync('./certs/ca.crt'),
-              rejectUnauthorized: true,
-              requestCert: true,
-            },
+            // tlsOptions: {
+            //   key: readFileSync('./certs/client.key'),
+            //   cert: readFileSync('./certs/client.crt'),
+            //   ca: readFileSync('./certs/ca.crt'),
+            //   rejectUnauthorized: true,
+            //   requestCert: true,
+            // },
           },
         }),
         inject: [ConfigService],

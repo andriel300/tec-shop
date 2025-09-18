@@ -14,7 +14,9 @@ export class AppController {
   }
 
   @MessagePattern('update-user-profile')
-  updateUserProfile(@Payload() payload: { userId: string; data: UpdateUserDto }) {
+  updateUserProfile(
+    @Payload() payload: { userId: string; data: UpdateUserDto }
+  ) {
     return this.appService.updateUserProfile(payload.userId, payload.data);
   }
 

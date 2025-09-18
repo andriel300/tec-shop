@@ -1,32 +1,30 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../../../node_modules/.prisma/user-client"
 }
 
 datasource db {
   provider = "mongodb"
-  url      = env("DATABASE_URL")
+  url      = env("USER_SERVICE_DB_URL")
 }
 
-model images {
-  id      String  @id @default(auto()) @map("_id") @db.ObjectId
-  file_id String
-  url     String
-  userId  String? @unique @db.ObjectId
-  users   users?  @relation(fields: [userId], references: [id])
+model Image {
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  file_id       String
+  url           String
+  userProfile   UserProfile? @relation(fields: [userProfileId], references: [id])
+  userProfileId String?     @unique @db.ObjectId
 }
 
-model users {
-  id              String    @id @map("_id")
-  name            String
-  email           String    @unique
-  bio             String?
-  isEmailVerified Boolean   @default(false)
-  googleId        String?   @unique
-  provider        String    @default("local")
-  picture         String?
-  following       String[]
-  avatar          images?
-  createdAt       DateTime  @default(now())
-  refreshToken    String?
-  updatedAt       DateTime  @updatedAt
+model UserProfile {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @unique // This will store the ID from the auth-service's User model
+  name      String
+  email     String   @unique
+  bio       String?
+  picture   String?
+  following String[] @default([])
+  avatar    Image?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
