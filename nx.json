@@ -106,12 +106,7 @@
     }
   },
   "release": {
-    "projects": [
-      "api-gateway",
-      "auth-service",
-      "shared-exceptions",
-      "shared-middleware"
-    ],
+    "projects": ["api-gateway", "auth-service", "user-service"],
     "changelog": {
       "projectChangelogs": {
         "renderOptions": {

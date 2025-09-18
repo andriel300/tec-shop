@@ -1,30 +1,42 @@
 //// ------------------------------------------------------
-//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// THIS FILE WAS MANUALLY UPDATED TO REFLECT SCHEMA CHANGES
 //// ------------------------------------------------------
 
-Table images {
-  id String [pk]
-  file_id String [not null]
-  url String [not null]
-  userId String [unique]
-  users users
+//// ------------------------------------------------------
+//// auth-service
+//// ------------------------------------------------------
+
+Table User {
+  id              String [pk]
+  email           String [unique, not null]
+  password        String
+  isEmailVerified Boolean [not null, default: false]
+  googleId        String [unique]
+  provider        String [not null, default: 'local']
+  refreshToken    String
 }
 
-Table users {
-  id String [pk]
-  name String [not null]
-  email String [unique, not null]
-  password String
-  bio String
-  isEmailVerified Boolean [not null, default: false]
-  googleId String [unique]
-  provider String [not null, default: 'local']
-  picture String
+//// ------------------------------------------------------
+//// user-service
+//// ------------------------------------------------------
+
+Table Image {
+  id            String [pk]
+  file_id       String [not null]
+  url           String [not null]
+  userProfileId String [unique]
+}
+
+Table UserProfile {
+  id        String [pk]
+  userId    String [unique, not null]
+  name      String [not null]
+  email     String [unique, not null]
+  bio       String
+  picture   String
   following String[] [not null]
-  avatar images
   createdAt DateTime [default: `now()`, not null]
-  refreshToken String
   updatedAt DateTime [not null]
 }
 
-Ref: images.userId - users.id
+Ref: Image.userProfileId - UserProfile.id

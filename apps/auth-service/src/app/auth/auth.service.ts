@@ -1,6 +1,12 @@
-import { Injectable, UnauthorizedException, ConflictException, Inject, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  Inject,
+  OnModuleInit,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from '../../prisma/prisma.service';
+import { AuthPrismaService } from '../../prisma/prisma.service';
 import { SignupDto } from '../dto/signup.dto';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from '../dto/login.dto';
@@ -10,7 +16,7 @@ import { ClientProxy } from '@nestjs/microservices';
 export class AuthService implements OnModuleInit {
   constructor(
     private jwtService: JwtService,
-    private prisma: PrismaService,
+    private prisma: AuthPrismaService,
     @Inject('USER_SERVICE') private readonly userClient: ClientProxy
   ) {}
 
@@ -21,7 +27,7 @@ export class AuthService implements OnModuleInit {
   async signup(signupDto: SignupDto) {
     const { email, password, name } = signupDto;
 
-    const existingUser = await this.prisma.users.findUnique({
+    const existingUser = await this.prisma.user.findUnique({
       where: { email },
     });
 
@@ -31,7 +37,7 @@ export class AuthService implements OnModuleInit {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await this.prisma.users.create({
+    const user = await this.prisma.user.create({
       data: {
         email,
         password: hashedPassword,
@@ -49,7 +55,7 @@ export class AuthService implements OnModuleInit {
   }
 
   async login(credential: LoginDto) {
-    const user = await this.prisma.users.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { email: credential.email },
     });
 

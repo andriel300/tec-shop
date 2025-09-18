@@ -8,6 +8,11 @@ module.exports = {
       devtoolModuleFilenameTemplate: '[absolute-resource-path]',
     }),
   },
+  resolve: {
+    alias: {
+      '@tec-shop/user-prisma-client': join(__dirname, '../../node_modules/.prisma/user-client'),
+    },
+  },
   plugins: [
     new NxAppWebpackPlugin({
       target: 'node',
