@@ -1,27 +1,48 @@
 import {
-  Injectable,
-  UnauthorizedException,
   ConflictException,
   Inject,
+  Injectable,
   OnModuleInit,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { AuthPrismaService } from '../../prisma/prisma.service';
-import { SignupDto } from '../dto/signup.dto';
 import * as bcrypt from 'bcrypt';
-import { LoginDto } from '../dto/login.dto';
 import { ClientProxy } from '@nestjs/microservices';
+import { AuthPrismaService } from '../../prisma/prisma.service';
+import { LoginDto } from '../dto/login.dto';
+import { SignupDto } from '../dto/signup.dto';
+import { VerifyEmailDto } from '../dto/verify-email.dto';
+import { EmailService } from '../email/email.service';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
   constructor(
     private jwtService: JwtService,
     private prisma: AuthPrismaService,
-    @Inject('USER_SERVICE') private readonly userClient: ClientProxy
+    private redisService: RedisService,
+    private emailService: EmailService,
+    @Inject('USER_SERVICE') private readonly userClient: ClientProxy,
   ) {}
 
   async onModuleInit() {
-    await this.userClient.connect();
+    console.log('AuthService: Initializing module...');
+
+    // 1. Test User Service connection
+    try {
+      await this.userClient.connect();
+      console.log('AuthService: User Service client connected successfully.');
+    } catch (err) {
+      console.error('AuthService: FAILED to connect to User Service client.', err);
+    }
+
+    // 2. Test Redis connection
+    try {
+      await this.redisService.get('ping'); // Use a simple command to check connection
+      console.log('AuthService: Redis connected successfully.');
+    } catch (err) {
+      console.error('AuthService: FAILED to connect to Redis.', err);
+    }
   }
 
   async signup(signupDto: SignupDto) {
@@ -41,17 +62,26 @@ export class AuthService implements OnModuleInit {
       data: {
         email,
         password: hashedPassword,
+        isEmailVerified: false,
       },
     });
 
-    // Create the user profile in the user-service
-    this.userClient.emit('create-user-profile', {
-      userId: user.id,
-      email: user.email,
-      name,
-    });
+    // Generate and store OTP and name
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const redisPayload = JSON.stringify({ otp, name });
+    await this.redisService.set(
+      `verification-otp:${user.id}`,
+      redisPayload,
+      600,
+    );
 
-    return this.generateToken(user.id, user.email);
+    // Send verification email
+    await this.emailService.sendOtp(user.email, otp);
+
+    // We will not emit an event or return a token until the user is verified.
+    return {
+      message: 'Signup successful. Please check your email to verify your account.',
+    };
   }
 
   async login(credential: LoginDto) {
@@ -59,13 +89,15 @@ export class AuthService implements OnModuleInit {
       where: { email: credential.email },
     });
 
-    if (!user || !user.password) {
-      throw new UnauthorizedException('Credentials are not valid');
+    if (!user || !user.password || !user.isEmailVerified) {
+      throw new UnauthorizedException(
+        'Credentials are not valid or email not verified',
+      );
     }
 
     const isPasswordMatching = await bcrypt.compare(
       credential.password,
-      user.password
+      user.password,
     );
 
     if (!isPasswordMatching) {
@@ -73,6 +105,48 @@ export class AuthService implements OnModuleInit {
     }
 
     return this.generateToken(user.id, user.email);
+  }
+
+  async verifyEmail(verifyEmailDto: VerifyEmailDto) {
+    const { email, otp } = verifyEmailDto;
+
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const redisPayload = await this.redisService.get(
+      `verification-otp:${user.id}`,
+    );
+
+    if (!redisPayload) {
+      throw new UnauthorizedException('Invalid or expired OTP');
+    }
+
+    const { otp: storedOtp, name } = JSON.parse(redisPayload);
+
+    if (storedOtp !== otp) {
+      throw new UnauthorizedException('Invalid or expired OTP');
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { isEmailVerified: true },
+    });
+
+    await this.redisService.del(`verification-otp:${user.id}`);
+
+    // Create the user profile in the user-service now that email is verified
+    this.userClient.emit('create-user-profile', {
+      userId: user.id,
+      email: user.email,
+      name,
+    });
+
+    return { message: 'Email verified successfully.' };
   }
 
   async validateToken(token: string) {

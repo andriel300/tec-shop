@@ -3,6 +3,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { LoginDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Auth')
@@ -16,7 +17,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({
     status: 201,
-    description: 'User successfully registered and returns a JWT token.',
+    description: 'User registration initiated. Check email for OTP.',
   })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
   @ApiResponse({
@@ -26,6 +27,16 @@ export class AuthController {
   async signup(@Body() signupDto: SignupDto) {
     return await firstValueFrom(
       this.authService.send('auth-signup', signupDto)
+    );
+  }
+
+  @Post('verify-email')
+  @ApiOperation({ summary: 'Verify user email with OTP' })
+  @ApiResponse({ status: 201, description: 'Email successfully verified.' })
+  @ApiResponse({ status: 401, description: 'Invalid or expired OTP.' })
+  async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto) {
+    return await firstValueFrom(
+      this.authService.send('auth-verify-email', verifyEmailDto)
     );
   }
 

@@ -16,7 +16,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
           transport: Transport.TCP,
           options: {
             host: configService.get<string>('AUTH_SERVICE_HOST'),
-            port: configService.get<number>('AUTH_SERVICE_PORT'),
+            port: parseInt(
+              configService.get<string>('AUTH_SERVICE_PORT'),
+              10
+            ),
           },
         }),
         inject: [ConfigService],

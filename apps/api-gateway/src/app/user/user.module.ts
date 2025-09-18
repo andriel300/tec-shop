@@ -17,7 +17,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
           transport: Transport.TCP,
           options: {
             host: configService.get<string>('USER_SERVICE_HOST'),
-            port: configService.get<number>('USER_SERVICE_PORT'),
+            port: parseInt(
+              configService.get<string>('USER_SERVICE_PORT'),
+              10
+            ),
             // tlsOptions: {
             //   key: readFileSync('./certs/client.key'),
             //   cert: readFileSync('./certs/client.crt'),
