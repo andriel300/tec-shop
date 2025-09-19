@@ -4,7 +4,10 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { LoggerModule } from 'nestjs-pino';
-import { MailerModule } from '@nestjs-modules/mailer';
+import { APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
+import { LoggingInterceptor } from './interceptors/logging.interceptor';
+import { ErrorInterceptor } from './interceptors/error.interceptor';
+import { AllExceptionsFilter } from './filters/rpc-exception.filter';
 
 @Module({
   imports: [
@@ -38,6 +41,20 @@ import { MailerModule } from '@nestjs-modules/mailer';
     AuthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ErrorInterceptor,
+    },
+    {
+      provide: APP_FILTER, // Provide the global exception filter
+      useClass: AllExceptionsFilter,
+    },
+  ],
 })
 export class AppModule {}

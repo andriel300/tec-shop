@@ -14,8 +14,13 @@ export default {
   preset: '../../jest.preset.js',
   testEnvironment: 'node',
   transform: {
-    '^.+\\.[tj]s$': ['@swc/jest', swcJestConfig],
+    '^.+.[tj]s$': ['@swc/jest', swcJestConfig],
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
   coverageDirectory: 'test-output/jest/coverage',
+  moduleNameMapper: {
+    '^@tec-shop/auth-prisma-client$':
+      '../../node_modules/.prisma/auth-client/index.js',
+    '^@tec-shop/shared/dto$': '../../libs/shared/dto/src/index.ts',
+  },
 };

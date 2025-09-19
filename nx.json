@@ -29,7 +29,11 @@
           "watchDepsName": "watch-deps"
         }
       },
-      "exclude": ["libs/shared/exceptions/*", "libs/shared/middleware/*"]
+      "exclude": [
+        "libs/shared/exceptions/*",
+        "libs/shared/middleware/*",
+        "libs/shared/dto/*"
+      ]
     },
     {
       "plugin": "@nx/webpack/plugin",
@@ -70,7 +74,11 @@
     },
     {
       "plugin": "@nx/js/typescript",
-      "include": ["libs/shared/exceptions/*", "libs/shared/middleware/*"],
+      "include": [
+        "libs/shared/exceptions/*",
+        "libs/shared/middleware/*",
+        "libs/shared/dto/*"
+      ],
       "options": {
         "typecheck": {
           "targetName": "typecheck"
@@ -106,7 +114,12 @@
     }
   },
   "release": {
-    "projects": ["api-gateway", "auth-service", "user-service"],
+    "projects": [
+      "api-gateway",
+      "auth-service",
+      "user-service",
+      "@tec-shop/shared/dto"
+    ],
     "changelog": {
       "projectChangelogs": {
         "renderOptions": {
@@ -119,6 +132,7 @@
       "workspaceChangelog": false
     },
     "version": {
+      "preVersionCommand": "npx nx run-many -t build",
       "conventionalCommits": true
     }
   },

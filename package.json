@@ -109,6 +109,7 @@
     "jest-environment-jsdom": "^30.0.2",
     "jest-environment-node": "^30.0.2",
     "jest-util": "^30.0.2",
+    "jsonc-eslint-parser": "^2.1.0",
     "nock": "^14.0.10",
     "nx": "21.4.1",
     "postcss": "8.4.38",
@@ -121,12 +122,28 @@
     "tslib": "^2.3.0",
     "typescript": "~5.8.2",
     "typescript-eslint": "^8.29.0",
+    "verdaccio": "^6.0.5",
     "webpack-cli": "^5.1.4"
   },
   "workspaces": [
     "apps/*",
     "common",
     "libs/*",
-    "libs/shared/*"
-  ]
+    "libs/shared/*",
+    "shared",
+    "shared/*"
+  ],
+  "nx": {
+    "includedScripts": [],
+    "targets": {
+      "local-registry": {
+        "executor": "@nx/js:verdaccio",
+        "options": {
+          "port": 4873,
+          "config": ".verdaccio/config.yml",
+          "storage": "tmp/local-registry/storage"
+        }
+      }
+    }
+  }
 }

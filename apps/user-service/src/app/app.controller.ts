@@ -1,8 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { CreateUserProfileDto } from './dto/create-user-profile.dto';
+import { UpdateUserDto, CreateUserProfileDto } from '@tec-shop/shared/dto';
 
 @Controller()
 export class AppController {

@@ -1,0 +1,49 @@
+import { Catch, RpcExceptionFilter, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
+import { Observable, throwError } from 'rxjs';
+import { RpcException } from '@nestjs/microservices';
+
+@Catch(RpcException, HttpException) // Catch RpcException and all HttpExceptions
+export class AllExceptionsFilter implements RpcExceptionFilter<RpcException | HttpException> {
+  catch(exception: RpcException | HttpException, host: ArgumentsHost): Observable<any> {
+    let status: number;
+    let message: string | object;
+    let error: string;
+
+    if (exception instanceof RpcException) {
+      const errorResponse = exception.getError();
+      if (typeof errorResponse === 'object' && errorResponse !== null && 'status' in errorResponse && 'message' in errorResponse) {
+        // If the RpcException was created with a structured error object (e.g., from an HttpException)
+        status = (errorResponse as any).status;
+        message = (errorResponse as any).message;
+        error = (errorResponse as any).error || 'RpcException';
+      } else {
+        // If RpcException was created with a simple string message
+        status = HttpStatus.INTERNAL_SERVER_ERROR; // Default status for generic RpcException
+        message = errorResponse as string;
+        error = 'RpcException';
+      }
+    } else if (exception instanceof HttpException) {
+      // Handle NestJS HttpExceptions
+      status = exception.getStatus();
+      message = exception.getResponse();
+      error = exception.name;
+    } else {
+      // Handle any other unexpected errors
+      status = HttpStatus.INTERNAL_SERVER_ERROR;
+      message = 'Internal server error';
+      error = 'UnknownError';
+    }
+
+    // Log the error (you can use your pino logger here)
+    console.error(`[RpcExceptionFilter] Status: ${status}, Message: ${JSON.stringify(message)}, Error: ${error}`);
+
+    // Return a structured error object that the client can understand
+    // The client (e.g., API Gateway) will receive this object
+    return throwError(() => ({
+      status,
+      message,
+      error,
+      timestamp: new Date().toISOString(),
+    }));
+  }
+}
