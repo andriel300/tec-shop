@@ -9,9 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { ClientProxy } from '@nestjs/microservices';
 import { AuthPrismaService } from '../../prisma/prisma.service';
-import { LoginDto } from '../dto/login.dto';
-import { SignupDto } from '../dto/signup.dto';
-import { VerifyEmailDto } from '../dto/verify-email.dto';
+import { LoginDto, SignupDto, VerifyEmailDto } from '@tec-shop/shared/dto';
 import { EmailService } from '../email/email.service';
 import { RedisService } from '../redis/redis.service';
 

@@ -23,6 +23,9 @@
     },
     {
       "path": "./apps/user-service"
+    },
+    {
+      "path": "./libs/shared/dto"
     }
   ]
 }

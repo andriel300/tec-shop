@@ -1,4 +1,5 @@
 const { NxAppWebpackPlugin } = require('@nx/webpack/app-plugin');
+const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 const { join } = require('path');
 
 module.exports = {
@@ -9,9 +10,11 @@ module.exports = {
     }),
   },
   resolve: {
-    alias: {
-      '@tec-shop/auth-prisma-client': join(__dirname, '../../node_modules/.prisma/auth-client'),
-    },
+    plugins: [
+      new TsconfigPathsPlugin({
+        configFile: join(__dirname, '../../tsconfig.base.json'),
+      }),
+    ],
   },
   plugins: [
     new NxAppWebpackPlugin({
