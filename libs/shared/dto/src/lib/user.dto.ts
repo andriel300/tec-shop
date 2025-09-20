@@ -1,12 +1,9 @@
-import { IsString, IsEmail, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsEmail, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
 
 export class CreateUserProfileDto {
   @IsString()
   @IsNotEmpty()
   userId!: string;
-
-  @IsEmail()
-  email!: string;
 
   @IsString()
   @IsNotEmpty()
@@ -25,4 +22,34 @@ export class UpdateUserDto {
   @IsString()
   @IsOptional()
   picture?: string;
+}
+
+export enum ImageType {
+  AVATAR = 'AVATAR',
+  COVER = 'COVER',
+  GALLERY = 'GALLERY',
+}
+
+export class CreateImageDto {
+  @IsString()
+  @IsNotEmpty()
+  file_id!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  url!: string;
+
+  @IsEnum(ImageType)
+  @IsOptional()
+  imageType?: ImageType;
+
+  @IsString()
+  @IsNotEmpty()
+  userProfileId!: string;
+}
+
+export class FollowUserDto {
+  @IsString()
+  @IsNotEmpty()
+  followingId!: string;
 }

@@ -10,11 +10,9 @@ describe('AppService', () => {
   const mockUserProfile = {
     id: 'profile1',
     userId: 'user1',
-    email: 'test@example.com',
     name: 'Test User',
     bio: null,
     picture: null,
-    following: [],
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -74,7 +72,6 @@ describe('AppService', () => {
     it('should create and return a new user profile', async () => {
       const createData: CreateUserProfileDto = {
         userId: 'user1',
-        email: 'test@example.com',
         name: 'Test User',
       };
       jest.spyOn(prisma.userProfile, 'create').mockResolvedValue(mockUserProfile);
