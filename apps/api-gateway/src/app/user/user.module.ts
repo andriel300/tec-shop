@@ -16,7 +16,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         imports: [ConfigModule],
         useFactory: (configService: ConfigService) => {
           // Load mTLS certificates for client authentication
-          const certsPath = join(__dirname, '../../../../certs');
+          const certsPath = join(process.cwd(), 'certs');
           const tlsOptions = {
             key: readFileSync(join(certsPath, 'api-gateway/api-gateway-key.pem')),
             cert: readFileSync(join(certsPath, 'api-gateway/api-gateway-cert.pem')),

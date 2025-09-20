@@ -8,7 +8,7 @@ import { Logger as PinoLogger } from 'nestjs-pino';
 
 async function bootstrap() {
   // Load mTLS certificates
-  const certsPath = join(__dirname, '../../../../certs');
+  const certsPath = join(process.cwd(), 'certs');
   const tlsOptions = {
     key: readFileSync(join(certsPath, 'user-service/user-service-key.pem')),
     cert: readFileSync(join(certsPath, 'user-service/user-service-cert.pem')),

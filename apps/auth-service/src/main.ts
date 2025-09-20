@@ -8,7 +8,7 @@ import { join } from 'path';
 
 async function bootstrap() {
   // Load mTLS certificates
-  const certsPath = join(__dirname, '../../../../certs');
+  const certsPath = join(process.cwd(), 'certs');
   const tlsOptions = {
     key: readFileSync(join(certsPath, 'auth-service/auth-service-key.pem')),
     cert: readFileSync(join(certsPath, 'auth-service/auth-service-cert.pem')),
