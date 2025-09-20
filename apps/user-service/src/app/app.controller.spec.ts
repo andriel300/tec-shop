@@ -50,7 +50,6 @@ describe('AppController', () => {
     it('should call AppService.createUserProfile with the correct data', async () => {
       const data: CreateUserProfileDto = {
         userId: 'user1',
-        email: 'test@example.com',
         name: 'Test User',
       };
       await controller.createUserProfile(data);

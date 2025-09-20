@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { randomInt } from 'crypto';
 import { ClientProxy } from '@nestjs/microservices';
 import { AuthPrismaService } from '../../prisma/prisma.service';
 import { LoginDto, SignupDto, VerifyEmailDto } from '@tec-shop/dto';
@@ -67,8 +68,8 @@ export class AuthService implements OnModuleInit {
       },
     });
 
-    // Generate and store OTP and name
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate and store OTP and name using cryptographically secure random
+    const otp = randomInt(100000, 1000000).toString().padStart(6, '0');
     const redisPayload = JSON.stringify({ otp, name });
     await this.redisService.set(
       `verification-otp:${user.id}`,
@@ -91,10 +92,11 @@ export class AuthService implements OnModuleInit {
       where: { email: credential.email },
     });
 
+    // Generic error message to prevent email enumeration
+    const genericError = 'Invalid credentials';
+
     if (!user || !user.password || !user.isEmailVerified) {
-      throw new UnauthorizedException(
-        'Credentials are not valid or email not verified'
-      );
+      throw new UnauthorizedException(genericError);
     }
 
     const isPasswordMatching = await bcrypt.compare(
@@ -103,7 +105,7 @@ export class AuthService implements OnModuleInit {
     );
 
     if (!isPasswordMatching) {
-      throw new UnauthorizedException('Credentials are not valid');
+      throw new UnauthorizedException(genericError);
     }
 
     return this.generateToken(user.id, user.email);
@@ -117,7 +119,18 @@ export class AuthService implements OnModuleInit {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Invalid verification details');
+    }
+
+    // Check OTP attempt limiting
+    const attemptKey = `otp-attempts:${user.id}`;
+    const attemptsStr = await this.redisService.get(attemptKey);
+    const attempts = attemptsStr ? parseInt(attemptsStr) : 0;
+
+    if (attempts >= 3) {
+      // Clean up OTP after max attempts
+      await this.redisService.del(`verification-otp:${user.id}`);
+      throw new UnauthorizedException('Too many failed attempts. Please request a new OTP.');
     }
 
     const redisPayload = await this.redisService.get(
@@ -125,13 +138,15 @@ export class AuthService implements OnModuleInit {
     );
 
     if (!redisPayload) {
-      throw new UnauthorizedException('Invalid or expired OTP');
+      throw new UnauthorizedException('Invalid verification details');
     }
 
     const { otp: storedOtp, name } = JSON.parse(redisPayload);
 
     if (storedOtp !== otp) {
-      throw new UnauthorizedException('Invalid or expired OTP');
+      // Increment failed attempts
+      await this.redisService.set(attemptKey, (attempts + 1).toString(), 600);
+      throw new UnauthorizedException('Invalid verification details');
     }
 
     await this.prisma.user.update({
@@ -140,6 +155,7 @@ export class AuthService implements OnModuleInit {
     });
 
     await this.redisService.del(`verification-otp:${user.id}`);
+    await this.redisService.del(`otp-attempts:${user.id}`);
 
     // Create the user profile in the user-service now that email is verified
     this.userClient.emit('create-user-profile', {
