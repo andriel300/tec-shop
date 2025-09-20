@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { loginUser } from '../../lib/api/auth';
+import { useAuth } from '../../hooks/use-auth';
 import { Button } from '../ui/core/Button';
 import { Input } from '../ui/core/Input';
 import { Eye, EyeOff } from 'lucide-react';
@@ -14,11 +15,20 @@ import { Eye, EyeOff } from 'lucide-react';
 export function LoginForm() {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
 
   const { mutate, isPending, error, reset } = useMutation({
     mutationFn: loginUser,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Mock user data - in real app, you'd get this from JWT or separate call
+      const mockUser = {
+        id: 'user-id',
+        email: form.getFieldValue('email'),
+        isEmailVerified: true
+      };
+
+      login(data.access_token, mockUser);
       queryClient.invalidateQueries({ queryKey: ['user'] });
       toast.success('Login successful!');
       router.push('/'); // Redirect to dashboard or home

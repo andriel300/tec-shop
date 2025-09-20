@@ -4,7 +4,8 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { resetPassword } from '../../../lib/api/auth'; // Assuming this function exists
+import { resetPassword } from '../../../lib/api/auth';
+import { ProtectedRoute } from '../../../components/auth/protected-route';
 import { Button } from '../../../components/ui/core/Button';
 import { Input } from '../../../components/ui/core/Input';
 import { Eye, EyeOff } from 'lucide-react';
@@ -39,7 +40,6 @@ function ResetPasswordContent() {
 
   const form = useForm({
     defaultValues: {
-      email: '',
       newPassword: '',
       confirmPassword: '',
     },
@@ -48,19 +48,20 @@ function ResetPasswordContent() {
         toast.error('Password reset token is missing.');
         return;
       }
-      mutate({ ...value, token });
+      mutate({ token, newPassword: value.newPassword });
     },
   });
 
   return (
-    <main className="flex items-center justify-center min-h-[calc(100vh-200px)] bg-ui-muted/50 py-12 px-4">
+    <ProtectedRoute requireAuth={false}>
+      <main className="flex items-center justify-center min-h-[calc(100vh-200px)] bg-ui-muted/50 py-12 px-4">
       <div className="w-full max-w-md p-8 space-y-6 bg-ui-muted rounded-lg shadow-elev-lg border border-ui-divider">
         <div>
           <h1 className="text-2xl font-bold text-center font-heading text-text-primary">
             Reset your password
           </h1>
           <p className="mt-2 text-sm text-center text-text-secondary">
-            Enter your email and new password.
+            Enter your new password below.
           </p>
         </div>
 
@@ -72,38 +73,6 @@ function ResetPasswordContent() {
           }}
           className="space-y-4"
         >
-          <form.Field
-            name="email"
-            validators={{
-              onChange: ({ value }) =>
-                !value ? 'An email is required' : undefined,
-            }}
-          >
-            {(field) => (
-              <div>
-                <label
-                  htmlFor={field.name}
-                  className="block py-2 text-sm font-medium text-text-secondary"
-                >
-                  Email Address
-                </label>
-                <Input
-                  id={field.name}
-                  name={field.name}
-                  type="email"
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="Enter your Email"
-                />
-                {field.state.meta.errors.length > 0 ? (
-                  <em className="text-sm text-feedback-error">
-                    {field.state.meta.errors[0]}
-                  </em>
-                ) : null}
-              </div>
-            )}
-          </form.Field>
 
           <form.Field
             name="newPassword"
@@ -264,7 +233,8 @@ function ResetPasswordContent() {
           </Link>
         </p>
       </div>
-    </main>
+      </main>
+    </ProtectedRoute>
   );
 }
 

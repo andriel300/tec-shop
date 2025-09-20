@@ -7,10 +7,10 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { randomInt } from 'crypto';
+import { randomInt, randomBytes, createHash } from 'crypto';
 import { ClientProxy } from '@nestjs/microservices';
 import { AuthPrismaService } from '../../prisma/prisma.service';
-import { LoginDto, SignupDto, VerifyEmailDto } from '@tec-shop/dto';
+import { LoginDto, SignupDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto } from '@tec-shop/dto';
 import { EmailService } from '../email/email.service';
 import { RedisService } from '../redis/redis.service';
 
@@ -174,6 +174,93 @@ export class AuthService implements OnModuleInit {
     } catch {
       return { valid: false, userId: null, role: null };
     }
+  }
+
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
+    const { email } = forgotPasswordDto;
+
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    // Always return success to prevent email enumeration
+    const successMessage = 'If an account with this email exists, you will receive a password reset link.';
+
+    if (!user || !user.isEmailVerified) {
+      return { message: successMessage };
+    }
+
+    // Generate cryptographically secure reset token
+    const resetToken = randomBytes(32).toString('hex');
+
+    // Store SHA-256 hash of the token (not the token itself)
+    const tokenHash = createHash('sha256').update(resetToken).digest('hex');
+
+    // Store in Redis with 15-minute expiry
+    await this.redisService.set(
+      `password-reset:${tokenHash}`,
+      user.id,
+      900 // 15 minutes
+    );
+
+    // Send reset email with the original token (not the hash)
+    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+    await this.emailService.sendPasswordResetLink(user.email, resetLink);
+
+    return { message: successMessage };
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    const { token, newPassword } = resetPasswordDto;
+
+    // Hash the provided token to look up in Redis
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+
+    // Check if token exists and get user ID
+    const userId = await this.redisService.get(`password-reset:${tokenHash}`);
+
+    if (!userId) {
+      throw new UnauthorizedException('Invalid or expired reset token');
+    }
+
+    // Check reset attempt limiting
+    const attemptKey = `reset-attempts:${tokenHash}`;
+    const attemptsStr = await this.redisService.get(attemptKey);
+    const attempts = attemptsStr ? parseInt(attemptsStr) : 0;
+
+    if (attempts >= 5) {
+      // Clean up token after max attempts
+      await this.redisService.del(`password-reset:${tokenHash}`);
+      throw new UnauthorizedException('Too many failed attempts. Please request a new reset link.');
+    }
+
+    // Get user to verify they still exist
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      await this.redisService.del(`password-reset:${tokenHash}`);
+      throw new UnauthorizedException('Invalid or expired reset token');
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update the user's password
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    // Clean up reset token and attempts
+    await this.redisService.del(`password-reset:${tokenHash}`);
+    await this.redisService.del(`reset-attempts:${tokenHash}`);
+
+    // Send confirmation email
+    await this.emailService.sendPasswordChangedNotification(user.email);
+
+    return { message: 'Password has been reset successfully.' };
   }
 
   private generateToken(userId: string, email: string) {

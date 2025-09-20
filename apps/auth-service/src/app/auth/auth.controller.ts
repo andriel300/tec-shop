@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { Throttle } from '@nestjs/throttler';
-import { LoginDto, SignupDto, VerifyEmailDto } from '@tec-shop/dto';
+import { LoginDto, SignupDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto } from '@tec-shop/dto';
 import { AuthService } from './auth.service';
 
 @Controller()
@@ -29,5 +29,17 @@ export class AuthController {
   @MessagePattern('validate-token')
   async validateToken(@Payload() token: string) {
     return this.authService.validateToken(token);
+  }
+
+  @MessagePattern('auth-forgot-password')
+  @Throttle({ medium: { limit: 3, ttl: 900000 } }) // 3 requests per 15 minutes
+  async forgotPassword(@Payload() forgotPasswordDto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(forgotPasswordDto);
+  }
+
+  @MessagePattern('auth-reset-password')
+  @Throttle({ medium: { limit: 5, ttl: 900000 } }) // 5 attempts per 15 minutes
+  async resetPassword(@Payload() resetPasswordDto: ResetPasswordDto) {
+    return this.authService.resetPassword(resetPasswordDto);
   }
 }
