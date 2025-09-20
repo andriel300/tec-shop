@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { readFileSync } from 'fs';
 
 // Reading the SWC compilation config for the spec files
@@ -20,7 +19,7 @@ export default {
   coverageDirectory: 'test-output/jest/coverage',
   moduleNameMapper: {
     '^@tec-shop/auth-prisma-client$':
-      '../../node_modules/.prisma/auth-client/index.js',
-    '^@tec-shop/shared/dto$': '../../libs/shared/dto/src/index.ts',
+      '<rootDir>/../../node_modules/.prisma/auth-client/index.js',
+    '^@tec-shop/dto$': '<rootDir>/../../libs/shared/dto/src/index.ts',
   },
 };

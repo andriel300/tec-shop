@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { LoginDto, SignupDto, VerifyEmailDto } from '@tec-shop/shared/dto';
+import { LoginDto, SignupDto, VerifyEmailDto } from '@tec-shop/dto';
 import { AuthService } from './auth.service';
 
 @Controller()

@@ -12,5 +12,8 @@ describe('AppController', () => {
     }).compile();
   });
 
-
+  it('should be defined', () => {
+    const controller = app.get<AppController>(AppController);
+    expect(controller).toBeDefined();
+  });
 });

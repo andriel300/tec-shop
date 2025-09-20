@@ -8,10 +8,14 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger as PinoLogger } from 'nestjs-pino';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(PinoLogger));
+
+  app.enableCors({ origin: 'http://localhost:3000' });
+  app.use(helmet());
 
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);

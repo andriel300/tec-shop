@@ -39,6 +39,7 @@
     "ejs": "^3.1.10",
     "express-session": "^1.18.2",
     "framer-motion": "^12.23.12",
+    "helmet": "^8.1.0",
     "http-proxy-middleware": "^3.0.5",
     "jwks-rsa": "^3.2.0",
     "lucide-react": "^0.542.0",

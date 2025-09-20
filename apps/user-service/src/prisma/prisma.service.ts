@@ -12,7 +12,7 @@ export class UserPrismaService
 
   async onModuleInit() {
     await this.$connect();
-    console.log('User service connected to database');
+    console.log('User service connected to prisma database');
   }
 
   async onModuleDestroy() {

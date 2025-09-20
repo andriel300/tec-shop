@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { ClientProxy } from '@nestjs/microservices';
-import { UpdateUserDto } from '@tec-shop/shared/dto';
+import { UpdateUserDto } from '@tec-shop/dto';
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
 import {
   ApiBearerAuth,
