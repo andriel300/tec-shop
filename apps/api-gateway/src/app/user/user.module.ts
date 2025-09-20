@@ -3,7 +3,8 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { UserController } from './user.controller';
 import { AuthModule } from '../auth/auth.module';
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
-// import { readFileSync } from 'fs';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
@@ -13,23 +14,28 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       {
         name: 'USER_SERVICE',
         imports: [ConfigModule],
-        useFactory: (configService: ConfigService) => ({
-          transport: Transport.TCP,
-          options: {
-            host: configService.get<string>('USER_SERVICE_HOST'),
-            port: parseInt(
-              configService.get<string>('USER_SERVICE_PORT'),
-              10
-            ),
-            // tlsOptions: {
-            //   key: readFileSync('./certs/client.key'),
-            //   cert: readFileSync('./certs/client.crt'),
-            //   ca: readFileSync('./certs/ca.crt'),
-            //   rejectUnauthorized: true,
-            //   requestCert: true,
-            // },
-          },
-        }),
+        useFactory: (configService: ConfigService) => {
+          // Load mTLS certificates for client authentication
+          const certsPath = join(__dirname, '../../../../certs');
+          const tlsOptions = {
+            key: readFileSync(join(certsPath, 'api-gateway/api-gateway-key.pem')),
+            cert: readFileSync(join(certsPath, 'api-gateway/api-gateway-cert.pem')),
+            ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
+            checkServerIdentity: () => undefined, // Allow self-signed certificates
+          };
+
+          return {
+            transport: Transport.TCP,
+            options: {
+              host: configService.get<string>('USER_SERVICE_HOST'),
+              port: parseInt(
+                configService.get<string>('USER_SERVICE_PORT'),
+                10
+              ),
+              tlsOptions,
+            },
+          };
+        },
         inject: [ConfigService],
       },
     ]),

@@ -4,6 +4,8 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from '../../strategies/jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -12,16 +14,28 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       {
         name: 'AUTH_SERVICE',
         imports: [ConfigModule],
-        useFactory: (configService: ConfigService) => ({
-          transport: Transport.TCP,
-          options: {
-            host: configService.get<string>('AUTH_SERVICE_HOST'),
-            port: parseInt(
-              configService.get<string>('AUTH_SERVICE_PORT'),
-              10
-            ),
-          },
-        }),
+        useFactory: (configService: ConfigService) => {
+          // Load mTLS certificates for client authentication
+          const certsPath = join(__dirname, '../../../../certs');
+          const tlsOptions = {
+            key: readFileSync(join(certsPath, 'api-gateway/api-gateway-key.pem')),
+            cert: readFileSync(join(certsPath, 'api-gateway/api-gateway-cert.pem')),
+            ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
+            checkServerIdentity: () => undefined, // Allow self-signed certificates
+          };
+
+          return {
+            transport: Transport.TCP,
+            options: {
+              host: configService.get<string>('AUTH_SERVICE_HOST'),
+              port: parseInt(
+                configService.get<string>('AUTH_SERVICE_PORT'),
+                10
+              ),
+              tlsOptions,
+            },
+          };
+        },
         inject: [ConfigService],
       },
     ]),

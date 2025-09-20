@@ -9,6 +9,8 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { RedisModule } from '../redis/redis.module';
 import { EmailModule } from '../email/email.module';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -40,13 +42,25 @@ import { EmailModule } from '../email/email.module';
       {
         name: 'USER_SERVICE',
         imports: [ConfigModule],
-        useFactory: (configService: ConfigService) => ({
-          transport: Transport.TCP,
-          options: {
-            host: configService.get<string>('USER_SERVICE_HOST'),
-            port: configService.get<number>('USER_SERVICE_PORT'),
-          },
-        }),
+        useFactory: (configService: ConfigService) => {
+          // Load mTLS certificates for client authentication
+          const certsPath = join(__dirname, '../../../../certs');
+          const tlsOptions = {
+            key: readFileSync(join(certsPath, 'auth-service/auth-service-key.pem')),
+            cert: readFileSync(join(certsPath, 'auth-service/auth-service-cert.pem')),
+            ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
+            checkServerIdentity: () => undefined, // Allow self-signed certificates
+          };
+
+          return {
+            transport: Transport.TCP,
+            options: {
+              host: configService.get<string>('USER_SERVICE_HOST'),
+              port: configService.get<number>('USER_SERVICE_PORT'),
+              tlsOptions,
+            },
+          };
+        },
         inject: [ConfigService],
       },
     ]),
