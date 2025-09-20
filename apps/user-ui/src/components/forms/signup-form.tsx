@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { signupUser, API_BASE_URL } from '../../lib/api/auth';
+import { signupUser } from '../../lib/api/auth';
 import { Button } from '../ui/core/Button';
 import { Input } from '../ui/core/Input';
 import { Checkbox } from '../ui/core/Checkbox';
@@ -25,7 +25,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
       toast.success('OTP sent to your email!');
       onSuccess(variables.email, variables.name, variables.password || '');
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(error.message);
     },
   });
@@ -39,11 +39,6 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
       termsAccepted: false,
     },
     onSubmit: async ({ value }) => {
-      console.log(
-        'NEXT_PUBLIC_BACKEND_URL:',
-        process.env.NEXT_PUBLIC_BACKEND_URL
-      );
-      console.log('API_BASE_URL (from auth.ts):', API_BASE_URL);
       mutate(value);
     },
   });
