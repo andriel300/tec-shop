@@ -20,10 +20,10 @@
     "customConditions": ["development"],
     "paths": {
       "@tec-shop/api-gateway/*": ["apps/api-gateway/src/*"],
-      "@tec-shop/auth-prisma-client": ["node_modules/.prisma/auth-client/*"],
+      "@tec-shop/auth-prisma-client": ["node_modules/.prisma/auth-client"],
       "@tec-shop/auth-service/*": ["apps/auth-service/src/*"],
-      "@tec-shop/shared/dto": ["libs/shared/dto/src/*"],
-      "@tec-shop/user-prisma-client": ["node_modules/.prisma/user-client/*"],
+      "@tec-shop/dto": ["libs/shared/dto/src/*"],
+      "@tec-shop/user-prisma-client": ["node_modules/.prisma/user-client"],
       "@tec-shop/user-service/*": ["apps/user-service/src/*"],
       "@tec-shop/user-ui/*": ["apps/user-ui/src/*"]
     }

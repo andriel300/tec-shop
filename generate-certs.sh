@@ -69,8 +69,9 @@ generate_service_cert() {
   # Create extensions file
   local ext_file="$service_dir/${service}-extensions.cnf"
   cat >"$ext_file" <<EOF
-authorityKeyIdentifier=keyid,issuer
-basicConstraints=CA:FALSE
+[v3_req]
+authorityKeyIdentifier = keyid,issuer
+basicConstraints = CA:FALSE
 keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
 subjectAltName = @alt_names
 

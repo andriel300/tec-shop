@@ -10,7 +10,11 @@ import Redis from 'ioredis';
     {
       provide: 'REDIS_CLIENT',
       useFactory: (configService: ConfigService) => {
-        return new Redis(configService.get<string>('REDIS_URL'));
+        const redisUrl = configService.get<string>('REDIS_URL');
+        if (!redisUrl) {
+          throw new Error('REDIS_URL environment variable not set');
+        }
+        return new Redis(redisUrl);
       },
       inject: [ConfigService],
     },

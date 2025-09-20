@@ -4,10 +4,10 @@ import { tap } from 'rxjs/operators';
 import { Logger } from 'nestjs-pino'; // Assuming nestjs-pino for integration
 
 @Injectable()
-export class LoggingInterceptor implements NestInterceptor {
+export class LoggingInterceptor implements NestInterceptor<unknown, unknown> {
   constructor(private readonly logger: Logger) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const now = Date.now();
     const type = context.getType(); // 'rpc' for microservices
 

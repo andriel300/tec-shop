@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { LoginDto, SignupDto, VerifyEmailDto } from '@tec-shop/shared/dto';
+import { LoginDto, SignupDto, VerifyEmailDto } from '@tec-shop/dto';
 
 describe('AuthController', () => {
   let authController: AuthController;
@@ -36,8 +36,7 @@ describe('AuthController', () => {
       const signupDto: SignupDto = {
         email: 'test@example.com',
         password: 'password123',
-        firstName: 'John',
-        lastName: 'Doe',
+        name: 'John Doe',
       };
       const expectedResult = { message: 'User registered successfully' };
       jest.spyOn(authService, 'signup').mockResolvedValue(expectedResult);
@@ -50,7 +49,10 @@ describe('AuthController', () => {
 
   describe('verifyEmail', () => {
     it('should call authService.verifyEmail with the provided data', async () => {
-      const verifyEmailDto: VerifyEmailDto = { token: 'some-token' };
+      const verifyEmailDto: VerifyEmailDto = {
+        email: 'test@example.com',
+        otp: '123456',
+      };
       const expectedResult = { message: 'Email verified successfully' };
       jest.spyOn(authService, 'verifyEmail').mockResolvedValue(expectedResult);
 
@@ -66,7 +68,7 @@ describe('AuthController', () => {
         email: 'test@example.com',
         password: 'password123',
       };
-      const expectedResult = { accessToken: 'mockAccessToken' };
+      const expectedResult = { access_token: 'mockAccessToken' };
       jest.spyOn(authService, 'login').mockResolvedValue(expectedResult);
 
       const result = await authController.login(loginDto);
@@ -78,8 +80,10 @@ describe('AuthController', () => {
   describe('validateToken', () => {
     it('should call authService.validateToken with the provided token', async () => {
       const token = 'some-jwt-token';
-      const expectedResult = { userId: '123', email: 'test@example.com' };
-      jest.spyOn(authService, 'validateToken').mockResolvedValue(expectedResult);
+      const expectedResult = { valid: true, userId: '123', role: 'user' };
+      jest
+        .spyOn(authService, 'validateToken')
+        .mockResolvedValue(expectedResult);
 
       const result = await authController.validateToken(token);
       expect(authService.validateToken).toHaveBeenCalledWith(token);

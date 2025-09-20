@@ -9,7 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { ClientProxy } from '@nestjs/microservices';
 import { AuthPrismaService } from '../../prisma/prisma.service';
-import { LoginDto, SignupDto, VerifyEmailDto } from '@tec-shop/shared/dto';
+import { LoginDto, SignupDto, VerifyEmailDto } from '@tec-shop/dto';
 import { EmailService } from '../email/email.service';
 import { RedisService } from '../redis/redis.service';
 
@@ -20,7 +20,7 @@ export class AuthService implements OnModuleInit {
     private prisma: AuthPrismaService,
     private redisService: RedisService,
     private emailService: EmailService,
-    @Inject('USER_SERVICE') private readonly userClient: ClientProxy,
+    @Inject('USER_SERVICE') private readonly userClient: ClientProxy
   ) {}
 
   async onModuleInit() {
@@ -31,7 +31,10 @@ export class AuthService implements OnModuleInit {
       await this.userClient.connect();
       console.log('AuthService: User Service client connected successfully.');
     } catch (err) {
-      console.error('AuthService: FAILED to connect to User Service client.', err);
+      console.error(
+        'AuthService: FAILED to connect to User Service client.',
+        err
+      );
     }
 
     // 2. Test Redis connection
@@ -70,7 +73,7 @@ export class AuthService implements OnModuleInit {
     await this.redisService.set(
       `verification-otp:${user.id}`,
       redisPayload,
-      600,
+      600
     );
 
     // Send verification email
@@ -78,7 +81,8 @@ export class AuthService implements OnModuleInit {
 
     // We will not emit an event or return a token until the user is verified.
     return {
-      message: 'Signup successful. Please check your email to verify your account.',
+      message:
+        'Signup successful. Please check your email to verify your account.',
     };
   }
 
@@ -89,13 +93,13 @@ export class AuthService implements OnModuleInit {
 
     if (!user || !user.password || !user.isEmailVerified) {
       throw new UnauthorizedException(
-        'Credentials are not valid or email not verified',
+        'Credentials are not valid or email not verified'
       );
     }
 
     const isPasswordMatching = await bcrypt.compare(
       credential.password,
-      user.password,
+      user.password
     );
 
     if (!isPasswordMatching) {
@@ -117,7 +121,7 @@ export class AuthService implements OnModuleInit {
     }
 
     const redisPayload = await this.redisService.get(
-      `verification-otp:${user.id}`,
+      `verification-otp:${user.id}`
     );
 
     if (!redisPayload) {
@@ -151,7 +155,7 @@ export class AuthService implements OnModuleInit {
     try {
       const decoded = this.jwtService.verify(token);
       return { valid: true, userId: decoded.sub, role: decoded.role };
-    } catch (err) {
+    } catch {
       return { valid: false, userId: null, role: null };
     }
   }
