@@ -1,12 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { verifyEmail } from '../../lib/api/auth';
 import { Button } from '../ui/core/Button';
-import { Input } from '../ui/core/Input';
 
 interface VerifyOtpFormProps {
   email: string;
@@ -14,6 +13,8 @@ interface VerifyOtpFormProps {
 }
 
 export function VerifyOtpForm({ email, onSuccess }: VerifyOtpFormProps) {
+  const inputRefs = useRef<HTMLInputElement[]>([]);
+
   const { mutate, isPending, error } = useMutation({
     mutationFn: verifyEmail,
     onSuccess: () => {
@@ -27,12 +28,51 @@ export function VerifyOtpForm({ email, onSuccess }: VerifyOtpFormProps) {
 
   const form = useForm({
     defaultValues: {
-      otp: '',
+      otp: Array(6).fill(''), // store as array of digits
     },
     onSubmit: async ({ value }) => {
-      mutate({ email, otp: value.otp });
+      const otp = value.otp.join('');
+      mutate({ email, otp });
     },
   });
+
+  // --- Handlers ---
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    i: number
+  ) => {
+    const val = e.target.value.replace(/\D/, ''); // only digits
+    form.setFieldValue('otp', (prev) => {
+      const newOtp = [...prev];
+      newOtp[i] = val;
+      return newOtp;
+    });
+
+    if (val && i < 5) {
+      inputRefs.current[i + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    i: number
+  ) => {
+    if (e.key === 'Backspace' && !form.state.values.otp[i] && i > 0) {
+      inputRefs.current[i - 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const pasteData = e.clipboardData
+      .getData('Text')
+      .slice(0, 6)
+      .replace(/\D/g, '');
+    if (pasteData.length === 6) {
+      form.setFieldValue('otp', pasteData.split(''));
+      inputRefs.current[5]?.focus();
+    }
+  };
 
   return (
     <form
@@ -41,38 +81,44 @@ export function VerifyOtpForm({ email, onSuccess }: VerifyOtpFormProps) {
         e.stopPropagation();
         form.handleSubmit();
       }}
-      className="space-y-4"
+      className="space-y-6"
     >
       <form.Field
         name="otp"
         validators={{
           onChange: ({ value }) => {
-            if (!value) return 'OTP is required';
-            if (value.length !== 6) return 'OTP must be 6 digits';
-            if (!/^\d{6}$/.test(value)) return 'OTP must contain only numbers';
+            const code = value.join('');
+            if (code.length !== 6) return 'OTP must be 6 digits';
+            if (!/^\d{6}$/.test(code)) return 'OTP must contain only numbers';
             return undefined;
           },
         }}
       >
         {(field) => (
           <div>
-            <label
-              htmlFor={field.name}
-              className="block py-2 text-sm font-medium text-text-secondary"
-            >
+            <label className="block py-2 text-sm font-medium text-text-secondary">
               Verification Code
             </label>
-            <Input
-              id={field.name}
-              name={field.name}
-              type="text"
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChange={(e) => field.handleChange(e.target.value)}
-              placeholder="Enter 6-digit code"
-              maxLength={6}
-              autoFocus
-            />
+            <div className="flex justify-center gap-2" onPaste={handlePaste}>
+              {Array(6)
+                .fill(null)
+                .map((_, i) => (
+                  <input
+                    key={i}
+                    ref={(el) => {
+                      if (el) inputRefs.current[i] = el;
+                    }}
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={field.state.value[i] || ''}
+                    onChange={(e) => handleInputChange(e, i)}
+                    onKeyDown={(e) => handleKeyDown(e, i)}
+                    onFocus={(e) => e.target.select()}
+                    className="w-12 h-12 text-center border rounded-md border-ui-divider focus:ring-brand-primary focus:border-brand-primary"
+                  />
+                ))}
+            </div>
             {field.state.meta.errors.length > 0 ? (
               <em className="text-sm text-feedback-error">
                 {field.state.meta.errors[0]}
