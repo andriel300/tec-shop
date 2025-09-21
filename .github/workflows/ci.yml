@@ -23,7 +23,8 @@ jobs:
       # Run this command as early as possible, before dependencies are installed
       # Learn more at https://nx.dev/ci/reference/nx-cloud-cli#npx-nxcloud-startcirun
       # Connect your workspace by running "nx connect" and uncomment this line to enable task distribution
-      - run: npx nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="build"
+      # Temporarily disabled distributed execution to avoid hanging issues with Prisma dependencies
+      # - run: npx nx start-ci-run --distribute-on="1 linux-medium-js" --stop-agents-after="build"
 
       # Cache node_modules
       - uses: actions/setup-node@v4
@@ -34,9 +35,14 @@ jobs:
       - run: npm ci --legacy-peer-deps
       - uses: nrwl/nx-set-shas@v4.3.3
 
+      # Generate Prisma clients before distributed execution to avoid dependency issues
+      - name: Generate Prisma Clients
+        run: |
+          npx nx run @tec-shop/auth-service:prisma-generate
+          npx nx run @tec-shop/user-service:prisma-generate
+
       # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
       # - run: npx nx-cloud record -- echo Hello World
-      # Prisma generation now handled automatically via Nx dependencies
       - run: npx nx affected -t lint test build typecheck
       # Nx Cloud recommends fixes for failures to help you get CI green faster. Learn more: https://nx.dev/ci/features/self-healing-ci
       - run: npx nx fix-ci
