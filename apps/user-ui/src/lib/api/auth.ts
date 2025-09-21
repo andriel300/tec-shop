@@ -9,6 +9,7 @@ export interface SignupData {
 export interface LoginData {
   email: string;
   password: string;
+  rememberMe?: boolean;
 }
 
 export interface VerifyEmailData {
@@ -21,12 +22,14 @@ export interface ForgotPasswordData {
 }
 
 export interface ResetPasswordData {
-  token: string;
+  email: string;
+  code: string;
   newPassword: string;
 }
 
 export interface AuthResponse {
-  access_token: string;
+  access_token?: string; // Optional for backward compatibility with cookie-based auth
+  message: string;
 }
 
 export interface ApiResponse<T = any> {
@@ -57,6 +60,11 @@ export const requestPasswordReset = async (data: ForgotPasswordData): Promise<Ap
 
 export const resetPassword = async (data: ResetPasswordData): Promise<ApiResponse> => {
   const response = await apiClient.post('/auth/reset-password', data);
+  return response.data;
+};
+
+export const logoutUser = async (): Promise<ApiResponse> => {
+  const response = await apiClient.post('/auth/logout');
   return response.data;
 };
 

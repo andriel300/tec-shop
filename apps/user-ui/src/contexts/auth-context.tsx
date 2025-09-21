@@ -13,7 +13,7 @@ interface AuthState {
 
 interface AuthContextType extends AuthState {
   login: (token: string, user: User) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   setUserProfile: (profile: UserProfile) => void;
   updateAuthState: (updates: Partial<AuthState>) => void;
 }
@@ -95,7 +95,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
     });
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      // Call the logout endpoint to clear the httpOnly cookie
+      const { logoutUser } = await import('../lib/api/auth');
+      await logoutUser();
+    } catch (error) {
+      console.error('Logout API call failed:', error);
+      // Continue with logout even if API call fails
+    }
+
+    // Clear localStorage (for backward compatibility)
     localStorage.removeItem('access_token');
     localStorage.removeItem('user');
     localStorage.removeItem('userProfile');

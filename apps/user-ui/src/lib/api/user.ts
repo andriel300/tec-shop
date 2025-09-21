@@ -4,6 +4,7 @@ export interface User {
   id: string;
   email: string;
   isEmailVerified: boolean;
+  name?: string; // Name from UserProfile
 }
 
 export interface UserProfile {
@@ -22,18 +23,19 @@ export interface UserProfile {
 }
 
 // User API functions
-export const getCurrentUser = async (): Promise<User> => {
-  const response = await apiClient.get('/user/me');
+export const getCurrentUser = async (): Promise<UserProfile> => {
+  const response = await apiClient.get('/user');
   return response.data;
 };
 
 export const getUserProfile = async (userId?: string): Promise<UserProfile> => {
-  const endpoint = userId ? `/user/profile/${userId}` : '/user/profile/me';
-  const response = await apiClient.get(endpoint);
+  // For now, we only support getting current user's profile
+  // In the future, we can add support for getting other users' profiles
+  const response = await apiClient.get('/user');
   return response.data;
 };
 
 export const updateUserProfile = async (data: Partial<UserProfile>): Promise<UserProfile> => {
-  const response = await apiClient.put('/user/profile', data);
+  const response = await apiClient.patch('/user', data);
   return response.data;
 };

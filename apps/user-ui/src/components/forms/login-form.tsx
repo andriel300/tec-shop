@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { loginUser } from '../../lib/api/auth';
+import { getCurrentUser } from '../../lib/api/user';
 import { useAuth } from '../../hooks/use-auth';
 import { Button } from '../ui/core/Button';
 import { Input } from '../ui/core/Input';
@@ -20,18 +21,42 @@ export function LoginForm() {
 
   const { mutate, isPending, error, reset } = useMutation({
     mutationFn: loginUser,
-    onSuccess: (data) => {
-      // Mock user data - in real app, you'd get this from JWT or separate call
-      const mockUser = {
-        id: 'user-id',
-        email: form.getFieldValue('email'),
-        isEmailVerified: true
-      };
+    onSuccess: async (data) => {
+      try {
+        // With cookie-based auth, we don't get the token in response body
+        // The token is automatically set as httpOnly cookie by the server
+        const mockToken = 'cookie-based-auth'; // Placeholder since token is in httpOnly cookie
 
-      login(data.access_token, mockUser);
-      queryClient.invalidateQueries({ queryKey: ['user'] });
-      toast.success('Login successful!');
-      router.push('/'); // Redirect to dashboard or home
+        // Set a temporary user object
+        const tempUser = {
+          id: 'temp',
+          email: form.getFieldValue('email'),
+          isEmailVerified: true
+        };
+
+        login(mockToken, tempUser);
+
+        // Now fetch the real user profile using the cookie
+        const userProfile = await getCurrentUser();
+
+        // Update with the real user data including the name from UserProfile
+        const realUser = {
+          id: userProfile.userId,
+          email: form.getFieldValue('email'),
+          isEmailVerified: true,
+          name: userProfile.name // This is what we need for the navbar
+        };
+
+        login(mockToken, realUser);
+        queryClient.invalidateQueries({ queryKey: ['user'] });
+        toast.success(`Welcome back, ${userProfile.name}!`);
+        router.push('/'); // Redirect to dashboard or home
+      } catch (error) {
+        console.error('Failed to fetch user profile:', error);
+        // Login was successful but profile fetch failed - still allow login
+        toast.success('Login successful!');
+        router.push('/');
+      }
     },
     onError: (error: Error | { message: string } | string) => {
       console.error('Login error:', error); // Add debugging
@@ -72,7 +97,9 @@ export function LoginForm() {
     onSubmit: async ({ value }) => {
       // Clear any previous errors before submitting
       reset();
-      mutate(value);
+      // Extract email, password, and rememberMe for the API call
+      const { email, password, rememberMe } = value;
+      mutate({ email, password, rememberMe });
     },
   });
 

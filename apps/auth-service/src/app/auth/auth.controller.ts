@@ -1,6 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { Throttle } from '@nestjs/throttler';
+// Throttle decorators removed - rate limiting handled at API Gateway
 import { LoginDto, SignupDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto } from '@tec-shop/dto';
 import { AuthService } from './auth.service';
 
@@ -9,19 +9,19 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @MessagePattern('auth-signup')
-  @Throttle({ medium: { limit: 3, ttl: 900000 } }) // 3 signups per 15 minutes
+  // Throttle decorator removed - rate limiting handled at API Gateway
   async signup(@Payload() signupDto: SignupDto) {
     return this.authService.signup(signupDto);
   }
 
   @MessagePattern('auth-verify-email')
-  @Throttle({ medium: { limit: 3, ttl: 900000 } }) // 3 attempts per 15 minutes
+  // Throttle decorator removed - rate limiting handled at API Gateway
   async verifyEmail(@Payload() verifyEmailDto: VerifyEmailDto) {
     return this.authService.verifyEmail(verifyEmailDto);
   }
 
   @MessagePattern('auth-login')
-  @Throttle({ medium: { limit: 5, ttl: 900000 } }) // 5 attempts per 15 minutes
+  // Throttle decorator removed - rate limiting handled at API Gateway
   async login(@Payload() credential: LoginDto) {
     return this.authService.login(credential);
   }
@@ -31,14 +31,25 @@ export class AuthController {
     return this.authService.validateToken(token);
   }
 
+  @MessagePattern('auth-refresh-token')
+  // Rate limiting handled at API Gateway level
+  async refreshToken(@Payload() payload: { refreshToken: string; currentAccessToken?: string }) {
+    return this.authService.refreshToken(payload.refreshToken, payload.currentAccessToken);
+  }
+
+  @MessagePattern('auth-revoke-refresh-token')
+  async revokeRefreshToken(@Payload() userId: string) {
+    return this.authService.revokeRefreshToken(userId);
+  }
+
   @MessagePattern('auth-forgot-password')
-  @Throttle({ medium: { limit: 3, ttl: 900000 } }) // 3 requests per 15 minutes
+  // Throttle decorator removed - rate limiting handled at API Gateway
   async forgotPassword(@Payload() forgotPasswordDto: ForgotPasswordDto) {
     return this.authService.forgotPassword(forgotPasswordDto);
   }
 
   @MessagePattern('auth-reset-password')
-  @Throttle({ medium: { limit: 5, ttl: 900000 } }) // 5 attempts per 15 minutes
+  // Throttle decorator removed - rate limiting handled at API Gateway
   async resetPassword(@Payload() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(resetPasswordDto);
   }

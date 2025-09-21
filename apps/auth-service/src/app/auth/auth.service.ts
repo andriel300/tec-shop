@@ -9,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { randomInt, randomBytes, createHash } from 'crypto';
 import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 import { AuthPrismaService } from '../../prisma/prisma.service';
 import { LoginDto, SignupDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto } from '@tec-shop/dto';
 import { EmailService } from '../email/email.service';
@@ -108,7 +109,8 @@ export class AuthService implements OnModuleInit {
       throw new UnauthorizedException(genericError);
     }
 
-    return this.generateToken(user.id, user.email);
+    // Pass rememberMe flag to token generation for extended session
+    return this.generateTokens(user.id, user.email, credential.rememberMe);
   }
 
   async verifyEmail(verifyEmailDto: VerifyEmailDto) {
@@ -158,11 +160,19 @@ export class AuthService implements OnModuleInit {
     await this.redisService.del(`otp-attempts:${user.id}`);
 
     // Create the user profile in the user-service now that email is verified
-    this.userClient.emit('create-user-profile', {
-      userId: user.id,
-      email: user.email,
-      name,
-    });
+    try {
+      await firstValueFrom(
+        this.userClient.send('create-user-profile', {
+          userId: user.id,
+          name,
+        })
+      );
+      console.log(`User profile created successfully for user ${user.id}`);
+    } catch (error) {
+      console.error('Failed to create user profile in user-service:', error);
+      // Log the error but don't fail the email verification process
+      // The user profile can be created later if needed
+    }
 
     return { message: 'Email verified successfully.' };
   }
@@ -176,6 +186,53 @@ export class AuthService implements OnModuleInit {
     }
   }
 
+  async refreshToken(refreshToken: string, currentAccessToken?: string) {
+    // Hash the provided refresh token to compare with stored hash
+    const hashedRefreshToken = createHash('sha256').update(refreshToken).digest('hex');
+
+    // Find user with matching refresh token
+    const user = await this.prisma.user.findFirst({
+      where: {
+        refreshToken: hashedRefreshToken,
+        isEmailVerified: true
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    // Determine if this was a "remember me" session by checking token expiration
+    let wasRememberMe = false;
+    if (currentAccessToken) {
+      try {
+        const decoded = this.jwtService.decode(currentAccessToken) as any;
+        if (decoded && decoded.exp) {
+          const tokenDuration = decoded.exp - decoded.iat;
+          wasRememberMe = tokenDuration > (2 * 24 * 60 * 60); // More than 2 days = remember me
+        }
+      } catch (error) {
+        // If we can't decode, default to normal session
+        console.log('Could not decode token for remember me detection');
+      }
+    }
+
+    // Generate new token pair maintaining the remember me preference
+    const tokens = await this.generateTokens(user.id, user.email, wasRememberMe);
+
+    return tokens;
+  }
+
+  async revokeRefreshToken(userId: string) {
+    // Clear the refresh token from database
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshToken: null },
+    });
+
+    return { message: 'Refresh token revoked successfully' };
+  }
+
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
     const { email } = forgotPasswordDto;
 
@@ -184,64 +241,65 @@ export class AuthService implements OnModuleInit {
     });
 
     // Always return success to prevent email enumeration
-    const successMessage = 'If an account with this email exists, you will receive a password reset link.';
+    const successMessage = 'If an account with this email exists, you will receive a password reset code.';
 
     if (!user || !user.isEmailVerified) {
       return { message: successMessage };
     }
 
-    // Generate cryptographically secure reset token
-    const resetToken = randomBytes(32).toString('hex');
+    // Generate cryptographically secure 6-digit code
+    const resetCode = randomInt(100000, 1000000).toString().padStart(6, '0');
 
-    // Store SHA-256 hash of the token (not the token itself)
-    const tokenHash = createHash('sha256').update(resetToken).digest('hex');
+    // Store code hash with user ID (similar to OTP system)
+    const codeHash = createHash('sha256').update(resetCode).digest('hex');
 
-    // Store in Redis with 15-minute expiry
+    // Store in Redis with 10-minute expiry (shorter than URL tokens for better security)
     await this.redisService.set(
-      `password-reset:${tokenHash}`,
+      `password-reset:${codeHash}`,
       user.id,
-      900 // 15 minutes
+      600 // 10 minutes
     );
 
-    // Send reset email with the original token (not the hash)
-    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
-    await this.emailService.sendPasswordResetLink(user.email, resetLink);
+    // Send reset email with the 6-digit code
+    await this.emailService.sendPasswordResetCode(user.email, resetCode);
 
     return { message: successMessage };
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
-    const { token, newPassword } = resetPasswordDto;
+    const { email, code, newPassword } = resetPasswordDto;
 
-    // Hash the provided token to look up in Redis
-    const tokenHash = createHash('sha256').update(token).digest('hex');
+    // First verify the user exists and get their ID
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
 
-    // Check if token exists and get user ID
-    const userId = await this.redisService.get(`password-reset:${tokenHash}`);
-
-    if (!userId) {
-      throw new UnauthorizedException('Invalid or expired reset token');
+    if (!user || !user.isEmailVerified) {
+      throw new UnauthorizedException('Invalid reset credentials');
     }
 
-    // Check reset attempt limiting
-    const attemptKey = `reset-attempts:${tokenHash}`;
+    // Check reset attempt limiting per user (not per code, for better UX)
+    const attemptKey = `reset-attempts:${user.id}`;
     const attemptsStr = await this.redisService.get(attemptKey);
     const attempts = attemptsStr ? parseInt(attemptsStr) : 0;
 
-    if (attempts >= 5) {
-      // Clean up token after max attempts
-      await this.redisService.del(`password-reset:${tokenHash}`);
-      throw new UnauthorizedException('Too many failed attempts. Please request a new reset link.');
+    // Hash the provided code to look up in Redis
+    const codeHash = createHash('sha256').update(code).digest('hex');
+
+    // Check if code exists and matches the user
+    const storedUserId = await this.redisService.get(`password-reset:${codeHash}`);
+
+    if (!storedUserId || storedUserId !== user.id) {
+      // Increment failed attempts for this user
+      const newAttempts = attempts + 1;
+      await this.redisService.set(attemptKey, newAttempts.toString(), 600);
+      throw new UnauthorizedException('Invalid or expired reset code');
     }
 
-    // Get user to verify they still exist
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      await this.redisService.del(`password-reset:${tokenHash}`);
-      throw new UnauthorizedException('Invalid or expired reset token');
+    if (attempts >= 3) {
+      // Clean up code after max attempts (stricter limit for security)
+      await this.redisService.del(`password-reset:${codeHash}`);
+      throw new UnauthorizedException('Too many failed attempts. Please request a new reset code.');
     }
 
     // Hash the new password
@@ -249,13 +307,13 @@ export class AuthService implements OnModuleInit {
 
     // Update the user's password
     await this.prisma.user.update({
-      where: { id: userId },
+      where: { id: user.id },
       data: { password: hashedPassword },
     });
 
-    // Clean up reset token and attempts
-    await this.redisService.del(`password-reset:${tokenHash}`);
-    await this.redisService.del(`reset-attempts:${tokenHash}`);
+    // Clean up reset code and attempts
+    await this.redisService.del(`password-reset:${codeHash}`);
+    await this.redisService.del(`reset-attempts:${user.id}`);
 
     // Send confirmation email
     await this.emailService.sendPasswordChangedNotification(user.email);
@@ -263,13 +321,32 @@ export class AuthService implements OnModuleInit {
     return { message: 'Password has been reset successfully.' };
   }
 
-  private generateToken(userId: string, email: string) {
+  private async generateTokens(userId: string, email: string, rememberMe: boolean = false) {
     const payload = {
       sub: userId,
       username: email,
     };
+
+    // Set token expiration based on rememberMe preference
+    const accessTokenExpiry = rememberMe ? '7d' : '1d'; // Extended: 7 days, Normal: 1 day
+
+    // Generate access token with appropriate expiration
+    const access_token = this.jwtService.sign(payload, { expiresIn: accessTokenExpiry });
+
+    // Generate refresh token (cryptographically secure)
+    const refresh_token = randomBytes(32).toString('hex');
+
+    // Store refresh token in database (hashed for security)
+    const hashedRefreshToken = createHash('sha256').update(refresh_token).digest('hex');
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshToken: hashedRefreshToken },
+    });
+
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token,
+      refresh_token,
+      rememberMe, // Return the flag for cookie configuration
     };
   }
 }
