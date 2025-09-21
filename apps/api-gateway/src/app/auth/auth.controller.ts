@@ -1,10 +1,10 @@
 import { Body, Controller, Inject, Post, Res, Req, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { LoginDto, SignupDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto } from '@tec-shop/dto';
+import type { LoginDto, SignupDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto } from '@tec-shop/dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { Response, Request } from 'express';
+import type { Response, Request } from 'express';
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
 
 @ApiTags('Auth')

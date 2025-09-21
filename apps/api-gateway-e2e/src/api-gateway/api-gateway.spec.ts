@@ -17,8 +17,9 @@ describe('POST /auth/login', () => {
         password: 'fakepassword',
       });
     } catch (error) {
-      expect(error.response.status).toBe(401);
-      expect(error.response.data.message).toBe('Unauthorized');
+      const axiosError = error as { response: { status: number; data: { message: string } } };
+      expect(axiosError.response.status).toBe(401);
+      expect(axiosError.response.data.message).toBe('Unauthorized');
     }
   });
 });

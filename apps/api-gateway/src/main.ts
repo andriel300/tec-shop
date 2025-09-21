@@ -9,7 +9,7 @@ import { AppModule } from './app/app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger as PinoLogger } from 'nestjs-pino';
 import helmet from 'helmet';
-const cookieParser = require('cookie-parser');
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
@@ -51,13 +51,13 @@ async function bootstrap() {
         connectSrc: [
           "'self'",
           "https:", // Allow HTTPS API calls
-          process.env.NODE_ENV === 'development' ? 'ws:' : null, // WebSocket for dev
-        ].filter(Boolean),
+          ...(process.env.NODE_ENV === 'development' ? ['ws:'] : []), // WebSocket for dev
+        ],
         frameSrc: ["'none'"], // Prevent iframe embedding
         objectSrc: ["'none'"], // Prevent Flash/Java applets
         manifestSrc: ["'self'"], // Allow web app manifest
         workerSrc: ["'self'"], // Allow service workers
-        ...(process.env.NODE_ENV === 'production' && { 'upgrade-insecure-requests': [] }), // Force HTTPS in production
+        ...(process.env.NODE_ENV === 'production' && { upgradeInsecureRequests: [] }), // Force HTTPS in production
       },
     },
     crossOriginEmbedderPolicy: { policy: "require-corp" },
