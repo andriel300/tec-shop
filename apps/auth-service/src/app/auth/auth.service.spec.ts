@@ -152,7 +152,11 @@ describe('AuthService', () => {
 
       const result = await service.login(loginDto);
 
-      expect(result).toEqual({ access_token: 'mockAccessToken' });
+      expect(result).toEqual({
+        access_token: 'mockAccessToken',
+        refresh_token: expect.any(String),
+        rememberMe: false
+      });
     });
 
     it('should throw UnauthorizedException if credentials are invalid', async () => {

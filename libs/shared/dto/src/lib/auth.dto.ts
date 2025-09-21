@@ -7,7 +7,6 @@ import {
   Matches,
   IsBoolean,
   IsOptional,
-  ValidateIf,
   registerDecorator,
   ValidationOptions,
   ValidationArguments,
@@ -23,12 +22,12 @@ export function IsPasswordMatch(property: string, validationOptions?: Validation
       constraints: [property],
       options: validationOptions,
       validator: {
-        validate(value: any, args: ValidationArguments) {
+        validate(value: unknown, args: ValidationArguments) {
           const [relatedPropertyName] = args.constraints;
-          const relatedValue = (args.object as any)[relatedPropertyName];
+          const relatedValue = (args.object as Record<string, unknown>)[relatedPropertyName];
           return value === relatedValue;
         },
-        defaultMessage(args: ValidationArguments) {
+        defaultMessage(_args: ValidationArguments) {
           return 'Password confirmation must match password';
         },
       },

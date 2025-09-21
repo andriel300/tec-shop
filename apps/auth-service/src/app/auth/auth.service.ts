@@ -206,12 +206,12 @@ export class AuthService implements OnModuleInit {
     let wasRememberMe = false;
     if (currentAccessToken) {
       try {
-        const decoded = this.jwtService.decode(currentAccessToken) as any;
+        const decoded = this.jwtService.decode(currentAccessToken) as { exp: number; iat: number } | null;
         if (decoded && decoded.exp) {
           const tokenDuration = decoded.exp - decoded.iat;
           wasRememberMe = tokenDuration > (2 * 24 * 60 * 60); // More than 2 days = remember me
         }
-      } catch (error) {
+      } catch (_error) {
         // If we can't decode, default to normal session
         console.log('Could not decode token for remember me detection');
       }
@@ -321,7 +321,7 @@ export class AuthService implements OnModuleInit {
     return { message: 'Password has been reset successfully.' };
   }
 
-  private async generateTokens(userId: string, email: string, rememberMe: boolean = false) {
+  private async generateTokens(userId: string, email: string, rememberMe = false) {
     const payload = {
       sub: userId,
       username: email,

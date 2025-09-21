@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { UserPrismaService } from '../prisma/prisma.service';
-import { UpdateUserDto, CreateUserProfileDto, CreateImageDto, FollowUserDto } from '@tec-shop/dto';
+import { UpdateUserDto, CreateUserProfileDto, CreateImageDto, ImageType } from '@tec-shop/dto';
 
 @Injectable()
 export class AppService {
@@ -75,11 +75,11 @@ export class AppService {
     });
   }
 
-  async getUserImages(userProfileId: string, imageType?: string) {
+  async getUserImages(userProfileId: string, imageType?: ImageType) {
     return this.prisma.image.findMany({
       where: {
         userProfileId,
-        ...(imageType && { imageType: imageType as any }),
+        ...(imageType && { imageType }),
       },
       orderBy: {
         createdAt: 'desc',

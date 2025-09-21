@@ -48,7 +48,7 @@ apiClient.interceptors.response.use(
 
         // Retry the original request
         return apiClient(originalRequest);
-      } catch (refreshError) {
+      } catch (_refreshError) {
         // Refresh failed, clear token and redirect to login
         localStorage.removeItem('access_token');
         localStorage.removeItem('user');

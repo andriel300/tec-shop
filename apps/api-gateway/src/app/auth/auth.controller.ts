@@ -149,7 +149,7 @@ export class AuthController {
     status: 201,
     description: 'User successfully logged out.',
   })
-  async logout(@Req() request: any, @Res({ passthrough: true }) response: Response) {
+  async logout(@Req() request: { user: { userId: string } }, @Res({ passthrough: true }) response: Response) {
     try {
       // Revoke the refresh token in the database
       await firstValueFrom(
