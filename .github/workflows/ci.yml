@@ -34,14 +34,9 @@ jobs:
       - run: npm ci --legacy-peer-deps
       - uses: nrwl/nx-set-shas@v4.3.3
 
-      # Generate Prisma clients before running tests and builds
-      - name: Generate Prisma Clients
-        run: |
-          npx prisma generate --schema=apps/auth-service/prisma/schema.prisma
-          npx prisma generate --schema=apps/user-service/prisma/schema.prisma
-
       # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
       # - run: npx nx-cloud record -- echo Hello World
+      # Prisma generation now handled automatically via Nx dependencies
       - run: npx nx affected -t lint test build typecheck
       # Nx Cloud recommends fixes for failures to help you get CI green faster. Learn more: https://nx.dev/ci/features/self-healing-ci
       - run: npx nx fix-ci
