@@ -99,7 +99,13 @@
   ],
   "targetDefaults": {
     "test": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build", "prisma-generate"]
+    },
+    "build": {
+      "dependsOn": ["prisma-generate"]
+    },
+    "typecheck": {
+      "dependsOn": ["prisma-generate"]
     }
   },
   "release": {
