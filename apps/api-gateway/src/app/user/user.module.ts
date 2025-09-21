@@ -27,9 +27,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
           return {
             transport: Transport.TCP,
             options: {
-              host: configService.get<string>('USER_SERVICE_HOST'),
+              host: configService.get<string>('USER_SERVICE_HOST') || 'localhost',
               port: parseInt(
-                configService.get<string>('USER_SERVICE_PORT'),
+                configService.get<string>('USER_SERVICE_PORT') || '6002',
                 10
               ),
               tlsOptions,

@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { ClientProxy } from '@nestjs/microservices';
-import { UpdateUserDto } from '@tec-shop/dto';
+import type { UpdateUserDto } from '@tec-shop/dto';
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
 import {
   ApiBearerAuth,
@@ -30,7 +30,7 @@ export class UserController {
   @ApiOperation({ summary: "Get the current user's profile" })
   @ApiResponse({ status: 200, description: 'User profile data.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async getUserProfile(@Req() req) {
+  async getUserProfile(@Req() req: { user: { userId: string } }) {
     const userId = req.user.userId;
     const user$ = this.userClient.send('get-user-profile', userId);
     return firstValueFrom(user$);
@@ -41,7 +41,7 @@ export class UserController {
   @ApiOperation({ summary: "Update the current user's profile" })
   @ApiResponse({ status: 200, description: 'Profile successfully updated.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  async updateUserProfile(@Req() req, @Body() body: UpdateUserDto) {
+  async updateUserProfile(@Req() req: { user: { userId: string } }, @Body() body: UpdateUserDto) {
     const payload = {
       userId: req.user.userId,
       data: body,

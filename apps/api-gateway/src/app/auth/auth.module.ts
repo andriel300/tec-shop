@@ -27,9 +27,9 @@ import { join } from 'path';
           return {
             transport: Transport.TCP,
             options: {
-              host: configService.get<string>('AUTH_SERVICE_HOST'),
+              host: configService.get<string>('AUTH_SERVICE_HOST') || 'localhost',
               port: parseInt(
-                configService.get<string>('AUTH_SERVICE_PORT'),
+                configService.get<string>('AUTH_SERVICE_PORT') || '6001',
                 10
               ),
               tlsOptions,
