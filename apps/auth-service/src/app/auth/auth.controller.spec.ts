@@ -37,6 +37,8 @@ describe('AuthController', () => {
         email: 'test@example.com',
         password: 'password123',
         name: 'John Doe',
+        confirmPassword: 'password123',
+        termsAccepted: true,
       };
       const expectedResult = { message: 'User registered successfully' };
       jest.spyOn(authService, 'signup').mockResolvedValue(expectedResult);
@@ -68,7 +70,11 @@ describe('AuthController', () => {
         email: 'test@example.com',
         password: 'password123',
       };
-      const expectedResult = { access_token: 'mockAccessToken' };
+      const expectedResult = {
+        access_token: 'mockAccessToken',
+        refresh_token: 'mockRefreshToken',
+        rememberMe: false
+      };
       jest.spyOn(authService, 'login').mockResolvedValue(expectedResult);
 
       const result = await authController.login(loginDto);
