@@ -29,7 +29,16 @@ async function bootstrap() {
     }
   );
   app.useLogger(app.get(PinoLogger));
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,           // Strip non-whitelisted properties
+    forbidNonWhitelisted: true, // Throw error for non-whitelisted properties
+    transform: true,           // Transform payloads to DTO instances
+    disableErrorMessages: process.env.NODE_ENV === 'production', // Hide validation details in production
+    validationError: {
+      target: false,           // Don't expose target object
+      value: false,           // Don't expose submitted values
+    },
+  }));
   await app.listen();
   Logger.log('🚀 Application auth-service is running on TCP port 6001 with mTLS');
 }

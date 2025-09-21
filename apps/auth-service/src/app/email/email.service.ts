@@ -22,6 +22,27 @@ export class EmailService {
     });
   }
 
+  async sendPasswordResetCode(to: string, resetCode: string): Promise<void> {
+    await this.mailerService.sendMail({
+      to,
+      subject: 'Tec-Shop Password Reset Code',
+      html: `
+        <div style="font-family: sans-serif; text-align: center; padding: 20px;">
+          <h2>Password Reset Request</h2>
+          <p>You have requested to reset your password for Tec-Shop.</p>
+          <p>Your password reset code is:</p>
+          <p style="font-size: 28px; font-weight: bold; letter-spacing: 4px; margin: 20px; padding: 15px; background-color: #f8f9fa; border: 2px solid #007bff; border-radius: 8px; color: #007bff;">
+            ${resetCode}
+          </p>
+          <p><strong>This code will expire in 10 minutes.</strong></p>
+          <p>Enter this code on the password reset page to continue.</p>
+          <p style="color: #666; font-size: 14px;">If you did not request a password reset, please ignore this email.</p>
+        </div>
+      `,
+    });
+  }
+
+  // Legacy method - keeping for backward compatibility during migration
   async sendPasswordResetLink(to: string, resetLink: string): Promise<void> {
     await this.mailerService.sendMail({
       to,

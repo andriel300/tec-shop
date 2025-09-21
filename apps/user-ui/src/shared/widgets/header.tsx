@@ -61,7 +61,7 @@ const Header = () => {
                   onClick={handleLogout}
                   className="block font-semibold text-brand-primary text-sm hover:underline text-left"
                 >
-                  {user?.email?.split('@')[0] || 'User'}
+                  {user?.name?.split('@')[0] || 'User'}
                 </button>
               </div>
             ) : (
