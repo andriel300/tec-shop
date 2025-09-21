@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
   displayName: '@tec-shop/api-gateway-e2e',
   preset: '../../jest.preset.js',

@@ -8,6 +8,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import * as bcrypt from 'bcrypt';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { LoginDto, SignupDto, VerifyEmailDto } from '@tec-shop/dto';
+import { of } from 'rxjs';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -68,6 +69,7 @@ describe('AuthService', () => {
           provide: 'USER_SERVICE',
           useValue: {
             emit: jest.fn(),
+            send: jest.fn(),
             connect: jest.fn().mockResolvedValue(undefined),
           },
         },
@@ -100,6 +102,8 @@ describe('AuthService', () => {
       email: 'test@example.com',
       password: 'password123',
       name: 'John Doe',
+      confirmPassword: 'password123',
+      termsAccepted: true,
     };
 
     it('should successfully register a new user', async () => {
@@ -181,7 +185,7 @@ describe('AuthService', () => {
         .spyOn(prismaService.user, 'update')
         .mockResolvedValue({ ...mockUser, isEmailVerified: true });
       jest.spyOn(redisService, 'del').mockResolvedValue(undefined);
-      jest.spyOn(userClient, 'emit').mockReturnValue({} as unknown);
+      jest.spyOn(userClient, 'send').mockReturnValue(of({ success: true }));
 
       const result = await service.verifyEmail(verifyEmailDto);
       expect(result).toEqual({ message: 'Email verified successfully.' });
