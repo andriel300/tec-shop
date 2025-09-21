@@ -1,53 +1,60 @@
-import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AuthModule } from './auth/auth.module';
+import { UserModule } from './user/user.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { LoggerModule } from 'nestjs-pino';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_FILTER, APP_GUARD } from '@nestjs/core';
-import { ConfigModule } from '@nestjs/config';
-import { AllExceptionsFilter } from '@tec-shop/exceptions';
-import { LoggerMiddleware } from '@tec-shop/middleware';
-import { HttpModule } from '@nestjs/axios';
-import { AuthModule } from '../auth/auth.module';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: './.env',
+    ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([
+      {
+        name: 'short',
+        ttl: 60000, // 1 minute
+        limit: 20, // 20 requests per minute for general operations
+      },
+      {
+        name: 'medium',
+        ttl: 900000, // 15 minutes
+        limit: 10, // 10 attempts per 15 minutes for auth operations
+      },
+    ]),
+    LoggerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (config: ConfigService) => ({
+        pinoHttp: {
+          level:
+            config.get<string>('NODE_ENV') !== 'production' ? 'debug' : 'info',
+          transport:
+            config.get<string>('NODE_ENV') !== 'production'
+              ? {
+                  target: 'pino-pretty',
+                  options: {
+                    colorize: true,
+                    levelFirst: true,
+                    translateTime: 'SYS:standard',
+                    ignore: 'pid,hostname',
+                  },
+                }
+              : undefined,
+        },
+      }),
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 10,
-    }]),
-    HttpModule,
     AuthModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
     {
-      // This special token tells Nest to register this guard as a global
-      // security layer, meaning it will automatically protect all routes
-      // in the application without needing to add it to each controller.
-      provide: APP_GUARD, // This is the key that tells NestJS to apply it globally
+      provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
-    {
-      // By binding this filter globally, we ensure every unhandled error
-      // across the entire app gets processed into a consistent, friendly
-      // JSON response format before it's sent back to the client.
-      provide: APP_FILTER,
-      useClass: AllExceptionsFilter,
-    }
   ],
 })
-
-export class AppModule implements NestModule {
-  // This is where we hook into Nest's request lifecycle and apply
-  // middleware that runs before any route handler is executed.
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(LoggerMiddleware) // Applies our custom logging to every single incoming request
-      .forRoutes('*path');         // The asterisk wildcard means "for all routes without exception"
-  }
-}
+export class AppModule {}

@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { readFileSync } from 'fs';
 
 // Reading the SWC compilation config for the spec files
@@ -12,11 +11,15 @@ swcJestConfig.swcrc = false;
 export default {
   displayName: '@tec-shop/auth-service',
   preset: '../../jest.preset.js',
-  setupFilesAfterEnv: ['<rootDir>/src/jest-setup.ts'],
   testEnvironment: 'node',
   transform: {
-    '^.+\.[tj]s$': ['@swc/jest', swcJestConfig],
+    '^.+.[tj]s$': ['@swc/jest', swcJestConfig],
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
   coverageDirectory: 'test-output/jest/coverage',
+  moduleNameMapper: {
+    '^@tec-shop/auth-prisma-client$':
+      '<rootDir>/../../node_modules/.prisma/auth-client/index.js',
+    '^@tec-shop/dto$': '<rootDir>/../../libs/shared/dto/src/index.ts',
+  },
 };

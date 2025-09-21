@@ -4,23 +4,27 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { GoogleLoginButton } from '../../../components/ui/google-login-button';
 import { SignUpForm } from '../../../components/forms/signup-form';
-import { OtpForm } from '../../../components/forms/otp-form';
+import { VerifyOtpForm } from '../../../components/forms/verify-otp-form';
+import { ProtectedRoute } from '../../../components/auth/protected-route';
+import { useRouter } from 'next/navigation';
 
 export default function SignupPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [password, setPassword] = useState('');
   const [showOtp, setShowOtp] = useState(false);
 
-  const handleSuccess = (email: string, name: string, pass: string) => {
-    setEmail(email);
-    setName(name);
-    setPassword(pass);
+  const handleSuccess = (userEmail: string, userName: string, userPassword: string) => {
+    setEmail(userEmail);
     setShowOtp(true);
   };
 
+  const handleVerificationSuccess = () => {
+    router.push('/login');
+  };
+
   return (
-    <main className="flex items-center justify-center min-h-[calc(100vh-200px)] bg-ui-muted/50 py-12 px-4">
+    <ProtectedRoute requireAuth={false}>
+      <main className="flex items-center justify-center min-h-[calc(100vh-200px)] bg-ui-muted/50 py-12 px-4">
       <div className="w-full max-w-md p-8 space-y-6 bg-ui-muted rounded-lg shadow-elev-lg border border-ui-divider">
         <div>
           <h1 className="text-2xl font-bold text-center font-heading text-text-primary">
@@ -49,11 +53,9 @@ export default function SignupPage() {
 
         <div>
           {showOtp ? (
-            <OtpForm
-              flow="signup"
+            <VerifyOtpForm
               email={email}
-              name={name}
-              password={password}
+              onSuccess={handleVerificationSuccess}
             />
           ) : (
             <>
@@ -73,6 +75,7 @@ export default function SignupPage() {
           </>
         </p>
       </div>
-    </main>
+      </main>
+    </ProtectedRoute>
   );
 }

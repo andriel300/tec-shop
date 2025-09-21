@@ -1,7 +1,10 @@
 {
   "name": "@tec-shop/auth-service",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
+  "scripts": {
+    "prisma:generate": "npx prisma generate --schema=./prisma/schema.prisma"
+  },
   "nx": {
     "targets": {
       "build": {
@@ -79,20 +82,8 @@
         "options": {
           "passWithNoTests": true
         }
-      },
-      "docker:build": {
-        "dependsOn": [
-          "build",
-          "prune"
-        ]
       }
     }
   },
-  "devDependencies": {
-    "@prisma/client": "^6.16.1",
-    "prisma": "^6.15.0"
-  },
-  "dependencies": {
-    "bcryptjs": "^3.0.2"
-  }
+  "dependencies": {}
 }

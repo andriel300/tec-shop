@@ -22,10 +22,7 @@
   ],
   "references": [
     {
-      "path": "../../libs/shared/exceptions/tsconfig.lib.json"
-    },
-    {
-      "path": "../../libs/shared/middleware/tsconfig.lib.json"
+      "path": "../../libs/shared/dto/tsconfig.lib.json"
     }
   ]
 }

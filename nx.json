@@ -29,7 +29,11 @@
           "watchDepsName": "watch-deps"
         }
       },
-      "exclude": ["libs/shared/exceptions/*", "libs/shared/middleware/*"]
+      "exclude": [
+        "libs/shared/exceptions/*",
+        "libs/shared/middleware/*",
+        "libs/shared/dto/*"
+      ]
     },
     {
       "plugin": "@nx/webpack/plugin",
@@ -53,7 +57,13 @@
       "options": {
         "targetName": "test"
       },
-      "exclude": ["apps/auth-service-e2e/**/*", "apps/api-gateway-e2e/**/*"]
+      "exclude": [
+        "apps/auth-service-e2e/**/*",
+        "apps/api-gateway-e2e/**/*",
+        "apps/api-gateway-e2e/**/*",
+        "apps/auth-service-e2e/**/*",
+        "apps/user-service-e2e/**/*"
+      ]
     },
     {
       "plugin": "@nx/docker",
@@ -64,7 +74,11 @@
     },
     {
       "plugin": "@nx/js/typescript",
-      "include": ["libs/shared/exceptions/*", "libs/shared/middleware/*"],
+      "include": [
+        "libs/shared/exceptions/*",
+        "libs/shared/middleware/*",
+        "libs/shared/dto/*"
+      ],
       "options": {
         "typecheck": {
           "targetName": "typecheck"
@@ -92,8 +106,8 @@
     "projects": [
       "api-gateway",
       "auth-service",
-      "shared-exceptions",
-      "shared-middleware"
+      "user-service",
+      "@tec-shop/shared/dto"
     ],
     "changelog": {
       "projectChangelogs": {
@@ -107,6 +121,7 @@
       "workspaceChangelog": false
     },
     "version": {
+      "preVersionCommand": "npx nx run-many -t build",
       "conventionalCommits": true
     }
   },

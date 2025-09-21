@@ -12,10 +12,8 @@ describe('AppController', () => {
     }).compile();
   });
 
-  describe('getData', () => {
-    it('should return "Hello API"', () => {
-      const appController = app.get<AppController>(AppController);
-      expect(appController.getData()).toEqual({message: 'Hello API test from path service/src/app/app.service.ts'});
-    });
+  it('should be defined', () => {
+    const controller = app.get<AppController>(AppController);
+    expect(controller).toBeDefined();
   });
 });

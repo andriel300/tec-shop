@@ -1,135 +1,390 @@
-# Tec-Shop: A Multi-Vendor Microservice E-commerce Platform
+# TecShop
 
-This repository contains the source code for Tec-Shop, a full-stack, multi-vendor e-commerce platform built with a modern microservices architecture. It features a Next.js frontend, a NestJS backend, and is managed as an Nx monorepo.
+A modern, secure, and scalable e-commerce platform built with microservices architecture. TecShop demonstrates enterprise-grade patterns including mutual TLS authentication, comprehensive security measures, and advanced user management features.
 
-## Overview
+## Overview & DEMO
 
-Tec-Shop is a cutting-edge e-commerce platform designed for scalability, maintainability, and a rich developer experience. The project leverages the power of NestJS for the backend microservices and Next.js for a dynamic, server-rendered frontend. It is structured as a monorepo to streamline development, code sharing, and dependency management across the different applications.
+TecShop is a production-ready microservices-based e-commerce platform that showcases modern software architecture principles. The system implements a secure, scalable foundation suitable for enterprise applications with features like JWT authentication, refresh token rotation, social login, and comprehensive user management.
 
-## Problems Solved & Best Practices Demonstrated
+I will add a video demo link later.
 
-This project tackles common challenges in modern application development, showcasing elegant solutions:
+## Kanban Project Management methology
 
-- **Secure and Scalable Authentication:** Implemented a robust, custom authentication system using JWTs (Access and Refresh Tokens) and secure cookies. This provides a stateless, scalable, and secure foundation for user identity management.
-- **Enhanced Security with OTP:** Integrated a One-Time Password (OTP) system for email verification and potentially passwordless login flows. This significantly improves user security and provides a modern user experience.
-- **Efficient Temporary Data Handling:** Utilized **Redis** as a high-performance, in-memory data store for short-lived data like OTPs, ensuring rapid, time-sensitive operations.
-- **Type-Safe Database Operations:** Leveraged **Prisma** as a next-generation ORM for PostgreSQL, providing full type-safety between the database and the application, which eliminates a whole class of runtime errors.
-- **Monorepo Management:** Employed **Nx** to manage multiple applications and shared libraries within a single repository. This solves challenges related to code sharing, consistent tooling, and simplified dependency management in a microservices environment.
-- **Automated API Documentation:** Configured **Swagger** for automatic generation of interactive API documentation. This keeps documentation in sync with the codebase and provides a user-friendly interface for API exploration.
-
-## Lessons Learned
-
-As a first-time user of NestJS and Redis, transitioning from Express.js, this project provided invaluable insights:
-
-- **NestJS: The Power of Opinionated Frameworks:**
-
-  - **Structure and Modularity:** Coming from the more unopinionated nature of Express.js, NestJS's clear module, controller, and service structure enforces a highly organized and scalable architecture, making it easier to manage complex applications.
-  - **Dependency Injection (DI):** Understanding and leveraging NestJS's DI system was a game-changer. It simplifies testing, promotes loose coupling, and makes code more maintainable.
-  - **Decorators and Metadata:** The extensive use of decorators (`@Module`, `@Controller`, `@Injectable`) provides a powerful and concise way to define application logic and metadata, streamlining development.
-
-- **Redis: Beyond a Simple Cache:**
-  - **Versatility:** Redis proved to be far more than just a caching layer. Its ability to handle data with an expiration (TTL) made it ideal for time-sensitive, temporary data storage like OTPs.
-  - **Performance:** The speed of Redis for read/write operations is remarkable, making it perfect for high-throughput scenarios.
+I will add Pictures of my agil methologies later
 
 ## Architecture
 
-The project follows a microservices pattern, orchestrated within an Nx monorepo.
+### Microservices Design
 
-- **`apps/user-ui`**: The main customer-facing frontend application built with Next.js.
-- **`apps/api-gateway`**: A NestJS application that serves as the single entry point for all client requests. It routes traffic to the appropriate backend microservices.
-- **`apps/auth-service`**: A NestJS microservice dedicated to handling user authentication, registration, sessions, and profiles.
-- **`libs/`**: Contains shared code, types, and utilities used across multiple applications.
+- **API Gateway** (Port 8080): Central entry point with rate limiting, authentication, and request routing
+- **Auth Service** (Port 6001): Handles authentication, authorization, and security operations
+- **User Service** (Port 6002): Manages user profiles, social features, and user-related data
+- **Frontend Application**: Modern Next.js client with React 19 and server-side rendering
 
-## Tech Stack
+### Security Features
 
-- **Frontend:** React, Next.js, TypeScript, Tailwind CSS
-- **Backend:** NestJS, TypeScript
-- **Database:** PostgreSQL with Prisma ORM
-- **Caching:** Redis
-- **Monorepo Management:** Nx
+- **Mutual TLS (mTLS)**: Secure service-to-service communication with certificate-based authentication
+- **JWT Authentication**: Stateless authentication with access and refresh token rotation
+- **Rate Limiting**: Configurable throttling to prevent abuse and ensure stability
+- **CSRF Protection**: Cross-site request forgery prevention
+- **Security Headers**: Comprehensive HTTP security headers via Helmet
+- **Input Validation**: Robust validation using class-validator and DTOs
+- **Password Security**: bcrypt hashing with configurable salt rounds
 
-## Getting Started
+## Technology Stack
 
-Follow these steps to get the entire platform running on your local machine.
+### Backend
+
+- **Framework**: NestJS with TypeScript
+- **Database**: MongoDB with Prisma ORM
+- **Caching**: Redis for session management and rate limiting
+- **Authentication**: JWT with Passport strategies
+- **Communication**: TCP microservices with RxJS
+- **Logging**: Structured logging with Pino
+- **Documentation**: Swagger/OpenAPI integration
+
+### Frontend
+
+- **Framework**: Next.js 15 with React 19
+- **Styling**: Tailwind CSS with component variants
+- **State Management**: TanStack Query for server state
+- **Forms**: TanStack Form with validation
+- **UI Components**: Radix UI primitives
+- **Notifications**: Sonner for toast messages
+
+### DevOps & Tooling
+
+- **Monorepo**: Nx workspace with project orchestration
+- **Testing**: Jest with comprehensive test suites
+- **Linting**: ESLint with TypeScript integration
+- **Package Management**: npm workspaces
+
+## Key Features
+
+### Authentication & Security
+
+- Email/password registration with OTP verification
+- Google OAuth 2.0 integration
+- Remember me functionality with extended sessions
+- Password reset with secure 6-digit codes
+- Automatic token refresh with rotation
+- Session management with httpOnly cookies
+
+### User Management
+
+- Comprehensive user profiles with bio and images
+- Follow/unfollow social functionality
+- Image upload and management system
+- User preferences and settings
+
+### Developer Experience
+
+- Hot reload for all services
+- Comprehensive error handling
+- Structured logging across services
+- API documentation with Swagger
+- Type-safe communication between services
+
+## Quick Start
 
 ### Prerequisites
 
-- Node.js (v18 or higher)
-- Docker
+- Node.js 18+
+- MongoDB database
+- Redis instance
+- SMTP server (for email functionality)
 
-### 1. Clone the Repository
+### Installation
+
+1. Clone the repository
 
 ```bash
-git clone https://github.com/your-repo/tec-shop.git
+git clone <repository-url>
 cd tec-shop
 ```
 
-### 2. Install Dependencies
+2. Install dependencies
 
 ```bash
 npm install
 ```
 
-### 3. Configure Environment Variables
+3. Set up environment variables
 
-Backend services require environment variables to run. For a detailed guide on setting up the authentication service, please refer to its dedicated documentation.
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
 
-**>> [Read the `auth-service` documentation for setup instructions](/apps/auth-service/DOCUMENTATION.md)**
+4. Generate Prisma clients
 
-### 4. Set Up the Database
+```bash
+npm run prisma:generate
+```
 
-1.  **Start a PostgreSQL database using Docker.**
+5. Push database schema
 
-    ```bash
-    docker run --name tec-shop-db -e POSTGRES_PASSWORD=mysecretpassword -p 5432:5432 -d postgres
-    ```
+```bash
+npm run prisma:db-push
+```
 
-2.  **Run database migrations.** After configuring your `.env` file for the `auth-service`, run the following command from the project root to apply the database schema:
-    ```bash
-    npx prisma migrate dev --schema=apps/auth-service/prisma/schema.prisma
-    ```
+6. Generate mTLS certificates (optional for development)
 
-## Running the Application
+```bash
+./generate-certs.sh --all
+```
 
-### Running the Entire Platform (Recommended)
-
-To launch the Next.js frontend, the API gateway, and all backend microservices simultaneously, run:
+7. Start all services
 
 ```bash
 npm run dev
 ```
 
-- **User UI** will be available at `http://localhost:3000`
-- **API Gateway** will be available at `http://localhost:4000`
+The application will be available at:
 
-### Running Individual Applications
+- API Gateway: http://localhost:8080/api
+- API Documentation: http://localhost:8080/api-docs
+- Frontend: http://localhost:3000
 
-You can also run each application independently:
+## Development Commands
 
-```bash
-# Run the frontend
-nx serve user-ui
-
-# Run the API Gateway
-nx serve api-gateway
-
-# Run the Authentication Service
-nx serve auth-service
-```
-
-## API Documentation (Swagger)
-
-Once the backend services are running, you can access the interactive API documentation for the `api-gateway` at:
-
-[http://localhost:4000/api/docs](http://localhost:4000/api/docs)
-
-## Testing
-
-To run the test suites for the backend applications and libraries:
+### Service Management
 
 ```bash
-nx test api-gateway
-nx test auth-service
+npm run dev              # Start all services
+npm run user-ui          # Start only frontend
+npx nx serve <service>   # Start specific service
+npx nx build <service>   # Build specific service
 ```
 
-_Note: The `user-ui` application does not currently have a test suite._
+### Database Operations
+
+```bash
+npm run prisma:generate  # Generate Prisma client
+npm run prisma:db-push   # Push schema changes
+npm run prisma:studio    # Open Prisma Studio
+```
+
+### Certificate Management
+
+```bash
+./generate-certs.sh --all        # Generate all certificates
+./generate-certs.sh --service auth-service  # Generate for specific service
+./generate-certs.sh --clean      # Remove all certificates
+```
+
+### Testing & Quality
+
+```bash
+npx nx test <service>         # Run tests for service
+npx nx lint <service>         # Lint specific service
+npx nx typecheck <service>    # Type check service
+npx nx run-many --target=test --all  # Run all tests
+```
+
+## Environment Variables
+
+### Required Variables
+
+```bash
+# Database Configuration
+AUTH_SERVICE_DB_URL="mongodb://localhost:27017/auth"
+USER_SERVICE_DB_URL="mongodb://localhost:27017/user"
+
+# Redis Configuration
+REDIS_URL="redis://localhost:6379"
+
+# Security
+JWT_SECRET="your-jwt-secret-minimum-32-characters"
+
+# Email Configuration
+SMTP_HOST="smtp.example.com"
+SMTP_PORT=587
+SMTP_USER="your-smtp-user"
+SMTP_PASS="your-smtp-password"
+SMTP_FROM="noreply@yourdomain.com"
+
+# Google OAuth (optional)
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+GOOGLE_CALLBACK_URL="http://localhost:8080/api/auth/google/callback"
+
+# Service Configuration
+AUTH_SERVICE_HOST=localhost
+AUTH_SERVICE_PORT=6001
+USER_SERVICE_HOST=localhost
+USER_SERVICE_PORT=6002
+```
+
+### Production Configuration
+
+For production deployment, use the `.env.production.example` template with:
+
+- Strong, unique secrets for JWT and encryption
+- Production database URLs with connection pooling
+- Production SMTP credentials
+- Secure Redis configuration
+- HTTPS URLs for all external services
+
+## API Documentation
+
+The API is fully documented with Swagger/OpenAPI. Access the interactive documentation at:
+
+- Development: http://localhost:8080/api-docs
+- Production: https://your-domain.com/api-docs
+
+### Authentication Endpoints
+
+| Method | Endpoint                    | Description              |
+| ------ | --------------------------- | ------------------------ |
+| POST   | `/api/auth/signup`          | Register new user        |
+| POST   | `/api/auth/verify-email`    | Verify email with OTP    |
+| POST   | `/api/auth/login`           | Authenticate user        |
+| POST   | `/api/auth/refresh`         | Refresh access token     |
+| POST   | `/api/auth/logout`          | Logout user              |
+| POST   | `/api/auth/forgot-password` | Request password reset   |
+| POST   | `/api/auth/reset-password`  | Reset password with code |
+| GET    | `/api/auth/google`          | Google OAuth login       |
+
+### User Management Endpoints
+
+| Method | Endpoint    | Description              |
+| ------ | ----------- | ------------------------ |
+| GET    | `/api/user` | Get current user profile |
+| PATCH  | `/api/user` | Update user profile      |
+
+of course this is only the initial setup of endpoints, I will add more as I develop, the project is in the baby stage anyways.
+
+## Architecture Diagram
+
+```mermaid
+graph TB
+    Client[Next.js Frontend]
+    Gateway[API Gateway :8080]
+    Auth[Auth Service :6001]
+    User[User Service :6002]
+    MongoDB[(MongoDB)]
+    Redis[(Redis)]
+    SMTP[SMTP Server]
+
+    Client <--> Gateway
+    Gateway <--> Auth
+    Gateway <--> User
+    Auth <--> MongoDB
+    User <--> MongoDB
+    Auth <--> Redis
+    Auth <--> SMTP
+
+    subgraph "mTLS Communication"
+        Gateway -.-> Auth
+        Gateway -.-> User
+        Auth -.-> User
+    end
+```
+
+## Security Considerations
+
+### Authentication Flow
+
+1. User registers with email/password
+2. OTP sent via email for verification
+3. Email verification creates user profile
+4. JWT access token (1-24 hours) and refresh token (7-30 days) issued
+5. Tokens stored in httpOnly cookies
+6. Automatic token refresh with rotation
+7. Secure logout with token revocation
+
+### Rate Limiting
+
+- Login attempts: 5 per 15 minutes
+- Registration: 3 per 15 minutes
+- Password reset: 3 per 15 minutes
+- Token refresh: 10 per 15 minutes
+
+### Data Protection
+
+- Passwords hashed with bcrypt (10 rounds)
+- Refresh tokens hashed with SHA-256
+- Sensitive data encrypted in transit (HTTPS/TLS)
+- Input validation on all endpoints
+- SQL injection prevention via Prisma ORM
+
+## Deployment
+
+### Docker Deployment
+
+The project includes Docker configurations for containerized deployment:
+
+```bash
+# Build and run with Docker Compose
+docker-compose up -d
+```
+
+### Production Checklist
+
+- [ ] Use strong, unique environment variables
+- [ ] Configure production databases with connection pooling
+- [ ] Set up Redis with persistence and clustering
+- [ ] Configure HTTPS with valid SSL certificates
+- [ ] Enable request logging and monitoring
+- [ ] Set up health checks and graceful shutdown
+- [ ] Configure reverse proxy (nginx/Apache)
+- [ ] Enable database backups
+- [ ] Set up monitoring and alerting
+
+## Performance Features
+
+### Database Optimization
+
+- Indexed queries for optimal performance
+- Separate databases per service
+- Connection pooling with Prisma
+- Optimistic concurrency control
+
+### Caching Strategy
+
+- Redis for session storage
+- Rate limiting data caching
+- OTP and reset code caching
+- Connection pooling
+
+### Security Performance
+
+- JWT stateless authentication
+- Cookie-based token storage
+- Efficient password hashing
+- Rate limiting to prevent abuse
+
+And more more to add :).
+
+## Troubleshooting
+
+### Common Issues
+
+**Services not starting**
+
+- Check if required ports are available (8080, 6001, 6002)
+- Verify environment variables are set correctly
+- Ensure MongoDB and Redis are running
+
+**Authentication issues**
+
+- Verify JWT_SECRET is set and consistent
+- Check database connections
+- Confirm SMTP configuration for email verification
+
+**mTLS certificate errors**
+
+- Regenerate certificates: `./generate-certs.sh --clean && ./generate-certs.sh --all`
+- Ensure certificate permissions are correct
+
+## Acknowledgements
+
+- [Sakura dev](https://www.youtube.com/@SakuraDev) - Comprehensive NestJS microservices guidance and architecture patterns
+- NestJS community for excellent documentation and examples
+- Prisma team for outstanding ORM and database tooling
+- Next.js team for the powerful React framework
+
+## License
+
+[MIT](https://choosealicense.com/licenses/mit/)

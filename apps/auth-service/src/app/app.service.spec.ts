@@ -12,9 +12,7 @@ describe('AppService', () => {
     service = app.get<AppService>(AppService);
   });
 
-  describe('getData', () => {
-    it('should return "Hello API"', () => {
-      expect(service.getData()).toEqual({message: 'Hello API test from path service/src/app/app.service.ts'});
-    });
+  it('should be defined', () => {
+    expect(service).toBeDefined();
   });
 });

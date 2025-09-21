@@ -56,3 +56,10 @@ apps/*/prisma/generated/
 # Next.js
 .next
 out
+/generated/prisma
+
+# certificates mTLS security keys
+/certs
+
+.vscode
+

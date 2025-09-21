@@ -1,12 +1,21 @@
+'use client';
+
 import Link from 'next/link';
 import React from 'react';
 import { Search } from 'lucide-react';
+import { useAuth } from '../../hooks/use-auth';
 import ProfileIcon from '../../assets/svgs/profile-icon';
 import HeartIcon from '../../assets/svgs/heart-icon';
 import CartIcon from '../../assets/svgs/cart-icon';
 import HeaderBottom from './header-bottom';
 
 const Header = () => {
+  const { isAuthenticated, user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+  };
+
   return (
     <div className="w-full bg-ui-background border-b border-ui-divider">
       <div className="w-[90%] lg:w-[80%] mx-auto py-5 flex items-center justify-between gap-4">
@@ -38,21 +47,33 @@ const Header = () => {
           <div className="flex items-center gap-3 lg:gap-4">
             {/* Profile Icon */}
             <Link
-              href={'/login'}
+              href={isAuthenticated ? '/profile' : '/login'}
               className="p-2 border-2 w-[45px] h-[45px] lg:w-[50px] lg:h-[50px] flex items-center justify-center rounded-full border-ui-divider hover:bg-ui-muted transition-colors"
             >
               <ProfileIcon className="w-5 h-5 lg:w-6 lg:h-6 text-text-primary" />
             </Link>
 
-            {/* Sign In Text */}
-            <Link href={'/login'} className="hidden md:block">
-              <div className="flex flex-col">
+            {/* User Info / Sign In */}
+            {isAuthenticated ? (
+              <div className="hidden md:flex flex-col">
                 <span className="block font-medium text-sm">Hello,</span>
-                <span className="block font-semibold text-brand-primary text-sm">
-                  Sign In
-                </span>
+                <button
+                  onClick={handleLogout}
+                  className="block font-semibold text-brand-primary text-sm hover:underline text-left"
+                >
+                  {user?.name?.split(' ')[0] || 'User'}
+                </button>
               </div>
-            </Link>
+            ) : (
+              <Link href={'/login'} className="hidden md:block">
+                <div className="flex flex-col">
+                  <span className="block font-medium text-sm">Hello,</span>
+                  <span className="block font-semibold text-brand-primary text-sm">
+                    Sign In
+                  </span>
+                </div>
+              </Link>
+            )}
 
             {/* Wishlist Icon */}
             <Link
