@@ -1,11 +1,9 @@
-import nx from '@nx/eslint-plugin';
+import baseConfig from './eslint.base.config.mjs';
 
 export default [
-  ...nx.configs['flat/base'],
-  ...nx.configs['flat/typescript'],
-  ...nx.configs['flat/javascript'],
+  ...baseConfig,
   {
-    ignores: ['**/dist', '**/generated/prisma'],
+    ignores: ['**/dist', '**/generated/prisma', '**/out-tsc'],
   },
   {
     files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
