@@ -114,6 +114,30 @@ export class ForgotPasswordDto {
 }
 
 export class ResetPasswordDto {
+  @ApiProperty({
+    example: 'abc123-def456-ghi789',
+    description: 'Password reset token from email link'
+  })
+  @IsString()
+  @IsNotEmpty()
+  token!: string;
+
+  @ApiProperty({
+    example: 'NewPassword123!',
+    description:
+      'New password (min 8 chars, must contain uppercase, lowercase, number and special character)',
+  })
+  @IsString()
+  @MinLength(8, { message: 'Password must be at least 8 characters long' })
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/, {
+    message:
+      'Password must contain at least one uppercase letter, one lowercase letter, one number and one special character (@$!%*?&)',
+  })
+  newPassword!: string;
+}
+
+// Keep the old DTO for backward compatibility during transition
+export class ResetPasswordWithCodeDto {
   @ApiProperty({ example: 'test@example.com', description: 'User email' })
   @IsEmail()
   email!: string;
@@ -136,4 +160,14 @@ export class ResetPasswordDto {
       'Password must contain at least one uppercase letter, one lowercase letter, one number and one special character (@$!%*?&)',
   })
   newPassword!: string;
+}
+
+export class ValidateResetTokenDto {
+  @ApiProperty({
+    example: 'abc123-def456-ghi789',
+    description: 'Password reset token to validate'
+  })
+  @IsString()
+  @IsNotEmpty()
+  token!: string;
 }

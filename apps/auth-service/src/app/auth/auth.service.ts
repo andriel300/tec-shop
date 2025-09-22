@@ -11,7 +11,7 @@ import { randomInt, randomBytes, createHash } from 'crypto';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { AuthPrismaService } from '../../prisma/prisma.service';
-import { LoginDto, SignupDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto } from '@tec-shop/dto';
+import { LoginDto, SignupDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto, ResetPasswordWithCodeDto, ValidateResetTokenDto } from '@tec-shop/dto';
 import { EmailService } from '../email/email.service';
 import { RedisService } from '../redis/redis.service';
 
@@ -241,32 +241,128 @@ export class AuthService implements OnModuleInit {
     });
 
     // Always return success to prevent email enumeration
-    const successMessage = 'If an account with this email exists, you will receive a password reset code.';
+    const successMessage = 'If an account with this email exists, you will receive a password reset link.';
 
     if (!user || !user.isEmailVerified) {
       return { message: successMessage };
     }
 
-    // Generate cryptographically secure 6-digit code
-    const resetCode = randomInt(100000, 1000000).toString().padStart(6, '0');
+    // Clean up any existing unused tokens for this user (security best practice)
+    await this.prisma.passwordResetToken.deleteMany({
+      where: {
+        userId: user.id,
+        OR: [
+          { used: true },
+          { expiresAt: { lt: new Date() } }
+        ]
+      }
+    });
 
-    // Store code hash with user ID (similar to OTP system)
-    const codeHash = createHash('sha256').update(resetCode).digest('hex');
+    // Generate cryptographically secure token (128-bit entropy)
+    const resetToken = randomBytes(32).toString('hex');
 
-    // Store in Redis with 10-minute expiry (shorter than URL tokens for better security)
-    await this.redisService.set(
-      `password-reset:${codeHash}`,
-      user.id,
-      600 // 10 minutes
-    );
+    // Create token record with 1-hour expiry
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    await this.prisma.passwordResetToken.create({
+      data: {
+        token: resetToken,
+        userId: user.id,
+        expiresAt,
+      },
+    });
 
-    // Send reset email with the 6-digit code
-    await this.emailService.sendPasswordResetCode(user.email, resetCode);
+    // Generate reset link with frontend URL
+    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+
+    // Send reset email with secure link
+    await this.emailService.sendPasswordResetLink(user.email, resetLink);
 
     return { message: successMessage };
   }
 
+  async validateResetToken(validateResetTokenDto: ValidateResetTokenDto) {
+    const { token } = validateResetTokenDto;
+
+    const resetToken = await this.prisma.passwordResetToken.findUnique({
+      where: {
+        token,
+        used: false,
+        expiresAt: {
+          gt: new Date()
+        }
+      },
+      include: {
+        user: {
+          select: {
+            email: true,
+            isEmailVerified: true
+          }
+        }
+      }
+    });
+
+    if (!resetToken || !resetToken.user.isEmailVerified) {
+      throw new UnauthorizedException('Invalid or expired reset token');
+    }
+
+    return {
+      valid: true,
+      email: resetToken.user.email
+    };
+  }
+
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
+    const { token, newPassword } = resetPasswordDto;
+
+    // Find and validate the token
+    const resetToken = await this.prisma.passwordResetToken.findUnique({
+      where: {
+        token,
+        used: false,
+        expiresAt: {
+          gt: new Date()
+        }
+      },
+      include: {
+        user: true
+      }
+    });
+
+    if (!resetToken || !resetToken.user.isEmailVerified) {
+      throw new UnauthorizedException('Invalid or expired reset token');
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update the user's password and mark token as used
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: resetToken.userId },
+        data: { password: hashedPassword },
+      }),
+      this.prisma.passwordResetToken.update({
+        where: { id: resetToken.id },
+        data: { used: true },
+      })
+    ]);
+
+    // Clean up all reset tokens for this user (security best practice)
+    await this.prisma.passwordResetToken.deleteMany({
+      where: {
+        userId: resetToken.userId,
+        used: true
+      }
+    });
+
+    // Send confirmation email
+    await this.emailService.sendPasswordChangedNotification(resetToken.user.email);
+
+    return { message: 'Password has been reset successfully.' };
+  }
+
+  // Legacy method - keep for backward compatibility during transition
+  async resetPasswordWithCode(resetPasswordDto: ResetPasswordWithCodeDto) {
     const { email, code, newPassword } = resetPasswordDto;
 
     // First verify the user exists and get their ID
