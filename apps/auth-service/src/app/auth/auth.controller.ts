@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 // Throttle decorators removed - rate limiting handled at API Gateway
-import { LoginDto, SignupDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto, ResetPasswordWithCodeDto, ValidateResetTokenDto } from '@tec-shop/dto';
+import { LoginDto, SignupDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto, ResetPasswordWithCodeDto, ValidateResetTokenDto, SellerSignupDto } from '@tec-shop/dto';
 import { AuthService } from './auth.service';
 
 @Controller()
@@ -14,16 +14,34 @@ export class AuthController {
     return this.authService.signup(signupDto);
   }
 
+  @MessagePattern('seller-auth-signup')
+  // Throttle decorator removed - rate limiting handled at API Gateway
+  async sellerSignup(@Payload() sellerSignupDto: SellerSignupDto) {
+    return this.authService.sellerSignup(sellerSignupDto);
+  }
+
   @MessagePattern('auth-verify-email')
   // Throttle decorator removed - rate limiting handled at API Gateway
   async verifyEmail(@Payload() verifyEmailDto: VerifyEmailDto) {
     return this.authService.verifyEmail(verifyEmailDto);
   }
 
+  @MessagePattern('seller-auth-verify-email')
+  // Throttle decorator removed - rate limiting handled at API Gateway
+  async verifySellerEmail(@Payload() verifyEmailDto: VerifyEmailDto) {
+    return this.authService.verifySellerEmail(verifyEmailDto);
+  }
+
   @MessagePattern('auth-login')
   // Throttle decorator removed - rate limiting handled at API Gateway
   async login(@Payload() credential: LoginDto) {
     return this.authService.login(credential);
+  }
+
+  @MessagePattern('seller-auth-login')
+  // Throttle decorator removed - rate limiting handled at API Gateway
+  async sellerLogin(@Payload() credential: LoginDto) {
+    return this.authService.sellerLogin(credential);
   }
 
   @MessagePattern('validate-token')

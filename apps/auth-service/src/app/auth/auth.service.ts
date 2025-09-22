@@ -11,7 +11,7 @@ import { randomInt, randomBytes, createHash } from 'crypto';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { AuthPrismaService } from '../../prisma/prisma.service';
-import { LoginDto, SignupDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto, ResetPasswordWithCodeDto, ValidateResetTokenDto } from '@tec-shop/dto';
+import { LoginDto, SignupDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto, ResetPasswordWithCodeDto, ValidateResetTokenDto, SellerSignupDto } from '@tec-shop/dto';
 import { EmailService } from '../email/email.service';
 import { RedisService } from '../redis/redis.service';
 
@@ -22,7 +22,8 @@ export class AuthService implements OnModuleInit {
     private prisma: AuthPrismaService,
     private redisService: RedisService,
     private emailService: EmailService,
-    @Inject('USER_SERVICE') private readonly userClient: ClientProxy
+    @Inject('USER_SERVICE') private readonly userClient: ClientProxy,
+    @Inject('SELLER_SERVICE') private readonly sellerClient: ClientProxy
   ) {}
 
   async onModuleInit() {
@@ -88,6 +89,63 @@ export class AuthService implements OnModuleInit {
     };
   }
 
+  async sellerSignup(sellerSignupDto: SellerSignupDto) {
+    const { email, password, name, phoneNumber, country } = sellerSignupDto;
+
+    // Check if email already exists in regular users or sellers
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('User with this email already exists');
+    }
+
+    const existingSeller = await this.prisma.seller.findUnique({
+      where: { email },
+    });
+
+    if (existingSeller) {
+      throw new ConflictException('Seller with this email already exists');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create seller in auth-service
+    const seller = await this.prisma.seller.create({
+      data: {
+        name,
+        email,
+        phoneNumber,
+        country,
+        password: hashedPassword,
+      },
+    });
+
+    // Generate and store OTP for seller verification
+    const otp = randomInt(100000, 1000000).toString().padStart(6, '0');
+    const redisPayload = JSON.stringify({
+      otp,
+      name,
+      phoneNumber,
+      country,
+      userType: 'seller'
+    });
+    await this.redisService.set(
+      `seller-verification-otp:${seller.id}`,
+      redisPayload,
+      600
+    );
+
+    // Send verification email
+    await this.emailService.sendOtp(seller.email, otp);
+
+    return {
+      message:
+        'Seller signup successful. Please check your email to verify your account.',
+    };
+  }
+
   async login(credential: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: credential.email },
@@ -111,6 +169,31 @@ export class AuthService implements OnModuleInit {
 
     // Pass rememberMe flag to token generation for extended session
     return this.generateTokens(user.id, user.email, credential.rememberMe);
+  }
+
+  async sellerLogin(credential: LoginDto) {
+    const seller = await this.prisma.seller.findUnique({
+      where: { email: credential.email },
+    });
+
+    // Generic error message to prevent email enumeration
+    const genericError = 'Invalid credentials';
+
+    if (!seller || !seller.password || !seller.isEmailVerified) {
+      throw new UnauthorizedException(genericError);
+    }
+
+    const isPasswordMatching = await bcrypt.compare(
+      credential.password,
+      seller.password
+    );
+
+    if (!isPasswordMatching) {
+      throw new UnauthorizedException(genericError);
+    }
+
+    // Generate tokens for seller with role information
+    return this.generateSellerTokens(seller.id, seller.email, credential.rememberMe);
   }
 
   async verifyEmail(verifyEmailDto: VerifyEmailDto) {
@@ -175,6 +258,73 @@ export class AuthService implements OnModuleInit {
     }
 
     return { message: 'Email verified successfully.' };
+  }
+
+  async verifySellerEmail(verifyEmailDto: VerifyEmailDto) {
+    const { email, otp } = verifyEmailDto;
+
+    const seller = await this.prisma.seller.findUnique({
+      where: { email },
+    });
+
+    if (!seller) {
+      throw new UnauthorizedException('Invalid verification details');
+    }
+
+    // Check OTP attempt limiting
+    const attemptKey = `seller-otp-attempts:${seller.id}`;
+    const attemptsStr = await this.redisService.get(attemptKey);
+    const attempts = attemptsStr ? parseInt(attemptsStr) : 0;
+
+    if (attempts >= 3) {
+      // Clean up OTP after max attempts
+      await this.redisService.del(`seller-verification-otp:${seller.id}`);
+      throw new UnauthorizedException('Too many failed attempts. Please request a new OTP.');
+    }
+
+    const redisPayload = await this.redisService.get(
+      `seller-verification-otp:${seller.id}`
+    );
+
+    if (!redisPayload) {
+      throw new UnauthorizedException('Invalid verification details');
+    }
+
+    const { otp: storedOtp, name, phoneNumber, country } = JSON.parse(redisPayload);
+
+    if (storedOtp !== otp) {
+      // Increment failed attempts
+      await this.redisService.set(attemptKey, (attempts + 1).toString(), 600);
+      throw new UnauthorizedException('Invalid verification details');
+    }
+
+    await this.prisma.seller.update({
+      where: { id: seller.id },
+      data: { isEmailVerified: true },
+    });
+
+    await this.redisService.del(`seller-verification-otp:${seller.id}`);
+    await this.redisService.del(`seller-otp-attempts:${seller.id}`);
+
+    // Create the seller profile in the seller-service now that email is verified
+    try {
+      await firstValueFrom(
+        this.sellerClient.send('create-seller-profile', {
+          authId: seller.id,
+          name,
+          email: seller.email,
+          phoneNumber,
+          country,
+        })
+      );
+      console.log(`Seller profile created successfully for seller ${seller.id}`);
+    } catch (error) {
+      console.error('Failed to create seller profile in seller-service:', error);
+      // Log the error but don't fail the email verification process
+      // The seller profile can be created later if needed
+    }
+
+    return { message: 'Seller email verified successfully.' };
   }
 
   async validateToken(token: string) {
@@ -421,6 +571,7 @@ export class AuthService implements OnModuleInit {
     const payload = {
       sub: userId,
       username: email,
+      role: 'user',
     };
 
     // Set token expiration based on rememberMe preference
@@ -436,6 +587,36 @@ export class AuthService implements OnModuleInit {
     const hashedRefreshToken = createHash('sha256').update(refresh_token).digest('hex');
     await this.prisma.user.update({
       where: { id: userId },
+      data: { refreshToken: hashedRefreshToken },
+    });
+
+    return {
+      access_token,
+      refresh_token,
+      rememberMe, // Return the flag for cookie configuration
+    };
+  }
+
+  private async generateSellerTokens(sellerId: string, email: string, rememberMe = false) {
+    const payload = {
+      sub: sellerId,
+      username: email,
+      role: 'seller',
+    };
+
+    // Set token expiration based on rememberMe preference
+    const accessTokenExpiry = rememberMe ? '7d' : '1d'; // Extended: 7 days, Normal: 1 day
+
+    // Generate access token with appropriate expiration
+    const access_token = this.jwtService.sign(payload, { expiresIn: accessTokenExpiry });
+
+    // Generate refresh token (cryptographically secure)
+    const refresh_token = randomBytes(32).toString('hex');
+
+    // Store refresh token in database (hashed for security)
+    const hashedRefreshToken = createHash('sha256').update(refresh_token).digest('hex');
+    await this.prisma.seller.update({
+      where: { id: sellerId },
       data: { refreshToken: hashedRefreshToken },
     });
 
