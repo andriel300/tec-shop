@@ -26,6 +26,9 @@
     },
     {
       "path": "./libs/shared/dto"
+    },
+    {
+      "path": "./apps/seller-ui"
     }
   ]
 }
