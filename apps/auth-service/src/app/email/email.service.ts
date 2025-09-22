@@ -42,22 +42,49 @@ export class EmailService {
     });
   }
 
-  // Legacy method - keeping for backward compatibility during migration
   async sendPasswordResetLink(to: string, resetLink: string): Promise<void> {
     await this.mailerService.sendMail({
       to,
       subject: 'Tec-Shop Password Reset Request',
       html: `
-        <div style="font-family: sans-serif; text-align: center; padding: 20px;">
-          <h2>Password Reset Request</h2>
-          <p>You have requested to reset your password for Tec-Shop.</p>
-          <p>Please click the link below to reset your password:</p>
-          <p style="margin: 20px;">
-            <a href="${resetLink}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-              Reset Password
-            </a>
-          </p>
-          <p>If you did not request a password reset, please ignore this email.</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
+          <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #007bff; margin: 0; font-size: 28px;">TecShop</h1>
+            </div>
+
+            <h2 style="color: #333; margin-bottom: 20px;">Password Reset Request</h2>
+
+            <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
+              You have requested to reset your password for your TecShop account.
+              Click the button below to create a new password.
+            </p>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetLink}"
+                 style="background-color: #007bff; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 16px;">
+                Reset Your Password
+              </a>
+            </div>
+
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; margin: 20px 0;">
+              <p style="margin: 0; color: #666; font-size: 14px;">
+                <strong>🔒 Security Notice:</strong> This link will expire in 1 hour for your security.
+              </p>
+            </div>
+
+            <p style="color: #666; font-size: 14px; line-height: 1.5; margin-top: 20px;">
+              If you didn't request this password reset, you can safely ignore this email.
+              Your password will remain unchanged.
+            </p>
+
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+
+            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
+              If the button doesn't work, copy and paste this link into your browser:<br>
+              <span style="word-break: break-all;">${resetLink}</span>
+            </p>
+          </div>
         </div>
       `,
     });

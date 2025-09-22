@@ -22,9 +22,23 @@ export interface ForgotPasswordData {
 }
 
 export interface ResetPasswordData {
+  token: string;
+  newPassword: string;
+}
+
+export interface ResetPasswordWithCodeData {
   email: string;
   code: string;
   newPassword: string;
+}
+
+export interface ValidateResetTokenData {
+  token: string;
+}
+
+export interface ValidateResetTokenResponse {
+  valid: boolean;
+  email: string;
 }
 
 export interface AuthResponse {
@@ -58,8 +72,18 @@ export const requestPasswordReset = async (data: ForgotPasswordData): Promise<Ap
   return response.data;
 };
 
+export const validateResetToken = async (data: ValidateResetTokenData): Promise<ValidateResetTokenResponse> => {
+  const response = await apiClient.post('/auth/validate-reset-token', data);
+  return response.data;
+};
+
 export const resetPassword = async (data: ResetPasswordData): Promise<ApiResponse> => {
   const response = await apiClient.post('/auth/reset-password', data);
+  return response.data;
+};
+
+export const resetPasswordWithCode = async (data: ResetPasswordWithCodeData): Promise<ApiResponse> => {
+  const response = await apiClient.post('/auth/reset-password-with-code', data);
   return response.data;
 };
 

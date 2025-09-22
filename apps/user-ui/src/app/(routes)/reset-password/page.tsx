@@ -2,33 +2,45 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useForm } from '@tanstack/react-form';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { resetPassword } from '../../../lib/api/auth';
+import { resetPassword, validateResetToken } from '../../../lib/api/auth';
 import { ProtectedRoute } from '../../../components/auth/protected-route';
 import { Button } from '../../../components/ui/core/Button';
 import { Input } from '../../../components/ui/core/Input';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  // Legacy support: Check for old token parameter and redirect
   const token = searchParams.get('token');
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Validate token when component mounts
+  const { data: tokenValidation, isLoading: isValidating, error: tokenError } = useQuery({
+    queryKey: ['validate-reset-token', token],
+    queryFn: () => validateResetToken({ token: token! }),
+    enabled: !!token,
+    retry: false,
+  });
+
   useEffect(() => {
-    if (token) {
-      toast.error(
-        'This password reset link is no longer valid. Please request a new reset code.'
-      );
+    if (!token) {
+      toast.error('No reset token provided. Please check your email for the reset link.');
       router.push('/forgot-password');
     }
   }, [token, router]);
+
+  useEffect(() => {
+    if (tokenError) {
+      toast.error('This password reset link is invalid or has expired. Please request a new one.');
+      router.push('/forgot-password');
+    }
+  }, [tokenError, router]);
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: resetPassword,
@@ -43,19 +55,58 @@ function ResetPasswordContent() {
 
   const form = useForm({
     defaultValues: {
-      email: '',
-      code: '',
       newPassword: '',
       confirmPassword: '',
     },
     onSubmit: async ({ value }) => {
+      if (!token) return;
       mutate({
-        email: value.email.trim(),
-        code: value.code.trim(),
+        token,
         newPassword: value.newPassword,
       });
     },
   });
+
+  // Show loading state while validating token
+  if (isValidating) {
+    return (
+      <ProtectedRoute requireAuth={false}>
+        <main className="flex items-center justify-center min-h-[calc(100vh-200px)] bg-ui-muted/50 py-12 px-4">
+          <div className="w-full max-w-md p-8 space-y-6 bg-ui-muted rounded-lg shadow-elev-lg border border-ui-divider">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto"></div>
+              <p className="mt-4 text-text-secondary">Validating reset link...</p>
+            </div>
+          </div>
+        </main>
+      </ProtectedRoute>
+    );
+  }
+
+  // Show error state if token is invalid
+  if (tokenError || !tokenValidation) {
+    return (
+      <ProtectedRoute requireAuth={false}>
+        <main className="flex items-center justify-center min-h-[calc(100vh-200px)] bg-ui-muted/50 py-12 px-4">
+          <div className="w-full max-w-md p-8 space-y-6 bg-ui-muted rounded-lg shadow-elev-lg border border-ui-divider">
+            <div className="text-center">
+              <AlertCircle className="h-12 w-12 text-feedback-error mx-auto mb-4" />
+              <h1 className="text-xl font-bold text-text-primary mb-2">Invalid Reset Link</h1>
+              <p className="text-text-secondary mb-6">
+                This password reset link is invalid or has expired.
+              </p>
+              <Link
+                href="/forgot-password"
+                className="inline-flex items-center px-4 py-2 bg-brand-primary text-white rounded-md hover:bg-brand-secondary transition-colors"
+              >
+                Request New Reset Link
+              </Link>
+            </div>
+          </div>
+        </main>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute requireAuth={false}>
@@ -66,8 +117,7 @@ function ResetPasswordContent() {
               Reset your password
             </h1>
             <p className="mt-2 text-sm text-center text-text-secondary">
-              Enter your email, the 6-digit code from your email, and your new
-              password.
+              Enter your new password for {tokenValidation.email}
             </p>
           </div>
 
@@ -79,84 +129,6 @@ function ResetPasswordContent() {
             }}
             className="space-y-4"
           >
-            {/* Email field */}
-            <form.Field
-              name="email"
-              validators={{
-                onChange: ({ value }) => {
-                  if (!value) return 'Email is required';
-                  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
-                    return 'Invalid email format';
-                  return undefined;
-                },
-              }}
-            >
-              {(field) => (
-                <div>
-                  <label
-                    htmlFor={field.name}
-                    className="block py-2 text-sm font-medium text-text-secondary"
-                  >
-                    Email
-                  </label>
-                  <Input
-                    id={field.name}
-                    name={field.name}
-                    type="email"
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    placeholder="Enter your email"
-                  />
-                  {field.state.meta.errors.length > 0 ? (
-                    <em className="text-sm text-feedback-error">
-                      {field.state.meta.errors[0]}
-                    </em>
-                  ) : null}
-                </div>
-              )}
-            </form.Field>
-
-            {/* Code field */}
-            <form.Field
-              name="code"
-              validators={{
-                onChange: ({ value }) => {
-                  if (!value) return 'Reset code is required';
-                  if (!/^\d{6}$/.test(value))
-                    return 'Code must be a 6-digit number';
-                  return undefined;
-                },
-              }}
-            >
-              {(field) => (
-                <div>
-                  <label
-                    htmlFor={field.name}
-                    className="block py-2 text-sm font-medium text-text-secondary"
-                  >
-                    6-Digit Reset Code
-                  </label>
-                  <Input
-                    id={field.name}
-                    name={field.name}
-                    type="text"
-                    inputMode="numeric"
-                    pattern="\d{6}"
-                    maxLength={6}
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    placeholder="Enter 6-digit code"
-                  />
-                  {field.state.meta.errors.length > 0 ? (
-                    <em className="text-sm text-feedback-error">
-                      {field.state.meta.errors[0]}
-                    </em>
-                  ) : null}
-                </div>
-              )}
-            </form.Field>
 
             {/* New Password field */}
             <form.Field

@@ -1,7 +1,7 @@
 import { Body, Controller, Inject, Post, Res, Req, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import type { LoginDto, SignupDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto } from '@tec-shop/dto';
+import type { LoginDto, SignupDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto, ValidateResetTokenDto } from '@tec-shop/dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Response, Request } from 'express';
@@ -188,6 +188,20 @@ export class AuthController {
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
     return await firstValueFrom(
       this.authService.send('auth-forgot-password', forgotPasswordDto)
+    );
+  }
+
+  @Post('validate-reset-token')
+  @Throttle({ medium: { limit: 10, ttl: 900000 } }) // 10 validation attempts per 15 minutes
+  @ApiOperation({ summary: 'Validate password reset token' })
+  @ApiResponse({
+    status: 201,
+    description: 'Token is valid, returns user email.',
+  })
+  @ApiResponse({ status: 401, description: 'Invalid or expired reset token.' })
+  async validateResetToken(@Body() validateResetTokenDto: ValidateResetTokenDto) {
+    return await firstValueFrom(
+      this.authService.send('auth-validate-reset-token', validateResetTokenDto)
     );
   }
 

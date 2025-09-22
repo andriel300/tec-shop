@@ -10,13 +10,12 @@ import { ProtectedRoute } from '../../../components/auth/protected-route';
 import { Button } from '../../../components/ui/core/Button';
 import { Input } from '../../../components/ui/core/Input';
 import Link from 'next/link';
-
 export default function ForgotPasswordPage() {
   const { mutate, isPending, isSuccess, error } = useMutation({
     mutationFn: requestPasswordReset,
     onSuccess: () => {
       toast.success(
-        'If an account with that email exists, a password reset link has been sent.'
+        'If an account with that email exists, you will receive a password reset link.'
       );
     },
     onError: (err) => {
@@ -42,7 +41,7 @@ export default function ForgotPasswordPage() {
             Forgot your password?
           </h1>
           <p className="mt-2 text-sm text-center text-text-secondary">
-            Enter your email address and we&apos;ll send you a link to reset your
+            Enter your email address and we&apos;ll send you a secure link to reset your
             password.
           </p>
         </div>
@@ -96,8 +95,7 @@ export default function ForgotPasswordPage() {
 
           {isSuccess && (
             <div className="p-3 text-sm text-center text-white bg-feedback-success rounded-md">
-              If an account with that email exists, a password reset link has
-              been sent.
+              If an account with that email exists, a password reset link has been sent.
             </div>
           )}
 
