@@ -1,0 +1,21 @@
+{
+  "displayName": "@tec-shop/seller-service E2E",
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "../../",
+  "testEnvironment": "node",
+  "testRegex": "\\.e2e-spec\\.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "coverageDirectory": "../test-output/jest/e2e-coverage",
+  "collectCoverageFrom": [
+    "src/**/*.(t|j)s",
+    "!src/**/*.spec.ts",
+    "!src/**/*.e2e-spec.ts",
+    "!src/test/**/*",
+    "!src/main.ts"
+  ],
+  "testTimeout": 60000,
+  "setupFilesAfterEnv": ["<rootDir>/test/e2e/setup.ts"],
+  "verbose": true
+}

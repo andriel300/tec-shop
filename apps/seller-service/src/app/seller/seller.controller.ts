@@ -1,6 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { SellerService } from './seller.service';
+import { ServiceAuthUtil, SignedRequest } from './service-auth.util';
 
 interface CreateSellerProfileDto {
   authId: string;
@@ -26,6 +27,28 @@ export class SellerController {
   @MessagePattern('create-seller-profile')
   async createProfile(@Payload() createProfileDto: CreateSellerProfileDto) {
     return this.sellerService.createProfile(createProfileDto);
+  }
+
+  @MessagePattern('create-seller-profile-signed')
+  async createProfileSigned(@Payload() signedRequest: SignedRequest) {
+    // Verify the signed request from auth-service (Security Hardened)
+    const authServiceSecret = ServiceAuthUtil.deriveServiceSecret(
+      process.env.SERVICE_MASTER_SECRET || 'default-secret',
+      'auth-service'
+    );
+
+    const verification = ServiceAuthUtil.verifyRequest(
+      signedRequest,
+      'auth-service',
+      authServiceSecret
+    );
+
+    if (!verification.valid) {
+      throw new Error(`Invalid service request: ${verification.reason}`);
+    }
+
+    // Process the verified request
+    return this.sellerService.createProfile(signedRequest.payload);
   }
 
   @MessagePattern('get-seller-profile')
