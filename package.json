@@ -133,7 +133,9 @@
     "libs/*",
     "libs/shared/*",
     "shared",
-    "shared/*"
+    "shared/*",
+    "prisma-schemas/*",
+    "prisma-clients/*"
   ],
   "nx": {
     "includedScripts": [],
