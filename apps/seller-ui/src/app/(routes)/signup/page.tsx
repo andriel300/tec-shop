@@ -6,6 +6,7 @@ import { SignUpForm } from '../../../components/forms/signup-form';
 import { VerifyOtpForm } from '../../../components/forms/verify-otp-form';
 import { ProtectedRoute } from '../../../components/auth/protected-route';
 import { useRouter } from 'next/navigation';
+import CreateShop from '../../../shared/modules/auth/create-shop';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -70,6 +71,8 @@ export default function SignupPage() {
                   )}
                 </>
               )}
+
+              {activeStep === 2 && <CreateShop />}
 
               {/* Login link */}
               <div className="mt-4 text-center">
