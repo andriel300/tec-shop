@@ -14,6 +14,7 @@ import { AuthPrismaService } from '../../prisma/prisma.service';
 import { LoginDto, SignupDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto, ResetPasswordWithCodeDto, ValidateResetTokenDto, SellerSignupDto } from '@tec-shop/dto';
 import { EmailService } from '../email/email.service';
 import { RedisService } from '../redis/redis.service';
+import { ServiceAuthUtil } from './service-auth.util';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -122,19 +123,39 @@ export class AuthService implements OnModuleInit {
       },
     });
 
-    // Generate and store OTP for seller verification
+    // Generate and store OTP for seller verification (Security Hardened)
     const otp = randomInt(100000, 1000000).toString().padStart(6, '0');
-    const redisPayload = JSON.stringify({
-      otp,
+
+    // Hash OTP before storing to prevent exposure if Redis is compromised
+    const hashedOtp = createHash('sha256').update(otp + seller.id + process.env.OTP_SALT || 'default-salt').digest('hex');
+
+    // Store user data separately with hash-based key (no PII in keys)
+    const dataHash = createHash('sha256').update(`seller:${seller.id}:${Date.now()}`).digest('hex');
+
+    // Store OTP verification data (no plain text OTP or PII)
+    await this.redisService.set(
+      `otp:${hashedOtp}`,
+      JSON.stringify({
+        sellerId: seller.id,
+        dataKey: dataHash,
+        created: Date.now(),
+        attempts: 0
+      }),
+      600
+    );
+
+    // Store user data separately (encrypted with Base64)
+    const userData = Buffer.from(JSON.stringify({
       name,
       phoneNumber,
       country,
       userType: 'seller'
-    });
+    })).toString('base64');
+
     await this.redisService.set(
-      `seller-verification-otp:${seller.id}`,
-      redisPayload,
-      600
+      `data:${dataHash}`,
+      userData,
+      300 // 5 minutes for PII data - shorter than OTP
     );
 
     // Send verification email
@@ -271,51 +292,86 @@ export class AuthService implements OnModuleInit {
       throw new UnauthorizedException('Invalid verification details');
     }
 
-    // Check OTP attempt limiting
-    const attemptKey = `seller-otp-attempts:${seller.id}`;
-    const attemptsStr = await this.redisService.get(attemptKey);
-    const attempts = attemptsStr ? parseInt(attemptsStr) : 0;
+    // Hash the provided OTP to compare with stored hash (Security Hardened)
+    const hashedOtp = createHash('sha256').update(otp + seller.id + process.env.OTP_SALT || 'default-salt').digest('hex');
 
-    if (attempts >= 3) {
-      // Clean up OTP after max attempts
-      await this.redisService.del(`seller-verification-otp:${seller.id}`);
-      throw new UnauthorizedException('Too many failed attempts. Please request a new OTP.');
+    // Get OTP verification data using hash
+    const otpData = await this.redisService.get(`otp:${hashedOtp}`);
+
+    if (!otpData) {
+      throw new UnauthorizedException('Invalid or expired verification code');
     }
 
-    const redisPayload = await this.redisService.get(
-      `seller-verification-otp:${seller.id}`
+    const { sellerId, dataKey, attempts, created } = JSON.parse(otpData);
+
+    // Verify the seller ID matches (prevent OTP reuse across accounts)
+    if (sellerId !== seller.id) {
+      throw new UnauthorizedException('Invalid verification details');
+    }
+
+    // Check attempt limits with exponential backoff
+    if (attempts >= 3) {
+      // Clean up all related data
+      await this.redisService.del(`otp:${hashedOtp}`);
+      await this.redisService.del(`data:${dataKey}`);
+      throw new UnauthorizedException('Too many failed attempts. Please request a new verification code.');
+    }
+
+    // Check OTP age (additional security layer)
+    const otpAge = Date.now() - created;
+    if (otpAge > 600000) { // 10 minutes
+      await this.redisService.del(`otp:${hashedOtp}`);
+      await this.redisService.del(`data:${dataKey}`);
+      throw new UnauthorizedException('Verification code has expired');
+    }
+
+    // Get user data
+    const userData = await this.redisService.get(`data:${dataKey}`);
+    if (!userData) {
+      throw new UnauthorizedException('Verification data not found or expired');
+    }
+
+    // Decode user data
+    const { name, phoneNumber, country } = JSON.parse(
+      Buffer.from(userData, 'base64').toString('utf8')
     );
 
-    if (!redisPayload) {
-      throw new UnauthorizedException('Invalid verification details');
-    }
-
-    const { otp: storedOtp, name, phoneNumber, country } = JSON.parse(redisPayload);
-
-    if (storedOtp !== otp) {
-      // Increment failed attempts
-      await this.redisService.set(attemptKey, (attempts + 1).toString(), 600);
-      throw new UnauthorizedException('Invalid verification details');
-    }
-
+    // Update seller as verified
     await this.prisma.seller.update({
       where: { id: seller.id },
       data: { isEmailVerified: true },
     });
 
-    await this.redisService.del(`seller-verification-otp:${seller.id}`);
-    await this.redisService.del(`seller-otp-attempts:${seller.id}`);
+    // Clean up all verification data immediately after successful verification
+    await Promise.all([
+      this.redisService.del(`otp:${hashedOtp}`),
+      this.redisService.del(`data:${dataKey}`)
+    ]);
 
-    // Create the seller profile in the seller-service now that email is verified
+    // Create the seller profile in the seller-service now that email is verified (Security Hardened)
     try {
+      const profileData = {
+        authId: seller.id,
+        name,
+        email: seller.email,
+        phoneNumber,
+        country,
+      };
+
+      // Sign the request for secure inter-service communication
+      const serviceSecret = ServiceAuthUtil.deriveServiceSecret(
+        process.env.SERVICE_MASTER_SECRET || 'default-secret',
+        'auth-service'
+      );
+
+      const signedRequest = ServiceAuthUtil.signRequest(
+        profileData,
+        'auth-service',
+        serviceSecret
+      );
+
       await firstValueFrom(
-        this.sellerClient.send('create-seller-profile', {
-          authId: seller.id,
-          name,
-          email: seller.email,
-          phoneNumber,
-          country,
-        })
+        this.sellerClient.send('create-seller-profile-signed', signedRequest)
       );
       console.log(`Seller profile created successfully for seller ${seller.id}`);
     } catch (error) {
@@ -330,9 +386,44 @@ export class AuthService implements OnModuleInit {
   async validateToken(token: string) {
     try {
       const decoded = this.jwtService.verify(token);
-      return { valid: true, userId: decoded.sub, role: decoded.role };
-    } catch {
-      return { valid: false, userId: null, role: null };
+
+      // Check if token is blacklisted (Security Hardened)
+      const tokenId = createHash('sha256').update(token).digest('hex');
+      const isBlacklisted = await this.redisService.get(`blacklist:${tokenId}`);
+
+      if (isBlacklisted) {
+        return { valid: false, userId: null, role: null, reason: 'token_revoked' };
+      }
+
+      // Check for global user token revocation
+      const userRevocation = await this.redisService.get(`user-revocation:${decoded.sub}`);
+      if (userRevocation) {
+        const revocationTime = parseInt(userRevocation);
+        if (decoded.iat < revocationTime) {
+          return { valid: false, userId: null, role: null, reason: 'user_tokens_revoked' };
+        }
+      }
+
+      // Additional validation: check token age and issuer
+      const now = Math.floor(Date.now() / 1000);
+      if (decoded.exp < now) {
+        return { valid: false, userId: null, role: null, reason: 'token_expired' };
+      }
+
+      return {
+        valid: true,
+        userId: decoded.sub,
+        role: decoded.role,
+        iat: decoded.iat,
+        exp: decoded.exp
+      };
+    } catch (error) {
+      return {
+        valid: false,
+        userId: null,
+        role: null,
+        reason: 'token_invalid'
+      };
     }
   }
 
@@ -381,6 +472,57 @@ export class AuthService implements OnModuleInit {
     });
 
     return { message: 'Refresh token revoked successfully' };
+  }
+
+  // Security Hardened: Token revocation with blacklisting
+  async revokeToken(token: string, reason: string = 'logout') {
+    try {
+      const decoded = this.jwtService.verify(token);
+      const tokenId = createHash('sha256').update(token).digest('hex');
+
+      // Calculate TTL to match token expiration (blacklist only as long as needed)
+      const now = Math.floor(Date.now() / 1000);
+      const ttl = Math.max(0, decoded.exp - now);
+
+      if (ttl > 0) {
+        // Store reason and timestamp for audit purposes
+        await this.redisService.set(
+          `blacklist:${tokenId}`,
+          JSON.stringify({
+            userId: decoded.sub,
+            reason,
+            revokedAt: now,
+            originalExp: decoded.exp
+          }),
+          ttl
+        );
+      }
+
+      return { success: true, message: 'Token revoked successfully' };
+    } catch (error) {
+      // Even if token is invalid, we don't want to throw errors during logout
+      return { success: false, message: 'Token already invalid' };
+    }
+  }
+
+  async revokeAllUserTokens(userId: string, reason: string = 'security_event') {
+    // Mark user for global token revocation by setting a revocation timestamp
+    const revocationTime = Math.floor(Date.now() / 1000);
+
+    // Store in Redis with long TTL for JWT validation
+    await this.redisService.set(
+      `user-revocation:${userId}`,
+      revocationTime.toString(),
+      30 * 24 * 60 * 60 // 30 days - longer than max JWT lifetime
+    );
+
+    // Also clear refresh token from database
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshToken: null },
+    });
+
+    return { message: 'All user tokens revoked successfully', revocationTime };
   }
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {

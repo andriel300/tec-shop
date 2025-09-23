@@ -4,13 +4,6 @@
   "sourceRoot": "apps/seller-service/src",
   "projectType": "application",
   "tags": ["type:app", "scope:seller"],
-  "targets": {
-    "prisma-generate": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npx prisma generate --schema=apps/seller-service/prisma/schema.prisma"
-      }
-    }
-  },
-  "implicitDependencies": []
+  "targets": {},
+  "implicitDependencies": ["@tec-shop/seller-client"]
 }

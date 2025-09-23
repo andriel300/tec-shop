@@ -82,4 +82,14 @@ export class AuthController {
   async resetPasswordWithCode(@Payload() resetPasswordDto: ResetPasswordWithCodeDto) {
     return this.authService.resetPasswordWithCode(resetPasswordDto);
   }
+
+  @MessagePattern('auth-revoke-token')
+  async revokeToken(@Payload() payload: { token: string; reason?: string }) {
+    return this.authService.revokeToken(payload.token, payload.reason);
+  }
+
+  @MessagePattern('auth-revoke-all-user-tokens')
+  async revokeAllUserTokens(@Payload() payload: { userId: string; reason?: string }) {
+    return this.authService.revokeAllUserTokens(payload.userId, payload.reason);
+  }
 }

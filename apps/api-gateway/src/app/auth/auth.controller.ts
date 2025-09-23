@@ -151,12 +151,25 @@ export class AuthController {
   })
   async logout(@Req() request: { user: { userId: string } }, @Res({ passthrough: true }) response: Response) {
     try {
+      // Get the access token from the request to revoke it
+      const accessToken = request.cookies?.access_token;
+
+      // Revoke the current access token (Security Hardened)
+      if (accessToken) {
+        await firstValueFrom(
+          this.authService.send('auth-revoke-token', {
+            token: accessToken,
+            reason: 'logout'
+          })
+        );
+      }
+
       // Revoke the refresh token in the database
       await firstValueFrom(
         this.authService.send('auth-revoke-refresh-token', request.user.userId)
       );
     } catch (error) {
-      console.error('Failed to revoke refresh token:', error);
+      console.error('Failed to revoke tokens:', error);
       // Continue with logout even if revocation fails
     }
 
