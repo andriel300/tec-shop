@@ -32,7 +32,13 @@
       "exclude": [
         "libs/shared/exceptions/*",
         "libs/shared/middleware/*",
-        "libs/shared/dto/*"
+        "libs/shared/dto/*",
+        "libs/prisma-schemas/auth-schema/*",
+        "libs/prisma-schemas/user-schema/*",
+        "libs/prisma-schemas/seller-schema/*",
+        "libs/prisma-clients/auth-client/*",
+        "libs/prisma-clients/user-client/*",
+        "libs/prisma-clients/seller-client/*"
       ]
     },
     {
@@ -78,7 +84,13 @@
       "include": [
         "libs/shared/exceptions/*",
         "libs/shared/middleware/*",
-        "libs/shared/dto/*"
+        "libs/shared/dto/*",
+        "libs/prisma-schemas/auth-schema/*",
+        "libs/prisma-schemas/user-schema/*",
+        "libs/prisma-schemas/seller-schema/*",
+        "libs/prisma-clients/auth-client/*",
+        "libs/prisma-clients/user-client/*",
+        "libs/prisma-clients/seller-client/*"
       ],
       "options": {
         "typecheck": {
