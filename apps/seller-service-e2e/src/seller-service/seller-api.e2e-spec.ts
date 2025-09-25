@@ -2,8 +2,8 @@ import axios from 'axios';
 
 describe('Seller Service API E2E Tests', () => {
   const API_BASE_URL = process.env.API_GATEWAY_URL || 'http://localhost:8080';
-  let accessToken: string;
-  let sellerData: any;
+  let _accessToken: string;
+  let sellerData: Record<string, unknown>;
 
   beforeAll(async () => {
     // Setup test environment
