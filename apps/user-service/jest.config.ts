@@ -10,6 +10,6 @@ export default {
   coverageDirectory: '../../coverage/apps/user-service',
   moduleNameMapper: {
     '^@tec-shop/dto$': '<rootDir>/../../libs/shared/dto/src/index.ts',
-    '^@tec-shop/user-prisma-client$': '<rootDir>/../../node_modules/.prisma/user-client/index.js',
+    '^@tec-shop/user-client$': '<rootDir>/../../libs/prisma-clients/user-client/src/index.ts',
   },
 };

@@ -18,8 +18,8 @@ export default {
   moduleFileExtensions: ['ts', 'js', 'html'],
   coverageDirectory: 'test-output/jest/coverage',
   moduleNameMapper: {
-    '^@tec-shop/auth-prisma-client$':
-      '<rootDir>/../../node_modules/.prisma/auth-client/index.js',
+    '^@tec-shop/auth-client$':
+      '<rootDir>/../../libs/prisma-clients/auth-client/src/index.ts',
     '^@tec-shop/dto$': '<rootDir>/../../libs/shared/dto/src/index.ts',
   },
 };
