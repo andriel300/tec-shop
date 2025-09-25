@@ -4,6 +4,9 @@
   "include": [],
   "references": [
     {
+      "path": "../../libs/prisma-clients/auth-client"
+    },
+    {
       "path": "../../libs/shared/dto"
     },
     {

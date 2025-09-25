@@ -1,0 +1,17 @@
+{
+  "name": "@tec-shop/seller-client",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/prisma-clients/seller-client/src",
+  "projectType": "library",
+  "targets": {
+    "generate-types": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma generate --schema=../../prisma-schemas/seller-schema/prisma/schema.prisma",
+        "cwd": "libs/prisma-clients/seller-client"
+      }
+    }
+  },
+  "tags": ["scope:shared", "type:prisma-client"],
+  "implicitDependencies": ["@tec-shop/seller-schema"]
+}
