@@ -11,7 +11,16 @@ import { randomInt, randomBytes, createHash } from 'crypto';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { AuthPrismaService } from '../../prisma/prisma.service';
-import { LoginDto, SignupDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto, ResetPasswordWithCodeDto, ValidateResetTokenDto, SellerSignupDto } from '@tec-shop/dto';
+import {
+  LoginDto,
+  SignupDto,
+  VerifyEmailDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  ResetPasswordWithCodeDto,
+  ValidateResetTokenDto,
+  SellerSignupDto,
+} from '@tec-shop/dto';
 import { EmailService } from '../email/email.service';
 import { RedisService } from '../redis/redis.service';
 import { ServiceAuthUtil } from './service-auth.util';
@@ -90,7 +99,10 @@ export class AuthService implements OnModuleInit {
     };
   }
 
-  async sellerSignup(sellerSignupDto: SellerSignupDto) {
+  async sellerSignup(_sellerSignupDto: SellerSignupDto) {
+    // TODO: Refactor seller signup to work with User model and inter-service communication
+    throw new Error('Seller signup temporarily disabled during refactor');
+
     const { email, password, name, phoneNumber, country } = sellerSignupDto;
 
     // Check if email already exists in regular users or sellers
@@ -127,10 +139,14 @@ export class AuthService implements OnModuleInit {
     const otp = randomInt(100000, 1000000).toString().padStart(6, '0');
 
     // Hash OTP before storing to prevent exposure if Redis is compromised
-    const hashedOtp = createHash('sha256').update(otp + seller.id + process.env.OTP_SALT || 'default-salt').digest('hex');
+    const hashedOtp = createHash('sha256')
+      .update(otp + seller.id + process.env.OTP_SALT || 'default-salt')
+      .digest('hex');
 
     // Store user data separately with hash-based key (no PII in keys)
-    const dataHash = createHash('sha256').update(`seller:${seller.id}:${Date.now()}`).digest('hex');
+    const dataHash = createHash('sha256')
+      .update(`seller:${seller.id}:${Date.now()}`)
+      .digest('hex');
 
     // Store OTP verification data (no plain text OTP or PII)
     await this.redisService.set(
@@ -139,18 +155,20 @@ export class AuthService implements OnModuleInit {
         sellerId: seller.id,
         dataKey: dataHash,
         created: Date.now(),
-        attempts: 0
+        attempts: 0,
       }),
       600
     );
 
     // Store user data separately (encrypted with Base64)
-    const userData = Buffer.from(JSON.stringify({
-      name,
-      phoneNumber,
-      country,
-      userType: 'seller'
-    })).toString('base64');
+    const userData = Buffer.from(
+      JSON.stringify({
+        name,
+        phoneNumber,
+        country,
+        userType: 'seller',
+      })
+    ).toString('base64');
 
     await this.redisService.set(
       `data:${dataHash}`,
@@ -193,20 +211,24 @@ export class AuthService implements OnModuleInit {
   }
 
   async sellerLogin(credential: LoginDto) {
-    const seller = await this.prisma.seller.findUnique({
+    // TODO: Implement proper inter-service communication with seller-service
+    // For now, this should authenticate the User and let seller-service handle seller-specific logic
+
+    // Find user by email (seller users are stored in User table)
+    const user = await this.prisma.user.findUnique({
       where: { email: credential.email },
     });
 
     // Generic error message to prevent email enumeration
     const genericError = 'Invalid credentials';
 
-    if (!seller || !seller.password || !seller.isEmailVerified) {
+    if (!user || !user.password || !user.isEmailVerified) {
       throw new UnauthorizedException(genericError);
     }
 
     const isPasswordMatching = await bcrypt.compare(
       credential.password,
-      seller.password
+      user.password
     );
 
     if (!isPasswordMatching) {
@@ -214,7 +236,11 @@ export class AuthService implements OnModuleInit {
     }
 
     // Generate tokens for seller with role information
-    return this.generateSellerTokens(seller.id, seller.email, credential.rememberMe);
+    return this.generateSellerTokens(
+      user.id,
+      user.email,
+      credential.rememberMe
+    );
   }
 
   async verifyEmail(verifyEmailDto: VerifyEmailDto) {
@@ -236,7 +262,9 @@ export class AuthService implements OnModuleInit {
     if (attempts >= 3) {
       // Clean up OTP after max attempts
       await this.redisService.del(`verification-otp:${user.id}`);
-      throw new UnauthorizedException('Too many failed attempts. Please request a new OTP.');
+      throw new UnauthorizedException(
+        'Too many failed attempts. Please request a new OTP.'
+      );
     }
 
     const redisPayload = await this.redisService.get(
@@ -282,6 +310,10 @@ export class AuthService implements OnModuleInit {
   }
 
   async verifySellerEmail(verifyEmailDto: VerifyEmailDto) {
+    // TODO: Refactor seller email verification to work with User model
+    throw new Error(
+      'Seller email verification temporarily disabled during refactor'
+    );
     const { email, otp } = verifyEmailDto;
 
     const seller = await this.prisma.seller.findUnique({
@@ -293,7 +325,9 @@ export class AuthService implements OnModuleInit {
     }
 
     // Hash the provided OTP to compare with stored hash (Security Hardened)
-    const hashedOtp = createHash('sha256').update(otp + seller.id + process.env.OTP_SALT || 'default-salt').digest('hex');
+    const hashedOtp = createHash('sha256')
+      .update(otp + seller.id + process.env.OTP_SALT || 'default-salt')
+      .digest('hex');
 
     // Get OTP verification data using hash
     const otpData = await this.redisService.get(`otp:${hashedOtp}`);
@@ -314,12 +348,15 @@ export class AuthService implements OnModuleInit {
       // Clean up all related data
       await this.redisService.del(`otp:${hashedOtp}`);
       await this.redisService.del(`data:${dataKey}`);
-      throw new UnauthorizedException('Too many failed attempts. Please request a new verification code.');
+      throw new UnauthorizedException(
+        'Too many failed attempts. Please request a new verification code.'
+      );
     }
 
     // Check OTP age (additional security layer)
     const otpAge = Date.now() - created;
-    if (otpAge > 600000) { // 10 minutes
+    if (otpAge > 600000) {
+      // 10 minutes
       await this.redisService.del(`otp:${hashedOtp}`);
       await this.redisService.del(`data:${dataKey}`);
       throw new UnauthorizedException('Verification code has expired');
@@ -339,13 +376,13 @@ export class AuthService implements OnModuleInit {
     // Update seller as verified
     await this.prisma.seller.update({
       where: { id: seller.id },
-      data: { isEmailVerified: true },
+      data: { isVerified: true },
     });
 
     // Clean up all verification data immediately after successful verification
     await Promise.all([
       this.redisService.del(`otp:${hashedOtp}`),
-      this.redisService.del(`data:${dataKey}`)
+      this.redisService.del(`data:${dataKey}`),
     ]);
 
     // Create the seller profile in the seller-service now that email is verified (Security Hardened)
@@ -373,9 +410,14 @@ export class AuthService implements OnModuleInit {
       await firstValueFrom(
         this.sellerClient.send('create-seller-profile-signed', signedRequest)
       );
-      console.log(`Seller profile created successfully for seller ${seller.id}`);
+      console.log(
+        `Seller profile created successfully for seller ${seller.id}`
+      );
     } catch (error) {
-      console.error('Failed to create seller profile in seller-service:', error);
+      console.error(
+        'Failed to create seller profile in seller-service:',
+        error
+      );
       // Log the error but don't fail the email verification process
       // The seller profile can be created later if needed
     }
@@ -392,22 +434,39 @@ export class AuthService implements OnModuleInit {
       const isBlacklisted = await this.redisService.get(`blacklist:${tokenId}`);
 
       if (isBlacklisted) {
-        return { valid: false, userId: null, role: null, reason: 'token_revoked' };
+        return {
+          valid: false,
+          userId: null,
+          role: null,
+          reason: 'token_revoked',
+        };
       }
 
       // Check for global user token revocation
-      const userRevocation = await this.redisService.get(`user-revocation:${decoded.sub}`);
+      const userRevocation = await this.redisService.get(
+        `user-revocation:${decoded.sub}`
+      );
       if (userRevocation) {
         const revocationTime = parseInt(userRevocation);
         if (decoded.iat < revocationTime) {
-          return { valid: false, userId: null, role: null, reason: 'user_tokens_revoked' };
+          return {
+            valid: false,
+            userId: null,
+            role: null,
+            reason: 'user_tokens_revoked',
+          };
         }
       }
 
       // Additional validation: check token age and issuer
       const now = Math.floor(Date.now() / 1000);
       if (decoded.exp < now) {
-        return { valid: false, userId: null, role: null, reason: 'token_expired' };
+        return {
+          valid: false,
+          userId: null,
+          role: null,
+          reason: 'token_expired',
+        };
       }
 
       return {
@@ -415,27 +474,29 @@ export class AuthService implements OnModuleInit {
         userId: decoded.sub,
         role: decoded.role,
         iat: decoded.iat,
-        exp: decoded.exp
+        exp: decoded.exp,
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         valid: false,
         userId: null,
         role: null,
-        reason: 'token_invalid'
+        reason: 'token_invalid',
       };
     }
   }
 
   async refreshToken(refreshToken: string, currentAccessToken?: string) {
     // Hash the provided refresh token to compare with stored hash
-    const hashedRefreshToken = createHash('sha256').update(refreshToken).digest('hex');
+    const hashedRefreshToken = createHash('sha256')
+      .update(refreshToken)
+      .digest('hex');
 
     // Find user with matching refresh token
     const user = await this.prisma.user.findFirst({
       where: {
         refreshToken: hashedRefreshToken,
-        isEmailVerified: true
+        isEmailVerified: true,
       },
     });
 
@@ -447,10 +508,13 @@ export class AuthService implements OnModuleInit {
     let wasRememberMe = false;
     if (currentAccessToken) {
       try {
-        const decoded = this.jwtService.decode(currentAccessToken) as { exp: number; iat: number } | null;
+        const decoded = this.jwtService.decode(currentAccessToken) as {
+          exp: number;
+          iat: number;
+        } | null;
         if (decoded && decoded.exp) {
           const tokenDuration = decoded.exp - decoded.iat;
-          wasRememberMe = tokenDuration > (2 * 24 * 60 * 60); // More than 2 days = remember me
+          wasRememberMe = tokenDuration > 2 * 24 * 60 * 60; // More than 2 days = remember me
         }
       } catch (_error) {
         // If we can't decode, default to normal session
@@ -459,7 +523,11 @@ export class AuthService implements OnModuleInit {
     }
 
     // Generate new token pair maintaining the remember me preference
-    const tokens = await this.generateTokens(user.id, user.email, wasRememberMe);
+    const tokens = await this.generateTokens(
+      user.id,
+      user.email,
+      wasRememberMe
+    );
 
     return tokens;
   }
@@ -475,7 +543,7 @@ export class AuthService implements OnModuleInit {
   }
 
   // Security Hardened: Token revocation with blacklisting
-  async revokeToken(token: string, reason: string = 'logout') {
+  async revokeToken(token: string, reason = 'logout') {
     try {
       const decoded = this.jwtService.verify(token);
       const tokenId = createHash('sha256').update(token).digest('hex');
@@ -492,20 +560,20 @@ export class AuthService implements OnModuleInit {
             userId: decoded.sub,
             reason,
             revokedAt: now,
-            originalExp: decoded.exp
+            originalExp: decoded.exp,
           }),
           ttl
         );
       }
 
       return { success: true, message: 'Token revoked successfully' };
-    } catch (error) {
+    } catch (_error) {
       // Even if token is invalid, we don't want to throw errors during logout
       return { success: false, message: 'Token already invalid' };
     }
   }
 
-  async revokeAllUserTokens(userId: string, reason: string = 'security_event') {
+  async revokeAllUserTokens(userId: string, _reason = 'security_event') {
     // Mark user for global token revocation by setting a revocation timestamp
     const revocationTime = Math.floor(Date.now() / 1000);
 
@@ -533,7 +601,8 @@ export class AuthService implements OnModuleInit {
     });
 
     // Always return success to prevent email enumeration
-    const successMessage = 'If an account with this email exists, you will receive a password reset link.';
+    const successMessage =
+      'If an account with this email exists, you will receive a password reset link.';
 
     if (!user || !user.isEmailVerified) {
       return { message: successMessage };
@@ -543,11 +612,8 @@ export class AuthService implements OnModuleInit {
     await this.prisma.passwordResetToken.deleteMany({
       where: {
         userId: user.id,
-        OR: [
-          { used: true },
-          { expiresAt: { lt: new Date() } }
-        ]
-      }
+        OR: [{ used: true }, { expiresAt: { lt: new Date() } }],
+      },
     });
 
     // Generate cryptographically secure token (128-bit entropy)
@@ -564,7 +630,9 @@ export class AuthService implements OnModuleInit {
     });
 
     // Generate reset link with frontend URL
-    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+    const resetLink = `${
+      process.env.FRONTEND_URL || 'http://localhost:3000'
+    }/reset-password?token=${resetToken}`;
 
     // Send reset email with secure link
     await this.emailService.sendPasswordResetLink(user.email, resetLink);
@@ -580,17 +648,17 @@ export class AuthService implements OnModuleInit {
         token,
         used: false,
         expiresAt: {
-          gt: new Date()
-        }
+          gt: new Date(),
+        },
       },
       include: {
         user: {
           select: {
             email: true,
-            isEmailVerified: true
-          }
-        }
-      }
+            isEmailVerified: true,
+          },
+        },
+      },
     });
 
     if (!resetToken || !resetToken.user.isEmailVerified) {
@@ -599,7 +667,7 @@ export class AuthService implements OnModuleInit {
 
     return {
       valid: true,
-      email: resetToken.user.email
+      email: resetToken.user.email,
     };
   }
 
@@ -612,12 +680,12 @@ export class AuthService implements OnModuleInit {
         token,
         used: false,
         expiresAt: {
-          gt: new Date()
-        }
+          gt: new Date(),
+        },
       },
       include: {
-        user: true
-      }
+        user: true,
+      },
     });
 
     if (!resetToken || !resetToken.user.isEmailVerified) {
@@ -636,19 +704,21 @@ export class AuthService implements OnModuleInit {
       this.prisma.passwordResetToken.update({
         where: { id: resetToken.id },
         data: { used: true },
-      })
+      }),
     ]);
 
     // Clean up all reset tokens for this user (security best practice)
     await this.prisma.passwordResetToken.deleteMany({
       where: {
         userId: resetToken.userId,
-        used: true
-      }
+        used: true,
+      },
     });
 
     // Send confirmation email
-    await this.emailService.sendPasswordChangedNotification(resetToken.user.email);
+    await this.emailService.sendPasswordChangedNotification(
+      resetToken.user.email
+    );
 
     return { message: 'Password has been reset successfully.' };
   }
@@ -675,7 +745,9 @@ export class AuthService implements OnModuleInit {
     const codeHash = createHash('sha256').update(code).digest('hex');
 
     // Check if code exists and matches the user
-    const storedUserId = await this.redisService.get(`password-reset:${codeHash}`);
+    const storedUserId = await this.redisService.get(
+      `password-reset:${codeHash}`
+    );
 
     if (!storedUserId || storedUserId !== user.id) {
       // Increment failed attempts for this user
@@ -687,7 +759,9 @@ export class AuthService implements OnModuleInit {
     if (attempts >= 3) {
       // Clean up code after max attempts (stricter limit for security)
       await this.redisService.del(`password-reset:${codeHash}`);
-      throw new UnauthorizedException('Too many failed attempts. Please request a new reset code.');
+      throw new UnauthorizedException(
+        'Too many failed attempts. Please request a new reset code.'
+      );
     }
 
     // Hash the new password
@@ -709,7 +783,11 @@ export class AuthService implements OnModuleInit {
     return { message: 'Password has been reset successfully.' };
   }
 
-  private async generateTokens(userId: string, email: string, rememberMe = false) {
+  private async generateTokens(
+    userId: string,
+    email: string,
+    rememberMe = false
+  ) {
     const payload = {
       sub: userId,
       username: email,
@@ -720,13 +798,17 @@ export class AuthService implements OnModuleInit {
     const accessTokenExpiry = rememberMe ? '7d' : '1d'; // Extended: 7 days, Normal: 1 day
 
     // Generate access token with appropriate expiration
-    const access_token = this.jwtService.sign(payload, { expiresIn: accessTokenExpiry });
+    const access_token = this.jwtService.sign(payload, {
+      expiresIn: accessTokenExpiry,
+    });
 
     // Generate refresh token (cryptographically secure)
     const refresh_token = randomBytes(32).toString('hex');
 
     // Store refresh token in database (hashed for security)
-    const hashedRefreshToken = createHash('sha256').update(refresh_token).digest('hex');
+    const hashedRefreshToken = createHash('sha256')
+      .update(refresh_token)
+      .digest('hex');
     await this.prisma.user.update({
       where: { id: userId },
       data: { refreshToken: hashedRefreshToken },
@@ -739,7 +821,11 @@ export class AuthService implements OnModuleInit {
     };
   }
 
-  private async generateSellerTokens(sellerId: string, email: string, rememberMe = false) {
+  private async generateSellerTokens(
+    sellerId: string,
+    email: string,
+    rememberMe = false
+  ) {
     const payload = {
       sub: sellerId,
       username: email,
@@ -750,17 +836,24 @@ export class AuthService implements OnModuleInit {
     const accessTokenExpiry = rememberMe ? '7d' : '1d'; // Extended: 7 days, Normal: 1 day
 
     // Generate access token with appropriate expiration
-    const access_token = this.jwtService.sign(payload, { expiresIn: accessTokenExpiry });
+    const access_token = this.jwtService.sign(payload, {
+      expiresIn: accessTokenExpiry,
+    });
 
     // Generate refresh token (cryptographically secure)
     const refresh_token = randomBytes(32).toString('hex');
 
     // Store refresh token in database (hashed for security)
-    const hashedRefreshToken = createHash('sha256').update(refresh_token).digest('hex');
-    await this.prisma.seller.update({
-      where: { id: sellerId },
-      data: { refreshToken: hashedRefreshToken },
-    });
+    const hashedRefreshToken = createHash('sha256')
+      .update(refresh_token)
+      .digest('hex');
+    // Note: Sellers don't store refresh tokens in the seller table
+    // This functionality should be handled differently for sellers
+    // For now, we'll skip this for sellers as they use a different auth flow
+    // await this.prisma.seller.update({
+    //   where: { id: sellerId },
+    //   data: { refreshToken: hashedRefreshToken },
+    // });
 
     return {
       access_token,

@@ -112,13 +112,27 @@
   ],
   "targetDefaults": {
     "test": {
-      "dependsOn": ["^build", "prisma-generate"]
+      "dependsOn": ["^build", "generate-types"]
     },
     "build": {
-      "dependsOn": ["prisma-generate"]
+      "dependsOn": ["generate-types"]
     },
     "typecheck": {
-      "dependsOn": ["prisma-generate"]
+      "dependsOn": ["generate-types"]
+    },
+    "generate-types": {
+      "cache": true,
+      "inputs": ["^generate-types", "{workspaceRoot}/libs/prisma-schemas/**/*"]
+    },
+    "migrate": {
+      "cache": false
+    },
+    "db-push": {
+      "cache": false
+    },
+    "format": {
+      "cache": true,
+      "inputs": ["{workspaceRoot}/libs/prisma-schemas/**/*.prisma"]
     }
   },
   "release": {
