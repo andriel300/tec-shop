@@ -1,4 +1,4 @@
-import { ServiceAuthUtil, SignedRequest } from './service-auth.util';
+import { ServiceAuthUtil } from './service-auth.util';
 import { TestDataFactory } from '../../test/factories';
 
 describe('ServiceAuthUtil', () => {
