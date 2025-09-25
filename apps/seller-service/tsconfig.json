@@ -7,6 +7,9 @@
       "path": "../../libs/prisma-clients/seller-client"
     },
     {
+      "path": "../../libs/shared/dto"
+    },
+    {
       "path": "./tsconfig.app.json"
     },
     {

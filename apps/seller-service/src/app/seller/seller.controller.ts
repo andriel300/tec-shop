@@ -1,24 +1,9 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { SellerService } from './seller.service';
-import { ServiceAuthUtil, SignedRequest } from './service-auth.util';
-
-interface CreateSellerProfileDto {
-  authId: string;
-  name: string;
-  email: string;
-  phoneNumber: string;
-  country: string;
-}
-
-interface UpdateShopDto {
-  businessName: string;
-  description?: string;
-  category: string;
-  address: string;
-  website?: string;
-  socialLinks?: any[];
-}
+import { ServiceAuthUtil } from './service-auth.util';
+import type { SignedRequest } from './service-auth.util';
+import type { CreateSellerProfileDto, CreateShopDto, UpdateShopDto } from '@tec-shop/dto';
 
 @Controller()
 export class SellerController {
@@ -59,6 +44,11 @@ export class SellerController {
   @MessagePattern('update-seller-profile')
   async updateProfile(@Payload() payload: { authId: string; updateData: Partial<CreateSellerProfileDto> }) {
     return this.sellerService.updateProfile(payload.authId, payload.updateData);
+  }
+
+  @MessagePattern('create-shop')
+  async createShop(@Payload() payload: { authId: string; shopData: CreateShopDto }) {
+    return this.sellerService.createShop(payload.authId, payload.shopData);
   }
 
   @MessagePattern('create-or-update-shop')
