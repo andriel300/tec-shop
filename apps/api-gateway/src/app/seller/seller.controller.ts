@@ -3,23 +3,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
-
-interface CreateSellerProfileDto {
-  authId: string;
-  name: string;
-  email: string;
-  phoneNumber: string;
-  country: string;
-}
-
-interface UpdateShopDto {
-  businessName: string;
-  description?: string;
-  category: string;
-  address: string;
-  website?: string;
-  socialLinks?: any[];
-}
+import { CreateSellerProfileDto, CreateShopDto, UpdateShopDto } from '@tec-shop/dto';
 
 @ApiTags('Seller')
 @Controller('seller')
@@ -58,6 +42,26 @@ export class SellerController {
       this.sellerService.send('update-seller-profile', {
         authId: request.user.userId,
         updateData,
+      })
+    );
+  }
+
+  @Post('shop/create')
+  @ApiOperation({ summary: 'Create a new seller shop' })
+  @ApiResponse({
+    status: 201,
+    description: 'Shop created successfully.',
+  })
+  @ApiResponse({ status: 400, description: 'Shop already exists or invalid data.' })
+  @ApiResponse({ status: 404, description: 'Seller profile not found.' })
+  async createShop(
+    @Req() request: { user: { userId: string } },
+    @Body() shopData: CreateShopDto
+  ) {
+    return await firstValueFrom(
+      this.sellerService.send('create-shop', {
+        authId: request.user.userId,
+        shopData,
       })
     );
   }

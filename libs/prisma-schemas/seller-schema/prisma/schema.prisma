@@ -31,9 +31,11 @@ model Shop {
   seller   Seller @relation(fields: [sellerId], references: [id])
 
   businessName String
-  description  String?
+  bio          String?
+  description  String? // Deprecated in favor of bio
   category     String
   address      String
+  openingHours String
   website      String?
   socialLinks  Json[]
 

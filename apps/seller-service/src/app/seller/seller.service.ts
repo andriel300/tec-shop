@@ -1,22 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { SellerPrismaService } from '../../prisma/prisma.service';
-
-interface CreateSellerProfileDto {
-  authId: string;
-  name: string;
-  email: string;
-  phoneNumber: string;
-  country: string;
-}
-
-interface UpdateShopDto {
-  businessName: string;
-  description?: string;
-  category: string;
-  address: string;
-  website?: string;
-  socialLinks?: any[];
-}
+import { CreateSellerProfileDto, CreateShopDto, UpdateShopDto } from '@tec-shop/dto';
 
 @Injectable()
 export class SellerService {
@@ -87,6 +71,37 @@ export class SellerService {
     return updatedSeller;
   }
 
+  async createShop(authId: string, shopData: CreateShopDto) {
+    const seller = await this.prisma.seller.findUnique({
+      where: { authId },
+      include: { shop: true },
+    });
+
+    if (!seller) {
+      throw new NotFoundException('Seller profile not found');
+    }
+
+    if (seller.shop) {
+      throw new BadRequestException('Shop already exists for this seller');
+    }
+
+    // Create new shop with proper field mapping
+    const newShop = await this.prisma.shop.create({
+      data: {
+        businessName: shopData.businessName,
+        bio: shopData.bio,
+        category: shopData.category,
+        address: shopData.address,
+        openingHours: shopData.openingHours,
+        website: shopData.website,
+        sellerId: seller.id,
+        socialLinks: [], // Initialize as empty array
+      },
+    });
+
+    return newShop;
+  }
+
   async createOrUpdateShop(authId: string, shopData: UpdateShopDto) {
     const seller = await this.prisma.seller.findUnique({
       where: { authId },
@@ -101,15 +116,32 @@ export class SellerService {
       // Update existing shop
       const updatedShop = await this.prisma.shop.update({
         where: { sellerId: seller.id },
-        data: shopData,
+        data: {
+          businessName: shopData.businessName,
+          bio: shopData.bio,
+          category: shopData.category,
+          address: shopData.address,
+          openingHours: shopData.openingHours,
+          website: shopData.website,
+        },
       });
       return updatedShop;
     } else {
-      // Create new shop
+      // Create new shop if required fields are provided
+      if (!shopData.businessName || !shopData.category || !shopData.address) {
+        throw new BadRequestException('businessName, category, and address are required to create a new shop');
+      }
+
       const newShop = await this.prisma.shop.create({
         data: {
-          ...shopData,
+          businessName: shopData.businessName,
+          bio: shopData.bio,
+          category: shopData.category,
+          address: shopData.address,
+          openingHours: shopData.openingHours || 'Please contact for hours',
+          website: shopData.website,
           sellerId: seller.id,
+          socialLinks: [],
         },
       });
       return newShop;

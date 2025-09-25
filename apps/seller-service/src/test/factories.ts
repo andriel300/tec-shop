@@ -25,9 +25,11 @@ export class TestDataFactory {
   static createShopDto(overrides: Partial<any> = {}) {
     return {
       businessName: 'Tech Solutions Inc',
-      description: 'Professional technology solutions for businesses',
+      bio: 'Professional technology solutions for businesses',
+      description: 'Professional technology solutions for businesses', // Deprecated
       category: 'Technology',
       address: '123 Business Street, Tech City, TC 12345',
+      openingHours: 'Mon-Fri 9AM-6PM, Sat 10AM-4PM',
       website: 'https://techsolutions.example.com',
       socialLinks: [
         { platform: 'linkedin', url: 'https://linkedin.com/company/techsolutions' },
@@ -67,9 +69,11 @@ export class TestDataFactory {
       id: TestUtils.generateRandomObjectId(),
       sellerId,
       businessName: 'Digital Commerce Ltd',
-      description: 'E-commerce solutions for modern businesses',
+      bio: 'E-commerce solutions for modern businesses',
+      description: 'E-commerce solutions for modern businesses', // Deprecated
       category: 'E-commerce',
       address: '456 Commerce Ave, Business District, BD 67890',
+      openingHours: 'Mon-Sun 8AM-10PM',
       website: 'https://digitalcommerce.example.com',
       socialLinks: [],
       isActive: true,
