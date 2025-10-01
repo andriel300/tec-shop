@@ -19,7 +19,10 @@ async function bootstrap() {
   app.use(cookieParser());
 
   app.enableCors({
-    origin: 'http://localhost:3000',
+    origin: [
+      'http://localhost:3000', // user-ui
+      'http://localhost:3001', // seller-ui
+    ],
     credentials: true // Allow cookies to be sent with cross-origin requests
   });
 

@@ -2,11 +2,12 @@ import { apiClient } from './client';
 
 export interface SignupData {
   name: string;
-  businessName: string;
   email: string;
   phoneNumber: string;
   country: string;
   password: string;
+  confirmPassword: string;
+  termsAccepted: boolean;
 }
 
 export interface LoginData {
@@ -56,17 +57,17 @@ export interface ApiResponse<T = unknown> {
 
 // Auth API functions
 export const signupUser = async (data: SignupData): Promise<ApiResponse> => {
-  const response = await apiClient.post('/auth/signup', data);
+  const response = await apiClient.post('/auth/seller/signup', data);
   return response.data;
 };
 
 export const loginUser = async (data: LoginData): Promise<AuthResponse> => {
-  const response = await apiClient.post('/auth/login', data);
+  const response = await apiClient.post('/auth/seller/login', data);
   return response.data;
 };
 
 export const verifyEmail = async (data: VerifyEmailData): Promise<ApiResponse> => {
-  const response = await apiClient.post('/auth/verify-email', data);
+  const response = await apiClient.post('/auth/seller/verify-email', data);
   return response.data;
 };
 
