@@ -4,27 +4,30 @@ import { join } from 'path';
 // Load test environment variables
 config({ path: join(__dirname, '../../.env.test') });
 
-// Global test configuration
-jest.setTimeout(30000);
+// Global test configuration (Jest globals available via setupFilesAfterEnv)
+// Note: Jest globals (jest, beforeAll, etc.) are automatically available in test files
 
 // Mock console methods during tests to reduce noise
+const noop = (..._args: unknown[]) => { /* intentionally empty for test suppression */ };
+
 if (process.env.TEST_VERBOSE !== 'true') {
   global.console = {
     ...console,
-    log: jest.fn(),
-    info: jest.fn(),
-    debug: jest.fn(),
+    log: noop as typeof console.log,
+    info: noop as typeof console.info,
+    debug: noop as typeof console.debug,
     warn: console.warn,
     error: console.error,
   };
 }
 
 // Mock Date.now for consistent testing
-const mockDateNow = jest.fn(() => 1640995200000); // 2022-01-01 00:00:00 UTC
+const mockDateNow = () => 1640995200000; // 2022-01-01 00:00:00 UTC
 Date.now = mockDateNow;
 
-// Global test utilities
+// Global test utilities - extend Jest matchers
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
     interface Matchers<R> {
       toBeValidObjectId(): R;
@@ -53,7 +56,7 @@ expect.extend({
     }
   },
 
-  toMatchSellerSchema(received: any) {
+  toMatchSellerSchema(received: Record<string, unknown>) {
     const requiredFields = ['id', 'authId', 'name', 'email', 'phoneNumber', 'country', 'isVerified'];
     const missingFields = requiredFields.filter(field => !(field in received));
 
@@ -70,7 +73,7 @@ expect.extend({
     }
   },
 
-  toMatchShopSchema(received: any) {
+  toMatchShopSchema(received: Record<string, unknown>) {
     const requiredFields = ['id', 'sellerId', 'businessName', 'category', 'address', 'isActive'];
     const missingFields = requiredFields.filter(field => !(field in received));
 
@@ -88,18 +91,5 @@ expect.extend({
   },
 });
 
-// Global setup
-beforeAll(() => {
-  // Any global setup needed for all tests
-});
-
-// Global teardown
-afterAll(() => {
-  // Any global cleanup needed for all tests
-});
-
-// Reset mocks before each test
-beforeEach(() => {
-  jest.clearAllMocks();
-  mockDateNow.mockReturnValue(1640995200000); // Reset to default timestamp
-});
+// Note: Global lifecycle hooks (beforeAll, afterAll, beforeEach) and custom matchers
+// are automatically available in test files via Jest's setupFilesAfterEnv configuration

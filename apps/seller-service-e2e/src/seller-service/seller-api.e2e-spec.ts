@@ -157,16 +157,22 @@ describe('Seller Service API E2E Tests', () => {
     it('should return 401 for unauthorized requests', async () => {
       try {
         await axios.get(`${API_BASE_URL}/api/seller/profile`);
-      } catch (error) {
-        expect(error.response.status).toBe(401);
+      } catch (error: unknown) {
+        if (error && typeof error === 'object' && 'response' in error) {
+          const axiosError = error as { response?: { status?: number } };
+          expect(axiosError.response?.status).toBe(401);
+        }
       }
     });
 
     it('should return 404 for non-existent endpoints', async () => {
       try {
         await axios.get(`${API_BASE_URL}/api/seller/non-existent`);
-      } catch (error) {
-        expect(error.response.status).toBe(404);
+      } catch (error: unknown) {
+        if (error && typeof error === 'object' && 'response' in error) {
+          const axiosError = error as { response?: { status?: number } };
+          expect(axiosError.response?.status).toBe(404);
+        }
       }
     });
 
@@ -178,8 +184,11 @@ describe('Seller Service API E2E Tests', () => {
 
       try {
         await axios.post(`${API_BASE_URL}/api/auth/seller/signup`, invalidData);
-      } catch (error) {
-        expect(error.response.status).toBe(400);
+      } catch (error: unknown) {
+        if (error && typeof error === 'object' && 'response' in error) {
+          const axiosError = error as { response?: { status?: number } };
+          expect(axiosError.response?.status).toBe(400);
+        }
       }
     });
   });

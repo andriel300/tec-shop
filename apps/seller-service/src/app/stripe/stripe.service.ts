@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import { SellerPrismaService } from '../../prisma/prisma.service';
 import { createHash, randomBytes } from 'crypto';
+import type { Prisma } from '@tec-shop/seller-client';
 
 @Injectable()
 export class StripeService {
@@ -20,7 +21,7 @@ export class StripeService {
     }
 
     this.stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2024-12-18.acacia', // Use latest API version
+      apiVersion: '2025-08-27.basil', // Use latest API version
     });
 
     // In development, sync accounts periodically since webhooks may not be available
@@ -37,6 +38,7 @@ export class StripeService {
     // Find seller
     const seller = await this.prisma.seller.findUnique({
       where: { authId },
+      include: { shop: true },
     });
 
     if (!seller) {
@@ -202,7 +204,7 @@ export class StripeService {
           stripeDetailsSubmitted: account.details_submitted,
           stripePayoutsEnabled: account.payouts_enabled,
           stripeChargesEnabled: account.charges_enabled,
-          stripeRequirements: account.requirements as any,
+          stripeRequirements: account.requirements ? (account.requirements as unknown as Prisma.InputJsonValue) : null,
           stripeLastUpdated: new Date(),
         },
       });
@@ -210,7 +212,7 @@ export class StripeService {
       return {
         status,
         canAcceptPayments: account.charges_enabled && account.payouts_enabled,
-        requiresAction: account.requirements?.currently_due?.length > 0,
+        requiresAction: (account.requirements?.currently_due?.length ?? 0) > 0,
         requirements: account.requirements?.currently_due || [],
         accountId: account.id,
         detailsSubmitted: account.details_submitted,
@@ -313,7 +315,7 @@ export class StripeService {
           stripeDetailsSubmitted: account.details_submitted,
           stripePayoutsEnabled: account.payouts_enabled,
           stripeChargesEnabled: account.charges_enabled,
-          stripeRequirements: account.requirements as Record<string, unknown>,
+          stripeRequirements: account.requirements ? (account.requirements as unknown as Prisma.InputJsonValue) : null,
           stripeLastUpdated: new Date(),
         },
       });

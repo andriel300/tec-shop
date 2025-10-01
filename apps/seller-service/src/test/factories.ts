@@ -8,7 +8,7 @@ export class TestDataFactory {
   /**
    * Create a seller profile DTO for testing
    */
-  static createSellerProfileDto(overrides: Partial<any> = {}) {
+  static createSellerProfileDto(overrides: Record<string, unknown> = {}) {
     return {
       authId: TestUtils.generateRandomObjectId(),
       name: 'John Doe',
@@ -22,7 +22,7 @@ export class TestDataFactory {
   /**
    * Create a shop DTO for testing
    */
-  static createShopDto(overrides: Partial<any> = {}) {
+  static createShopDto(overrides: Record<string, unknown> = {}) {
     return {
       businessName: 'Tech Solutions Inc',
       bio: 'Professional technology solutions for businesses',
@@ -42,7 +42,7 @@ export class TestDataFactory {
   /**
    * Create a seller database entity for testing
    */
-  static createSellerEntity(overrides: Partial<any> = {}) {
+  static createSellerEntity(overrides: Record<string, unknown> = {}) {
     const baseDate = TestUtils.mockTimestamp();
     return {
       id: TestUtils.generateRandomObjectId(),
@@ -63,7 +63,7 @@ export class TestDataFactory {
   /**
    * Create a shop database entity for testing
    */
-  static createShopEntity(sellerId: string, overrides: Partial<any> = {}) {
+  static createShopEntity(sellerId: string, overrides: Record<string, unknown> = {}) {
     const baseDate = TestUtils.mockTimestamp();
     return {
       id: TestUtils.generateRandomObjectId(),
@@ -89,7 +89,7 @@ export class TestDataFactory {
   /**
    * Create seller with shop for testing
    */
-  static createSellerWithShop(overrides: { seller?: Partial<any>; shop?: Partial<any> } = {}) {
+  static createSellerWithShop(overrides: { seller?: Record<string, unknown>; shop?: Record<string, unknown> } = {}) {
     const seller = this.createSellerEntity(overrides.seller);
     const shop = this.createShopEntity(seller.id, overrides.shop);
 
@@ -102,7 +102,7 @@ export class TestDataFactory {
   /**
    * Create multiple sellers for bulk testing
    */
-  static createMultipleSellers(count: number, overrides: Partial<any> = []) {
+  static createMultipleSellers(count: number, overrides: Array<Record<string, unknown>> = []) {
     return Array.from({ length: count }, (_, index) =>
       this.createSellerEntity({
         ...overrides[index] || {},
@@ -115,7 +115,7 @@ export class TestDataFactory {
   /**
    * Create signed request for service authentication testing
    */
-  static createSignedRequest(payload: any, overrides: Partial<any> = {}) {
+  static createSignedRequest(payload: Record<string, unknown>, overrides: Record<string, unknown> = {}) {
     return {
       payload,
       signature: 'mock-signature-hash',
@@ -128,7 +128,7 @@ export class TestDataFactory {
   /**
    * Create dashboard data structure
    */
-  static createDashboardData(seller: any, shop: any = null) {
+  static createDashboardData(seller: Record<string, unknown>, shop: Record<string, unknown> | null = null) {
     return {
       seller: {
         id: seller.id,

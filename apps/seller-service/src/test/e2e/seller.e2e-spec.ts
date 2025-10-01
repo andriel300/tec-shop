@@ -91,7 +91,7 @@ describe('Seller Service E2E', () => {
         where: { authId: createProfileDto.authId },
       });
       expect(dbSeller).toBeTruthy();
-      expect(dbSeller.email).toBe(createProfileDto.email);
+      expect(dbSeller?.email).toBe(createProfileDto.email);
     });
 
     it('should return existing seller when profile already exists', async () => {
@@ -157,8 +157,8 @@ describe('Seller Service E2E', () => {
       const dbSeller = await prisma.seller.findUnique({
         where: { authId: seller.authId },
       });
-      expect(dbSeller.name).toBe(updateData.name);
-      expect(dbSeller.phoneNumber).toBe(updateData.phoneNumber);
+      expect(dbSeller?.name).toBe(updateData.name);
+      expect(dbSeller?.phoneNumber).toBe(updateData.phoneNumber);
     });
   });
 
@@ -184,7 +184,7 @@ describe('Seller Service E2E', () => {
         where: { sellerId: seller.id },
       });
       expect(dbShop).toBeTruthy();
-      expect(dbShop.businessName).toBe(shopData.businessName);
+      expect(dbShop?.businessName).toBe(shopData.businessName);
     });
 
     it('should update existing shop successfully', async () => {
@@ -212,7 +212,7 @@ describe('Seller Service E2E', () => {
       const dbShop = await prisma.shop.findUnique({
         where: { sellerId: seller.id },
       });
-      expect(dbShop.businessName).toBe(updateData.businessName);
+      expect(dbShop?.businessName).toBe(updateData.businessName);
     });
 
     it('should get shop for seller successfully', async () => {

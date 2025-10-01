@@ -347,8 +347,8 @@ const CreateShop: React.FC<CreateShopProps> = ({ sellerId, setActiveStep }) => {
                 </p>
               )}
               <p className="text-xs text-text-secondary">
-                Specify your business operating hours (e.g., "Mon-Fri 9AM-6PM,
-                Sat 10AM-4PM")
+                Specify your business operating hours (e.g., &quot;Mon-Fri 9AM-6PM,
+                Sat 10AM-4PM&quot;)
               </p>
             </div>
           )}

@@ -23,6 +23,7 @@ describe('AuthService', () => {
     email: 'test@example.com',
     password: 'hashed-password123',
     isEmailVerified: true,
+    userType: 'CUSTOMER' as const,
     googleId: null,
     provider: 'local',
     refreshToken: null,
@@ -67,6 +68,14 @@ describe('AuthService', () => {
         },
         {
           provide: 'USER_SERVICE',
+          useValue: {
+            emit: jest.fn(),
+            send: jest.fn(),
+            connect: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: 'SELLER_SERVICE',
           useValue: {
             emit: jest.fn(),
             send: jest.fn(),
@@ -206,7 +215,7 @@ describe('AuthService', () => {
         throw new Error('Invalid');
       });
       const result = await service.validateToken('token');
-      expect(result).toEqual({ valid: false, userId: null, role: null });
+      expect(result).toEqual({ valid: false, userId: null, role: null, reason: 'token_invalid' });
     });
   });
 });
