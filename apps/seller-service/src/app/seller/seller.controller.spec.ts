@@ -4,6 +4,7 @@ import { SellerService } from './seller.service';
 import { ServiceAuthUtil } from './service-auth.util';
 import { TestUtils } from '../../test/test-utils';
 import { TestDataFactory } from '../../test/factories';
+import type { CreateSellerProfileDto } from '@tec-shop/dto';
 
 // Mock the ServiceAuthUtil
 jest.mock('./service-auth.util');
@@ -291,7 +292,7 @@ describe('SellerController', () => {
       sellerService.updateProfile.mockRejectedValue(new Error('Invalid input'));
 
       // Act & Assert
-      await expect(controller.updateProfile(malformedPayload as any)).rejects.toThrow('Invalid input');
+      await expect(controller.updateProfile(malformedPayload as { authId: string; updateData: Partial<CreateSellerProfileDto> })).rejects.toThrow('Invalid input');
     });
   });
 
@@ -301,7 +302,7 @@ describe('SellerController', () => {
       const authIds = Array.from({ length: 10 }, () => TestUtils.generateRandomObjectId());
       const mockResults = authIds.map(id => TestDataFactory.createSellerEntity({ authId: id }));
 
-      sellerService.getProfile.mockImplementation((authId) =>
+      sellerService.getProfile.mockImplementation((authId: string) =>
         Promise.resolve(mockResults.find(result => result.authId === authId))
       );
 

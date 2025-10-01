@@ -352,23 +352,23 @@ describe('SellerService', () => {
   describe('Performance Tests', () => {
     it('should handle multiple concurrent profile creations', async () => {
       // Arrange
-      const profiles = TestDataFactory.createPerformanceTestData('small').sellers.map(seller =>
+      const profiles = TestDataFactory.createPerformanceTestData('small').sellers.map((seller: Record<string, unknown>) =>
         TestDataFactory.createSellerProfileDto({
-          authId: seller.authId,
-          name: seller.name,
-          email: seller.email,
+          authId: seller.authId as string,
+          name: seller.name as string,
+          email: seller.email as string,
         })
       );
 
       prisma.seller.findUnique.mockResolvedValue(null);
-      prisma.seller.create.mockImplementation((args) =>
-        Promise.resolve(TestDataFactory.createSellerEntity(args.data))
+      prisma.seller.create.mockImplementation((args: Record<string, unknown>) =>
+        Promise.resolve(TestDataFactory.createSellerEntity(args.data as Record<string, unknown>))
       );
 
       // Act
       const startTime = Date.now();
       const results = await Promise.all(
-        profiles.map(profile => service.createProfile(profile))
+        profiles.map((profile: Record<string, unknown>) => service.createProfile(profile))
       );
       const duration = Date.now() - startTime;
 

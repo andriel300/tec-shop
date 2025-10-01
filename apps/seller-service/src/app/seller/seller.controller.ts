@@ -33,7 +33,7 @@ export class SellerController {
     }
 
     // Process the verified request
-    return this.sellerService.createProfile(signedRequest.payload);
+    return this.sellerService.createProfile(signedRequest.payload as unknown as CreateSellerProfileDto);
   }
 
   @MessagePattern('get-seller-profile')

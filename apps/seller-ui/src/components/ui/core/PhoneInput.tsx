@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Select } from './Select';
 import { Input } from './Input';
-import { getPhoneCodeOptions, getCountryByPhoneCode } from '../../../lib/data/countries';
+import { getPhoneCodeOptions } from '../../../lib/data/countries';
 
 export interface PhoneInputProps {
   value?: string;

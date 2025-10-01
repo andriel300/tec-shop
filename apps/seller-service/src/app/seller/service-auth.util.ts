@@ -1,7 +1,7 @@
 import { createHmac } from 'crypto';
 
 export interface SignedRequest {
-  payload: any;
+  payload: Record<string, unknown>;
   signature: string;
   timestamp: number;
   serviceId: string;
@@ -13,7 +13,7 @@ export class ServiceAuthUtil {
   /**
    * Sign a request payload for inter-service communication
    */
-  static signRequest(payload: any, serviceId: string, secretKey: string): SignedRequest {
+  static signRequest(payload: Record<string, unknown>, serviceId: string, secretKey: string): SignedRequest {
     const timestamp = Math.floor(Date.now() / 1000);
     const requestData = {
       payload,

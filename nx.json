@@ -122,7 +122,7 @@
     },
     "generate-types": {
       "cache": true,
-      "inputs": ["^generate-types", "{workspaceRoot}/libs/prisma-schemas/**/*"]
+      "inputs": ["{workspaceRoot}/libs/prisma-schemas/**/*"]
     },
     "migrate": {
       "cache": false

@@ -8,7 +8,7 @@ export class TestUtils {
   /**
    * Create a testing module with mocked dependencies
    */
-  static async createTestingModule(imports: any[], providers: any[] = [], controllers: any[] = []): Promise<TestingModule> {
+  static async createTestingModule(imports: unknown[], providers: unknown[] = [], controllers: unknown[] = []): Promise<TestingModule> {
     return Test.createTestingModule({
       imports,
       providers,
@@ -19,7 +19,7 @@ export class TestUtils {
   /**
    * Clean up all mocks before each test
    */
-  static resetAllMocks(mocks: Record<string, any>) {
+  static resetAllMocks(mocks: Record<string, unknown>) {
     Object.values(mocks).forEach(mock => {
       if (mock && typeof mock === 'object' && 'mockReset' in mock) {
         mockReset(mock);
@@ -90,7 +90,7 @@ export class TestDatabase {
     await prisma.seller.deleteMany({});
   }
 
-  static async createTestSeller(prisma: PrismaClient, overrides: Partial<any> = {}): Promise<any> {
+  static async createTestSeller(prisma: PrismaClient, overrides: Record<string, unknown> = {}) {
     return prisma.seller.create({
       data: {
         authId: TestUtils.generateRandomObjectId(),
@@ -104,7 +104,7 @@ export class TestDatabase {
     });
   }
 
-  static async createTestShop(prisma: PrismaClient, sellerId: string, overrides: Partial<any> = {}): Promise<any> {
+  static async createTestShop(prisma: PrismaClient, sellerId: string, overrides: Record<string, unknown> = {}) {
     return prisma.shop.create({
       data: {
         sellerId,
@@ -112,6 +112,7 @@ export class TestDatabase {
         description: 'Test Description',
         category: 'Electronics',
         address: '123 Test St',
+        openingHours: 'Mon-Fri 9AM-6PM',
         website: 'https://test.com',
         isActive: true,
         rating: 4.5,

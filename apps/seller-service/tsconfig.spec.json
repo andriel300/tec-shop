@@ -8,9 +8,15 @@
   },
   "include": [
     "jest.config.ts",
-    "src/**/*.test.ts",
-    "src/**/*.spec.ts",
-    "src/**/*.d.ts"
+    "src/app/**/*.test.ts",
+    "src/app/**/*.spec.ts",
+    "src/**/*.d.ts",
+    "src/test/setup.ts",
+    "src/test/test-utils.ts",
+    "src/test/factories.ts"
+  ],
+  "exclude": [
+    "src/test/e2e"
   ],
   "references": [
     {

@@ -44,6 +44,15 @@
     },
     {
       "path": "./libs/prisma-clients/user-client"
+    },
+    {
+      "path": "./libs/prisma-schemas/seller-schema"
+    },
+    {
+      "path": "./libs/prisma-schemas/auth-schema"
+    },
+    {
+      "path": "./libs/prisma-schemas/user-schema"
     }
   ]
 }
