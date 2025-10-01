@@ -13,6 +13,7 @@ model User {
   email               String               @unique
   password            String?
   isEmailVerified     Boolean              @default(false)
+  userType            UserType             @default(CUSTOMER)
   googleId            String?              @unique
   provider            String               @default("local")
   refreshToken        String?
@@ -29,4 +30,10 @@ model PasswordResetToken {
   expiresAt DateTime
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+enum UserType {
+  CUSTOMER
+  SELLER
+  ADMIN
 }

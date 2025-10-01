@@ -16,7 +16,16 @@ model Seller {
   phoneNumber String
   country     String
   isVerified  Boolean @default(false)
-  stripeId    String? @unique
+
+  // Stripe Connect fields
+  stripeAccountId        String?           @unique // Stripe Connect account ID
+  stripeOnboardingStatus StripeStatus      @default(NOT_STARTED)
+  stripeDetailsSubmitted Boolean           @default(false)
+  stripePayoutsEnabled   Boolean           @default(false)
+  stripeChargesEnabled   Boolean           @default(false)
+  stripeOnboardingUrl    String?           // Current onboarding URL
+  stripeRequirements     Json?             // Required fields from Stripe
+  stripeLastUpdated      DateTime?         // Last webhook update
 
   // Business info
   shop Shop?
@@ -46,4 +55,13 @@ model Shop {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum StripeStatus {
+  NOT_STARTED     // Seller hasn't started Stripe onboarding
+  PENDING         // Account created, onboarding in progress
+  INCOMPLETE      // Onboarding started but missing information
+  COMPLETE        // Fully onboarded and can accept payments
+  RESTRICTED      // Account restricted due to issues
+  REJECTED        // Account rejected by Stripe
 }

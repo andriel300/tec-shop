@@ -73,6 +73,22 @@ export interface SellerDashboardData {
   } | null;
 }
 
+export interface StripeOnboardingResponse {
+  url: string;
+  expires_at: number;
+}
+
+export interface StripeAccountStatus {
+  status: 'NOT_STARTED' | 'PENDING' | 'INCOMPLETE' | 'COMPLETE' | 'RESTRICTED' | 'REJECTED';
+  canAcceptPayments: boolean;
+  requiresAction: boolean;
+  requirements: string[];
+  accountId?: string;
+  detailsSubmitted: boolean;
+  payoutsEnabled: boolean;
+  chargesEnabled: boolean;
+}
+
 export interface ApiResponse<T = unknown> {
   message: string;
   data?: T;
@@ -116,5 +132,16 @@ export const getShop = async (): Promise<ShopResponse | null> => {
 
 export const getSellerDashboard = async (): Promise<SellerDashboardData> => {
   const response = await apiClient.get('/seller/dashboard');
+  return response.data;
+};
+
+// Stripe Connect API functions
+export const createStripeOnboardingLink = async (): Promise<StripeOnboardingResponse> => {
+  const response = await apiClient.post('/seller/stripe/onboard');
+  return response.data;
+};
+
+export const getStripeAccountStatus = async (): Promise<StripeAccountStatus> => {
+  const response = await apiClient.get('/seller/stripe/status');
   return response.data;
 };
