@@ -149,7 +149,7 @@ export class AuthController {
     status: 201,
     description: 'User successfully logged out.',
   })
-  async logout(@Req() request: { user: { userId: string } }, @Res({ passthrough: true }) response: Response) {
+  async logout(@Req() request: Request & { user: { userId: string } }, @Res({ passthrough: true }) response: Response) {
     try {
       // Get the access token from the request to revoke it
       const accessToken = request.cookies?.access_token;

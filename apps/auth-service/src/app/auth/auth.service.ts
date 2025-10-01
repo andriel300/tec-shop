@@ -99,13 +99,9 @@ export class AuthService implements OnModuleInit {
     };
   }
 
-  async sellerSignup(_sellerSignupDto: SellerSignupDto) {
-    // TODO: Refactor seller signup to work with User model and inter-service communication
-    throw new Error('Seller signup temporarily disabled during refactor');
-
+  async sellerSignup(sellerSignupDto: SellerSignupDto) {
     const { email, password, name, phoneNumber, country } = sellerSignupDto;
 
-    // Check if email already exists in regular users or sellers
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -114,70 +110,34 @@ export class AuthService implements OnModuleInit {
       throw new ConflictException('User with this email already exists');
     }
 
-    const existingSeller = await this.prisma.seller.findUnique({
-      where: { email },
-    });
-
-    if (existingSeller) {
-      throw new ConflictException('Seller with this email already exists');
-    }
-
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create seller in auth-service
-    const seller = await this.prisma.seller.create({
+    const user = await this.prisma.user.create({
       data: {
-        name,
         email,
-        phoneNumber,
-        country,
         password: hashedPassword,
+        isEmailVerified: false,
+        userType: 'SELLER', // Mark as seller type
       },
     });
 
-    // Generate and store OTP for seller verification (Security Hardened)
+    // Generate and store OTP with seller profile data
     const otp = randomInt(100000, 1000000).toString().padStart(6, '0');
-
-    // Hash OTP before storing to prevent exposure if Redis is compromised
-    const hashedOtp = createHash('sha256')
-      .update(otp + seller.id + process.env.OTP_SALT || 'default-salt')
-      .digest('hex');
-
-    // Store user data separately with hash-based key (no PII in keys)
-    const dataHash = createHash('sha256')
-      .update(`seller:${seller.id}:${Date.now()}`)
-      .digest('hex');
-
-    // Store OTP verification data (no plain text OTP or PII)
+    const redisPayload = JSON.stringify({
+      otp,
+      name,
+      phoneNumber,
+      country,
+      userType: 'SELLER'
+    });
     await this.redisService.set(
-      `otp:${hashedOtp}`,
-      JSON.stringify({
-        sellerId: seller.id,
-        dataKey: dataHash,
-        created: Date.now(),
-        attempts: 0,
-      }),
+      `verification-otp:${user.id}`,
+      redisPayload,
       600
     );
 
-    // Store user data separately (encrypted with Base64)
-    const userData = Buffer.from(
-      JSON.stringify({
-        name,
-        phoneNumber,
-        country,
-        userType: 'seller',
-      })
-    ).toString('base64');
-
-    await this.redisService.set(
-      `data:${dataHash}`,
-      userData,
-      300 // 5 minutes for PII data - shorter than OTP
-    );
-
     // Send verification email
-    await this.emailService.sendOtp(seller.email, otp);
+    await this.emailService.sendOtp(user.email, otp);
 
     return {
       message:
@@ -211,12 +171,12 @@ export class AuthService implements OnModuleInit {
   }
 
   async sellerLogin(credential: LoginDto) {
-    // TODO: Implement proper inter-service communication with seller-service
-    // For now, this should authenticate the User and let seller-service handle seller-specific logic
-
-    // Find user by email (seller users are stored in User table)
+    // Find user by email with seller userType
     const user = await this.prisma.user.findUnique({
-      where: { email: credential.email },
+      where: {
+        email: credential.email,
+        userType: 'SELLER',
+      },
     });
 
     // Generic error message to prevent email enumeration
@@ -235,7 +195,7 @@ export class AuthService implements OnModuleInit {
       throw new UnauthorizedException(genericError);
     }
 
-    // Generate tokens for seller with role information
+    // Generate tokens for seller with proper role and userType
     return this.generateSellerTokens(
       user.id,
       user.email,
@@ -310,92 +270,66 @@ export class AuthService implements OnModuleInit {
   }
 
   async verifySellerEmail(verifyEmailDto: VerifyEmailDto) {
-    // TODO: Refactor seller email verification to work with User model
-    throw new Error(
-      'Seller email verification temporarily disabled during refactor'
-    );
     const { email, otp } = verifyEmailDto;
 
-    const seller = await this.prisma.seller.findUnique({
-      where: { email },
+    const user = await this.prisma.user.findUnique({
+      where: { email, userType: 'SELLER' },
     });
 
-    if (!seller) {
+    if (!user) {
       throw new UnauthorizedException('Invalid verification details');
     }
 
-    // Hash the provided OTP to compare with stored hash (Security Hardened)
-    const hashedOtp = createHash('sha256')
-      .update(otp + seller.id + process.env.OTP_SALT || 'default-salt')
-      .digest('hex');
+    // Check OTP attempt limiting
+    const attemptKey = `otp-attempts:${user.id}`;
+    const attemptsStr = await this.redisService.get(attemptKey);
+    const attempts = attemptsStr ? parseInt(attemptsStr) : 0;
 
-    // Get OTP verification data using hash
-    const otpData = await this.redisService.get(`otp:${hashedOtp}`);
-
-    if (!otpData) {
-      throw new UnauthorizedException('Invalid or expired verification code');
-    }
-
-    const { sellerId, dataKey, attempts, created } = JSON.parse(otpData);
-
-    // Verify the seller ID matches (prevent OTP reuse across accounts)
-    if (sellerId !== seller.id) {
-      throw new UnauthorizedException('Invalid verification details');
-    }
-
-    // Check attempt limits with exponential backoff
     if (attempts >= 3) {
-      // Clean up all related data
-      await this.redisService.del(`otp:${hashedOtp}`);
-      await this.redisService.del(`data:${dataKey}`);
+      await this.redisService.del(`verification-otp:${user.id}`);
       throw new UnauthorizedException(
-        'Too many failed attempts. Please request a new verification code.'
+        'Too many failed attempts. Please request a new OTP.'
       );
     }
 
-    // Check OTP age (additional security layer)
-    const otpAge = Date.now() - created;
-    if (otpAge > 600000) {
-      // 10 minutes
-      await this.redisService.del(`otp:${hashedOtp}`);
-      await this.redisService.del(`data:${dataKey}`);
-      throw new UnauthorizedException('Verification code has expired');
-    }
-
-    // Get user data
-    const userData = await this.redisService.get(`data:${dataKey}`);
-    if (!userData) {
-      throw new UnauthorizedException('Verification data not found or expired');
-    }
-
-    // Decode user data
-    const { name, phoneNumber, country } = JSON.parse(
-      Buffer.from(userData, 'base64').toString('utf8')
+    const redisPayload = await this.redisService.get(
+      `verification-otp:${user.id}`
     );
 
-    // Update seller as verified
-    await this.prisma.seller.update({
-      where: { id: seller.id },
-      data: { isVerified: true },
+    if (!redisPayload) {
+      throw new UnauthorizedException('Invalid verification details');
+    }
+
+    const { otp: storedOtp, name, phoneNumber, country, userType } = JSON.parse(redisPayload);
+
+    if (storedOtp !== otp) {
+      await this.redisService.set(attemptKey, (attempts + 1).toString(), 600);
+      throw new UnauthorizedException('Invalid verification details');
+    }
+
+    // Verify this is actually a seller verification
+    if (userType !== 'SELLER') {
+      throw new UnauthorizedException('Invalid verification type');
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { isEmailVerified: true },
     });
 
-    // Clean up all verification data immediately after successful verification
-    await Promise.all([
-      this.redisService.del(`otp:${hashedOtp}`),
-      this.redisService.del(`data:${dataKey}`),
-    ]);
+    await this.redisService.del(`verification-otp:${user.id}`);
+    await this.redisService.del(`otp-attempts:${user.id}`);
 
-    // Create the seller profile in the seller-service now that email is verified (Security Hardened)
+    // Create the seller profile in seller-service using signed request
     try {
       const profileData = {
-        authId: seller.id,
+        authId: user.id,
         name,
-        email: seller.email,
+        email: user.email,
         phoneNumber,
         country,
       };
 
-      // Sign the request for secure inter-service communication
       const serviceSecret = ServiceAuthUtil.deriveServiceSecret(
         process.env.SERVICE_MASTER_SECRET || 'default-secret',
         'auth-service'
@@ -410,16 +344,10 @@ export class AuthService implements OnModuleInit {
       await firstValueFrom(
         this.sellerClient.send('create-seller-profile-signed', signedRequest)
       );
-      console.log(
-        `Seller profile created successfully for seller ${seller.id}`
-      );
+      console.log(`Seller profile created successfully for user ${user.id}`);
     } catch (error) {
-      console.error(
-        'Failed to create seller profile in seller-service:',
-        error
-      );
+      console.error('Failed to create seller profile in seller-service:', error);
       // Log the error but don't fail the email verification process
-      // The seller profile can be created later if needed
     }
 
     return { message: 'Seller email verified successfully.' };
@@ -792,6 +720,7 @@ export class AuthService implements OnModuleInit {
       sub: userId,
       username: email,
       role: 'user',
+      userType: 'CUSTOMER' as const,
     };
 
     // Set token expiration based on rememberMe preference
@@ -822,14 +751,15 @@ export class AuthService implements OnModuleInit {
   }
 
   private async generateSellerTokens(
-    sellerId: string,
+    userId: string,
     email: string,
     rememberMe = false
   ) {
     const payload = {
-      sub: sellerId,
+      sub: userId,
       username: email,
       role: 'seller',
+      userType: 'SELLER' as const,
     };
 
     // Set token expiration based on rememberMe preference
@@ -844,16 +774,15 @@ export class AuthService implements OnModuleInit {
     const refresh_token = randomBytes(32).toString('hex');
 
     // Store refresh token in database (hashed for security)
+    // For sellers, we use the same User table since they are Users with userType: SELLER
     const hashedRefreshToken = createHash('sha256')
       .update(refresh_token)
       .digest('hex');
-    // Note: Sellers don't store refresh tokens in the seller table
-    // This functionality should be handled differently for sellers
-    // For now, we'll skip this for sellers as they use a different auth flow
-    // await this.prisma.seller.update({
-    //   where: { id: sellerId },
-    //   data: { refreshToken: hashedRefreshToken },
-    // });
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshToken: hashedRefreshToken },
+    });
 
     return {
       access_token,

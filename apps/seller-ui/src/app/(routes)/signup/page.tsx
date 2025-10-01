@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { SignUpForm } from '../../../components/forms/signup-form';
 import { VerifyOtpForm } from '../../../components/forms/verify-otp-form';
@@ -10,12 +10,54 @@ import CreateShop from '../../../shared/modules/auth/create-shop';
 import { StripeIcon } from '../../../assets/svgs/stripe-logo';
 import { Button } from '../../../components/ui/core/Button';
 import { CreditCard, CheckCircle, Shield } from 'lucide-react';
+import { createStripeOnboardingLink, getStripeAccountStatus } from '../../../lib/api/seller';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'next/navigation';
 
 export default function SignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeStep, setActiveStep] = useState(3);
   const [email, setEmail] = useState('');
   const [showOtp, setShowOtp] = useState(false);
+
+  // Handle Stripe success/error from URL parameters
+  useEffect(() => {
+    const stripeStatus = searchParams.get('stripe');
+    if (stripeStatus === 'success') {
+      toast.success('Stripe account connected successfully! 🎉');
+      // Remove the parameter from URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('stripe');
+      window.history.replaceState({}, '', url.toString());
+    } else if (stripeStatus === 'error') {
+      toast.error('Failed to connect Stripe account. Please try again.');
+      // Remove the parameter from URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('stripe');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [searchParams]);
+
+  // Check Stripe account status
+  const { data: stripeStatus, isLoading: isLoadingStripeStatus } = useQuery({
+    queryKey: ['stripe-status'],
+    queryFn: getStripeAccountStatus,
+    enabled: activeStep === 3,
+    retry: false,
+  });
+
+  // Stripe onboarding mutation
+  const { mutate: startStripeOnboarding, isPending: isCreatingOnboardingLink } = useMutation({
+    mutationFn: createStripeOnboardingLink,
+    onSuccess: (data) => {
+      // Redirect to Stripe onboarding
+      window.location.href = data.url;
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to start Stripe onboarding');
+    },
+  });
 
   const handleSuccess = (
     userEmail: string,
@@ -134,27 +176,46 @@ export default function SignupPage() {
                   <div className="space-y-4">
                     <Button
                       className="w-full bg-[#635BFF] hover:bg-[#5A56E8] text-white py-3 text-base font-semibold"
-                      onClick={() => {
-                        // TODO: Implement Stripe Connect integration
-                        console.log('Connecting to Stripe...');
-                      }}
+                      onClick={() => startStripeOnboarding()}
+                      disabled={isCreatingOnboardingLink || isLoadingStripeStatus}
                     >
                       <div className="flex items-center justify-center space-x-3">
-                        <span>Connect with Stripe</span>
-                        <StripeIcon className="h-6 w-6" />
+                        <span>
+                          {isCreatingOnboardingLink
+                            ? 'Creating onboarding link...'
+                            : stripeStatus?.status === 'COMPLETE'
+                            ? 'Stripe Connected ✓'
+                            : stripeStatus?.status === 'PENDING' || stripeStatus?.status === 'INCOMPLETE'
+                            ? 'Continue Stripe Setup'
+                            : 'Connect with Stripe'
+                          }
+                        </span>
+                        {!isCreatingOnboardingLink && <StripeIcon className="h-6 w-6" />}
                       </div>
                     </Button>
 
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => {
-                        // TODO: Skip for now, redirect to dashboard
-                        router.push('/dashboard');
-                      }}
-                    >
-                      Skip for now
-                    </Button>
+                    {stripeStatus?.status !== 'COMPLETE' && (
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          router.push('/dashboard');
+                        }}
+                      >
+                        Skip for now
+                      </Button>
+                    )}
+
+                    {stripeStatus?.status === 'COMPLETE' && (
+                      <Button
+                        className="w-full"
+                        onClick={() => {
+                          router.push('/dashboard');
+                        }}
+                      >
+                        Continue to Dashboard
+                      </Button>
+                    )}
                   </div>
 
                   {/* Security Notice */}

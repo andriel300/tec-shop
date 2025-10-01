@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { SellerController } from './seller.controller';
+import { StripeController } from '../stripe/stripe.controller';
+import { StripeWebhookController } from '../webhooks/stripe-webhook.controller';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -34,6 +36,6 @@ import { join } from 'path';
       },
     ]),
   ],
-  controllers: [SellerController],
+  controllers: [SellerController, StripeController, StripeWebhookController],
 })
 export class SellerModule {}
