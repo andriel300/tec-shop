@@ -1,7 +1,8 @@
-import { Controller, Post, Body, Headers, Inject, BadRequestException, RawBodyRequest, Req } from '@nestjs/common';
+import { Controller, Post, Headers, Inject, BadRequestException, Req } from '@nestjs/common';
+import type { RawBodyRequest } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { ApiTags, ApiOperation, ApiResponse, ApiExcludeEndpoint } from '@nestjs/swagger';
+import { ApiTags, ApiExcludeEndpoint } from '@nestjs/swagger';
 import Stripe from 'stripe';
 import type { Request } from 'express';
 
@@ -19,7 +20,7 @@ export class StripeWebhookController {
     }
 
     this.stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2024-12-18.acacia',
+      apiVersion: '2025-08-27.basil',
     });
   }
 
