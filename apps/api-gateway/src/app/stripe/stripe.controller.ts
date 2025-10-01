@@ -76,7 +76,7 @@ export class StripeController {
   @Get('return')
   @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 requests per minute per IP
   @ApiOperation({ summary: 'Handle successful Stripe onboarding return' })
-  @ApiResponse({ status: 200, description: 'Onboarding completed successfully' }}
+  @ApiResponse({ status: 200, description: 'Onboarding completed successfully' })
   async handleOnboardingReturn(
     @Query('authId') authId: string,
     @Query('state') state: string,
@@ -111,7 +111,7 @@ export class StripeController {
   @Get('refresh')
   @Throttle({ default: { limit: 5, ttl: 300000 } }) // 5 requests per 5 minutes per IP
   @ApiOperation({ summary: 'Handle Stripe onboarding refresh (restart)' })
-  @ApiResponse({ status: 302, description: 'Redirect to new onboarding link' }}
+  @ApiResponse({ status: 302, description: 'Redirect to new onboarding link' })
   async handleOnboardingRefresh(
     @Query('authId') authId: string,
     @Query('state') state: string,

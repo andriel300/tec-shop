@@ -34,73 +34,56 @@ export class StripeService {
    * Create Stripe Connect account for seller and generate onboarding link
    */
   async createConnectAccount(authId: string) {
-    // Use atomic update to prevent race conditions
-    return await this.prisma.$transaction(async (prisma) => {
-      // Find seller with lock for update
-      const seller = await prisma.seller.findUnique({
-        where: { authId },
-      });
-
-      if (!seller) {
-        throw new NotFoundException('Seller not found');
-      }
-
-      // Check if seller already has a Stripe account
-      if (seller.stripeAccountId) {
-        // If account exists, generate fresh onboarding link
-        return this.createAccountLink(seller.stripeAccountId, authId);
-      }
-
-      // Check one more time within transaction to prevent race conditions
-      const existingAccount = await prisma.seller.findUnique({
-        where: { authId },
-        select: { stripeAccountId: true }
-      });
-
-      if (existingAccount?.stripeAccountId) {
-        // Account was created in parallel, use existing
-        return this.createAccountLink(existingAccount.stripeAccountId, authId);
-      }
-
-      try {
-        // Create Stripe Connect Express account
-        const account = await this.stripe.accounts.create({
-          type: 'express',
-          country: seller.country,
-          email: seller.email,
-          business_profile: {
-            name: seller.shop?.businessName || seller.name,
-            support_email: seller.email,
-            url: seller.shop?.website || undefined,
-            mcc: '5734', // Computer Software Stores - adjust based on your marketplace
-          },
-          capabilities: {
-            card_payments: { requested: true },
-            transfers: { requested: true },
-          },
-        });
-
-        // Atomic update within transaction to prevent race conditions
-        const updatedSeller = await prisma.seller.update({
-          where: {
-            authId,
-            stripeAccountId: null // Only update if still null
-          },
-          data: {
-            stripeAccountId: account.id,
-            stripeOnboardingStatus: 'PENDING',
-            stripeLastUpdated: new Date(),
-          },
-        });
-
-        // Create account link for onboarding
-        return this.createAccountLink(account.id, authId);
-      } catch (error) {
-        // Log error without exposing sensitive Stripe API details
-        console.error('Stripe account creation failed for seller:', { authId, error: error instanceof Error ? error.message : 'Unknown error' });
-        throw new BadRequestException('Failed to create Stripe account. Please try again.');
-      }
+    // Find seller
+    const seller = await this.prisma.seller.findUnique({
+      where: { authId },
     });
+
+    if (!seller) {
+      throw new NotFoundException('Seller not found');
+    }
+
+    // Check if seller already has a Stripe account
+    if (seller.stripeAccountId) {
+      // If account exists, generate fresh onboarding link
+      return this.createAccountLink(seller.stripeAccountId, authId);
+    }
+
+    try {
+      // Create Stripe Connect Express account (external API - don't wrap in transaction)
+      const account = await this.stripe.accounts.create({
+        type: 'express',
+        country: seller.country,
+        email: seller.email,
+        business_profile: {
+          name: seller.shop?.businessName || seller.name,
+          support_email: seller.email,
+          url: seller.shop?.website || undefined,
+          mcc: '5734', // Computer Software Stores - adjust based on your marketplace
+        },
+        capabilities: {
+          card_payments: { requested: true },
+          transfers: { requested: true },
+        },
+      });
+
+      // Update seller with Stripe account ID
+      await this.prisma.seller.update({
+        where: { authId },
+        data: {
+          stripeAccountId: account.id,
+          stripeOnboardingStatus: 'PENDING',
+          stripeLastUpdated: new Date(),
+        },
+      });
+
+      // Create account link for onboarding
+      return this.createAccountLink(account.id, authId);
+    } catch (error) {
+      // Log error without exposing sensitive Stripe API details
+      console.error('Stripe account creation failed for seller:', { authId, error: error instanceof Error ? error.message : 'Unknown error' });
+      throw new BadRequestException('Failed to create Stripe account. Please try again.');
+    }
   }
 
   /**
@@ -160,8 +143,8 @@ export class StripeService {
 
       const accountLink = await this.stripe.accountLinks.create({
         account: stripeAccountId,
-        refresh_url: `${this.getBaseUrl()}/seller/stripe/refresh?authId=${authId}&state=${encodeURIComponent(state)}`,
-        return_url: `${this.getBaseUrl()}/seller/stripe/return?authId=${authId}&state=${encodeURIComponent(state)}`,
+        refresh_url: `${this.getBaseUrl()}/api/seller/stripe/refresh?authId=${authId}&state=${encodeURIComponent(state)}`,
+        return_url: `${this.getBaseUrl()}/api/seller/stripe/return?authId=${authId}&state=${encodeURIComponent(state)}`,
         type: 'account_onboarding',
       });
 
@@ -434,9 +417,9 @@ export class StripeService {
   }
 
   /**
-   * Get base URL for redirects
+   * Get base URL for redirects (API Gateway URL, not frontend)
    */
   private getBaseUrl(): string {
-    return this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3001';
+    return this.configService.get<string>('API_GATEWAY_URL') || 'http://localhost:8080';
   }
 }

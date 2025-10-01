@@ -10,15 +10,21 @@ import CreateShop from '../../../shared/modules/auth/create-shop';
 import { StripeIcon } from '../../../assets/svgs/stripe-logo';
 import { Button } from '../../../components/ui/core/Button';
 import { CreditCard, CheckCircle, Shield } from 'lucide-react';
-import { createStripeOnboardingLink, getStripeAccountStatus } from '../../../lib/api/seller';
+import {
+  createStripeOnboardingLink,
+  getStripeAccountStatus,
+} from '../../../lib/api/seller';
+import { loginUser } from '../../../lib/api/auth';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 
 export default function SignupPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeStep, setActiveStep] = useState(3);
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showOtp, setShowOtp] = useState(false);
 
   // Handle Stripe success/error from URL parameters
@@ -48,14 +54,29 @@ export default function SignupPage() {
   });
 
   // Stripe onboarding mutation
-  const { mutate: startStripeOnboarding, isPending: isCreatingOnboardingLink } = useMutation({
-    mutationFn: createStripeOnboardingLink,
-    onSuccess: (data) => {
-      // Redirect to Stripe onboarding
-      window.location.href = data.url;
+  const { mutate: startStripeOnboarding, isPending: isCreatingOnboardingLink } =
+    useMutation({
+      mutationFn: createStripeOnboardingLink,
+      onSuccess: (data) => {
+        // Redirect to Stripe onboarding
+        window.location.href = data.url;
+      },
+      onError: (error: Error) => {
+        toast.error(error.message || 'Failed to start Stripe onboarding');
+      },
+    });
+
+  // Auto-login mutation after email verification
+  const { mutate: autoLogin } = useMutation({
+    mutationFn: loginUser,
+    onSuccess: () => {
+      toast.success('Logged in successfully!');
+      setShowOtp(false);
+      setActiveStep(2);
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Failed to start Stripe onboarding');
+      toast.error('Auto-login failed. Please login manually.');
+      router.push('/login');
     },
   });
 
@@ -65,11 +86,13 @@ export default function SignupPage() {
     userPassword: string
   ) => {
     setEmail(userEmail);
+    setPassword(userPassword);
     setShowOtp(true);
   };
 
   const handleVerificationSuccess = () => {
-    router.push('/login');
+    // Auto-login after email verification
+    autoLogin({ email, password, rememberMe: false });
   };
 
   return (
@@ -177,7 +200,9 @@ export default function SignupPage() {
                     <Button
                       className="w-full bg-[#635BFF] hover:bg-[#5A56E8] text-white py-3 text-base font-semibold"
                       onClick={() => startStripeOnboarding()}
-                      disabled={isCreatingOnboardingLink || isLoadingStripeStatus}
+                      disabled={
+                        isCreatingOnboardingLink || isLoadingStripeStatus
+                      }
                     >
                       <div className="flex items-center justify-center space-x-3">
                         <span>
@@ -185,12 +210,14 @@ export default function SignupPage() {
                             ? 'Creating onboarding link...'
                             : stripeStatus?.status === 'COMPLETE'
                             ? 'Stripe Connected ✓'
-                            : stripeStatus?.status === 'PENDING' || stripeStatus?.status === 'INCOMPLETE'
+                            : stripeStatus?.status === 'PENDING' ||
+                              stripeStatus?.status === 'INCOMPLETE'
                             ? 'Continue Stripe Setup'
-                            : 'Connect with Stripe'
-                          }
+                            : 'Connect with Stripe'}
                         </span>
-                        {!isCreatingOnboardingLink && <StripeIcon className="h-6 w-6" />}
+                        {!isCreatingOnboardingLink && (
+                          <StripeIcon className="h-6 w-6" />
+                        )}
                       </div>
                     </Button>
 

@@ -4,11 +4,17 @@
   "license": "MIT",
   "scripts": {
     "dev": "npx nx run-many --target=serve --all",
-    "user-ui": "npx nx run-many --target=dev --all --projects=user-ui",
-    "seller-ui": "npx nx run-many --target=dev --all --projects=seller-ui",
+    "user-ui": "PORT=3000 npx nx dev user-ui",
+    "seller-ui": "PORT=3001 npx nx dev seller-ui",
     "prisma:generate": "npx nx run @tec-shop/auth-schema:generate-types && npx nx run @tec-shop/user-schema:generate-types && npx nx run @tec-shop/seller-schema:generate-types",
-    "prisma:db-push": "dotenv -e .env -- prisma db push",
-    "prisma:studio": "dotenv -e .env -- prisma studio"
+    "prisma:db-push": "npx nx run-many --target=db-push --projects=@tec-shop/auth-schema,@tec-shop/user-schema,@tec-shop/seller-schema",
+    "prisma:studio:auth": "npx nx run @tec-shop/auth-schema:studio",
+    "prisma:studio:user": "npx nx run @tec-shop/user-schema:studio",
+    "prisma:studio:seller": "npx nx run @tec-shop/seller-schema:studio",
+    "prisma:format": "npx nx run-many --target=format --projects=@tec-shop/auth-schema,@tec-shop/user-schema,@tec-shop/seller-schema",
+    "test": "npx nx run-many --target=test --all",
+    "lint": "npx nx run-many --target=lint --all",
+    "typecheck": "npx nx run-many --target=typecheck --all"
   },
   "private": true,
   "dependencies": {
