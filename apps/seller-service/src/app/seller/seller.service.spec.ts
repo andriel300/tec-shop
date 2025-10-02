@@ -187,8 +187,14 @@ describe('SellerService', () => {
       });
       expect(prisma.shop.create).toHaveBeenCalledWith({
         data: {
-          ...shopData,
+          businessName: shopData.businessName,
+          bio: shopData.bio,
+          category: shopData.category,
+          address: shopData.address,
+          openingHours: shopData.openingHours,
+          website: shopData.website,
           sellerId: seller.id,
+          socialLinks: [],
         },
       });
       expect(result).toEqual(expectedShop);
@@ -211,7 +217,14 @@ describe('SellerService', () => {
       // Assert
       expect(prisma.shop.update).toHaveBeenCalledWith({
         where: { sellerId: seller.id },
-        data: shopData,
+        data: {
+          businessName: shopData.businessName,
+          bio: shopData.bio,
+          category: shopData.category,
+          address: shopData.address,
+          openingHours: shopData.openingHours,
+          website: shopData.website,
+        },
       });
       expect(result).toEqual(updatedShop);
     });
