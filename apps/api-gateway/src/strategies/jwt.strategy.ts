@@ -11,11 +11,26 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly configService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        // First try to extract from cookie (secure method)
+        // Extract from secure httpOnly cookies with proper naming
         (request: Request) => {
-          return request?.cookies?.access_token;
+          const isProduction = process.env.NODE_ENV === 'production';
+          const prefix = isProduction ? '__Host-' : '';
+
+          // Try customer cookies first (most common)
+          const customerToken = request?.cookies?.[`${prefix}customer_access_token`];
+          if (customerToken) return customerToken;
+
+          // Try seller cookies
+          const sellerToken = request?.cookies?.[`${prefix}seller_access_token`];
+          if (sellerToken) return sellerToken;
+
+          // Fallback to legacy cookie name for backward compatibility during migration
+          const legacyToken = request?.cookies?.access_token;
+          if (legacyToken) return legacyToken;
+
+          return null;
         },
-        // Fallback to Authorization header for backward compatibility
+        // Fallback to Authorization header for API clients and backward compatibility
         ExtractJwt.fromAuthHeaderAsBearerToken(),
       ]),
       ignoreExpiration: false,
