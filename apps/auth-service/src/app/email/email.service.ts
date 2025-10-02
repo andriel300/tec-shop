@@ -1,11 +1,23 @@
 import { MailerService } from '@nestjs-modules/mailer';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 @Injectable()
 export class EmailService {
+  private readonly logger = new Logger(EmailService.name);
+  private readonly isDevelopment = process.env.NODE_ENV !== 'production';
+
   constructor(private readonly mailerService: MailerService) {}
 
   async sendOtp(to: string, otp: string): Promise<void> {
+    // Log OTP in development for easy testing
+    if (this.isDevelopment) {
+      this.logger.log(`
+       OTP CODE FOR TESTING
+  Email: ${to.padEnd(28)}
+  Code:  ${otp.padEnd(28)}
+      `);
+    }
+
     await this.mailerService.sendMail({
       to,
       subject: 'Your Tec-Shop One-Time Password',

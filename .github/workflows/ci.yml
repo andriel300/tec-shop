@@ -35,11 +35,14 @@ jobs:
       - run: npm ci --legacy-peer-deps
       - uses: nrwl/nx-set-shas@v4.3.3
 
-      # Generate Prisma clients before distributed execution to avoid dependency issues
+      # Generate Prisma clients before running tests/builds
+      # Run for all schemas (not just affected) since generated files in node_modules/.prisma/*
+      # are required by all services regardless of what changed
       - name: Generate Prisma Clients
         run: |
-          npx nx run @tec-shop/auth-service:prisma-generate
-          npx nx run @tec-shop/user-service:prisma-generate
+          npx nx run @tec-shop/auth-schema:generate-types
+          npx nx run @tec-shop/user-schema:generate-types
+          npx nx run @tec-shop/seller-schema:generate-types
 
       # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
       # - run: npx nx-cloud record -- echo Hello World

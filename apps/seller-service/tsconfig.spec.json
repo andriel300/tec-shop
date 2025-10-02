@@ -1,0 +1,26 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./out-tsc/jest",
+    "types": ["jest", "node"],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "include": [
+    "jest.config.ts",
+    "src/app/**/*.test.ts",
+    "src/app/**/*.spec.ts",
+    "src/**/*.d.ts",
+    "src/test/setup.ts",
+    "src/test/test-utils.ts",
+    "src/test/factories.ts"
+  ],
+  "exclude": [
+    "src/test/e2e"
+  ],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    }
+  ]
+}

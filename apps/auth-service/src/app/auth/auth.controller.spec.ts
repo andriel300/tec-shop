@@ -86,7 +86,13 @@ describe('AuthController', () => {
   describe('validateToken', () => {
     it('should call authService.validateToken with the provided token', async () => {
       const token = 'some-jwt-token';
-      const expectedResult = { valid: true, userId: '123', role: 'user' };
+      const expectedResult = {
+        valid: true,
+        userId: '123',
+        role: 'user',
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 3600
+      };
       jest
         .spyOn(authService, 'validateToken')
         .mockResolvedValue(expectedResult);

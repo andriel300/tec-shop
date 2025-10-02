@@ -4,13 +4,6 @@
   "sourceRoot": "apps/user-service/src",
   "projectType": "application",
   "tags": ["type:app", "scope:user"],
-  "targets": {
-    "prisma-generate": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npx prisma generate --schema=apps/user-service/prisma/schema.prisma"
-      }
-    }
-  },
-  "implicitDependencies": []
+  "targets": {},
+  "implicitDependencies": ["@tec-shop/user-client"]
 }

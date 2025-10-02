@@ -1,0 +1,17 @@
+{
+  "name": "@tec-shop/seller-service",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/seller-service/src",
+  "projectType": "application",
+  "tags": ["type:app", "scope:seller"],
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit"
+      },
+      "dependsOn": ["generate-types"]
+    }
+  },
+  "implicitDependencies": ["@tec-shop/seller-client"]
+}

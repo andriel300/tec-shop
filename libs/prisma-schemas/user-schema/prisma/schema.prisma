@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../../node_modules/.prisma/user-client"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("USER_SERVICE_DB_URL")
+}
+
+model Follow {
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  followerId  String      @db.ObjectId
+  followingId String      @db.ObjectId
+  follower    UserProfile @relation("UserFollowing", fields: [followerId], references: [id])
+  following   UserProfile @relation("UserFollowers", fields: [followingId], references: [id])
+  createdAt   DateTime    @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+enum ImageType {
+  AVATAR
+  COVER
+  GALLERY
+}
+
+model Image {
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  file_id       String
+  url           String
+  imageType     ImageType   @default(AVATAR)
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  userProfileId String      @db.ObjectId
+  createdAt     DateTime    @default(now())
+
+  @@index([userProfileId, imageType])
+}
+
+model UserProfile {
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId  String  @unique @db.ObjectId // References auth-service User.id
+  name    String
+  bio     String?
+  picture String?
+
+  // Image relationships
+  images Image[]
+
+  // Following relationships
+  followers Follow[] @relation("UserFollowers")
+  following Follow[] @relation("UserFollowing")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -32,7 +32,13 @@
       "exclude": [
         "libs/shared/exceptions/*",
         "libs/shared/middleware/*",
-        "libs/shared/dto/*"
+        "libs/shared/dto/*",
+        "libs/prisma-schemas/auth-schema/*",
+        "libs/prisma-schemas/user-schema/*",
+        "libs/prisma-schemas/seller-schema/*",
+        "libs/prisma-clients/auth-client/*",
+        "libs/prisma-clients/user-client/*",
+        "libs/prisma-clients/seller-client/*"
       ]
     },
     {
@@ -62,7 +68,8 @@
         "apps/api-gateway-e2e/**/*",
         "apps/api-gateway-e2e/**/*",
         "apps/auth-service-e2e/**/*",
-        "apps/user-service-e2e/**/*"
+        "apps/user-service-e2e/**/*",
+        "apps/seller-service-e2e/**/*"
       ]
     },
     {
@@ -77,7 +84,13 @@
       "include": [
         "libs/shared/exceptions/*",
         "libs/shared/middleware/*",
-        "libs/shared/dto/*"
+        "libs/shared/dto/*",
+        "libs/prisma-schemas/auth-schema/*",
+        "libs/prisma-schemas/user-schema/*",
+        "libs/prisma-schemas/seller-schema/*",
+        "libs/prisma-clients/auth-client/*",
+        "libs/prisma-clients/user-client/*",
+        "libs/prisma-clients/seller-client/*"
       ],
       "options": {
         "typecheck": {
@@ -99,13 +112,32 @@
   ],
   "targetDefaults": {
     "test": {
-      "dependsOn": ["^build", "prisma-generate"]
+      "dependsOn": ["^build", "generate-types"]
     },
     "build": {
-      "dependsOn": ["prisma-generate"]
+      "dependsOn": ["generate-types"]
     },
     "typecheck": {
-      "dependsOn": ["prisma-generate"]
+      "dependsOn": ["generate-types"]
+    },
+    "generate-types": {
+      "cache": true,
+      "inputs": ["{workspaceRoot}/libs/prisma-schemas/**/*"],
+      "outputs": [
+        "{workspaceRoot}/node_modules/.prisma/auth-client",
+        "{workspaceRoot}/node_modules/.prisma/user-client",
+        "{workspaceRoot}/node_modules/.prisma/seller-client"
+      ]
+    },
+    "migrate": {
+      "cache": false
+    },
+    "db-push": {
+      "cache": false
+    },
+    "format": {
+      "cache": true,
+      "inputs": ["{workspaceRoot}/libs/prisma-schemas/**/*.prisma"]
     }
   },
   "release": {

@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../../node_modules/.prisma/auth-client"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("AUTH_SERVICE_DB_URL")
+}
+
+model User {
+  id                  String               @id @default(auto()) @map("_id") @db.ObjectId
+  email               String               @unique
+  password            String?
+  isEmailVerified     Boolean              @default(false)
+  userType            UserType             @default(CUSTOMER)
+  googleId            String?              @unique
+  provider            String               @default("local")
+  refreshToken        String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  passwordResetTokens PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  token     String   @unique
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+enum UserType {
+  CUSTOMER
+  SELLER
+  ADMIN
+}
