@@ -38,8 +38,9 @@ jobs:
       # Generate Prisma clients before distributed execution to avoid dependency issues
       - name: Generate Prisma Clients
         run: |
-          npx nx run @tec-shop/auth-service:prisma-generate
-          npx nx run @tec-shop/user-service:prisma-generate
+          npx nx run @tec-shop/auth-schema:generate-types
+          npx nx run @tec-shop/user-schema:generate-types
+          npx nx run @tec-shop/seller-schema:generate-types
 
       # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
       # - run: npx nx-cloud record -- echo Hello World
