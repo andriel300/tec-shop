@@ -122,7 +122,12 @@
     },
     "generate-types": {
       "cache": true,
-      "inputs": ["{workspaceRoot}/libs/prisma-schemas/**/*"]
+      "inputs": ["{workspaceRoot}/libs/prisma-schemas/**/*"],
+      "outputs": [
+        "{workspaceRoot}/node_modules/.prisma/auth-client",
+        "{workspaceRoot}/node_modules/.prisma/user-client",
+        "{workspaceRoot}/node_modules/.prisma/seller-client"
+      ]
     },
     "migrate": {
       "cache": false
