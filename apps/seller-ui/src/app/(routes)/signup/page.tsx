@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { SignUpForm } from '../../../components/forms/signup-form';
 import { VerifyOtpForm } from '../../../components/forms/verify-otp-form';
@@ -19,7 +19,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 
-export default function SignupPage() {
+function SignupPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeStep, setActiveStep] = useState(3);
@@ -281,5 +281,19 @@ export default function SignupPage() {
         </div>
       </main>
     </ProtectedRoute>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          Loading...
+        </div>
+      }
+    >
+      <SignupPageContent />
+    </Suspense>
   );
 }
