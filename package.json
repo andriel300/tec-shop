@@ -4,10 +4,17 @@
   "license": "MIT",
   "scripts": {
     "dev": "npx nx run-many --target=serve --all",
-    "user-ui": "npx nx run-many --target=dev --all --projects=user-ui",
-    "prisma:generate": "npx nx run @tec-shop/auth-service:prisma-generate && npx nx run @tec-shop/user-service:prisma-generate",
-    "prisma:db-push": "dotenv -e .env -- prisma db push",
-    "prisma:studio": "dotenv -e .env -- prisma studio"
+    "user-ui": "PORT=3000 npx nx dev user-ui",
+    "seller-ui": "PORT=3001 npx nx dev seller-ui",
+    "prisma:generate": "npx nx run @tec-shop/auth-schema:generate-types && npx nx run @tec-shop/user-schema:generate-types && npx nx run @tec-shop/seller-schema:generate-types",
+    "prisma:db-push": "npx nx run-many --target=db-push --projects=@tec-shop/auth-schema,@tec-shop/user-schema,@tec-shop/seller-schema",
+    "prisma:studio:auth": "npx nx run @tec-shop/auth-schema:studio",
+    "prisma:studio:user": "npx nx run @tec-shop/user-schema:studio",
+    "prisma:studio:seller": "npx nx run @tec-shop/seller-schema:studio",
+    "prisma:format": "npx nx run-many --target=format --projects=@tec-shop/auth-schema,@tec-shop/user-schema,@tec-shop/seller-schema",
+    "test": "npx nx run-many --target=test --all",
+    "lint": "npx nx run-many --target=lint --all",
+    "typecheck": "npx nx run-many --target=typecheck --all"
   },
   "private": true,
   "dependencies": {
@@ -28,6 +35,7 @@
     "@tanstack/react-form": "^1.19.4",
     "@tanstack/react-query": "^5.87.1",
     "@types/passport-google-oauth20": "^2.0.16",
+    "@types/stripe": "^8.0.416",
     "axios": "^1.11.0",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
@@ -58,6 +66,7 @@
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
     "sonner": "^2.0.7",
+    "stripe": "^18.5.0",
     "tailwind-merge": "^3.3.1",
     "uuid": "^11.1.0"
   },
@@ -86,7 +95,7 @@
     "@swc/jest": "~0.2.38",
     "@tailwindcss/aspect-ratio": "^0.4.2",
     "@tailwindcss/forms": "^0.5.10",
-    "@tailwindcss/typography": "^0.5.16",
+    "@tailwindcss/typography": "^0.5.19",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.9",
     "@types/http-proxy-middleware": "^0.19.3",
@@ -109,6 +118,7 @@
     "jest": "^30.0.2",
     "jest-environment-jsdom": "^30.0.2",
     "jest-environment-node": "^30.0.2",
+    "jest-mock-extended": "^4.0.0",
     "jest-util": "^30.0.2",
     "jsonc-eslint-parser": "^2.1.0",
     "nock": "^14.0.10",
@@ -132,7 +142,9 @@
     "libs/*",
     "libs/shared/*",
     "shared",
-    "shared/*"
+    "shared/*",
+    "prisma-schemas/*",
+    "prisma-clients/*"
   ],
   "nx": {
     "includedScripts": [],

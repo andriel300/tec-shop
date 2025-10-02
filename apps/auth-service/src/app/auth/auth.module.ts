@@ -43,8 +43,32 @@ import { join } from 'path';
           return {
             transport: Transport.TCP,
             options: {
-              host: configService.get<string>('USER_SERVICE_HOST'),
-              port: configService.get<number>('USER_SERVICE_PORT'),
+              host: configService.get<string>('USER_SERVICE_HOST') || 'localhost',
+              port: configService.get<number>('USER_SERVICE_PORT') || 6002,
+              tlsOptions,
+            },
+          };
+        },
+        inject: [ConfigService],
+      },
+      {
+        name: 'SELLER_SERVICE',
+        imports: [ConfigModule],
+        useFactory: (configService: ConfigService) => {
+          // Load mTLS certificates for client authentication
+          const certsPath = join(process.cwd(), 'certs');
+          const tlsOptions = {
+            key: readFileSync(join(certsPath, 'auth-service/auth-service-key.pem')),
+            cert: readFileSync(join(certsPath, 'auth-service/auth-service-cert.pem')),
+            ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
+            checkServerIdentity: () => undefined, // Allow self-signed certificates
+          };
+
+          return {
+            transport: Transport.TCP,
+            options: {
+              host: configService.get<string>('SELLER_SERVICE_HOST') || 'localhost',
+              port: configService.get<number>('SELLER_SERVICE_PORT') || 6003,
               tlsOptions,
             },
           };

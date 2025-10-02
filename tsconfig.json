@@ -26,6 +26,33 @@
     },
     {
       "path": "./libs/shared/dto"
+    },
+    {
+      "path": "./apps/seller-ui"
+    },
+    {
+      "path": "./apps/seller-service-e2e"
+    },
+    {
+      "path": "./apps/seller-service"
+    },
+    {
+      "path": "./libs/prisma-clients/seller-client"
+    },
+    {
+      "path": "./libs/prisma-clients/auth-client"
+    },
+    {
+      "path": "./libs/prisma-clients/user-client"
+    },
+    {
+      "path": "./libs/prisma-schemas/seller-schema"
+    },
+    {
+      "path": "./libs/prisma-schemas/auth-schema"
+    },
+    {
+      "path": "./libs/prisma-schemas/user-schema"
     }
   ]
 }

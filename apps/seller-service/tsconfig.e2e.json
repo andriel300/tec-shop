@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./out-tsc/jest-e2e",
+    "types": ["jest", "node"],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "declaration": false,
+    "emitDeclarationOnly": false
+  },
+  "include": [
+    "jest.e2e.config.ts",
+    "src/test/e2e/**/*.ts",
+    "src/test/e2e/**/*.e2e-spec.ts",
+    "src/test/factories.ts",
+    "src/test/test-utils.ts"
+  ],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    }
+  ]
+}

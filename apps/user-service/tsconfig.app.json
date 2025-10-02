@@ -22,6 +22,9 @@
   ],
   "references": [
     {
+      "path": "../../libs/prisma-clients/user-client/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/shared/dto/tsconfig.lib.json"
     }
   ]

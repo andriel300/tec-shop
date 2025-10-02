@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
+import { SellerModule } from './seller/seller.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -47,6 +48,7 @@ import { APP_GUARD } from '@nestjs/core';
     }),
     AuthModule,
     UserModule,
+    SellerModule,
   ],
   controllers: [AppController],
   providers: [

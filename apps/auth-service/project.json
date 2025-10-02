@@ -4,13 +4,6 @@
   "sourceRoot": "apps/auth-service/src",
   "projectType": "application",
   "tags": ["type:app", "scope:auth"],
-  "targets": {
-    "prisma-generate": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "npx prisma generate --schema=apps/auth-service/prisma/schema.prisma"
-      }
-    }
-  },
-  "implicitDependencies": []
+  "targets": {},
+  "implicitDependencies": ["@tec-shop/auth-client"]
 }
