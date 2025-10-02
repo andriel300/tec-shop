@@ -15,15 +15,12 @@ export const apiClient = axios.create({
   },
 });
 
-// Request interceptor to add auth token (fallback to localStorage for backward compatibility)
+// Request interceptor - cookies are automatically sent with withCredentials: true
+// No need to manually add Authorization header as httpOnly cookies handle authentication
 apiClient.interceptors.request.use(
   (config) => {
-    // Cookies are automatically sent with withCredentials: true
-    // Only add Authorization header if we have a token in localStorage (fallback/legacy)
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // Cookies (customer_access_token or seller_access_token) are automatically sent
+    // by the browser with withCredentials: true
     return config;
   },
   (error) => {
@@ -43,16 +40,16 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        // Attempt to refresh the token
+        // Attempt to refresh the token using cookies
+        // Backend will read refresh_token from httpOnly cookie and set new cookies
         await apiClient.post('/auth/refresh');
 
-        // Retry the original request
+        // Retry the original request (new access_token cookie will be used automatically)
         return apiClient(originalRequest);
       } catch {
-        // Refresh failed, clear token and redirect to login
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('userProfile');
+        // Refresh failed, clear sessionStorage and redirect to login
+        sessionStorage.removeItem('user');
+        sessionStorage.removeItem('userProfile');
         window.location.href = '/login';
         return Promise.reject(new Error('Session expired. Please log in again.'));
       }

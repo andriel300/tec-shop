@@ -21,33 +21,23 @@ export function LoginForm() {
 
   const { mutate, isPending, error, reset } = useMutation({
     mutationFn: loginUser,
-    onSuccess: async (data) => {
+    onSuccess: async (_data) => {
       try {
-        // With cookie-based auth, we don't get the token in response body
-        // The token is automatically set as httpOnly cookie by the server
-        const mockToken = 'cookie-based-auth'; // Placeholder since token is in httpOnly cookie
+        // Cookie-based auth: tokens are automatically set as httpOnly cookies by the server
+        // No need to handle tokens in the frontend
 
-        // Set a temporary user object
-        const tempUser = {
-          id: 'temp',
-          email: form.getFieldValue('email'),
-          isEmailVerified: true
-        };
-
-        login(mockToken, tempUser);
-
-        // Now fetch the real user profile using the cookie
+        // Fetch the user profile using the cookie (cookie sent automatically with withCredentials: true)
         const userProfile = await getCurrentUser();
 
-        // Update with the real user data including the name from UserProfile
-        const realUser = {
+        // Set user data in auth context (stored in sessionStorage, not tokens)
+        const user = {
           id: userProfile.userId,
           email: form.getFieldValue('email'),
           isEmailVerified: true,
-          name: userProfile.name // This is what we need for the navbar
+          name: userProfile.name
         };
 
-        login(mockToken, realUser);
+        login(user);
         queryClient.invalidateQueries({ queryKey: ['user'] });
         toast.success(`Welcome back, ${userProfile.name}!`);
         router.push('/'); // Redirect to dashboard or home

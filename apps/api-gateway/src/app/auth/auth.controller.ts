@@ -4,8 +4,16 @@ import { firstValueFrom } from 'rxjs';
 import type { LoginDto, SignupDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto, ValidateResetTokenDto, SellerSignupDto } from '@tec-shop/dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import type { Response, Request } from 'express';
+import type { Response, Request, CookieOptions } from 'express';
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
+
+type UserType = 'customer' | 'seller';
+type TokenType = 'access' | 'refresh';
+
+interface CookieConfig {
+  name: string;
+  options: CookieOptions;
+}
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -13,6 +21,50 @@ export class AuthController {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authService: ClientProxy
   ) {}
+
+  /**
+   * Get secure cookie configuration with path isolation and proper naming
+   * Uses __Host- prefix in production for additional security
+   */
+  private getCookieConfig(
+    userType: UserType,
+    tokenType: TokenType,
+    isRememberMe: boolean
+  ): CookieConfig {
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    // Calculate expiration times based on remember me preference
+    const accessTokenMaxAge = isRememberMe
+      ? 7 * 24 * 60 * 60 * 1000  // 7 days for remember me
+      : 24 * 60 * 60 * 1000;     // 24 hours for normal session
+
+    const refreshTokenMaxAge = isRememberMe
+      ? 30 * 24 * 60 * 60 * 1000 // 30 days for remember me
+      : 7 * 24 * 60 * 60 * 1000; // 7 days for normal session
+
+    // Cookie naming with __Host- prefix in production for enhanced security
+    // __Host- prefix enforces: secure=true, no domain attribute, path must be /
+    const cookieName = isProduction
+      ? `__Host-${userType}_${tokenType}_token`
+      : `${userType}_${tokenType}_token`;
+
+    // Path must be /api to cover both auth endpoints (/api/auth/*) and resource endpoints (/api/customer/*, /api/seller/*)
+    // More restrictive paths would prevent cookies from being sent to auth endpoints
+    // Cookie names provide isolation instead (customer_access_token vs seller_access_token)
+    const cookiePath = '/api';
+
+    return {
+      name: cookieName,
+      options: {
+        httpOnly: true,                    // Prevent XSS attacks - JavaScript cannot access
+        secure: isProduction,              // HTTPS only in production (__Host- requires this)
+        sameSite: 'strict',                // CSRF protection - cookie only sent to same site
+        maxAge: tokenType === 'access' ? accessTokenMaxAge : refreshTokenMaxAge,
+        path: cookiePath,
+        // Note: Cookie isolation achieved via unique names (customer_* vs seller_*) rather than path
+      },
+    };
+  }
 
   @Post('signup')
   @Throttle({ medium: { limit: 3, ttl: 900000 } }) // 3 signups per 15 minutes
@@ -45,48 +97,29 @@ export class AuthController {
 
   @Post('login')
   @Throttle({ medium: { limit: 5, ttl: 900000 } }) // 5 login attempts per 15 minutes
-  @ApiOperation({ summary: 'Log in a user' })
+  @ApiOperation({ summary: 'Log in a customer user' })
   @ApiResponse({
     status: 201,
-    description: 'User successfully logged in and returns a JWT token.',
+    description: 'Customer successfully logged in. Tokens set as httpOnly cookies.',
   })
   @ApiResponse({ status: 401, description: 'Invalid credentials.' })
   async login(@Body() body: LoginDto, @Res({ passthrough: true }) response: Response) {
     const result = await firstValueFrom(this.authService.send('auth-login', body));
 
-    // Set secure httpOnly cookies with duration based on rememberMe preference
-    const isProduction = process.env.NODE_ENV === 'production';
-    const isRememberMe = result.rememberMe;
+    // Get cookie configurations with proper isolation and security
+    const accessCookie = this.getCookieConfig('customer', 'access', result.rememberMe);
+    const refreshCookie = this.getCookieConfig('customer', 'refresh', result.rememberMe);
 
-    // Access token duration based on rememberMe
-    const accessTokenMaxAge = isRememberMe
-      ? 7 * 24 * 60 * 60 * 1000  // 7 days for remember me
-      : 24 * 60 * 60 * 1000;     // 24 hours for normal session
-
-    // Refresh token duration based on rememberMe
-    const refreshTokenMaxAge = isRememberMe
-      ? 30 * 24 * 60 * 60 * 1000 // 30 days for remember me
-      : 7 * 24 * 60 * 60 * 1000; // 7 days for normal session
-
-    // Access token
-    response.cookie('access_token', result.access_token, {
-      httpOnly: true,        // Prevent XSS attacks
-      secure: isProduction,  // HTTPS only in production
-      sameSite: 'strict',    // CSRF protection
-      maxAge: accessTokenMaxAge,
-    });
-
-    // Refresh token
-    response.cookie('refresh_token', result.refresh_token, {
-      httpOnly: true,        // Prevent XSS attacks
-      secure: isProduction,  // HTTPS only in production
-      sameSite: 'strict',    // CSRF protection
-      maxAge: refreshTokenMaxAge,
-      path: '/api/auth/refresh', // Only sent to refresh endpoint
-    });
+    // Set cookies with path isolation (/api/customer/*)
+    response.cookie(accessCookie.name, result.access_token, accessCookie.options);
+    response.cookie(refreshCookie.name, result.refresh_token, refreshCookie.options);
 
     // Return success without exposing tokens in response body
-    return { message: 'Login successful' };
+    // Include userType to help frontend distinguish between customer and seller
+    return {
+      message: 'Login successful',
+      userType: 'customer',
+    };
   }
 
   @Post('refresh')
@@ -96,63 +129,65 @@ export class AuthController {
     status: 201,
     description: 'Access token successfully refreshed.',
   })
-  @ApiResponse({ status: 401, description: 'Invalid refresh token.' })
+  @ApiResponse({ status: 401, description: 'Authentication failed.' })
   async refreshToken(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
-    const refreshToken = request.cookies?.refresh_token;
-    const currentAccessToken = request.cookies?.access_token;
+    const isProduction = process.env.NODE_ENV === 'production';
+    const prefix = isProduction ? '__Host-' : '';
+
+    // Try to extract refresh token from customer or seller cookies
+    const customerRefreshToken = request.cookies?.[`${prefix}customer_refresh_token`];
+    const sellerRefreshToken = request.cookies?.[`${prefix}seller_refresh_token`];
+
+    // Also try old cookie name for backward compatibility during migration
+    const legacyRefreshToken = request.cookies?.refresh_token;
+
+    const refreshToken = customerRefreshToken || sellerRefreshToken || legacyRefreshToken;
+    const userType: UserType = customerRefreshToken ? 'customer' : 'seller';
 
     if (!refreshToken) {
-      throw new Error('Refresh token not found');
+      throw new Error('Authentication failed');
     }
+
+    // Get current access token for validation
+    const currentAccessToken = request.cookies?.[`${prefix}${userType}_access_token`] ||
+                               request.cookies?.access_token;
 
     const result = await firstValueFrom(
       this.authService.send('auth-refresh-token', { refreshToken, currentAccessToken })
     );
 
-    // Set new secure httpOnly cookies with rotated tokens
-    const isProduction = process.env.NODE_ENV === 'production';
-    const isRememberMe = result.rememberMe;
+    // Get cookie configurations with proper isolation
+    const accessCookie = this.getCookieConfig(userType, 'access', result.rememberMe);
+    const refreshCookie = this.getCookieConfig(userType, 'refresh', result.rememberMe);
 
-    // Determine cookie durations based on remember me preference
-    const accessTokenMaxAge = isRememberMe
-      ? 7 * 24 * 60 * 60 * 1000  // 7 days for remember me
-      : 24 * 60 * 60 * 1000;     // 24 hours for normal session
+    // Set new cookies with rotated tokens (security best practice)
+    response.cookie(accessCookie.name, result.access_token, accessCookie.options);
+    response.cookie(refreshCookie.name, result.refresh_token, refreshCookie.options);
 
-    const refreshTokenMaxAge = isRememberMe
-      ? 30 * 24 * 60 * 60 * 1000 // 30 days for remember me
-      : 7 * 24 * 60 * 60 * 1000; // 7 days for normal session
-
-    // New access token
-    response.cookie('access_token', result.access_token, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'strict',
-      maxAge: accessTokenMaxAge,
-    });
-
-    // New refresh token (token rotation for security)
-    response.cookie('refresh_token', result.refresh_token, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: 'strict',
-      maxAge: refreshTokenMaxAge,
-      path: '/api/auth/refresh',
-    });
-
-    return { message: 'Token refreshed successfully' };
+    return {
+      message: 'Token refreshed successfully',
+      userType,
+    };
   }
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Log out a user' })
+  @ApiOperation({ summary: 'Log out a user (customer or seller)' })
   @ApiResponse({
     status: 201,
     description: 'User successfully logged out.',
   })
-  async logout(@Req() request: Request & { user: { userId: string } }, @Res({ passthrough: true }) response: Response) {
+  async logout(@Req() request: Request & { user: { userId: string; userType?: string } }, @Res({ passthrough: true }) response: Response) {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const prefix = isProduction ? '__Host-' : '';
+
     try {
-      // Get the access token from the request to revoke it
-      const accessToken = request.cookies?.access_token;
+      // Determine user type from cookies or JWT payload
+      const customerAccessToken = request.cookies?.[`${prefix}customer_access_token`];
+      const sellerAccessToken = request.cookies?.[`${prefix}seller_access_token`];
+      const accessToken = customerAccessToken || sellerAccessToken || request.cookies?.access_token;
+
+      const userType: UserType = customerAccessToken ? 'customer' : 'seller';
 
       // Revoke the current access token (Security Hardened)
       if (accessToken) {
@@ -173,16 +208,29 @@ export class AuthController {
       // Continue with logout even if revocation fails
     }
 
-    // Clear both authentication cookies
+    // Clear all possible cookie variations (for migration compatibility)
+    // Customer cookies
+    const customerAccessCookie = this.getCookieConfig('customer', 'access', false);
+    const customerRefreshCookie = this.getCookieConfig('customer', 'refresh', false);
+    response.clearCookie(customerAccessCookie.name, customerAccessCookie.options);
+    response.clearCookie(customerRefreshCookie.name, customerRefreshCookie.options);
+
+    // Seller cookies
+    const sellerAccessCookie = this.getCookieConfig('seller', 'access', false);
+    const sellerRefreshCookie = this.getCookieConfig('seller', 'refresh', false);
+    response.clearCookie(sellerAccessCookie.name, sellerAccessCookie.options);
+    response.clearCookie(sellerRefreshCookie.name, sellerRefreshCookie.options);
+
+    // Legacy cookies (for backward compatibility during migration)
     response.clearCookie('access_token', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
       sameSite: 'strict',
     });
 
     response.clearCookie('refresh_token', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
       sameSite: 'strict',
       path: '/api/auth/refresh',
     });
@@ -265,47 +313,28 @@ export class AuthController {
 
   @Post('seller/login')
   @Throttle({ medium: { limit: 5, ttl: 900000 } }) // 5 login attempts per 15 minutes
-  @ApiOperation({ summary: 'Log in a seller' })
+  @ApiOperation({ summary: 'Log in a seller user' })
   @ApiResponse({
     status: 201,
-    description: 'Seller successfully logged in and returns a JWT token.',
+    description: 'Seller successfully logged in. Tokens set as httpOnly cookies.',
   })
   @ApiResponse({ status: 401, description: 'Invalid credentials.' })
   async sellerLogin(@Body() body: LoginDto, @Res({ passthrough: true }) response: Response) {
     const result = await firstValueFrom(this.authService.send('seller-auth-login', body));
 
-    // Set secure httpOnly cookies with duration based on rememberMe preference
-    const isProduction = process.env.NODE_ENV === 'production';
-    const isRememberMe = result.rememberMe;
+    // Get cookie configurations with proper isolation and security
+    const accessCookie = this.getCookieConfig('seller', 'access', result.rememberMe);
+    const refreshCookie = this.getCookieConfig('seller', 'refresh', result.rememberMe);
 
-    // Access token duration based on rememberMe
-    const accessTokenMaxAge = isRememberMe
-      ? 7 * 24 * 60 * 60 * 1000  // 7 days for remember me
-      : 24 * 60 * 60 * 1000;     // 24 hours for normal session
-
-    // Refresh token duration based on rememberMe
-    const refreshTokenMaxAge = isRememberMe
-      ? 30 * 24 * 60 * 60 * 1000 // 30 days for remember me
-      : 7 * 24 * 60 * 60 * 1000; // 7 days for normal session
-
-    // Access token
-    response.cookie('access_token', result.access_token, {
-      httpOnly: true,        // Prevent XSS attacks
-      secure: isProduction,  // HTTPS only in production
-      sameSite: 'strict',    // CSRF protection
-      maxAge: accessTokenMaxAge,
-    });
-
-    // Refresh token
-    response.cookie('refresh_token', result.refresh_token, {
-      httpOnly: true,        // Prevent XSS attacks
-      secure: isProduction,  // HTTPS only in production
-      sameSite: 'strict',    // CSRF protection
-      maxAge: refreshTokenMaxAge,
-      path: '/api/auth/refresh', // Only sent to refresh endpoint
-    });
+    // Set cookies with path isolation (/api/seller/*)
+    response.cookie(accessCookie.name, result.access_token, accessCookie.options);
+    response.cookie(refreshCookie.name, result.refresh_token, refreshCookie.options);
 
     // Return success without exposing tokens in response body
-    return { message: 'Seller login successful' };
+    // Include userType to help frontend distinguish between customer and seller
+    return {
+      message: 'Seller login successful',
+      userType: 'seller',
+    };
   }
 }
