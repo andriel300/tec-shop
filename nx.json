@@ -33,6 +33,7 @@
         "libs/shared/exceptions/*",
         "libs/shared/middleware/*",
         "libs/shared/dto/*",
+        "libs/shared/validation/*",
         "libs/prisma-schemas/auth-schema/*",
         "libs/prisma-schemas/user-schema/*",
         "libs/prisma-schemas/seller-schema/*",

@@ -53,6 +53,9 @@
     },
     {
       "path": "./libs/prisma-schemas/user-schema"
+    },
+    {
+      "path": "./libs/shared/validation"
     }
   ]
 }
