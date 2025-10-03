@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect } from 'react';
 import useSidebar from '../../hooks/useSidebar';
 import { usePathname } from 'next/navigation';
