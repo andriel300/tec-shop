@@ -164,9 +164,69 @@ export const CreateProductSchema = z.object({
 
 /**
  * Update Product Schema
- * Partial version for updates
+ * Partial version for updates (without refinements for optional fields)
  */
-export const UpdateProductSchema = CreateProductSchema.partial();
+export const UpdateProductSchema = z.object({
+  // Basic Information
+  name: z.string()
+    .min(3, 'Product name must be at least 3 characters')
+    .max(200, 'Product name must be less than 200 characters')
+    .optional(),
+
+  description: z.string()
+    .min(50, 'Product description must be at least 50 words')
+    .max(1000, 'Product description should not exceed 200 words')
+    .optional(),
+
+  // Category & Brand
+  categoryId: z.string().min(1, 'Category is required').optional(),
+  brandId: z.string().min(1, 'Brand is required').optional(),
+
+  // Pricing
+  price: z.number().positive('Price must be greater than 0').optional(),
+  salePrice: z.number().positive().optional(),
+
+  // Stock
+  stock: z.number().int().min(0, 'Stock cannot be negative').optional(),
+
+  // Images
+  images: z.array(z.string())
+    .min(1, 'At least one product image is required')
+    .max(10, 'Maximum 10 images allowed')
+    .optional(),
+
+  // Product Type
+  productType: z.enum(['simple', 'variable', 'digital']).optional(),
+
+  // Variants
+  variants: z.array(ProductVariantSchema).optional(),
+  hasVariants: z.boolean().optional(),
+
+  // Dynamic Attributes
+  attributes: z.record(z.string(), z.any()).optional(),
+
+  // Shipping Information
+  shipping: ShippingInfoSchema.optional(),
+
+  // SEO
+  seo: SEOSchema.optional(),
+
+  // Inventory
+  inventory: InventorySchema.optional(),
+
+  // Additional Fields
+  warranty: z.string().max(500).optional(),
+  tags: z.array(z.string()).max(20, 'Maximum 20 tags').optional(),
+
+  // Status
+  status: z.enum(['draft', 'published', 'scheduled']).optional(),
+  visibility: z.enum(['public', 'private', 'password_protected']).optional(),
+  publishDate: z.date().optional(),
+
+  // Flags
+  isFeatured: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+});
 
 /**
  * TypeScript Types
