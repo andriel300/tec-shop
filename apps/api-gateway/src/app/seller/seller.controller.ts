@@ -23,7 +23,11 @@ import {
   CreateShopDto,
   UpdateShopDto,
   CreateProductDto,
-  UpdateProductDto
+  UpdateProductDto,
+  CreateCategoryDto,
+  UpdateCategoryDto,
+  CreateBrandDto,
+  UpdateBrandDto
 } from '@tec-shop/dto';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -304,6 +308,172 @@ export class SellerController {
         id,
         sellerId: seller.id,
       })
+    );
+  }
+
+  // ==================== Category Endpoints ====================
+
+  @Post('categories')
+  @ApiOperation({ summary: 'Create a new category' })
+  @ApiResponse({ status: 201, description: 'Category created successfully.' })
+  @ApiResponse({ status: 409, description: 'Category already exists.' })
+  async createCategory(@Body() categoryData: CreateCategoryDto) {
+    return await firstValueFrom(
+      this.sellerService.send({ cmd: 'create_category' }, categoryData)
+    );
+  }
+
+  @Get('categories')
+  @ApiOperation({ summary: 'Get all categories' })
+  @ApiResponse({ status: 200, description: 'Categories retrieved successfully.' })
+  async getAllCategories(
+    @Query('includeChildren') includeChildren?: string,
+    @Query('onlyActive') onlyActive?: string,
+    @Query('parentId') parentId?: string
+  ) {
+    return await firstValueFrom(
+      this.sellerService.send({ cmd: 'get_all_categories' }, {
+        includeChildren: includeChildren === 'true',
+        onlyActive: onlyActive === 'true',
+        parentId: parentId || undefined,
+      })
+    );
+  }
+
+  @Get('categories/tree')
+  @ApiOperation({ summary: 'Get category tree (hierarchical)' })
+  @ApiResponse({ status: 200, description: 'Category tree retrieved successfully.' })
+  async getCategoryTree(@Query('onlyActive') onlyActive?: string) {
+    return await firstValueFrom(
+      this.sellerService.send({ cmd: 'get_category_tree' }, onlyActive === 'true')
+    );
+  }
+
+  @Get('categories/:id')
+  @ApiOperation({ summary: 'Get category by ID' })
+  @ApiResponse({ status: 200, description: 'Category retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Category not found.' })
+  async getCategory(
+    @Param('id') id: string,
+    @Query('includeChildren') includeChildren?: string,
+    @Query('includeProducts') includeProducts?: string
+  ) {
+    return await firstValueFrom(
+      this.sellerService.send({ cmd: 'get_category' }, {
+        id,
+        includeChildren: includeChildren === 'true',
+        includeProducts: includeProducts === 'true',
+      })
+    );
+  }
+
+  @Put('categories/:id')
+  @ApiOperation({ summary: 'Update category' })
+  @ApiResponse({ status: 200, description: 'Category updated successfully.' })
+  @ApiResponse({ status: 404, description: 'Category not found.' })
+  async updateCategory(
+    @Param('id') id: string,
+    @Body() updateData: UpdateCategoryDto
+  ) {
+    return await firstValueFrom(
+      this.sellerService.send({ cmd: 'update_category' }, {
+        id,
+        updateCategoryDto: updateData,
+      })
+    );
+  }
+
+  @Delete('categories/:id')
+  @ApiOperation({ summary: 'Delete category' })
+  @ApiResponse({ status: 200, description: 'Category deleted successfully.' })
+  @ApiResponse({ status: 404, description: 'Category not found.' })
+  @ApiResponse({ status: 409, description: 'Category has dependencies.' })
+  async deleteCategory(@Param('id') id: string) {
+    return await firstValueFrom(
+      this.sellerService.send({ cmd: 'delete_category' }, id)
+    );
+  }
+
+  // ==================== Brand Endpoints ====================
+
+  @Post('brands')
+  @ApiOperation({ summary: 'Create a new brand' })
+  @ApiResponse({ status: 201, description: 'Brand created successfully.' })
+  @ApiResponse({ status: 409, description: 'Brand already exists.' })
+  async createBrand(@Body() brandData: CreateBrandDto) {
+    return await firstValueFrom(
+      this.sellerService.send({ cmd: 'create_brand' }, brandData)
+    );
+  }
+
+  @Get('brands')
+  @ApiOperation({ summary: 'Get all brands' })
+  @ApiResponse({ status: 200, description: 'Brands retrieved successfully.' })
+  async getAllBrands(
+    @Query('onlyActive') onlyActive?: string,
+    @Query('search') search?: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string
+  ) {
+    return await firstValueFrom(
+      this.sellerService.send({ cmd: 'get_all_brands' }, {
+        onlyActive: onlyActive === 'true',
+        search,
+        limit: limit ? parseInt(limit, 10) : undefined,
+        offset: offset ? parseInt(offset, 10) : undefined,
+      })
+    );
+  }
+
+  @Get('brands/popular')
+  @ApiOperation({ summary: 'Get popular brands' })
+  @ApiResponse({ status: 200, description: 'Popular brands retrieved successfully.' })
+  async getPopularBrands(@Query('limit') limit?: string) {
+    return await firstValueFrom(
+      this.sellerService.send({ cmd: 'get_popular_brands' }, limit ? parseInt(limit, 10) : 10)
+    );
+  }
+
+  @Get('brands/:id')
+  @ApiOperation({ summary: 'Get brand by ID' })
+  @ApiResponse({ status: 200, description: 'Brand retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Brand not found.' })
+  async getBrand(
+    @Param('id') id: string,
+    @Query('includeProducts') includeProducts?: string
+  ) {
+    return await firstValueFrom(
+      this.sellerService.send({ cmd: 'get_brand' }, {
+        id,
+        includeProducts: includeProducts === 'true',
+      })
+    );
+  }
+
+  @Put('brands/:id')
+  @ApiOperation({ summary: 'Update brand' })
+  @ApiResponse({ status: 200, description: 'Brand updated successfully.' })
+  @ApiResponse({ status: 404, description: 'Brand not found.' })
+  async updateBrand(
+    @Param('id') id: string,
+    @Body() updateData: UpdateBrandDto
+  ) {
+    return await firstValueFrom(
+      this.sellerService.send({ cmd: 'update_brand' }, {
+        id,
+        updateBrandDto: updateData,
+      })
+    );
+  }
+
+  @Delete('brands/:id')
+  @ApiOperation({ summary: 'Delete brand' })
+  @ApiResponse({ status: 200, description: 'Brand deleted successfully.' })
+  @ApiResponse({ status: 404, description: 'Brand not found.' })
+  @ApiResponse({ status: 409, description: 'Brand has dependencies.' })
+  async deleteBrand(@Param('id') id: string) {
+    return await firstValueFrom(
+      this.sellerService.send({ cmd: 'delete_brand' }, id)
     );
   }
 }
