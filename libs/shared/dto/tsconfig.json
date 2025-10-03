@@ -4,6 +4,9 @@
   "include": [],
   "references": [
     {
+      "path": "../validation"
+    },
+    {
       "path": "./tsconfig.lib.json"
     }
   ]

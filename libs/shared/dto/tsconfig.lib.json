@@ -17,5 +17,9 @@
     "emitDecoratorMetadata": true
   },
   "include": ["src/**/*.ts"],
-  "references": []
+  "references": [
+    {
+      "path": "../validation/tsconfig.lib.json"
+    }
+  ]
 }
