@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, Folder, Plus, Loader2 } from 'lucide-react';
+import { ChevronRight, Folder, Loader2 } from 'lucide-react';
 import { Input } from '../core/Input';
 
 export interface Category {
@@ -66,7 +66,8 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
       // const response = await fetch('/api/categories');
       // const data = await response.json();
 
-      // Mock data for now
+      // Mock data - Amazon-like category structure
+      // TODO: Replace with actual API call to GET /api/seller/categories
       const mockCategories: Category[] = [
         {
           id: '1',
@@ -78,32 +79,125 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
             brand: { required: true, type: 'select' },
           },
           children: [
-            { id: '11', name: 'Smartphones', slug: 'smartphones', parentId: '1', isActive: true },
-            { id: '12', name: 'Laptops', slug: 'laptops', parentId: '1', isActive: true },
+            { id: '11', name: 'Smartphones & Accessories', slug: 'smartphones-accessories', parentId: '1', isActive: true },
+            { id: '12', name: 'Computers & Laptops', slug: 'computers-laptops', parentId: '1', isActive: true },
+            { id: '13', name: 'Cameras & Photography', slug: 'cameras-photography', parentId: '1', isActive: true },
+            { id: '14', name: 'TV & Home Theater', slug: 'tv-home-theater', parentId: '1', isActive: true },
+            { id: '15', name: 'Headphones & Audio', slug: 'headphones-audio', parentId: '1', isActive: true },
           ],
         },
         {
           id: '2',
-          name: 'Clothing',
-          slug: 'clothing',
+          name: 'Clothing, Shoes & Jewelry',
+          slug: 'clothing-shoes-jewelry',
           isActive: true,
           attributes: {
-            size: { required: true, type: 'select', values: ['S', 'M', 'L', 'XL'] },
+            size: { required: true, type: 'select', values: ['XS', 'S', 'M', 'L', 'XL', 'XXL'] },
+            color: { required: true, type: 'text' },
             material: { required: true, type: 'text' },
           },
           children: [
-            { id: '21', name: 'T-Shirts', slug: 't-shirts', parentId: '2', isActive: true },
-            { id: '22', name: 'Jeans', slug: 'jeans', parentId: '2', isActive: true },
+            { id: '21', name: "Men's Fashion", slug: 'mens-fashion', parentId: '2', isActive: true },
+            { id: '22', name: "Women's Fashion", slug: 'womens-fashion', parentId: '2', isActive: true },
+            { id: '23', name: "Kids' Fashion", slug: 'kids-fashion', parentId: '2', isActive: true },
+            { id: '24', name: 'Shoes', slug: 'shoes', parentId: '2', isActive: true },
+            { id: '25', name: 'Jewelry & Watches', slug: 'jewelry-watches', parentId: '2', isActive: true },
           ],
         },
         {
           id: '3',
-          name: 'Home & Garden',
-          slug: 'home-garden',
+          name: 'Home & Kitchen',
+          slug: 'home-kitchen',
           isActive: true,
           children: [
             { id: '31', name: 'Furniture', slug: 'furniture', parentId: '3', isActive: true },
-            { id: '32', name: 'Kitchen', slug: 'kitchen', parentId: '3', isActive: true },
+            { id: '32', name: 'Kitchen & Dining', slug: 'kitchen-dining', parentId: '3', isActive: true },
+            { id: '33', name: 'Bedding & Bath', slug: 'bedding-bath', parentId: '3', isActive: true },
+            { id: '34', name: 'Home Decor', slug: 'home-decor', parentId: '3', isActive: true },
+            { id: '35', name: 'Storage & Organization', slug: 'storage-organization', parentId: '3', isActive: true },
+          ],
+        },
+        {
+          id: '4',
+          name: 'Books & Media',
+          slug: 'books-media',
+          isActive: true,
+          children: [
+            { id: '41', name: 'Books', slug: 'books', parentId: '4', isActive: true },
+            { id: '42', name: 'Movies & TV', slug: 'movies-tv', parentId: '4', isActive: true },
+            { id: '43', name: 'Music', slug: 'music', parentId: '4', isActive: true },
+            { id: '44', name: 'Video Games', slug: 'video-games', parentId: '4', isActive: true },
+          ],
+        },
+        {
+          id: '5',
+          name: 'Sports & Outdoors',
+          slug: 'sports-outdoors',
+          isActive: true,
+          children: [
+            { id: '51', name: 'Exercise & Fitness', slug: 'exercise-fitness', parentId: '5', isActive: true },
+            { id: '52', name: 'Outdoor Recreation', slug: 'outdoor-recreation', parentId: '5', isActive: true },
+            { id: '53', name: 'Sports Equipment', slug: 'sports-equipment', parentId: '5', isActive: true },
+            { id: '54', name: 'Camping & Hiking', slug: 'camping-hiking', parentId: '5', isActive: true },
+          ],
+        },
+        {
+          id: '6',
+          name: 'Toys & Games',
+          slug: 'toys-games',
+          isActive: true,
+          children: [
+            { id: '61', name: 'Action Figures & Collectibles', slug: 'action-figures-collectibles', parentId: '6', isActive: true },
+            { id: '62', name: 'Board Games & Puzzles', slug: 'board-games-puzzles', parentId: '6', isActive: true },
+            { id: '63', name: 'Educational Toys', slug: 'educational-toys', parentId: '6', isActive: true },
+            { id: '64', name: 'Dolls & Accessories', slug: 'dolls-accessories', parentId: '6', isActive: true },
+          ],
+        },
+        {
+          id: '7',
+          name: 'Beauty & Personal Care',
+          slug: 'beauty-personal-care',
+          isActive: true,
+          children: [
+            { id: '71', name: 'Makeup', slug: 'makeup', parentId: '7', isActive: true },
+            { id: '72', name: 'Skin Care', slug: 'skin-care', parentId: '7', isActive: true },
+            { id: '73', name: 'Hair Care', slug: 'hair-care', parentId: '7', isActive: true },
+            { id: '74', name: 'Fragrances', slug: 'fragrances', parentId: '7', isActive: true },
+          ],
+        },
+        {
+          id: '8',
+          name: 'Automotive',
+          slug: 'automotive',
+          isActive: true,
+          children: [
+            { id: '81', name: 'Car Parts & Accessories', slug: 'car-parts-accessories', parentId: '8', isActive: true },
+            { id: '82', name: 'Motorcycle & Powersports', slug: 'motorcycle-powersports', parentId: '8', isActive: true },
+            { id: '83', name: 'Tools & Equipment', slug: 'tools-equipment', parentId: '8', isActive: true },
+          ],
+        },
+        {
+          id: '9',
+          name: 'Baby Products',
+          slug: 'baby-products',
+          isActive: true,
+          children: [
+            { id: '91', name: 'Diapering', slug: 'diapering', parentId: '9', isActive: true },
+            { id: '92', name: 'Nursery', slug: 'nursery', parentId: '9', isActive: true },
+            { id: '93', name: 'Baby Care', slug: 'baby-care', parentId: '9', isActive: true },
+            { id: '94', name: 'Strollers & Car Seats', slug: 'strollers-car-seats', parentId: '9', isActive: true },
+          ],
+        },
+        {
+          id: '10',
+          name: 'Pet Supplies',
+          slug: 'pet-supplies',
+          isActive: true,
+          children: [
+            { id: '101', name: 'Dog Supplies', slug: 'dog-supplies', parentId: '10', isActive: true },
+            { id: '102', name: 'Cat Supplies', slug: 'cat-supplies', parentId: '10', isActive: true },
+            { id: '103', name: 'Fish & Aquatic Pets', slug: 'fish-aquatic-pets', parentId: '10', isActive: true },
+            { id: '104', name: 'Bird Supplies', slug: 'bird-supplies', parentId: '10', isActive: true },
           ],
         },
       ];
@@ -252,18 +346,10 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
         {renderCategories(categories)}
       </div>
 
-      {/* Add New Category Button */}
-      <button
-        type="button"
-        className="w-full px-4 py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
-        onClick={() => {
-          // TODO: Open modal to add new category
-          console.log('Add new category');
-        }}
-      >
-        <Plus size={18} />
-        Add New Category
-      </button>
+      {/* Info Message */}
+      <p className="text-xs text-gray-500 text-center">
+        Can't find your category? Contact support to request a new category.
+      </p>
     </div>
   );
 };

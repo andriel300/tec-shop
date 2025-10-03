@@ -1,8 +1,18 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Plus, X, Trash2, RefreshCw } from 'lucide-react';
 import { Input } from '../core/Input';
+import {
+  ATTRIBUTE_SUGGESTIONS,
+  SUGGESTION_CATEGORIES,
+  COLOR_PALETTE,
+  generateSKU,
+  isColorAttribute,
+  calculateCombinationCount,
+  AttributeInput,
+  VariantTable,
+} from './variant-manager';
 
 export interface ProductVariant {
   id?: string;
@@ -30,14 +40,6 @@ export interface VariantManagerProps {
 /**
  * VariantManager Component
  * Manages product variants with dynamic attributes (size, color, etc.)
- *
- * @example
- * <VariantManager
- *   variants={variants}
- *   onChange={setVariants}
- *   basePrice={29.99}
- *   productName="T-Shirt"
- * />
  */
 const VariantManager: React.FC<VariantManagerProps> = ({
   variants,
@@ -51,26 +53,22 @@ const VariantManager: React.FC<VariantManagerProps> = ({
   ]);
   const [newAttributeName, setNewAttributeName] = useState('');
   const [newAttributeValue, setNewAttributeValue] = useState<Record<string, string>>({});
+  const [showAttributeSuggestions, setShowAttributeSuggestions] = useState(false);
 
-  // Generate SKU from product name and attributes
-  const generateSKU = (attrs: Record<string, string>): string => {
-    const prefix = productName
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase())
-      .join('')
-      .substring(0, 3);
-
-    const suffix = Object.values(attrs)
-      .map(val => val.substring(0, 2).toUpperCase())
-      .join('-');
-
-    const timestamp = Date.now().toString().slice(-4);
-    return `${prefix}-${suffix}-${timestamp}`;
-  };
+  // Filter suggestions based on input and already added attributes
+  const filteredSuggestions = ATTRIBUTE_SUGGESTIONS.filter((suggestion) => {
+    const alreadyAdded = attributes.some(
+      (attr) => attr.name.toLowerCase() === suggestion.name.toLowerCase()
+    );
+    const matchesSearch = suggestion.name
+      .toLowerCase()
+      .includes(newAttributeName.toLowerCase());
+    return !alreadyAdded && matchesSearch;
+  });
 
   // Generate all possible variant combinations
   const generateVariants = () => {
-    const activeAttributes = attributes.filter(attr => attr.values.length > 0);
+    const activeAttributes = attributes.filter((attr) => attr.values.length > 0);
 
     if (activeAttributes.length === 0) {
       onChange([]);
@@ -95,10 +93,10 @@ const VariantManager: React.FC<VariantManagerProps> = ({
     }
 
     // Create variants from combinations
-    const newVariants: ProductVariant[] = combinations.map(attrs => {
+    const newVariants: ProductVariant[] = combinations.map((attrs) => {
       // Check if variant already exists
-      const existingVariant = variants.find(v =>
-        JSON.stringify(v.attributes) === JSON.stringify(attrs)
+      const existingVariant = variants.find(
+        (v) => JSON.stringify(v.attributes) === JSON.stringify(attrs)
       );
 
       if (existingVariant) {
@@ -107,7 +105,7 @@ const VariantManager: React.FC<VariantManagerProps> = ({
 
       // Create new variant
       return {
-        sku: generateSKU(attrs),
+        sku: generateSKU(productName, attrs),
         attributes: attrs,
         price: basePrice,
         stock: 0,
@@ -119,11 +117,19 @@ const VariantManager: React.FC<VariantManagerProps> = ({
   };
 
   // Add new attribute
-  const addAttribute = () => {
-    if (newAttributeName && !attributes.some(a => a.name === newAttributeName)) {
-      setAttributes([...attributes, { name: newAttributeName, values: [] }]);
+  const addAttribute = (attributeName?: string) => {
+    const nameToAdd = attributeName || newAttributeName;
+
+    if (nameToAdd && !attributes.some((a) => a.name === nameToAdd)) {
+      setAttributes([...attributes, { name: nameToAdd, values: [] }]);
       setNewAttributeName('');
+      setShowAttributeSuggestions(false);
     }
+  };
+
+  // Select suggestion
+  const selectSuggestion = (suggestionName: string) => {
+    addAttribute(suggestionName);
   };
 
   // Remove attribute
@@ -133,9 +139,9 @@ const VariantManager: React.FC<VariantManagerProps> = ({
   };
 
   // Add value to attribute
-  const addAttributeValue = (attributeIndex: number) => {
+  const addAttributeValue = (attributeIndex: number, directValue?: string) => {
     const attribute = attributes[attributeIndex];
-    const value = newAttributeValue[attribute.name];
+    const value = directValue || newAttributeValue[attribute.name];
 
     if (value && !attribute.values.includes(value)) {
       const newAttrs = [...attributes];
@@ -167,13 +173,16 @@ const VariantManager: React.FC<VariantManagerProps> = ({
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Attribute Configuration */}
+      {/* Product Options Configuration */}
       <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
         <h3 className="text-lg font-semibold text-gray-200 mb-4">
-          Configure Variant Attributes
+          Product Options
         </h3>
+        <p className="text-sm text-gray-400 mb-4">
+          Add options like Size, Color, or Material that customers can choose from
+        </p>
 
-        {/* Existing Attributes */}
+        {/* Existing Options */}
         <div className="space-y-4 mb-4">
           {attributes.map((attribute, attrIndex) => (
             <div key={attrIndex} className="space-y-2">
@@ -192,78 +201,136 @@ const VariantManager: React.FC<VariantManagerProps> = ({
                 )}
               </div>
 
-              {/* Attribute Values */}
+              {/* Option Values */}
               <div className="flex flex-wrap gap-2 mb-2">
-                {attribute.values.map((value, valueIndex) => (
-                  <span
-                    key={valueIndex}
-                    className="inline-flex items-center gap-1 px-3 py-1 bg-blue-900/50 text-blue-300 rounded-full text-sm"
-                  >
-                    {value}
-                    <button
-                      type="button"
-                      onClick={() => removeAttributeValue(attrIndex, valueIndex)}
-                      className="hover:text-blue-100"
+                {attribute.values.map((value, valueIndex) => {
+                  const colorData = isColorAttribute(attribute.name)
+                    ? COLOR_PALETTE.find((c) => c.name === value)
+                    : null;
+
+                  return (
+                    <span
+                      key={valueIndex}
+                      className="inline-flex items-center gap-2 px-3 py-1 bg-blue-900/50 text-blue-300 rounded-full text-sm"
                     >
-                      <X size={14} />
-                    </button>
-                  </span>
-                ))}
+                      {/* Show color swatch for color attributes */}
+                      {colorData && (
+                        <span
+                          className="w-4 h-4 rounded-full border border-gray-600"
+                          style={{ backgroundColor: colorData.hex }}
+                          title={colorData.name}
+                        />
+                      )}
+                      {value}
+                      <button
+                        type="button"
+                        onClick={() => removeAttributeValue(attrIndex, valueIndex)}
+                        className="hover:text-blue-100"
+                      >
+                        <X size={14} />
+                      </button>
+                    </span>
+                  );
+                })}
               </div>
 
-              {/* Add Value Input */}
-              <div className="flex gap-2">
-                <Input
-                  variant="dark"
-                  placeholder={`Add ${attribute.name.toLowerCase()} option (e.g., ${attribute.name === 'Size' ? 'M, L, XL' : 'Red, Blue'})`}
-                  value={newAttributeValue[attribute.name] || ''}
-                  onChange={(e) =>
-                    setNewAttributeValue({
-                      ...newAttributeValue,
-                      [attribute.name]: e.target.value,
-                    })
-                  }
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addAttributeValue(attrIndex);
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => addAttributeValue(attrIndex)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <Plus size={18} />
-                </button>
-              </div>
+              {/* Option Input (Color Picker or Text) */}
+              <AttributeInput
+                attributeName={attribute.name}
+                selectedValues={attribute.values}
+                inputValue={newAttributeValue[attribute.name] || ''}
+                onInputChange={(value) =>
+                  setNewAttributeValue({
+                    ...newAttributeValue,
+                    [attribute.name]: value,
+                  })
+                }
+                onAddValue={(directValue) => addAttributeValue(attrIndex, directValue)}
+              />
             </div>
           ))}
         </div>
 
-        {/* Add New Attribute */}
-        <div className="flex gap-2 pt-4 border-t border-gray-700">
-          <Input
-            variant="dark"
-            placeholder="Add attribute (e.g., Color, Material)"
-            value={newAttributeName}
-            onChange={(e) => setNewAttributeName(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                addAttribute();
-              }
-            }}
-          />
-          <button
-            type="button"
-            onClick={addAttribute}
-            className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors whitespace-nowrap"
-          >
-            <Plus size={18} className="inline mr-1" />
-            Add Attribute
-          </button>
+        {/* Add New Option */}
+        <div className="pt-4 border-t border-gray-700">
+          <div className="flex gap-2 relative">
+            <div className="flex-1 relative">
+              <Input
+                variant="dark"
+                placeholder="Add option (e.g., Color, Material)"
+                value={newAttributeName}
+                onChange={(e) => setNewAttributeName(e.target.value)}
+                onFocus={() => setShowAttributeSuggestions(true)}
+                onBlur={() => {
+                  // Delay to allow click on suggestion
+                  setTimeout(() => setShowAttributeSuggestions(false), 200);
+                }}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addAttribute();
+                  }
+                }}
+              />
+
+              {/* Suggestions Dropdown */}
+              {showAttributeSuggestions && filteredSuggestions.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl max-h-80 overflow-y-auto">
+                  <div className="p-2 space-y-1">
+                    {/* Group by category */}
+                    {SUGGESTION_CATEGORIES.map((category) => {
+                      const categoryItems = filteredSuggestions.filter(
+                        (s) => s.category === category
+                      );
+                      if (categoryItems.length === 0) return null;
+
+                      return (
+                        <div key={category}>
+                          <div className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase">
+                            {category}
+                          </div>
+                          {categoryItems.map((suggestion, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => selectSuggestion(suggestion.name)}
+                              className="w-full px-3 py-2 text-left rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2 text-gray-300"
+                            >
+                              <span className="text-lg">{suggestion.icon}</span>
+                              <span className="font-medium">{suggestion.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Show "Add custom" hint if typing something not in suggestions */}
+                  {newAttributeName && filteredSuggestions.length === 0 && (
+                    <div className="p-3 text-sm text-gray-400 border-t border-gray-700">
+                      Press Enter to add "
+                      <span className="text-blue-400 font-medium">{newAttributeName}</span>" as
+                      a custom option
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => addAttribute()}
+              className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors whitespace-nowrap"
+            >
+              <Plus size={18} className="inline mr-1" />
+              Add Option
+            </button>
+          </div>
+
+          {/* Help text */}
+          <p className="mt-2 text-xs text-gray-500">
+            💡 Click the input to see common options or type your own custom option
+          </p>
         </div>
 
         {/* Generate Variants Button */}
@@ -273,119 +340,16 @@ const VariantManager: React.FC<VariantManagerProps> = ({
           className="mt-4 w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center justify-center gap-2"
         >
           <RefreshCw size={18} />
-          Generate Variants ({attributes.reduce((acc, attr) => acc * (attr.values.length || 1), 1)} combinations)
+          Generate Variants ({calculateCombinationCount(attributes)} combinations)
         </button>
       </div>
 
       {/* Variant Table */}
-      {variants.length > 0 && (
-        <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
-          <div className="p-4 border-b border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-200">
-              Manage Variants ({variants.length})
-            </h3>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-900 text-gray-300 text-sm">
-                <tr>
-                  <th className="px-4 py-3 text-left">SKU</th>
-                  <th className="px-4 py-3 text-left">Attributes</th>
-                  <th className="px-4 py-3 text-left">Price</th>
-                  <th className="px-4 py-3 text-left">Sale Price</th>
-                  <th className="px-4 py-3 text-left">Stock</th>
-                  <th className="px-4 py-3 text-left">Active</th>
-                  <th className="px-4 py-3 text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-700">
-                {variants.map((variant, index) => (
-                  <tr key={index} className="hover:bg-gray-750">
-                    <td className="px-4 py-3">
-                      <Input
-                        variant="dark"
-                        value={variant.sku}
-                        onChange={(e) => updateVariant(index, 'sku', e.target.value)}
-                        className="w-32 text-sm"
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1 flex-wrap">
-                        {Object.entries(variant.attributes).map(([key, value]) => (
-                          <span
-                            key={key}
-                            className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs"
-                          >
-                            {key}: {value}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Input
-                        variant="dark"
-                        type="number"
-                        step="0.01"
-                        value={variant.price}
-                        onChange={(e) =>
-                          updateVariant(index, 'price', parseFloat(e.target.value) || 0)
-                        }
-                        className="w-24 text-sm"
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Input
-                        variant="dark"
-                        type="number"
-                        step="0.01"
-                        value={variant.salePrice || ''}
-                        onChange={(e) =>
-                          updateVariant(
-                            index,
-                            'salePrice',
-                            e.target.value ? parseFloat(e.target.value) : undefined
-                          )
-                        }
-                        className="w-24 text-sm"
-                        placeholder="Optional"
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <Input
-                        variant="dark"
-                        type="number"
-                        value={variant.stock}
-                        onChange={(e) =>
-                          updateVariant(index, 'stock', parseInt(e.target.value, 10) || 0)
-                        }
-                        className="w-20 text-sm"
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={variant.isActive}
-                        onChange={(e) => updateVariant(index, 'isActive', e.target.checked)}
-                        className="w-4 h-4 rounded bg-gray-700 border-gray-600"
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        type="button"
-                        onClick={() => removeVariant(index)}
-                        className="text-red-400 hover:text-red-300"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      <VariantTable
+        variants={variants}
+        onUpdateVariant={updateVariant}
+        onRemoveVariant={removeVariant}
+      />
     </div>
   );
 };
