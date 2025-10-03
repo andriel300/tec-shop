@@ -3,10 +3,26 @@ import apiClient from './client';
 export interface CreateProductData {
   name: string;
   description: string;
+  categoryId: string;
+  brandId?: string;
+  productType?: 'simple' | 'variable' | 'digital';
   price: number;
+  salePrice?: number;
   stock: number;
-  category: string;
   images: File[];
+  hasVariants?: boolean;
+  variants?: unknown[];
+  attributes?: Record<string, unknown>;
+  shipping?: unknown;
+  seo?: unknown;
+  inventory?: unknown;
+  warranty?: string;
+  tags?: string[];
+  status?: 'draft' | 'published' | 'scheduled';
+  visibility?: 'public' | 'private' | 'password_protected';
+  publishDate?: Date;
+  isFeatured?: boolean;
+  isActive?: boolean;
 }
 
 export interface ProductResponse {
@@ -14,14 +30,27 @@ export interface ProductResponse {
   shopId: string;
   name: string;
   description: string;
+  categoryId: string;
+  brandId?: string | null;
+  productType: 'SIMPLE' | 'VARIABLE' | 'DIGITAL';
   price: number;
+  salePrice?: number | null;
   stock: number;
-  category: string;
   images: string[];
+  hasVariants: boolean;
+  variants?: unknown[];
+  attributes?: Record<string, unknown> | null;
+  shipping?: Record<string, unknown> | null;
+  seo?: Record<string, unknown> | null;
+  inventory?: Record<string, unknown> | null;
+  warranty?: string | null;
+  tags: string[];
+  slug?: string | null;
+  status: 'DRAFT' | 'PUBLISHED' | 'SCHEDULED';
+  visibility: 'PUBLIC' | 'PRIVATE' | 'PASSWORD_PROTECTED';
+  publishDate?: string | null;
   isActive: boolean;
   isFeatured: boolean;
-  slug: string | null;
-  tags: string[];
   views: number;
   sales: number;
   createdAt: string;
@@ -34,12 +63,34 @@ export interface ProductResponse {
 export const createProduct = async (productData: CreateProductData): Promise<ProductResponse> => {
   const formData = new FormData();
 
-  // Append product fields
+  // Append basic product fields
   formData.append('name', productData.name);
   formData.append('description', productData.description);
+  formData.append('categoryId', productData.categoryId);
+  if (productData.brandId) formData.append('brandId', productData.brandId);
+  if (productData.productType) formData.append('productType', productData.productType);
   formData.append('price', productData.price.toString());
+  if (productData.salePrice) formData.append('salePrice', productData.salePrice.toString());
   formData.append('stock', productData.stock.toString());
-  formData.append('category', productData.category);
+
+  // Append variant data
+  if (productData.hasVariants !== undefined) formData.append('hasVariants', productData.hasVariants.toString());
+  if (productData.variants) formData.append('variants', JSON.stringify(productData.variants));
+
+  // Append dynamic fields
+  if (productData.attributes) formData.append('attributes', JSON.stringify(productData.attributes));
+  if (productData.shipping) formData.append('shipping', JSON.stringify(productData.shipping));
+  if (productData.seo) formData.append('seo', JSON.stringify(productData.seo));
+  if (productData.inventory) formData.append('inventory', JSON.stringify(productData.inventory));
+
+  // Append additional fields
+  if (productData.warranty) formData.append('warranty', productData.warranty);
+  if (productData.tags) formData.append('tags', JSON.stringify(productData.tags));
+  if (productData.status) formData.append('status', productData.status);
+  if (productData.visibility) formData.append('visibility', productData.visibility);
+  if (productData.publishDate) formData.append('publishDate', productData.publishDate.toISOString());
+  if (productData.isFeatured !== undefined) formData.append('isFeatured', productData.isFeatured.toString());
+  if (productData.isActive !== undefined) formData.append('isActive', productData.isActive.toString());
 
   // Append images
   productData.images.forEach((image) => {
@@ -59,14 +110,22 @@ export const createProduct = async (productData: CreateProductData): Promise<Pro
  * Get all products for the seller's shop
  */
 export const getProducts = async (filters?: {
-  category?: string;
+  categoryId?: string;
+  brandId?: string;
+  productType?: string;
+  status?: string;
   isActive?: boolean;
   isFeatured?: boolean;
+  search?: string;
 }): Promise<ProductResponse[]> => {
   const params = new URLSearchParams();
-  if (filters?.category) params.append('category', filters.category);
+  if (filters?.categoryId) params.append('categoryId', filters.categoryId);
+  if (filters?.brandId) params.append('brandId', filters.brandId);
+  if (filters?.productType) params.append('productType', filters.productType);
+  if (filters?.status) params.append('status', filters.status);
   if (filters?.isActive !== undefined) params.append('isActive', String(filters.isActive));
   if (filters?.isFeatured !== undefined) params.append('isFeatured', String(filters.isFeatured));
+  if (filters?.search) params.append('search', filters.search);
 
   const response = await apiClient.get(`/seller/products?${params.toString()}`);
   return response.data;
@@ -92,9 +151,31 @@ export const updateProduct = async (
   // Append updated fields
   if (productData.name) formData.append('name', productData.name);
   if (productData.description) formData.append('description', productData.description);
+  if (productData.categoryId) formData.append('categoryId', productData.categoryId);
+  if (productData.brandId) formData.append('brandId', productData.brandId);
+  if (productData.productType) formData.append('productType', productData.productType);
   if (productData.price !== undefined) formData.append('price', productData.price.toString());
+  if (productData.salePrice) formData.append('salePrice', productData.salePrice.toString());
   if (productData.stock !== undefined) formData.append('stock', productData.stock.toString());
-  if (productData.category) formData.append('category', productData.category);
+
+  // Append variant data
+  if (productData.hasVariants !== undefined) formData.append('hasVariants', productData.hasVariants.toString());
+  if (productData.variants) formData.append('variants', JSON.stringify(productData.variants));
+
+  // Append dynamic fields
+  if (productData.attributes) formData.append('attributes', JSON.stringify(productData.attributes));
+  if (productData.shipping) formData.append('shipping', JSON.stringify(productData.shipping));
+  if (productData.seo) formData.append('seo', JSON.stringify(productData.seo));
+  if (productData.inventory) formData.append('inventory', JSON.stringify(productData.inventory));
+
+  // Append additional fields
+  if (productData.warranty) formData.append('warranty', productData.warranty);
+  if (productData.tags) formData.append('tags', JSON.stringify(productData.tags));
+  if (productData.status) formData.append('status', productData.status);
+  if (productData.visibility) formData.append('visibility', productData.visibility);
+  if (productData.publishDate) formData.append('publishDate', productData.publishDate.toISOString());
+  if (productData.isFeatured !== undefined) formData.append('isFeatured', productData.isFeatured.toString());
+  if (productData.isActive !== undefined) formData.append('isActive', productData.isActive.toString());
 
   // Append new images if provided
   if (productData.images && productData.images.length > 0) {
