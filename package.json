@@ -34,6 +34,10 @@
     "@radix-ui/react-checkbox": "^1.3.3",
     "@tanstack/react-form": "^1.19.4",
     "@tanstack/react-query": "^5.87.1",
+    "@tiptap/extension-placeholder": "^2.10.4",
+    "@tiptap/pm": "^2.10.4",
+    "@tiptap/react": "^2.10.4",
+    "@tiptap/starter-kit": "^2.10.4",
     "@types/passport-google-oauth20": "^2.0.16",
     "@types/stripe": "^8.0.416",
     "axios": "^1.11.0",
@@ -70,7 +74,8 @@
     "stripe": "^18.5.0",
     "styled-components": "^6.1.19",
     "tailwind-merge": "^3.3.1",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@eslint/compat": "^1.1.1",
