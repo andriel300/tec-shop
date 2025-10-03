@@ -53,8 +53,45 @@ model Shop {
   totalOrders Int     @default(0)
   isActive    Boolean @default(true)
 
+  // Relations
+  products Product[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  shopId      String   @db.ObjectId
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String
+  price       Float
+  stock       Int      @default(0)
+  category    String
+
+  // Images stored as array of file paths
+  images      String[] // e.g., ["/uploads/product-123-0.jpg", "/uploads/product-123-1.jpg"]
+
+  // Product status
+  isActive    Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+
+  // SEO fields (optional for now)
+  slug        String?  @unique
+  tags        String[] @default([])
+
+  // Sales metrics
+  views       Int      @default(0)
+  sales       Int      @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([shopId])
+  @@index([category])
+  @@index([isActive])
 }
 
 enum StripeStatus {

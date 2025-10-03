@@ -6,6 +6,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { PrismaModule } from '../prisma/prisma.module';
 import { SellerModule } from './seller/seller.module';
 import { StripeModule } from './stripe/stripe.module';
+import { ProductModule } from './product/product.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { StripeModule } from './stripe/stripe.module';
     PrismaModule,
     SellerModule,
     StripeModule,
+    ProductModule,
   ],
   controllers: [AppController],
   providers: [AppService],
