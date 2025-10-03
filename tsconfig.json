@@ -56,6 +56,12 @@
     },
     {
       "path": "./libs/shared/validation"
+    },
+    {
+      "path": "./apps/product-service-e2e"
+    },
+    {
+      "path": "./apps/product-service"
     }
   ]
 }
