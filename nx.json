@@ -70,7 +70,8 @@
         "apps/api-gateway-e2e/**/*",
         "apps/auth-service-e2e/**/*",
         "apps/user-service-e2e/**/*",
-        "apps/seller-service-e2e/**/*"
+        "apps/seller-service-e2e/**/*",
+        "apps/product-service-e2e/**/*"
       ]
     },
     {
