@@ -7,12 +7,12 @@ import { CategoryService } from './category.service';
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
-  @MessagePattern({ cmd: 'create_category' })
+  @MessagePattern('product-create-category')
   create(@Payload() createCategoryDto: CreateCategoryDto) {
     return this.categoryService.create(createCategoryDto);
   }
 
-  @MessagePattern({ cmd: 'get_all_categories' })
+  @MessagePattern('product-get-all-categories')
   findAll(@Payload() options?: {
     includeChildren?: boolean;
     onlyActive?: boolean;
@@ -21,27 +21,27 @@ export class CategoryController {
     return this.categoryService.findAll(options);
   }
 
-  @MessagePattern({ cmd: 'get_category' })
+  @MessagePattern('product-get-category')
   findOne(@Payload() data: { id: string; includeChildren?: boolean; includeProducts?: boolean }) {
     return this.categoryService.findOne(data.id, data.includeChildren, data.includeProducts);
   }
 
-  @MessagePattern({ cmd: 'get_category_by_slug' })
+  @MessagePattern('product-get-category-by-slug')
   findBySlug(@Payload() data: { slug: string; includeChildren?: boolean }) {
     return this.categoryService.findBySlug(data.slug, data.includeChildren);
   }
 
-  @MessagePattern({ cmd: 'update_category' })
+  @MessagePattern('product-update-category')
   update(@Payload() data: { id: string; updateCategoryDto: UpdateCategoryDto }) {
     return this.categoryService.update(data.id, data.updateCategoryDto);
   }
 
-  @MessagePattern({ cmd: 'delete_category' })
+  @MessagePattern('product-delete-category')
   remove(@Payload() id: string) {
     return this.categoryService.remove(id);
   }
 
-  @MessagePattern({ cmd: 'get_category_tree' })
+  @MessagePattern('product-get-category-tree')
   getCategoryTree(@Payload() onlyActive = false) {
     return this.categoryService.getCategoryTree(onlyActive);
   }

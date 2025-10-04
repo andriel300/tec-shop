@@ -61,7 +61,7 @@ export class ProductController {
    * Create a new product with image upload
    * Handles multipart/form-data with files
    */
-  @MessagePattern('seller-create-product')
+  @MessagePattern('product-create-product')
   async create(
     @Payload() payload: {
       sellerId: string;
@@ -85,7 +85,7 @@ export class ProductController {
   /**
    * Get all products for a shop
    */
-  @MessagePattern('seller-get-products')
+  @MessagePattern('product-get-products')
   async findAll(@Payload() payload: {
     shopId: string;
     filters?: {
@@ -100,7 +100,7 @@ export class ProductController {
   /**
    * Get single product by ID
    */
-  @MessagePattern('seller-get-product')
+  @MessagePattern('product-get-product')
   async findOne(@Payload() payload: { id: string; sellerId: string }) {
     return this.productService.findOne(payload.id, payload.sellerId);
   }
@@ -108,7 +108,7 @@ export class ProductController {
   /**
    * Update product with optional new images
    */
-  @MessagePattern('seller-update-product')
+  @MessagePattern('product-update-product')
   async update(
     @Payload() payload: {
       id: string;
@@ -128,7 +128,7 @@ export class ProductController {
   /**
    * Delete product
    */
-  @MessagePattern('seller-delete-product')
+  @MessagePattern('product-delete-product')
   async remove(@Payload() payload: { id: string; sellerId: string }) {
     return this.productService.remove(payload.id, payload.sellerId);
   }
@@ -136,7 +136,7 @@ export class ProductController {
   /**
    * Increment product views
    */
-  @MessagePattern('seller-increment-product-views')
+  @MessagePattern('product-increment-product-views')
   async incrementViews(@Payload() payload: { id: string }) {
     return this.productService.incrementViews(payload.id);
   }
