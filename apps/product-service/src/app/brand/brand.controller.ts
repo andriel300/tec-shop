@@ -13,12 +13,15 @@ export class BrandController {
   }
 
   @MessagePattern('product-get-all-brands')
-  findAll(@Payload() options?: {
-    onlyActive?: boolean;
-    search?: string;
-    limit?: number;
-    offset?: number;
-  }) {
+  findAll(
+    @Payload()
+    options?: {
+      onlyActive?: boolean;
+      search?: string;
+      limit?: number;
+      offset?: number;
+    }
+  ) {
     return this.brandService.findAll(options);
   }
 

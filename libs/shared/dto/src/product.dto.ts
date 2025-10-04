@@ -145,9 +145,16 @@ export interface BrandResponseDto {
 // ============================================
 
 export const CreateCategorySchema = z.object({
-  name: z.string().min(2, 'Category name must be at least 2 characters').max(100),
-  slug: z.string()
-    .regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers, and hyphens')
+  name: z
+    .string()
+    .min(2, 'Category name must be at least 2 characters')
+    .max(100),
+  slug: z
+    .string()
+    .regex(
+      /^[a-z0-9-]+$/,
+      'Slug can only contain lowercase letters, numbers, and hyphens'
+    )
     .optional(),
   description: z.string().max(500).optional(),
   parentId: z.string().optional(),
@@ -164,8 +171,12 @@ export type UpdateCategoryDto = z.infer<typeof UpdateCategorySchema>;
 
 export const CreateBrandSchema = z.object({
   name: z.string().min(2, 'Brand name must be at least 2 characters').max(100),
-  slug: z.string()
-    .regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers, and hyphens')
+  slug: z
+    .string()
+    .regex(
+      /^[a-z0-9-]+$/,
+      'Slug can only contain lowercase letters, numbers, and hyphens'
+    )
     .optional(),
   description: z.string().max(500).optional(),
   logo: z.string().url().optional(),

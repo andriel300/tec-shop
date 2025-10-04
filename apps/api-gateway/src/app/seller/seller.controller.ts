@@ -6,11 +6,16 @@ import {
   Post,
   Put,
   UseGuards,
-  Req
+  Req,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
 import {
   CreateSellerProfileDto,
@@ -65,7 +70,10 @@ export class SellerController {
     status: 201,
     description: 'Shop created successfully.',
   })
-  @ApiResponse({ status: 400, description: 'Shop already exists or invalid data.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Shop already exists or invalid data.',
+  })
   @ApiResponse({ status: 404, description: 'Seller profile not found.' })
   async createShop(
     @Req() request: { user: { userId: string } },

@@ -15,8 +15,14 @@ import { RichTextEditor } from '../../../../components/ui/form/RichTextEditor';
 import { VariantManager } from '../../../../components/ui/form/VariantManager';
 import { DimensionsInput } from '../../../../components/ui/form/DimensionsInput';
 import { SEOFields } from '../../../../components/ui/form/SEOFields';
-import { CategorySelector, type Category } from '../../../../components/ui/form/CategorySelector';
-import { BrandSelector, type Brand } from '../../../../components/ui/form/BrandSelector';
+import {
+  CategorySelector,
+  type Category,
+} from '../../../../components/ui/form/CategorySelector';
+import {
+  BrandSelector,
+  type Brand,
+} from '../../../../components/ui/form/BrandSelector';
 import { Breadcrumb } from '../../../../components/navigation/Breadcrumb';
 
 const PRODUCT_TYPES = [
@@ -33,14 +39,23 @@ const PRODUCT_STATUS = [
 
 const Page = () => {
   const router = useRouter();
-  const [productImages, setProductImages] = useState<(File | null)[]>([null, null, null, null]);
+  const [productImages, setProductImages] = useState<(File | null)[]>([
+    null,
+    null,
+    null,
+    null,
+  ]);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   // Track selected category/brand for potential future validation
   const [, setSelectedCategory] = useState<Category | null>(null);
   const [, setSelectedBrand] = useState<Brand | null>(null);
-  const [dynamicAttributes, setDynamicAttributes] = useState<Record<string, unknown>>({});
-  const [activeTab, setActiveTab] = useState<'basic' | 'variants' | 'shipping' | 'seo'>('basic');
+  const [dynamicAttributes, setDynamicAttributes] = useState<
+    Record<string, unknown>
+  >({});
+  const [activeTab, setActiveTab] = useState<
+    'basic' | 'variants' | 'shipping' | 'seo'
+  >('basic');
 
   const form = useForm({
     defaultValues: {
@@ -78,7 +93,9 @@ const Page = () => {
         setSubmitError(null);
         setSubmitSuccess(false);
 
-        const validImages = productImages.filter((img): img is File => img !== null);
+        const validImages = productImages.filter(
+          (img): img is File => img !== null
+        );
 
         if (validImages.length === 0) {
           setSubmitError('At least one product image is required');
@@ -173,7 +190,11 @@ const Page = () => {
                   <FormField field={field} label="Status">
                     <Select
                       value={field.state.value}
-                      onChange={(value) => field.handleChange(value as 'draft' | 'published' | 'scheduled')}
+                      onChange={(value) =>
+                        field.handleChange(
+                          value as 'draft' | 'published' | 'scheduled'
+                        )
+                      }
                       options={PRODUCT_STATUS}
                       variant="dark"
                     />
@@ -191,7 +212,10 @@ const Page = () => {
                       onChange={(e) => field.handleChange(e.target.checked)}
                       className="w-4 h-4 rounded bg-gray-700 border-gray-600 text-blue-600"
                     />
-                    <label htmlFor="isFeatured" className="text-sm text-gray-300">
+                    <label
+                      htmlFor="isFeatured"
+                      className="text-sm text-gray-300"
+                    >
                       Mark as featured product
                     </label>
                   </div>
@@ -262,7 +286,9 @@ const Page = () => {
                     name="description"
                     validators={{
                       onChange: ({ value }) => {
-                        const wordCount = value.split(/\s+/).filter(Boolean).length;
+                        const wordCount = value
+                          .split(/\s+/)
+                          .filter(Boolean).length;
                         return wordCount < 50
                           ? 'Description must be at least 50 words (150-200 recommended)'
                           : wordCount > 200
@@ -272,7 +298,11 @@ const Page = () => {
                     }}
                   >
                     {(field) => (
-                      <FormField field={field} label="Product Description" required>
+                      <FormField
+                        field={field}
+                        label="Product Description"
+                        required
+                      >
                         <RichTextEditor
                           value={field.state.value}
                           onChange={(value) => field.handleChange(value)}
@@ -289,7 +319,8 @@ const Page = () => {
                   <form.Field
                     name="categoryId"
                     validators={{
-                      onChange: ({ value }) => (!value ? 'Category is required' : undefined),
+                      onChange: ({ value }) =>
+                        !value ? 'Category is required' : undefined,
                     }}
                   >
                     {(field) => (
@@ -326,9 +357,14 @@ const Page = () => {
                         <Select
                           value={field.state.value}
                           onChange={(value) => {
-                            field.handleChange(value as 'simple' | 'variable' | 'digital');
+                            field.handleChange(
+                              value as 'simple' | 'variable' | 'digital'
+                            );
                             // Update hasVariants based on product type
-                            form.setFieldValue('hasVariants', value === 'variable');
+                            form.setFieldValue(
+                              'hasVariants',
+                              value === 'variable'
+                            );
                           }}
                           options={PRODUCT_TYPES}
                           variant="dark"
@@ -349,17 +385,27 @@ const Page = () => {
                         name="price"
                         validators={{
                           onChange: ({ value }) =>
-                            value <= 0 ? 'Price must be greater than 0' : undefined,
+                            value <= 0
+                              ? 'Price must be greater than 0'
+                              : undefined,
                         }}
                       >
                         {(field) => (
-                          <FormField field={field} label="Regular Price ($)" required>
+                          <FormField
+                            field={field}
+                            label="Regular Price ($)"
+                            required
+                          >
                             <Input
                               type="number"
                               step="0.01"
                               min="0"
                               value={field.state.value}
-                              onChange={(e) => field.handleChange(parseFloat(e.target.value) || 0)}
+                              onChange={(e) =>
+                                field.handleChange(
+                                  parseFloat(e.target.value) || 0
+                                )
+                              }
                               placeholder="0.00"
                               variant="dark"
                             />
@@ -376,7 +422,11 @@ const Page = () => {
                               min="0"
                               value={field.state.value || ''}
                               onChange={(e) =>
-                                field.handleChange(e.target.value ? parseFloat(e.target.value) : undefined)
+                                field.handleChange(
+                                  e.target.value
+                                    ? parseFloat(e.target.value)
+                                    : undefined
+                                )
                               }
                               placeholder="Optional"
                               variant="dark"
@@ -394,12 +444,20 @@ const Page = () => {
                       }}
                     >
                       {(field) => (
-                        <FormField field={field} label="Stock Quantity" required>
+                        <FormField
+                          field={field}
+                          label="Stock Quantity"
+                          required
+                        >
                           <Input
                             type="number"
                             min="0"
                             value={field.state.value}
-                            onChange={(e) => field.handleChange(parseInt(e.target.value, 10) || 0)}
+                            onChange={(e) =>
+                              field.handleChange(
+                                parseInt(e.target.value, 10) || 0
+                              )
+                            }
                             placeholder="0"
                             variant="dark"
                           />

@@ -75,7 +75,9 @@ const DimensionsInput: React.FC<DimensionsInputProps> = ({
           step="0.1"
           min="0"
           value={value.weight}
-          onChange={(e) => updateField('weight', parseFloat(e.target.value) || 0)}
+          onChange={(e) =>
+            updateField('weight', parseFloat(e.target.value) || 0)
+          }
           placeholder="0.5"
         />
         <p className="mt-1 text-xs text-gray-400">
@@ -146,7 +148,10 @@ const DimensionsInput: React.FC<DimensionsInputProps> = ({
           variant="dark"
           value={value.shippingClass}
           onChange={(val) =>
-            updateField('shippingClass', val as ShippingDimensions['shippingClass'])
+            updateField(
+              'shippingClass',
+              val as ShippingDimensions['shippingClass']
+            )
           }
           options={SHIPPING_CLASSES}
         />

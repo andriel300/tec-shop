@@ -13,17 +13,31 @@ export class CategoryController {
   }
 
   @MessagePattern({ cmd: 'get_all_categories' })
-  findAll(@Payload() options?: {
-    includeChildren?: boolean;
-    onlyActive?: boolean;
-    parentId?: string | null;
-  }) {
+  findAll(
+    @Payload()
+    options?: {
+      includeChildren?: boolean;
+      onlyActive?: boolean;
+      parentId?: string | null;
+    }
+  ) {
     return this.categoryService.findAll(options);
   }
 
   @MessagePattern({ cmd: 'get_category' })
-  findOne(@Payload() data: { id: string; includeChildren?: boolean; includeProducts?: boolean }) {
-    return this.categoryService.findOne(data.id, data.includeChildren, data.includeProducts);
+  findOne(
+    @Payload()
+    data: {
+      id: string;
+      includeChildren?: boolean;
+      includeProducts?: boolean;
+    }
+  ) {
+    return this.categoryService.findOne(
+      data.id,
+      data.includeChildren,
+      data.includeProducts
+    );
   }
 
   @MessagePattern({ cmd: 'get_category_by_slug' })
@@ -32,7 +46,9 @@ export class CategoryController {
   }
 
   @MessagePattern({ cmd: 'update_category' })
-  update(@Payload() data: { id: string; updateCategoryDto: UpdateCategoryDto }) {
+  update(
+    @Payload() data: { id: string; updateCategoryDto: UpdateCategoryDto }
+  ) {
     return this.categoryService.update(data.id, data.updateCategoryDto);
   }
 

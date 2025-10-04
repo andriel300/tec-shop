@@ -128,7 +128,7 @@ export class AuthService implements OnModuleInit {
       name,
       phoneNumber,
       country,
-      userType: 'SELLER'
+      userType: 'SELLER',
     });
     await this.redisService.set(
       `verification-otp:${user.id}`,
@@ -300,7 +300,13 @@ export class AuthService implements OnModuleInit {
       throw new UnauthorizedException('Invalid verification details');
     }
 
-    const { otp: storedOtp, name, phoneNumber, country, userType } = JSON.parse(redisPayload);
+    const {
+      otp: storedOtp,
+      name,
+      phoneNumber,
+      country,
+      userType,
+    } = JSON.parse(redisPayload);
 
     if (storedOtp !== otp) {
       await this.redisService.set(attemptKey, (attempts + 1).toString(), 600);
@@ -352,7 +358,10 @@ export class AuthService implements OnModuleInit {
       );
       console.log(`Seller profile created successfully for user ${user.id}`);
     } catch (error) {
-      console.error('Failed to create seller profile in seller-service:', error);
+      console.error(
+        'Failed to create seller profile in seller-service:',
+        error
+      );
       // Log the error but don't fail the email verification process
     }
 

@@ -1,6 +1,14 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { SellerPrismaService } from '../../prisma/prisma.service';
-import { CreateSellerProfileDto, CreateShopDto, UpdateShopDto } from '@tec-shop/dto';
+import {
+  CreateSellerProfileDto,
+  CreateShopDto,
+  UpdateShopDto,
+} from '@tec-shop/dto';
 
 @Injectable()
 export class SellerService {
@@ -51,7 +59,10 @@ export class SellerService {
     return seller;
   }
 
-  async updateProfile(authId: string, updateData: Partial<CreateSellerProfileDto>) {
+  async updateProfile(
+    authId: string,
+    updateData: Partial<CreateSellerProfileDto>
+  ) {
     const seller = await this.prisma.seller.findUnique({
       where: { authId },
     });
@@ -129,7 +140,9 @@ export class SellerService {
     } else {
       // Create new shop if required fields are provided
       if (!shopData.businessName || !shopData.category || !shopData.address) {
-        throw new BadRequestException('businessName, category, and address are required to create a new shop');
+        throw new BadRequestException(
+          'businessName, category, and address are required to create a new shop'
+        );
       }
 
       const newShop = await this.prisma.shop.create({
@@ -183,15 +196,17 @@ export class SellerService {
         isVerified: seller.isVerified,
         createdAt: seller.createdAt,
       },
-      shop: seller.shop ? {
-        id: seller.shop.id,
-        businessName: seller.shop.businessName,
-        category: seller.shop.category,
-        rating: seller.shop.rating,
-        totalOrders: seller.shop.totalOrders,
-        isActive: seller.shop.isActive,
-        createdAt: seller.shop.createdAt,
-      } : null,
+      shop: seller.shop
+        ? {
+            id: seller.shop.id,
+            businessName: seller.shop.businessName,
+            category: seller.shop.category,
+            rating: seller.shop.rating,
+            totalOrders: seller.shop.totalOrders,
+            isActive: seller.shop.isActive,
+            createdAt: seller.shop.createdAt,
+          }
+        : null,
     };
   }
 
@@ -233,7 +248,10 @@ export class SellerService {
    * Verify that a seller owns a specific shop
    * Used by product-service for authorization checks
    */
-  async verifyShopOwnership(sellerId: string, shopId: string): Promise<boolean> {
+  async verifyShopOwnership(
+    sellerId: string,
+    shopId: string
+  ): Promise<boolean> {
     const shop = await this.prisma.shop.findUnique({
       where: { id: shopId },
       include: {

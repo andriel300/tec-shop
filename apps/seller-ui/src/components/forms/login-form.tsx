@@ -34,7 +34,7 @@ export function LoginForm() {
           id: userProfile.userId,
           email: form.getFieldValue('email'),
           isEmailVerified: true,
-          name: userProfile.name
+          name: userProfile.name,
         };
 
         login(user);

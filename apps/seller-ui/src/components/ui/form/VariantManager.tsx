@@ -52,8 +52,11 @@ const VariantManager: React.FC<VariantManagerProps> = ({
     { name: 'Size', values: [] },
   ]);
   const [newAttributeName, setNewAttributeName] = useState('');
-  const [newAttributeValue, setNewAttributeValue] = useState<Record<string, string>>({});
-  const [showAttributeSuggestions, setShowAttributeSuggestions] = useState(false);
+  const [newAttributeValue, setNewAttributeValue] = useState<
+    Record<string, string>
+  >({});
+  const [showAttributeSuggestions, setShowAttributeSuggestions] =
+    useState(false);
 
   // Filter suggestions based on input and already added attributes
   const filteredSuggestions = ATTRIBUTE_SUGGESTIONS.filter((suggestion) => {
@@ -68,7 +71,9 @@ const VariantManager: React.FC<VariantManagerProps> = ({
 
   // Generate all possible variant combinations
   const generateVariants = () => {
-    const activeAttributes = attributes.filter((attr) => attr.values.length > 0);
+    const activeAttributes = attributes.filter(
+      (attr) => attr.values.length > 0
+    );
 
     if (activeAttributes.length === 0) {
       onChange([]);
@@ -159,7 +164,11 @@ const VariantManager: React.FC<VariantManagerProps> = ({
   };
 
   // Update variant
-  const updateVariant = (index: number, field: keyof ProductVariant, value: unknown) => {
+  const updateVariant = (
+    index: number,
+    field: keyof ProductVariant,
+    value: unknown
+  ) => {
     const newVariants = [...variants];
     newVariants[index] = { ...newVariants[index], [field]: value };
     onChange(newVariants);
@@ -179,7 +188,8 @@ const VariantManager: React.FC<VariantManagerProps> = ({
           Product Options
         </h3>
         <p className="text-sm text-gray-400 mb-4">
-          Add options like Size, Color, or Material that customers can choose from
+          Add options like Size, Color, or Material that customers can choose
+          from
         </p>
 
         {/* Existing Options */}
@@ -224,7 +234,9 @@ const VariantManager: React.FC<VariantManagerProps> = ({
                       {value}
                       <button
                         type="button"
-                        onClick={() => removeAttributeValue(attrIndex, valueIndex)}
+                        onClick={() =>
+                          removeAttributeValue(attrIndex, valueIndex)
+                        }
                         className="hover:text-blue-100"
                       >
                         <X size={14} />
@@ -245,7 +257,9 @@ const VariantManager: React.FC<VariantManagerProps> = ({
                     [attribute.name]: value,
                   })
                 }
-                onAddValue={(directValue) => addAttributeValue(attrIndex, directValue)}
+                onAddValue={(directValue) =>
+                  addAttributeValue(attrIndex, directValue)
+                }
               />
             </div>
           ))}
@@ -297,7 +311,9 @@ const VariantManager: React.FC<VariantManagerProps> = ({
                               className="w-full px-3 py-2 text-left rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2 text-gray-300"
                             >
                               <span className="text-lg">{suggestion.icon}</span>
-                              <span className="font-medium">{suggestion.name}</span>
+                              <span className="font-medium">
+                                {suggestion.name}
+                              </span>
                             </button>
                           ))}
                         </div>
@@ -309,8 +325,10 @@ const VariantManager: React.FC<VariantManagerProps> = ({
                   {newAttributeName && filteredSuggestions.length === 0 && (
                     <div className="p-3 text-sm text-gray-400 border-t border-gray-700">
                       Press Enter to add &quot;
-                      <span className="text-blue-400 font-medium">{newAttributeName}</span>&quot; as
-                      a custom option
+                      <span className="text-blue-400 font-medium">
+                        {newAttributeName}
+                      </span>
+                      &quot; as a custom option
                     </div>
                   )}
                 </div>
@@ -329,7 +347,8 @@ const VariantManager: React.FC<VariantManagerProps> = ({
 
           {/* Help text */}
           <p className="mt-2 text-xs text-gray-500">
-            💡 Click the input to see common options or type your own custom option
+            💡 Click the input to see common options or type your own custom
+            option
           </p>
         </div>
 
@@ -340,7 +359,8 @@ const VariantManager: React.FC<VariantManagerProps> = ({
           className="mt-4 w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center justify-center gap-2"
         >
           <RefreshCw size={18} />
-          Generate Variants ({calculateCombinationCount(attributes)} combinations)
+          Generate Variants ({calculateCombinationCount(attributes)}{' '}
+          combinations)
         </button>
       </div>
 

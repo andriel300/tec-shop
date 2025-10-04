@@ -52,9 +52,7 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
           onImageChange={handleImageChange}
           onRemove={handleImageRemove}
           setOpenImageModal={setOpenImageModal}
-          defaultImage={
-            images[0] ? URL.createObjectURL(images[0]) : null
-          }
+          defaultImage={images[0] ? URL.createObjectURL(images[0]) : null}
         />
         <p className="mt-2 text-xs text-gray-400">
           Upload the main product image (Required)

@@ -60,7 +60,9 @@ export interface ProductResponse {
 /**
  * Create a new product with images
  */
-export const createProduct = async (productData: CreateProductData): Promise<ProductResponse> => {
+export const createProduct = async (
+  productData: CreateProductData
+): Promise<ProductResponse> => {
   const formData = new FormData();
 
   // Append basic product fields
@@ -68,29 +70,41 @@ export const createProduct = async (productData: CreateProductData): Promise<Pro
   formData.append('description', productData.description);
   formData.append('categoryId', productData.categoryId);
   if (productData.brandId) formData.append('brandId', productData.brandId);
-  if (productData.productType) formData.append('productType', productData.productType);
+  if (productData.productType)
+    formData.append('productType', productData.productType);
   formData.append('price', productData.price.toString());
-  if (productData.salePrice) formData.append('salePrice', productData.salePrice.toString());
+  if (productData.salePrice)
+    formData.append('salePrice', productData.salePrice.toString());
   formData.append('stock', productData.stock.toString());
 
   // Append variant data
-  if (productData.hasVariants !== undefined) formData.append('hasVariants', productData.hasVariants.toString());
-  if (productData.variants) formData.append('variants', JSON.stringify(productData.variants));
+  if (productData.hasVariants !== undefined)
+    formData.append('hasVariants', productData.hasVariants.toString());
+  if (productData.variants)
+    formData.append('variants', JSON.stringify(productData.variants));
 
   // Append dynamic fields
-  if (productData.attributes) formData.append('attributes', JSON.stringify(productData.attributes));
-  if (productData.shipping) formData.append('shipping', JSON.stringify(productData.shipping));
+  if (productData.attributes)
+    formData.append('attributes', JSON.stringify(productData.attributes));
+  if (productData.shipping)
+    formData.append('shipping', JSON.stringify(productData.shipping));
   if (productData.seo) formData.append('seo', JSON.stringify(productData.seo));
-  if (productData.inventory) formData.append('inventory', JSON.stringify(productData.inventory));
+  if (productData.inventory)
+    formData.append('inventory', JSON.stringify(productData.inventory));
 
   // Append additional fields
   if (productData.warranty) formData.append('warranty', productData.warranty);
-  if (productData.tags) formData.append('tags', JSON.stringify(productData.tags));
+  if (productData.tags)
+    formData.append('tags', JSON.stringify(productData.tags));
   if (productData.status) formData.append('status', productData.status);
-  if (productData.visibility) formData.append('visibility', productData.visibility);
-  if (productData.publishDate) formData.append('publishDate', productData.publishDate.toISOString());
-  if (productData.isFeatured !== undefined) formData.append('isFeatured', productData.isFeatured.toString());
-  if (productData.isActive !== undefined) formData.append('isActive', productData.isActive.toString());
+  if (productData.visibility)
+    formData.append('visibility', productData.visibility);
+  if (productData.publishDate)
+    formData.append('publishDate', productData.publishDate.toISOString());
+  if (productData.isFeatured !== undefined)
+    formData.append('isFeatured', productData.isFeatured.toString());
+  if (productData.isActive !== undefined)
+    formData.append('isActive', productData.isActive.toString());
 
   // Append images
   productData.images.forEach((image) => {
@@ -123,8 +137,10 @@ export const getProducts = async (filters?: {
   if (filters?.brandId) params.append('brandId', filters.brandId);
   if (filters?.productType) params.append('productType', filters.productType);
   if (filters?.status) params.append('status', filters.status);
-  if (filters?.isActive !== undefined) params.append('isActive', String(filters.isActive));
-  if (filters?.isFeatured !== undefined) params.append('isFeatured', String(filters.isFeatured));
+  if (filters?.isActive !== undefined)
+    params.append('isActive', String(filters.isActive));
+  if (filters?.isFeatured !== undefined)
+    params.append('isFeatured', String(filters.isFeatured));
   if (filters?.search) params.append('search', filters.search);
 
   const response = await apiClient.get(`/seller/products?${params.toString()}`);
@@ -150,32 +166,48 @@ export const updateProduct = async (
 
   // Append updated fields
   if (productData.name) formData.append('name', productData.name);
-  if (productData.description) formData.append('description', productData.description);
-  if (productData.categoryId) formData.append('categoryId', productData.categoryId);
+  if (productData.description)
+    formData.append('description', productData.description);
+  if (productData.categoryId)
+    formData.append('categoryId', productData.categoryId);
   if (productData.brandId) formData.append('brandId', productData.brandId);
-  if (productData.productType) formData.append('productType', productData.productType);
-  if (productData.price !== undefined) formData.append('price', productData.price.toString());
-  if (productData.salePrice) formData.append('salePrice', productData.salePrice.toString());
-  if (productData.stock !== undefined) formData.append('stock', productData.stock.toString());
+  if (productData.productType)
+    formData.append('productType', productData.productType);
+  if (productData.price !== undefined)
+    formData.append('price', productData.price.toString());
+  if (productData.salePrice)
+    formData.append('salePrice', productData.salePrice.toString());
+  if (productData.stock !== undefined)
+    formData.append('stock', productData.stock.toString());
 
   // Append variant data
-  if (productData.hasVariants !== undefined) formData.append('hasVariants', productData.hasVariants.toString());
-  if (productData.variants) formData.append('variants', JSON.stringify(productData.variants));
+  if (productData.hasVariants !== undefined)
+    formData.append('hasVariants', productData.hasVariants.toString());
+  if (productData.variants)
+    formData.append('variants', JSON.stringify(productData.variants));
 
   // Append dynamic fields
-  if (productData.attributes) formData.append('attributes', JSON.stringify(productData.attributes));
-  if (productData.shipping) formData.append('shipping', JSON.stringify(productData.shipping));
+  if (productData.attributes)
+    formData.append('attributes', JSON.stringify(productData.attributes));
+  if (productData.shipping)
+    formData.append('shipping', JSON.stringify(productData.shipping));
   if (productData.seo) formData.append('seo', JSON.stringify(productData.seo));
-  if (productData.inventory) formData.append('inventory', JSON.stringify(productData.inventory));
+  if (productData.inventory)
+    formData.append('inventory', JSON.stringify(productData.inventory));
 
   // Append additional fields
   if (productData.warranty) formData.append('warranty', productData.warranty);
-  if (productData.tags) formData.append('tags', JSON.stringify(productData.tags));
+  if (productData.tags)
+    formData.append('tags', JSON.stringify(productData.tags));
   if (productData.status) formData.append('status', productData.status);
-  if (productData.visibility) formData.append('visibility', productData.visibility);
-  if (productData.publishDate) formData.append('publishDate', productData.publishDate.toISOString());
-  if (productData.isFeatured !== undefined) formData.append('isFeatured', productData.isFeatured.toString());
-  if (productData.isActive !== undefined) formData.append('isActive', productData.isActive.toString());
+  if (productData.visibility)
+    formData.append('visibility', productData.visibility);
+  if (productData.publishDate)
+    formData.append('publishDate', productData.publishDate.toISOString());
+  if (productData.isFeatured !== undefined)
+    formData.append('isFeatured', productData.isFeatured.toString());
+  if (productData.isActive !== undefined)
+    formData.append('isActive', productData.isActive.toString());
 
   // Append new images if provided
   if (productData.images && productData.images.length > 0) {

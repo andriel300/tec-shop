@@ -17,7 +17,13 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { firstValueFrom } from 'rxjs';
-import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  ApiBearerAuth,
+  ApiConsumes,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
 import { RolesGuard } from '../../guards/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
@@ -80,9 +86,15 @@ export class ProductController {
   @Roles('SELLER')
   @UseInterceptors(FilesInterceptor('images', 4, multerConfig))
   @ApiResponse({ status: 201, description: 'Product created successfully.' })
-  @ApiResponse({ status: 400, description: 'Invalid product data or missing images.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid product data or missing images.',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Seller access required.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Seller access required.',
+  })
   async createProduct(
     @Req() req: Record<string, unknown>,
     @Body() productData: Dto.CreateProductDto,
@@ -110,7 +122,10 @@ export class ProductController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SELLER')
   @ApiResponse({ status: 200, description: 'Products retrieved successfully.' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Seller access required.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Seller access required.',
+  })
   async getProducts(
     @Req() req: Record<string, unknown>,
     @Query('shopId') shopId: string,
@@ -139,7 +154,10 @@ export class ProductController {
   @Roles('SELLER')
   @ApiResponse({ status: 200, description: 'Product retrieved successfully.' })
   @ApiResponse({ status: 404, description: 'Product not found.' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Seller access required.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Seller access required.',
+  })
   async getProduct(
     @Req() req: Record<string, unknown>,
     @Param('id') id: string
@@ -160,7 +178,9 @@ export class ProductController {
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Update a product with optional new images (seller only)' })
+  @ApiOperation({
+    summary: 'Update a product with optional new images (seller only)',
+  })
   @ApiConsumes('multipart/form-data')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -168,7 +188,10 @@ export class ProductController {
   @UseInterceptors(FilesInterceptor('images', 4, multerConfig))
   @ApiResponse({ status: 200, description: 'Product updated successfully.' })
   @ApiResponse({ status: 404, description: 'Product not found.' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Seller access required.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Seller access required.',
+  })
   async updateProduct(
     @Req() req: Record<string, unknown>,
     @Param('id') id: string,
@@ -199,7 +222,10 @@ export class ProductController {
   @Roles('SELLER')
   @ApiResponse({ status: 200, description: 'Product deleted successfully.' })
   @ApiResponse({ status: 404, description: 'Product not found.' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Seller access required.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Seller access required.',
+  })
   async deleteProduct(
     @Req() req: Record<string, unknown>,
     @Param('id') id: string

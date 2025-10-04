@@ -2,9 +2,10 @@ import axios from 'axios';
 import { extractSafeErrorMessage } from '../utils/error-handler';
 
 // Use relative URL in production for security (prevents CSRF and reduces attack surface)
-export const API_BASE_URL = process.env.NODE_ENV === 'production'
-  ? '/api'  // Relative URL - assumes frontend and API are served from same domain in production
-  : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+export const API_BASE_URL =
+  process.env.NODE_ENV === 'production'
+    ? '/api' // Relative URL - assumes frontend and API are served from same domain in production
+    : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -51,7 +52,9 @@ apiClient.interceptors.response.use(
         sessionStorage.removeItem('user');
         sessionStorage.removeItem('userProfile');
         window.location.href = '/login';
-        return Promise.reject(new Error('Session expired. Please log in again.'));
+        return Promise.reject(
+          new Error('Session expired. Please log in again.')
+        );
       }
     }
 

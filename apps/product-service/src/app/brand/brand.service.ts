@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import type { CreateBrandDto, UpdateBrandDto } from '@tec-shop/dto';
 import { ProductPrismaService } from '../../prisma/prisma.service';
 
@@ -16,16 +20,15 @@ export class BrandService {
     // Check if slug or name already exists
     const existing = await this.prisma.brand.findFirst({
       where: {
-        OR: [
-          { slug },
-          { name: createBrandDto.name },
-        ],
+        OR: [{ slug }, { name: createBrandDto.name }],
       },
     });
 
     if (existing) {
       if (existing.name === createBrandDto.name) {
-        throw new ConflictException(`Brand with name '${createBrandDto.name}' already exists`);
+        throw new ConflictException(
+          `Brand with name '${createBrandDto.name}' already exists`
+        );
       }
       throw new ConflictException(`Brand with slug '${slug}' already exists`);
     }
@@ -88,11 +91,13 @@ export class BrandService {
     const brand = await this.prisma.brand.findUnique({
       where: { id },
       include: {
-        products: includeProducts ? {
-          where: { isActive: true },
-          take: 10,
-          orderBy: { createdAt: 'desc' },
-        } : false,
+        products: includeProducts
+          ? {
+              where: { isActive: true },
+              take: 10,
+              orderBy: { createdAt: 'desc' },
+            }
+          : false,
       },
     });
 
@@ -110,11 +115,13 @@ export class BrandService {
     const brand = await this.prisma.brand.findUnique({
       where: { slug },
       include: {
-        products: includeProducts ? {
-          where: { isActive: true },
-          take: 10,
-          orderBy: { createdAt: 'desc' },
-        } : false,
+        products: includeProducts
+          ? {
+              where: { isActive: true },
+              take: 10,
+              orderBy: { createdAt: 'desc' },
+            }
+          : false,
       },
     });
 
@@ -145,7 +152,9 @@ export class BrandService {
       });
 
       if (existing) {
-        throw new ConflictException(`Brand with name '${updateBrandDto.name}' already exists`);
+        throw new ConflictException(
+          `Brand with name '${updateBrandDto.name}' already exists`
+        );
       }
 
       updateData.name = updateBrandDto.name;
@@ -165,7 +174,9 @@ export class BrandService {
       });
 
       if (existing) {
-        throw new ConflictException(`Brand with slug '${updateBrandDto.slug}' already exists`);
+        throw new ConflictException(
+          `Brand with slug '${updateBrandDto.slug}' already exists`
+        );
       }
 
       updateData.slug = updateBrandDto.slug;

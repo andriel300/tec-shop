@@ -63,7 +63,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-invert prose-sm max-w-none focus:outline-none min-h-[150px] px-4 py-3',
+        class:
+          'prose prose-invert prose-sm max-w-none focus:outline-none min-h-[150px] px-4 py-3',
       },
     },
   });
@@ -74,7 +75,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const isOverMax = wordCount > maxWords;
 
   return (
-    <div className={`border border-gray-700 rounded-lg bg-gray-800 overflow-hidden ${className}`}>
+    <div
+      className={`border border-gray-700 rounded-lg bg-gray-800 overflow-hidden ${className}`}
+    >
       {/* Toolbar */}
       <div className="flex items-center gap-1 p-2 border-b border-gray-700 bg-gray-900/50">
         <button
@@ -82,7 +85,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           onClick={() => editor?.chain().focus().toggleBold().run()}
           disabled={!editor?.can().chain().focus().toggleBold().run()}
           className={`p-2 rounded hover:bg-gray-700 transition-colors ${
-            editor?.isActive('bold') ? 'bg-gray-700 text-blue-400' : 'text-gray-400'
+            editor?.isActive('bold')
+              ? 'bg-gray-700 text-blue-400'
+              : 'text-gray-400'
           }`}
           title="Bold"
         >
@@ -94,7 +99,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           onClick={() => editor?.chain().focus().toggleItalic().run()}
           disabled={!editor?.can().chain().focus().toggleItalic().run()}
           className={`p-2 rounded hover:bg-gray-700 transition-colors ${
-            editor?.isActive('italic') ? 'bg-gray-700 text-blue-400' : 'text-gray-400'
+            editor?.isActive('italic')
+              ? 'bg-gray-700 text-blue-400'
+              : 'text-gray-400'
           }`}
           title="Italic"
         >
@@ -103,9 +110,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
         <button
           type="button"
-          onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
+          onClick={() =>
+            editor?.chain().focus().toggleHeading({ level: 2 }).run()
+          }
           className={`p-2 rounded hover:bg-gray-700 transition-colors ${
-            editor?.isActive('heading', { level: 2 }) ? 'bg-gray-700 text-blue-400' : 'text-gray-400'
+            editor?.isActive('heading', { level: 2 })
+              ? 'bg-gray-700 text-blue-400'
+              : 'text-gray-400'
           }`}
           title="Heading"
         >
@@ -118,7 +129,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           type="button"
           onClick={() => editor?.chain().focus().toggleBulletList().run()}
           className={`p-2 rounded hover:bg-gray-700 transition-colors ${
-            editor?.isActive('bulletList') ? 'bg-gray-700 text-blue-400' : 'text-gray-400'
+            editor?.isActive('bulletList')
+              ? 'bg-gray-700 text-blue-400'
+              : 'text-gray-400'
           }`}
           title="Bullet List"
         >
@@ -129,7 +142,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           type="button"
           onClick={() => editor?.chain().focus().toggleOrderedList().run()}
           className={`p-2 rounded hover:bg-gray-700 transition-colors ${
-            editor?.isActive('orderedList') ? 'bg-gray-700 text-blue-400' : 'text-gray-400'
+            editor?.isActive('orderedList')
+              ? 'bg-gray-700 text-blue-400'
+              : 'text-gray-400'
           }`}
           title="Numbered List"
         >

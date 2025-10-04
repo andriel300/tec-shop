@@ -8,10 +8,17 @@ export { RichTextEditor } from './RichTextEditor';
 export type { RichTextEditorProps } from './RichTextEditor';
 
 export { VariantManager } from './VariantManager';
-export type { VariantManagerProps, ProductVariant, VariantAttribute } from './VariantManager';
+export type {
+  VariantManagerProps,
+  ProductVariant,
+  VariantAttribute,
+} from './VariantManager';
 
 export { DimensionsInput } from './DimensionsInput';
-export type { DimensionsInputProps, ShippingDimensions } from './DimensionsInput';
+export type {
+  DimensionsInputProps,
+  ShippingDimensions,
+} from './DimensionsInput';
 
 export { SEOFields } from './SEOFields';
 export type { SEOFieldsProps, SEOData } from './SEOFields';

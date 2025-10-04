@@ -8,7 +8,12 @@
  */
 export const isColorAttribute = (attributeName: string): boolean => {
   const name = attributeName.toLowerCase();
-  return name === 'color' || name === 'colour' || name === 'colors' || name === 'colours';
+  return (
+    name === 'color' ||
+    name === 'colour' ||
+    name === 'colors' ||
+    name === 'colours'
+  );
 };
 
 /**
@@ -104,7 +109,10 @@ export const getAttributePlaceholder = (attributeName: string): string => {
 /**
  * Generate SKU from product name and variant attributes
  */
-export const generateSKU = (productName: string, attributes: Record<string, string>): string => {
+export const generateSKU = (
+  productName: string,
+  attributes: Record<string, string>
+): string => {
   const prefix = productName
     .split(' ')
     .map((word) => word.charAt(0).toUpperCase())
@@ -127,13 +135,15 @@ export const generateVariantCombinations = <T extends Record<string, string[]>>(
   attributes: T
 ): Array<Record<keyof T, string>> => {
   const keys = Object.keys(attributes) as Array<keyof T>;
-  const values = keys.map(key => attributes[key]);
+  const values = keys.map((key) => attributes[key]);
 
-  if (values.some(arr => arr.length === 0)) {
+  if (values.some((arr) => arr.length === 0)) {
     return [];
   }
 
-  const combinations: Array<Record<keyof T, string>> = [{}  as Record<keyof T, string>];
+  const combinations: Array<Record<keyof T, string>> = [
+    {} as Record<keyof T, string>,
+  ];
 
   for (let i = 0; i < keys.length; i++) {
     const newCombinations: Array<Record<keyof T, string>> = [];
@@ -157,7 +167,9 @@ export const generateVariantCombinations = <T extends Record<string, string[]>>(
 /**
  * Calculate total variant combinations count
  */
-export const calculateCombinationCount = (attributes: Array<{ values: unknown[] }>): number => {
+export const calculateCombinationCount = (
+  attributes: Array<{ values: unknown[] }>
+): number => {
   return attributes.reduce((acc, attr) => {
     return acc * (attr.values.length || 1);
   }, 1);

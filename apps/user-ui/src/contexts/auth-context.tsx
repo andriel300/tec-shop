@@ -57,7 +57,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             userProfile,
           });
         } else {
-          setAuthState(prev => ({
+          setAuthState((prev) => ({
             ...prev,
             isLoading: false,
           }));
@@ -67,7 +67,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Clear corrupted data
         sessionStorage.removeItem('user');
         sessionStorage.removeItem('userProfile');
-        setAuthState(prev => ({
+        setAuthState((prev) => ({
           ...prev,
           isLoading: false,
         }));
@@ -112,14 +112,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const setUserProfile = (profile: UserProfile) => {
     sessionStorage.setItem('userProfile', JSON.stringify(profile));
-    setAuthState(prev => ({
+    setAuthState((prev) => ({
       ...prev,
       userProfile: profile,
     }));
   };
 
   const updateAuthState = (updates: Partial<AuthState>) => {
-    setAuthState(prev => ({
+    setAuthState((prev) => ({
       ...prev,
       ...updates,
     }));
@@ -134,8 +134,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
 }

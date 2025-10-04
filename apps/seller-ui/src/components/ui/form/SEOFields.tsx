@@ -218,7 +218,8 @@ const SEOFields: React.FC<SEOFieldsProps> = ({
         )}
 
         <p className="mt-2 text-xs text-gray-400">
-          Keywords help customers find your product. Add up to 10 relevant keywords.
+          Keywords help customers find your product. Add up to 10 relevant
+          keywords.
         </p>
       </div>
     </div>
