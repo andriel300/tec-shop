@@ -1,57 +1,15 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-  Query,
-  UseInterceptors,
-  UploadedFiles,
-  BadRequestException,
-} from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { Controller, BadRequestException } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { existsSync, mkdirSync } from 'fs';
 import { ProductService } from './product.service';
 import type { CreateProductDto, UpdateProductDto } from '@tec-shop/dto';
 
-// Multer configuration for local file storage
-const multerConfig = {
-  storage: diskStorage({
-    destination: (req, file, cb) => {
-      const uploadPath = './uploads/products';
-
-      // Create directory if it doesn't exist
-      if (!existsSync(uploadPath)) {
-        mkdirSync(uploadPath, { recursive: true });
-      }
-
-      cb(null, uploadPath);
-    },
-    filename: (req, file, cb) => {
-      // Generate unique filename: timestamp-random-originalname
-      const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-      const ext = extname(file.originalname);
-      const name = file.originalname.replace(ext, '').replace(/\s+/g, '-');
-      cb(null, `${name}-${uniqueSuffix}${ext}`);
-    },
-  }),
-  fileFilter: (req, file, cb) => {
-    // Only allow images
-    if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
-      return cb(new BadRequestException('Only image files are allowed'), false);
-    }
-    cb(null, true);
-  },
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB max file size
-    files: 4, // Max 4 images
-  },
-};
+// Type for file data received from API Gateway via TCP
+interface FileData {
+  filename: string;
+  originalname: string;
+  mimetype: string;
+  size: number;
+}
 
 @Controller()
 export class ProductController {
@@ -66,7 +24,7 @@ export class ProductController {
     @Payload() payload: {
       sellerId: string;
       productData: CreateProductDto;
-      files?: Express.Multer.File[];
+      files?: FileData[];
     }
   ) {
     const { sellerId, productData, files } = payload;
@@ -114,7 +72,7 @@ export class ProductController {
       id: string;
       sellerId: string;
       productData: UpdateProductDto;
-      files?: Express.Multer.File[];
+      files?: FileData[];
     }
   ) {
     const { id, sellerId, productData, files } = payload;

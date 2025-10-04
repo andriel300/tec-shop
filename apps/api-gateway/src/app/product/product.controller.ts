@@ -13,7 +13,6 @@ import {
   UploadedFiles,
   Req,
   BadRequestException,
-  ForbiddenException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { FilesInterceptor } from '@nestjs/platform-express';
@@ -22,29 +21,41 @@ import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth, ApiConsumes } from '
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
 import { RolesGuard } from '../../guards/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
-import { CreateProductDto, UpdateProductDto } from '@tec-shop/dto';
-import { diskStorage } from 'multer';
+import * as Dto from '@tec-shop/dto';
+import * as multer from 'multer';
 import { extname } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 
 // Multer configuration for local file storage
 const multerConfig = {
-  storage: diskStorage({
-    destination: (_req, _file, cb) => {
+  storage: multer.diskStorage({
+    destination: (
+      _req: Express.Request,
+      _file: Express.Multer.File,
+      cb: (error: Error | null, destination: string) => void
+    ) => {
       const uploadPath = './uploads/products';
       if (!existsSync(uploadPath)) {
         mkdirSync(uploadPath, { recursive: true });
       }
       cb(null, uploadPath);
     },
-    filename: (_req, file, cb) => {
+    filename: (
+      _req: Express.Request,
+      file: Express.Multer.File,
+      cb: (error: Error | null, filename: string) => void
+    ) => {
       const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
       const ext = extname(file.originalname);
       const name = file.originalname.replace(ext, '').replace(/\s+/g, '-');
       cb(null, `${name}-${uniqueSuffix}${ext}`);
     },
   }),
-  fileFilter: (_req, file, cb) => {
+  fileFilter: (
+    _req: Express.Request,
+    file: Express.Multer.File,
+    cb: (error: Error | null, acceptFile: boolean) => void
+  ) => {
     if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
       return cb(new BadRequestException('Only image files are allowed'), false);
     }
@@ -74,7 +85,7 @@ export class ProductController {
   @ApiResponse({ status: 403, description: 'Forbidden - Seller access required.' })
   async createProduct(
     @Req() req: Record<string, unknown>,
-    @Body() productData: CreateProductDto,
+    @Body() productData: Dto.CreateProductDto,
     @UploadedFiles() files: Express.Multer.File[]
   ) {
     const user = req.user as {
@@ -161,7 +172,7 @@ export class ProductController {
   async updateProduct(
     @Req() req: Record<string, unknown>,
     @Param('id') id: string,
-    @Body() productData: UpdateProductDto,
+    @Body() productData: Dto.UpdateProductDto,
     @UploadedFiles() files?: Express.Multer.File[]
   ) {
     const user = req.user as {

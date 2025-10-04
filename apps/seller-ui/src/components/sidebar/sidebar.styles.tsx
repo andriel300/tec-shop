@@ -34,7 +34,7 @@ export const SidebarWrapper = styled.div`
   }
 
   /* Variants for collapsed */
-  ${(props: any) =>
+  ${(props: { collapsed?: boolean }) =>
     props.collapsed &&
     `
     display: inherit;

@@ -15,7 +15,7 @@ export class ProductService {
     // Verify shop exists via seller-service
     // Note: shopId should be passed in the createProductDto or we need to get it from seller profile
     // For now, assuming shopId is in createProductDto or we fetch from seller-service
-    const shopId = createProductDto.shopId as unknown as string; // Will be added to DTO
+    const shopId = (createProductDto as CreateProductDto & { shopId?: string }).shopId;
 
     if (!shopId) {
       throw new BadRequestException('Shop ID is required');
@@ -204,8 +204,8 @@ export class ProductService {
   }
 
   async update(id: string, sellerId: string, updateProductDto: UpdateProductDto, newImagePaths?: string[]) {
-    // Verify ownership first
-    const existingProduct = await this.findOne(id, sellerId);
+    // Verify ownership first (throws if not owner)
+    await this.findOne(id, sellerId);
 
     const updateData: Record<string, unknown> = {};
 

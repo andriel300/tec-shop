@@ -108,6 +108,7 @@
     "@types/cookie-parser": "^1.4.9",
     "@types/http-proxy-middleware": "^0.19.3",
     "@types/jest": "^30.0.0",
+    "@types/multer": "^2.0.0",
     "@types/node": "20.19.9",
     "@types/passport-jwt": "^4.0.1",
     "@types/react": "19.0.0",

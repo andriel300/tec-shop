@@ -51,7 +51,7 @@ const SEOFields: React.FC<SEOFieldsProps> = ({
 
       onChange({ ...value, slug: generatedSlug });
     }
-  }, [productName, autoGenerateSlug]);
+  }, [productName, autoGenerateSlug, value, onChange]);
 
   const updateField = (field: keyof SEOData, val: unknown) => {
     onChange({ ...value, [field]: val });

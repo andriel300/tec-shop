@@ -16,7 +16,7 @@ import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagg
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
 import { RolesGuard } from '../../guards/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
-import { CreateCategoryDto, UpdateCategoryDto } from '@tec-shop/dto';
+import * as Dto from '@tec-shop/dto';
 
 @ApiTags('Categories')
 @Controller('categories')
@@ -108,7 +108,7 @@ export class CategoryController {
   @ApiResponse({ status: 201, description: 'Category created successfully.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin access required.' })
-  async createCategory(@Body() createCategoryDto: CreateCategoryDto) {
+  async createCategory(@Body() createCategoryDto: Dto.CreateCategoryDto) {
     return firstValueFrom(
       this.productService.send('product-create-category', createCategoryDto)
     );
@@ -127,7 +127,7 @@ export class CategoryController {
   @ApiResponse({ status: 403, description: 'Forbidden - Admin access required.' })
   async updateCategory(
     @Param('id') id: string,
-    @Body() updateCategoryDto: UpdateCategoryDto
+    @Body() updateCategoryDto: Dto.UpdateCategoryDto
   ) {
     return firstValueFrom(
       this.productService.send('product-update-category', {

@@ -348,7 +348,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
 
       {/* Info Message */}
       <p className="text-xs text-gray-500 text-center">
-        Can't find your category? Contact support to request a new category.
+        Can&apos;t find your category? Contact support to request a new category.
       </p>
     </div>
   );
