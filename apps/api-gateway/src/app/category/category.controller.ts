@@ -14,6 +14,8 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
+import { RolesGuard } from '../../guards/roles.guard';
+import { Roles } from '../../decorators/roles.decorator';
 import { CreateCategoryDto, UpdateCategoryDto } from '@tec-shop/dto';
 
 @ApiTags('Categories')
@@ -101,9 +103,11 @@ export class CategoryController {
   @Post()
   @ApiOperation({ summary: 'Create a new category (admin only)' })
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @ApiResponse({ status: 201, description: 'Category created successfully.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required.' })
   async createCategory(@Body() createCategoryDto: CreateCategoryDto) {
     return firstValueFrom(
       this.productService.send('product-create-category', createCategoryDto)
@@ -116,9 +120,11 @@ export class CategoryController {
   @Put(':id')
   @ApiOperation({ summary: 'Update a category (admin only)' })
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @ApiResponse({ status: 200, description: 'Category updated successfully.' })
   @ApiResponse({ status: 404, description: 'Category not found.' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required.' })
   async updateCategory(
     @Param('id') id: string,
     @Body() updateCategoryDto: UpdateCategoryDto
@@ -137,9 +143,11 @@ export class CategoryController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a category (admin only)' })
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @ApiResponse({ status: 200, description: 'Category deleted successfully.' })
   @ApiResponse({ status: 404, description: 'Category not found.' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required.' })
   async deleteCategory(@Param('id') id: string) {
     return firstValueFrom(
       this.productService.send('product-delete-category', id)

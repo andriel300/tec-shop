@@ -9,6 +9,14 @@ import { Request } from 'express';
 export class JwtStrategy extends PassportStrategy(Strategy) {
   // @ts-expect-error: configService is used in constructor call
   constructor(private readonly configService: ConfigService) {
+    const jwtSecret = configService.get<string>('JWT_SECRET');
+
+    if (!jwtSecret || jwtSecret.length < 32) {
+      throw new Error(
+        'JWT_SECRET environment variable must be configured and at least 32 characters long for secure authentication.'
+      );
+    }
+
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         // Extract from secure httpOnly cookies with proper naming
@@ -34,7 +42,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         ExtractJwt.fromAuthHeaderAsBearerToken(),
       ]),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET') || 'fallback-secret',
+      secretOrKey: jwtSecret,
     });
   }
 
