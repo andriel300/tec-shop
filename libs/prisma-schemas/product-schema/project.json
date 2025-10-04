@@ -1,0 +1,65 @@
+{
+  "name": "@tec-shop/product-schema",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/prisma-schemas/product-schema",
+  "projectType": "library",
+  "targets": {
+    "generate-types": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma generate --schema=prisma/schema.prisma",
+        "cwd": "libs/prisma-schemas/product-schema"
+      }
+    },
+    "migrate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma migrate dev --schema=prisma/schema.prisma",
+        "cwd": "libs/prisma-schemas/product-schema"
+      }
+    },
+    "migrate-deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma migrate deploy --schema=prisma/schema.prisma",
+        "cwd": "libs/prisma-schemas/product-schema"
+      }
+    },
+    "migrate-reset": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma migrate reset --schema=prisma/schema.prisma --force",
+        "cwd": "libs/prisma-schemas/product-schema"
+      }
+    },
+    "db-push": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma db push --schema=prisma/schema.prisma",
+        "cwd": "libs/prisma-schemas/product-schema"
+      }
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma format --schema=prisma/schema.prisma",
+        "cwd": "libs/prisma-schemas/product-schema"
+      }
+    },
+    "studio": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma studio --schema=prisma/schema.prisma",
+        "cwd": "libs/prisma-schemas/product-schema"
+      }
+    },
+    "validate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma validate --schema=prisma/schema.prisma",
+        "cwd": "libs/prisma-schemas/product-schema"
+      }
+    }
+  },
+  "tags": ["scope:shared", "type:prisma-schema"]
+}

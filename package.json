@@ -151,7 +151,9 @@
     "shared",
     "shared/*",
     "prisma-schemas/*",
-    "prisma-clients/*"
+    "prisma-clients/*",
+    "libs/prisma-schemas/product-schema",
+    "libs/prisma-clients/product-client"
   ],
   "nx": {
     "includedScripts": [],

@@ -62,6 +62,12 @@
     },
     {
       "path": "./apps/product-service"
+    },
+    {
+      "path": "./libs/prisma-schemas/product-schema"
+    },
+    {
+      "path": "./libs/prisma-clients/product-client"
     }
   ]
 }
