@@ -187,8 +187,8 @@ export class ProductService {
   }
 
   async update(id: string, sellerId: string, updateProductDto: UpdateProductDto, newImagePaths?: string[]) {
-    // Verify ownership first
-    const existingProduct = await this.findOne(id, sellerId);
+    // Verify ownership first (throws if not owner)
+    await this.findOne(id, sellerId);
 
     const updateData: Record<string, unknown> = {};
 

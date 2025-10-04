@@ -308,8 +308,8 @@ const VariantManager: React.FC<VariantManagerProps> = ({
                   {/* Show "Add custom" hint if typing something not in suggestions */}
                   {newAttributeName && filteredSuggestions.length === 0 && (
                     <div className="p-3 text-sm text-gray-400 border-t border-gray-700">
-                      Press Enter to add "
-                      <span className="text-blue-400 font-medium">{newAttributeName}</span>" as
+                      Press Enter to add &quot;
+                      <span className="text-blue-400 font-medium">{newAttributeName}</span>&quot; as
                       a custom option
                     </div>
                   )}

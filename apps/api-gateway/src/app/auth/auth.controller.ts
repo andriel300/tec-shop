@@ -182,12 +182,10 @@ export class AuthController {
     const prefix = isProduction ? '__Host-' : '';
 
     try {
-      // Determine user type from cookies or JWT payload
+      // Get access token from cookies
       const customerAccessToken = request.cookies?.[`${prefix}customer_access_token`];
       const sellerAccessToken = request.cookies?.[`${prefix}seller_access_token`];
       const accessToken = customerAccessToken || sellerAccessToken || request.cookies?.access_token;
-
-      const userType: UserType = customerAccessToken ? 'customer' : 'seller';
 
       // Revoke the current access token (Security Hardened)
       if (accessToken) {

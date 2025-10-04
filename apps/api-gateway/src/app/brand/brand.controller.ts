@@ -16,7 +16,7 @@ import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagg
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
 import { RolesGuard } from '../../guards/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
-import { CreateBrandDto, UpdateBrandDto } from '@tec-shop/dto';
+import * as Dto from '@tec-shop/dto';
 
 @ApiTags('Brands')
 @Controller('brands')
@@ -110,7 +110,7 @@ export class BrandController {
   @ApiResponse({ status: 201, description: 'Brand created successfully.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin access required.' })
-  async createBrand(@Body() createBrandDto: CreateBrandDto) {
+  async createBrand(@Body() createBrandDto: Dto.CreateBrandDto) {
     return firstValueFrom(
       this.productService.send('product-create-brand', createBrandDto)
     );
@@ -129,7 +129,7 @@ export class BrandController {
   @ApiResponse({ status: 403, description: 'Forbidden - Admin access required.' })
   async updateBrand(
     @Param('id') id: string,
-    @Body() updateBrandDto: UpdateBrandDto
+    @Body() updateBrandDto: Dto.UpdateBrandDto
   ) {
     return firstValueFrom(
       this.productService.send('product-update-brand', {

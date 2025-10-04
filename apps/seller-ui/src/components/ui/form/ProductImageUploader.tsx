@@ -20,7 +20,7 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
   onChange,
   className = '',
 }) => {
-  const [openImageModal, setOpenImageModal] = useState(false);
+  const [_openImageModal, setOpenImageModal] = useState(false);
 
   const handleImageChange = (file: File | null, index: number) => {
     const updated = [...images];

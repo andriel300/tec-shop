@@ -36,8 +36,9 @@ const Page = () => {
   const [productImages, setProductImages] = useState<(File | null)[]>([null, null, null, null]);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [_selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [_selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
+  // Track selected category/brand for potential future validation
+  const [, setSelectedCategory] = useState<Category | null>(null);
+  const [, setSelectedBrand] = useState<Brand | null>(null);
   const [dynamicAttributes, setDynamicAttributes] = useState<Record<string, unknown>>({});
   const [activeTab, setActiveTab] = useState<'basic' | 'variants' | 'shipping' | 'seo'>('basic');
 
