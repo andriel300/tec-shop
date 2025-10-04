@@ -7,7 +7,7 @@ import {
   SEOSchema,
   InventorySchema,
   PricingSchema,
-} from '@tec-shop/shared/validation';
+} from '@tec-shop/shared-validation';
 
 // Export Zod schemas for validation
 export {
