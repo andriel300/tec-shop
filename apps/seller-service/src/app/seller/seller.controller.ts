@@ -65,4 +65,35 @@ export class SellerController {
   async getDashboardData(@Payload() authId: string) {
     return this.sellerService.getDashboardData(authId);
   }
+
+  // ============================================
+  // Product Service Integration Endpoints
+  // ============================================
+
+  /**
+   * Verify that a shop exists by its ID
+   * Used by product-service to validate shopId references
+   */
+  @MessagePattern('seller-verify-shop')
+  async verifyShop(@Payload() payload: { shopId: string }): Promise<boolean> {
+    return this.sellerService.verifyShopExists(payload.shopId);
+  }
+
+  /**
+   * Get shop details by shop ID
+   * Used by product-service to fetch shop information
+   */
+  @MessagePattern('seller-get-shop-by-id')
+  async getShopById(@Payload() payload: { shopId: string }) {
+    return this.sellerService.getShopById(payload.shopId);
+  }
+
+  /**
+   * Verify that a seller owns a specific shop
+   * Used by product-service for authorization checks
+   */
+  @MessagePattern('seller-verify-shop-ownership')
+  async verifyShopOwnership(@Payload() payload: { sellerId: string; shopId: string }): Promise<boolean> {
+    return this.sellerService.verifyShopOwnership(payload.sellerId, payload.shopId);
+  }
 }

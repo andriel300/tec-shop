@@ -194,4 +194,53 @@ export class SellerService {
       } : null,
     };
   }
+
+  // ============================================
+  // Product Service Integration Methods
+  // ============================================
+
+  /**
+   * Verify that a shop exists by its ID
+   * Used by product-service to validate shopId references
+   */
+  async verifyShopExists(shopId: string): Promise<boolean> {
+    const shop = await this.prisma.shop.findUnique({
+      where: { id: shopId },
+    });
+    return !!shop;
+  }
+
+  /**
+   * Get shop details by shop ID
+   * Used by product-service to fetch shop information
+   */
+  async getShopById(shopId: string) {
+    const shop = await this.prisma.shop.findUnique({
+      where: { id: shopId },
+      include: {
+        seller: true,
+      },
+    });
+
+    if (!shop) {
+      throw new NotFoundException('Shop not found');
+    }
+
+    return shop;
+  }
+
+  /**
+   * Verify that a seller owns a specific shop
+   * Used by product-service for authorization checks
+   */
+  async verifyShopOwnership(sellerId: string, shopId: string): Promise<boolean> {
+    const shop = await this.prisma.shop.findUnique({
+      where: { id: shopId },
+      include: {
+        seller: true,
+      },
+    });
+
+    return shop?.seller.id === sellerId;
+  }
 }

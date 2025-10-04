@@ -2,20 +2,37 @@ import { Injectable, NotFoundException, ForbiddenException, BadRequestException 
 import type { CreateProductDto, UpdateProductDto, ProductVariantDto } from '@tec-shop/dto';
 import { ProductPrismaService } from '../../prisma/prisma.service';
 import { ProductType, ProductStatus, ProductVisibility } from '@prisma/product-client';
+import { SellerServiceClient } from '../../clients/seller.client';
 
 @Injectable()
 export class ProductService {
-  constructor(private readonly prisma: ProductPrismaService) {}
+  constructor(
+    private readonly prisma: ProductPrismaService,
+    private readonly sellerClient: SellerServiceClient
+  ) {}
 
   async create(sellerId: string, createProductDto: CreateProductDto, imagePaths: string[]) {
-    // Verify seller has a shop
-    const seller = await this.prisma.seller.findUnique({
-      where: { id: sellerId },
-      include: { shop: true },
-    });
+    // Verify shop exists via seller-service
+    // Note: shopId should be passed in the createProductDto or we need to get it from seller profile
+    // For now, assuming shopId is in createProductDto or we fetch from seller-service
+    const shopId = createProductDto.shopId as unknown as string; // Will be added to DTO
 
-    if (!seller?.shop) {
-      throw new ForbiddenException('You must create a shop before adding products');
+    if (!shopId) {
+      throw new BadRequestException('Shop ID is required');
+    }
+
+    // Verify shop exists and seller owns it
+    const [shopExists, ownsShop] = await Promise.all([
+      this.sellerClient.verifyShopExists(shopId),
+      this.sellerClient.verifyShopOwnership(sellerId, shopId),
+    ]);
+
+    if (!shopExists) {
+      throw new NotFoundException('Shop not found');
+    }
+
+    if (!ownsShop) {
+      throw new ForbiddenException('You do not have access to this shop');
     }
 
     // Verify category exists
@@ -78,7 +95,7 @@ export class ProductService {
       // Create the product
       const newProduct = await tx.product.create({
         data: {
-          shopId: seller.shop.id,
+          shopId,
           name: createProductDto.name,
           description: createProductDto.description,
           categoryId: createProductDto.categoryId,
@@ -165,7 +182,6 @@ export class ProductService {
     const product = await this.prisma.product.findUnique({
       where: { id },
       include: {
-        shop: { include: { seller: true } },
         category: true,
         brand: true,
         variants: {
@@ -178,8 +194,9 @@ export class ProductService {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
 
-    // Verify ownership
-    if (product.shop.seller.id !== sellerId) {
+    // Verify ownership via seller-service
+    const ownsShop = await this.sellerClient.verifyShopOwnership(sellerId, product.shopId);
+    if (!ownsShop) {
       throw new ForbiddenException('You do not have access to this product');
     }
 
