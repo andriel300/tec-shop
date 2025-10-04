@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import type { CreateProductDto, UpdateProductDto, ProductVariantDto } from '@tec-shop/dto';
 import { ProductPrismaService } from '../../prisma/prisma.service';
-import { ProductType, ProductStatus, ProductVisibility } from '@prisma/product-client';
+import { ProductType, ProductStatus, ProductVisibility } from '@tec-shop/product-client';
 import { SellerServiceClient } from '../../clients/seller.client';
 
 @Injectable()

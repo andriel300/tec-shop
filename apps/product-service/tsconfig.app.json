@@ -19,5 +19,13 @@
     "eslint.config.js",
     "eslint.config.cjs",
     "eslint.config.mjs"
+  ],
+  "references": [
+    {
+      "path": "../../libs/prisma-clients/product-client/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared/dto/tsconfig.lib.json"
+    }
   ]
 }
