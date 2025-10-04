@@ -18,7 +18,11 @@ export interface ProductVariant {
 
 export interface VariantTableProps {
   variants: ProductVariant[];
-  onUpdateVariant: (index: number, field: keyof ProductVariant, value: unknown) => void;
+  onUpdateVariant: (
+    index: number,
+    field: keyof ProductVariant,
+    value: unknown
+  ) => void;
   onRemoveVariant: (index: number) => void;
 }
 
@@ -63,7 +67,9 @@ export const VariantTable: React.FC<VariantTableProps> = ({
                   <Input
                     variant="dark"
                     value={variant.sku}
-                    onChange={(e) => onUpdateVariant(index, 'sku', e.target.value)}
+                    onChange={(e) =>
+                      onUpdateVariant(index, 'sku', e.target.value)
+                    }
                     className="w-32 text-sm"
                   />
                 </td>
@@ -85,7 +91,10 @@ export const VariantTable: React.FC<VariantTableProps> = ({
                               style={{ backgroundColor: colorData.hex }}
                             />
                           )}
-                          <span className="font-medium text-gray-400">{key}:</span> {value}
+                          <span className="font-medium text-gray-400">
+                            {key}:
+                          </span>{' '}
+                          {value}
                         </span>
                       );
                     })}
@@ -98,7 +107,11 @@ export const VariantTable: React.FC<VariantTableProps> = ({
                     step="0.01"
                     value={variant.price}
                     onChange={(e) =>
-                      onUpdateVariant(index, 'price', parseFloat(e.target.value) || 0)
+                      onUpdateVariant(
+                        index,
+                        'price',
+                        parseFloat(e.target.value) || 0
+                      )
                     }
                     className="w-24 text-sm"
                   />
@@ -126,7 +139,11 @@ export const VariantTable: React.FC<VariantTableProps> = ({
                     type="number"
                     value={variant.stock}
                     onChange={(e) =>
-                      onUpdateVariant(index, 'stock', parseInt(e.target.value, 10) || 0)
+                      onUpdateVariant(
+                        index,
+                        'stock',
+                        parseInt(e.target.value, 10) || 0
+                      )
                     }
                     className="w-20 text-sm"
                   />
@@ -135,7 +152,9 @@ export const VariantTable: React.FC<VariantTableProps> = ({
                   <input
                     type="checkbox"
                     checked={variant.isActive}
-                    onChange={(e) => onUpdateVariant(index, 'isActive', e.target.checked)}
+                    onChange={(e) =>
+                      onUpdateVariant(index, 'isActive', e.target.checked)
+                    }
                     className="w-4 h-4 rounded bg-gray-700 border-gray-600"
                   />
                 </td>

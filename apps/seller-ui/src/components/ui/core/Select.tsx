@@ -24,7 +24,21 @@ export interface SelectProps {
 }
 
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ options, value, onChange, onBlur, placeholder, disabled, className = '', id, name, variant = 'default' }, ref) => {
+  (
+    {
+      options,
+      value,
+      onChange,
+      onBlur,
+      placeholder,
+      disabled,
+      className = '',
+      id,
+      name,
+      variant = 'default',
+    },
+    ref
+  ) => {
     const baseClasses = `
       w-full px-3 py-2 rounded-md
       focus:outline-none focus:ring-2 focus:border-transparent
@@ -32,9 +46,10 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
       appearance-none pr-10
     `;
 
-    const variantClasses = variant === 'dark'
-      ? 'bg-gray-800 border border-gray-700 text-white focus:ring-blue-500'
-      : 'bg-ui-muted border border-ui-divider text-text-primary placeholder-text-muted focus:ring-brand-primary';
+    const variantClasses =
+      variant === 'dark'
+        ? 'bg-gray-800 border border-gray-700 text-white focus:ring-blue-500'
+        : 'bg-ui-muted border border-ui-divider text-text-primary placeholder-text-muted focus:ring-brand-primary';
 
     return (
       <div className="relative">
@@ -48,7 +63,8 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           disabled={disabled}
           className={`${baseClasses} ${variantClasses} ${className}`}
           style={{
-            fontFamily: '"Segoe UI", "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif'
+            fontFamily:
+              '"Segoe UI", "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif',
           }}
         >
           {placeholder && (
@@ -61,7 +77,8 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
               key={option.key || option.value}
               value={option.value}
               style={{
-                fontFamily: '"Segoe UI", "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif'
+                fontFamily:
+                  '"Segoe UI", "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif',
               }}
             >
               {option.label}

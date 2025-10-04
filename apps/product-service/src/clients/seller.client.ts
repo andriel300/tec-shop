@@ -1,5 +1,9 @@
 import { Module, Injectable, Inject } from '@nestjs/common';
-import { ClientProxy, ClientProxyFactory, Transport } from '@nestjs/microservices';
+import {
+  ClientProxy,
+  ClientProxyFactory,
+  Transport,
+} from '@nestjs/microservices';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { firstValueFrom } from 'rxjs';
@@ -36,7 +40,9 @@ export class SellerServiceClient {
   async getShop(shopId: string): Promise<Record<string, unknown> | null> {
     try {
       return await firstValueFrom(
-        this.client.send<Record<string, unknown>>('seller-get-shop-by-id', { shopId })
+        this.client.send<Record<string, unknown>>('seller-get-shop-by-id', {
+          shopId,
+        })
       );
     } catch (error) {
       console.error('Error getting shop:', error);
@@ -50,10 +56,16 @@ export class SellerServiceClient {
    * @param shopId - The shop ID
    * @returns Promise<boolean> - true if seller owns shop
    */
-  async verifyShopOwnership(sellerId: string, shopId: string): Promise<boolean> {
+  async verifyShopOwnership(
+    sellerId: string,
+    shopId: string
+  ): Promise<boolean> {
     try {
       return await firstValueFrom(
-        this.client.send<boolean>('seller-verify-shop-ownership', { sellerId, shopId })
+        this.client.send<boolean>('seller-verify-shop-ownership', {
+          sellerId,
+          shopId,
+        })
       );
     } catch (error) {
       console.error('Error verifying shop ownership:', error);
@@ -79,8 +91,12 @@ export class SellerServiceClient {
             host: process.env.SELLER_SERVICE_HOST || 'localhost',
             port: parseInt(process.env.SELLER_SERVICE_PORT || '6003', 10),
             tlsOptions: {
-              key: readFileSync(join(certsPath, 'product-service/product-service-key.pem')),
-              cert: readFileSync(join(certsPath, 'product-service/product-service-cert.pem')),
+              key: readFileSync(
+                join(certsPath, 'product-service/product-service-key.pem')
+              ),
+              cert: readFileSync(
+                join(certsPath, 'product-service/product-service-cert.pem')
+              ),
               ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
               rejectUnauthorized: true,
             },

@@ -61,7 +61,7 @@ const ImagePlaceHolder = ({
       setIsLoading(true);
 
       // Simulate small delay for loading state (optional, can remove in production)
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
       // Cleanup old preview URL if exists
       if (imagePreview && imagePreview.startsWith('blob:')) {
@@ -171,7 +171,10 @@ const ImagePlaceHolder = ({
       {isLoading && (
         <div className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center z-10">
           <div className="flex flex-col items-center gap-2">
-            <Loader2 size={small ? 24 : 32} className="animate-spin text-blue-400" />
+            <Loader2
+              size={small ? 24 : 32}
+              className="animate-spin text-blue-400"
+            />
             <span className="text-xs text-gray-300">Processing...</span>
           </div>
         </div>
@@ -213,13 +216,19 @@ const ImagePlaceHolder = ({
       ) : (
         <>
           {/* Upload Placeholder */}
-          <div className={`flex flex-col items-center justify-center transition-colors ${
-            isDragging ? 'text-blue-400 scale-110' : 'text-gray-400 group-hover:text-blue-400'
-          }`}>
+          <div
+            className={`flex flex-col items-center justify-center transition-colors ${
+              isDragging
+                ? 'text-blue-400 scale-110'
+                : 'text-gray-400 group-hover:text-blue-400'
+            }`}
+          >
             {small ? (
               <>
                 <ImageIcon size={24} className="mb-1" />
-                <span className="text-xs">{isDragging ? 'Drop here' : 'Upload'}</span>
+                <span className="text-xs">
+                  {isDragging ? 'Drop here' : 'Upload'}
+                </span>
               </>
             ) : (
               <>

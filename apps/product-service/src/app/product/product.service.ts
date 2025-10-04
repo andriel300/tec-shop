@@ -1,7 +1,20 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
-import type { CreateProductDto, UpdateProductDto, ProductVariantDto } from '@tec-shop/dto';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
+import type {
+  CreateProductDto,
+  UpdateProductDto,
+  ProductVariantDto,
+} from '@tec-shop/dto';
 import { ProductPrismaService } from '../../prisma/prisma.service';
-import { ProductType, ProductStatus, ProductVisibility } from '@tec-shop/product-client';
+import {
+  ProductType,
+  ProductStatus,
+  ProductVisibility,
+} from '@tec-shop/product-client';
 import { SellerServiceClient } from '../../clients/seller.client';
 
 @Injectable()
@@ -11,11 +24,16 @@ export class ProductService {
     private readonly sellerClient: SellerServiceClient
   ) {}
 
-  async create(sellerId: string, createProductDto: CreateProductDto, imagePaths: string[]) {
+  async create(
+    sellerId: string,
+    createProductDto: CreateProductDto,
+    imagePaths: string[]
+  ) {
     // Verify shop exists via seller-service
     // Note: shopId should be passed in the createProductDto or we need to get it from seller profile
     // For now, assuming shopId is in createProductDto or we fetch from seller-service
-    const shopId = (createProductDto as CreateProductDto & { shopId?: string }).shopId;
+    const shopId = (createProductDto as CreateProductDto & { shopId?: string })
+      .shopId;
 
     if (!shopId) {
       throw new BadRequestException('Shop ID is required');
@@ -41,7 +59,9 @@ export class ProductService {
     });
 
     if (!category) {
-      throw new NotFoundException(`Category with ID ${createProductDto.categoryId} not found`);
+      throw new NotFoundException(
+        `Category with ID ${createProductDto.categoryId} not found`
+      );
     }
 
     // Verify brand if provided
@@ -51,12 +71,15 @@ export class ProductService {
       });
 
       if (!brand) {
-        throw new NotFoundException(`Brand with ID ${createProductDto.brandId} not found`);
+        throw new NotFoundException(
+          `Brand with ID ${createProductDto.brandId} not found`
+        );
       }
     }
 
     // Generate slug from SEO slug or product name
-    const slug = createProductDto.seo?.slug || this.generateSlug(createProductDto.name);
+    const slug =
+      createProductDto.seo?.slug || this.generateSlug(createProductDto.name);
 
     // Check if slug already exists
     const existingProduct = await this.prisma.product.findUnique({
@@ -64,20 +87,31 @@ export class ProductService {
     });
 
     if (existingProduct) {
-      throw new BadRequestException(`Product with slug '${slug}' already exists`);
+      throw new BadRequestException(
+        `Product with slug '${slug}' already exists`
+      );
     }
 
     // Validate variants for variable products
     if (createProductDto.productType === 'variable') {
-      if (!createProductDto.variants || createProductDto.variants.length === 0) {
-        throw new BadRequestException('Variable products must have at least one variant');
+      if (
+        !createProductDto.variants ||
+        createProductDto.variants.length === 0
+      ) {
+        throw new BadRequestException(
+          'Variable products must have at least one variant'
+        );
       }
 
       // Validate unique SKUs
-      const skus = createProductDto.variants.map(v => v.sku);
-      const duplicates = skus.filter((sku, index) => skus.indexOf(sku) !== index);
+      const skus = createProductDto.variants.map((v) => v.sku);
+      const duplicates = skus.filter(
+        (sku, index) => skus.indexOf(sku) !== index
+      );
       if (duplicates.length > 0) {
-        throw new BadRequestException(`Duplicate SKUs found: ${duplicates.join(', ')}`);
+        throw new BadRequestException(
+          `Duplicate SKUs found: ${duplicates.join(', ')}`
+        );
       }
 
       // Check if SKUs already exist
@@ -86,7 +120,9 @@ export class ProductService {
       });
 
       if (existingSkus.length > 0) {
-        throw new BadRequestException(`SKUs already exist: ${existingSkus.map(v => v.sku).join(', ')}`);
+        throw new BadRequestException(
+          `SKUs already exist: ${existingSkus.map((v) => v.sku).join(', ')}`
+        );
       }
     }
 
@@ -122,7 +158,11 @@ export class ProductService {
       });
 
       // Create variants if it's a variable product
-      if (createProductDto.hasVariants && createProductDto.variants && createProductDto.variants.length > 0) {
+      if (
+        createProductDto.hasVariants &&
+        createProductDto.variants &&
+        createProductDto.variants.length > 0
+      ) {
         await tx.productVariant.createMany({
           data: createProductDto.variants.map((variant: ProductVariantDto) => ({
             productId: newProduct.id,
@@ -144,24 +184,37 @@ export class ProductService {
     return this.findOne(product.id, sellerId);
   }
 
-  async findAll(shopId: string, filters?: {
-    categoryId?: string;
-    brandId?: string;
-    productType?: string;
-    status?: string;
-    isActive?: boolean;
-    isFeatured?: boolean;
-    search?: string;
-  }) {
+  async findAll(
+    shopId: string,
+    filters?: {
+      categoryId?: string;
+      brandId?: string;
+      productType?: string;
+      status?: string;
+      isActive?: boolean;
+      isFeatured?: boolean;
+      search?: string;
+    }
+  ) {
     return this.prisma.product.findMany({
       where: {
         shopId,
         ...(filters?.categoryId && { categoryId: filters.categoryId }),
         ...(filters?.brandId && { brandId: filters.brandId }),
-        ...(filters?.productType && { productType: this.mapProductType(filters.productType as 'simple' | 'variable' | 'digital') }),
-        ...(filters?.status && { status: this.mapProductStatus(filters.status as 'draft' | 'published' | 'scheduled') }),
+        ...(filters?.productType && {
+          productType: this.mapProductType(
+            filters.productType as 'simple' | 'variable' | 'digital'
+          ),
+        }),
+        ...(filters?.status && {
+          status: this.mapProductStatus(
+            filters.status as 'draft' | 'published' | 'scheduled'
+          ),
+        }),
         ...(filters?.isActive !== undefined && { isActive: filters.isActive }),
-        ...(filters?.isFeatured !== undefined && { isFeatured: filters.isFeatured }),
+        ...(filters?.isFeatured !== undefined && {
+          isFeatured: filters.isFeatured,
+        }),
         ...(filters?.search && {
           OR: [
             { name: { contains: filters.search, mode: 'insensitive' } },
@@ -195,7 +248,10 @@ export class ProductService {
     }
 
     // Verify ownership via seller-service
-    const ownsShop = await this.sellerClient.verifyShopOwnership(sellerId, product.shopId);
+    const ownsShop = await this.sellerClient.verifyShopOwnership(
+      sellerId,
+      product.shopId
+    );
     if (!ownsShop) {
       throw new ForbiddenException('You do not have access to this product');
     }
@@ -203,7 +259,12 @@ export class ProductService {
     return product;
   }
 
-  async update(id: string, sellerId: string, updateProductDto: UpdateProductDto, newImagePaths?: string[]) {
+  async update(
+    id: string,
+    sellerId: string,
+    updateProductDto: UpdateProductDto,
+    newImagePaths?: string[]
+  ) {
     // Verify ownership first (throws if not owner)
     await this.findOne(id, sellerId);
 
@@ -218,14 +279,17 @@ export class ProductService {
       }
     }
 
-    if (updateProductDto.description !== undefined) updateData.description = updateProductDto.description;
+    if (updateProductDto.description !== undefined)
+      updateData.description = updateProductDto.description;
     if (updateProductDto.categoryId !== undefined) {
       // Verify category exists
       const category = await this.prisma.category.findUnique({
         where: { id: updateProductDto.categoryId },
       });
       if (!category) {
-        throw new NotFoundException(`Category with ID ${updateProductDto.categoryId} not found`);
+        throw new NotFoundException(
+          `Category with ID ${updateProductDto.categoryId} not found`
+        );
       }
       updateData.categoryId = updateProductDto.categoryId;
     }
@@ -237,33 +301,54 @@ export class ProductService {
           where: { id: updateProductDto.brandId },
         });
         if (!brand) {
-          throw new NotFoundException(`Brand with ID ${updateProductDto.brandId} not found`);
+          throw new NotFoundException(
+            `Brand with ID ${updateProductDto.brandId} not found`
+          );
         }
       }
       updateData.brandId = updateProductDto.brandId;
     }
 
-    if (updateProductDto.productType !== undefined) updateData.productType = this.mapProductType(updateProductDto.productType);
-    if (updateProductDto.price !== undefined) updateData.price = updateProductDto.price;
-    if (updateProductDto.salePrice !== undefined) updateData.salePrice = updateProductDto.salePrice;
-    if (updateProductDto.stock !== undefined) updateData.stock = updateProductDto.stock;
-    if (updateProductDto.hasVariants !== undefined) updateData.hasVariants = updateProductDto.hasVariants;
-    if (updateProductDto.attributes !== undefined) updateData.attributes = updateProductDto.attributes;
-    if (updateProductDto.shipping !== undefined) updateData.shipping = updateProductDto.shipping;
+    if (updateProductDto.productType !== undefined)
+      updateData.productType = this.mapProductType(
+        updateProductDto.productType
+      );
+    if (updateProductDto.price !== undefined)
+      updateData.price = updateProductDto.price;
+    if (updateProductDto.salePrice !== undefined)
+      updateData.salePrice = updateProductDto.salePrice;
+    if (updateProductDto.stock !== undefined)
+      updateData.stock = updateProductDto.stock;
+    if (updateProductDto.hasVariants !== undefined)
+      updateData.hasVariants = updateProductDto.hasVariants;
+    if (updateProductDto.attributes !== undefined)
+      updateData.attributes = updateProductDto.attributes;
+    if (updateProductDto.shipping !== undefined)
+      updateData.shipping = updateProductDto.shipping;
     if (updateProductDto.seo !== undefined) {
       updateData.seo = updateProductDto.seo;
       if (updateProductDto.seo.slug) {
         updateData.slug = updateProductDto.seo.slug;
       }
     }
-    if (updateProductDto.inventory !== undefined) updateData.inventory = updateProductDto.inventory;
-    if (updateProductDto.warranty !== undefined) updateData.warranty = updateProductDto.warranty;
-    if (updateProductDto.tags !== undefined) updateData.tags = updateProductDto.tags;
-    if (updateProductDto.status !== undefined) updateData.status = this.mapProductStatus(updateProductDto.status);
-    if (updateProductDto.visibility !== undefined) updateData.visibility = this.mapProductVisibility(updateProductDto.visibility);
-    if (updateProductDto.publishDate !== undefined) updateData.publishDate = updateProductDto.publishDate;
-    if (updateProductDto.isFeatured !== undefined) updateData.isFeatured = updateProductDto.isFeatured;
-    if (updateProductDto.isActive !== undefined) updateData.isActive = updateProductDto.isActive;
+    if (updateProductDto.inventory !== undefined)
+      updateData.inventory = updateProductDto.inventory;
+    if (updateProductDto.warranty !== undefined)
+      updateData.warranty = updateProductDto.warranty;
+    if (updateProductDto.tags !== undefined)
+      updateData.tags = updateProductDto.tags;
+    if (updateProductDto.status !== undefined)
+      updateData.status = this.mapProductStatus(updateProductDto.status);
+    if (updateProductDto.visibility !== undefined)
+      updateData.visibility = this.mapProductVisibility(
+        updateProductDto.visibility
+      );
+    if (updateProductDto.publishDate !== undefined)
+      updateData.publishDate = updateProductDto.publishDate;
+    if (updateProductDto.isFeatured !== undefined)
+      updateData.isFeatured = updateProductDto.isFeatured;
+    if (updateProductDto.isActive !== undefined)
+      updateData.isActive = updateProductDto.isActive;
 
     // If new images provided, replace old ones
     if (newImagePaths && newImagePaths.length > 0) {
@@ -287,16 +372,18 @@ export class ProductService {
         // Create new variants
         if (updateProductDto.variants && updateProductDto.variants.length > 0) {
           await tx.productVariant.createMany({
-            data: updateProductDto.variants.map((variant: ProductVariantDto) => ({
-              productId: id,
-              sku: variant.sku,
-              attributes: variant.attributes,
-              price: variant.price,
-              salePrice: variant.salePrice,
-              stock: variant.stock,
-              image: variant.image,
-              isActive: variant.isActive ?? true,
-            })),
+            data: updateProductDto.variants.map(
+              (variant: ProductVariantDto) => ({
+                productId: id,
+                sku: variant.sku,
+                attributes: variant.attributes,
+                price: variant.price,
+                salePrice: variant.salePrice,
+                stock: variant.stock,
+                image: variant.image,
+                isActive: variant.isActive ?? true,
+              })
+            ),
           });
         }
 
@@ -354,7 +441,9 @@ export class ProductService {
   /**
    * Map product type from DTO to Prisma enum
    */
-  private mapProductType(type?: 'simple' | 'variable' | 'digital'): ProductType {
+  private mapProductType(
+    type?: 'simple' | 'variable' | 'digital'
+  ): ProductType {
     if (!type) return ProductType.SIMPLE;
 
     const mapping: Record<string, ProductType> = {
@@ -369,7 +458,9 @@ export class ProductService {
   /**
    * Map product status from DTO to Prisma enum
    */
-  private mapProductStatus(status?: 'draft' | 'published' | 'scheduled'): ProductStatus {
+  private mapProductStatus(
+    status?: 'draft' | 'published' | 'scheduled'
+  ): ProductStatus {
     if (!status) return ProductStatus.DRAFT;
 
     const mapping: Record<string, ProductStatus> = {
@@ -384,7 +475,9 @@ export class ProductService {
   /**
    * Map product visibility from DTO to Prisma enum
    */
-  private mapProductVisibility(visibility?: 'public' | 'private' | 'password_protected'): ProductVisibility {
+  private mapProductVisibility(
+    visibility?: 'public' | 'private' | 'password_protected'
+  ): ProductVisibility {
     if (!visibility) return ProductVisibility.PUBLIC;
 
     const mapping: Record<string, ProductVisibility> = {

@@ -2,22 +2,19 @@ import React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 
-const alertVariants = cva(
-  'mb-6 p-4 rounded-lg flex items-start gap-3 border',
-  {
-    variants: {
-      variant: {
-        success: 'bg-green-900/50 border-green-500',
-        error: 'bg-red-900/50 border-red-500',
-        warning: 'bg-yellow-900/50 border-yellow-500',
-        info: 'bg-blue-900/50 border-blue-500',
-      },
+const alertVariants = cva('mb-6 p-4 rounded-lg flex items-start gap-3 border', {
+  variants: {
+    variant: {
+      success: 'bg-green-900/50 border-green-500',
+      error: 'bg-red-900/50 border-red-500',
+      warning: 'bg-yellow-900/50 border-yellow-500',
+      info: 'bg-blue-900/50 border-blue-500',
     },
-    defaultVariants: {
-      variant: 'info',
-    },
-  }
-);
+  },
+  defaultVariants: {
+    variant: 'info',
+  },
+});
 
 const iconMap = {
   success: CheckCircle,
@@ -72,11 +69,19 @@ const Alert: React.FC<AlertProps> = ({
         />
       )}
       <div className="flex-1">
-        <h3 className={`font-semibold ${titleColorMap[variant as keyof typeof titleColorMap]}`}>
+        <h3
+          className={`font-semibold ${
+            titleColorMap[variant as keyof typeof titleColorMap]
+          }`}
+        >
           {title}
         </h3>
         {description && (
-          <p className={`text-sm mt-1 ${descriptionColorMap[variant as keyof typeof descriptionColorMap]}`}>
+          <p
+            className={`text-sm mt-1 ${
+              descriptionColorMap[variant as keyof typeof descriptionColorMap]
+            }`}
+          >
             {description}
           </p>
         )}

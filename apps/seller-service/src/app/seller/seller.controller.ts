@@ -3,7 +3,11 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { SellerService } from './seller.service';
 import { ServiceAuthUtil } from './service-auth.util';
 import type { SignedRequest } from './service-auth.util';
-import type { CreateSellerProfileDto, CreateShopDto, UpdateShopDto } from '@tec-shop/dto';
+import type {
+  CreateSellerProfileDto,
+  CreateShopDto,
+  UpdateShopDto,
+} from '@tec-shop/dto';
 
 @Controller()
 export class SellerController {
@@ -39,7 +43,9 @@ export class SellerController {
     }
 
     // Process the verified request
-    return this.sellerService.createProfile(signedRequest.payload as unknown as CreateSellerProfileDto);
+    return this.sellerService.createProfile(
+      signedRequest.payload as unknown as CreateSellerProfileDto
+    );
   }
 
   @MessagePattern('get-seller-profile')
@@ -48,18 +54,31 @@ export class SellerController {
   }
 
   @MessagePattern('update-seller-profile')
-  async updateProfile(@Payload() payload: { authId: string; updateData: Partial<CreateSellerProfileDto> }) {
+  async updateProfile(
+    @Payload()
+    payload: {
+      authId: string;
+      updateData: Partial<CreateSellerProfileDto>;
+    }
+  ) {
     return this.sellerService.updateProfile(payload.authId, payload.updateData);
   }
 
   @MessagePattern('create-shop')
-  async createShop(@Payload() payload: { authId: string; shopData: CreateShopDto }) {
+  async createShop(
+    @Payload() payload: { authId: string; shopData: CreateShopDto }
+  ) {
     return this.sellerService.createShop(payload.authId, payload.shopData);
   }
 
   @MessagePattern('create-or-update-shop')
-  async createOrUpdateShop(@Payload() payload: { authId: string; shopData: UpdateShopDto }) {
-    return this.sellerService.createOrUpdateShop(payload.authId, payload.shopData);
+  async createOrUpdateShop(
+    @Payload() payload: { authId: string; shopData: UpdateShopDto }
+  ) {
+    return this.sellerService.createOrUpdateShop(
+      payload.authId,
+      payload.shopData
+    );
   }
 
   @MessagePattern('get-seller-shop')
@@ -99,7 +118,12 @@ export class SellerController {
    * Used by product-service for authorization checks
    */
   @MessagePattern('seller-verify-shop-ownership')
-  async verifyShopOwnership(@Payload() payload: { sellerId: string; shopId: string }): Promise<boolean> {
-    return this.sellerService.verifyShopOwnership(payload.sellerId, payload.shopId);
+  async verifyShopOwnership(
+    @Payload() payload: { sellerId: string; shopId: string }
+  ): Promise<boolean> {
+    return this.sellerService.verifyShopOwnership(
+      payload.sellerId,
+      payload.shopId
+    );
   }
 }

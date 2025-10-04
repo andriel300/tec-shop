@@ -12,7 +12,12 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
 import { RolesGuard } from '../../guards/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
@@ -29,7 +34,10 @@ export class CategoryController {
    */
   @Get()
   @ApiOperation({ summary: 'Get all categories' })
-  @ApiResponse({ status: 200, description: 'Categories retrieved successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Categories retrieved successfully.',
+  })
   async getAllCategories(
     @Query('includeChildren') includeChildren?: boolean,
     @Query('onlyActive') onlyActive?: boolean,
@@ -50,10 +58,16 @@ export class CategoryController {
    */
   @Get('tree')
   @ApiOperation({ summary: 'Get category tree' })
-  @ApiResponse({ status: 200, description: 'Category tree retrieved successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Category tree retrieved successfully.',
+  })
   async getCategoryTree(@Query('onlyActive') onlyActive?: boolean) {
     return firstValueFrom(
-      this.productService.send('product-get-category-tree', onlyActive !== false)
+      this.productService.send(
+        'product-get-category-tree',
+        onlyActive !== false
+      )
     );
   }
 
@@ -107,7 +121,10 @@ export class CategoryController {
   @Roles('ADMIN')
   @ApiResponse({ status: 201, description: 'Category created successfully.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required.',
+  })
   async createCategory(@Body() createCategoryDto: Dto.CreateCategoryDto) {
     return firstValueFrom(
       this.productService.send('product-create-category', createCategoryDto)
@@ -124,7 +141,10 @@ export class CategoryController {
   @Roles('ADMIN')
   @ApiResponse({ status: 200, description: 'Category updated successfully.' })
   @ApiResponse({ status: 404, description: 'Category not found.' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required.',
+  })
   async updateCategory(
     @Param('id') id: string,
     @Body() updateCategoryDto: Dto.UpdateCategoryDto
@@ -147,7 +167,10 @@ export class CategoryController {
   @Roles('ADMIN')
   @ApiResponse({ status: 200, description: 'Category deleted successfully.' })
   @ApiResponse({ status: 404, description: 'Category not found.' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required.',
+  })
   async deleteCategory(@Param('id') id: string) {
     return firstValueFrom(
       this.productService.send('product-delete-category', id)

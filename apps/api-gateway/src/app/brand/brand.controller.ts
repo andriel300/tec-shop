@@ -12,7 +12,12 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
 import { RolesGuard } from '../../guards/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
@@ -51,7 +56,10 @@ export class BrandController {
    */
   @Get('popular')
   @ApiOperation({ summary: 'Get popular brands' })
-  @ApiResponse({ status: 200, description: 'Popular brands retrieved successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Popular brands retrieved successfully.',
+  })
   async getPopularBrands(@Query('limit') limit?: number) {
     return firstValueFrom(
       this.productService.send(
@@ -109,7 +117,10 @@ export class BrandController {
   @Roles('ADMIN')
   @ApiResponse({ status: 201, description: 'Brand created successfully.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required.',
+  })
   async createBrand(@Body() createBrandDto: Dto.CreateBrandDto) {
     return firstValueFrom(
       this.productService.send('product-create-brand', createBrandDto)
@@ -126,7 +137,10 @@ export class BrandController {
   @Roles('ADMIN')
   @ApiResponse({ status: 200, description: 'Brand updated successfully.' })
   @ApiResponse({ status: 404, description: 'Brand not found.' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required.',
+  })
   async updateBrand(
     @Param('id') id: string,
     @Body() updateBrandDto: Dto.UpdateBrandDto
@@ -149,10 +163,11 @@ export class BrandController {
   @Roles('ADMIN')
   @ApiResponse({ status: 200, description: 'Brand deleted successfully.' })
   @ApiResponse({ status: 404, description: 'Brand not found.' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required.',
+  })
   async deleteBrand(@Param('id') id: string) {
-    return firstValueFrom(
-      this.productService.send('product-delete-brand', id)
-    );
+    return firstValueFrom(this.productService.send('product-delete-brand', id));
   }
 }

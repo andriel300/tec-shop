@@ -175,7 +175,9 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
 
   if (error) {
     return (
-      <div className={`p-4 bg-red-900/20 border border-red-700 rounded-lg ${className}`}>
+      <div
+        className={`p-4 bg-red-900/20 border border-red-700 rounded-lg ${className}`}
+      >
         <p className="text-red-400">{error}</p>
         <button
           type="button"
@@ -200,9 +202,13 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
           <div className="flex items-center gap-2">
             <Award size={18} className="text-blue-400" />
             <div>
-              <p className="text-sm font-medium text-blue-300">{selectedBrand.name}</p>
+              <p className="text-sm font-medium text-blue-300">
+                {selectedBrand.name}
+              </p>
               {selectedBrand.description && (
-                <p className="text-xs text-gray-400">{selectedBrand.description}</p>
+                <p className="text-xs text-gray-400">
+                  {selectedBrand.description}
+                </p>
               )}
             </div>
           </div>
@@ -220,7 +226,10 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
 
       {/* Search Input */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+        <Search
+          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+          size={18}
+        />
         <Input
           variant={variant}
           value={searchTerm}
@@ -254,14 +263,22 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
               >
                 <Award
                   size={16}
-                  className={selectedBrand?.id === brand.id ? 'text-white' : 'text-gray-400'}
+                  className={
+                    selectedBrand?.id === brand.id
+                      ? 'text-white'
+                      : 'text-gray-400'
+                  }
                 />
                 <div className="flex-1">
                   <p className="font-medium">{brand.name}</p>
                   {brand.description && (
-                    <p className={`text-xs mt-0.5 ${
-                      selectedBrand?.id === brand.id ? 'text-blue-100' : 'text-gray-400'
-                    }`}>
+                    <p
+                      className={`text-xs mt-0.5 ${
+                        selectedBrand?.id === brand.id
+                          ? 'text-blue-100'
+                          : 'text-gray-400'
+                      }`}
+                    >
                       {brand.description}
                     </p>
                   )}
@@ -292,7 +309,8 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
 
       {/* Info Text */}
       <p className="text-xs text-gray-400">
-        Select a brand for your product. This helps customers find products from their favorite brands.
+        Select a brand for your product. This helps customers find products from
+        their favorite brands.
       </p>
     </div>
   );

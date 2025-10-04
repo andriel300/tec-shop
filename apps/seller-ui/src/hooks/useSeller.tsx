@@ -1,7 +1,10 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { getSellerProfile, type SellerProfileResponse } from '../lib/api/seller';
+import {
+  getSellerProfile,
+  type SellerProfileResponse,
+} from '../lib/api/seller';
 
 interface UseSellerReturn {
   seller: SellerProfileResponse | null;

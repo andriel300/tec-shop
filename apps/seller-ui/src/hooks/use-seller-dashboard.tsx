@@ -1,7 +1,10 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { getSellerDashboard, type SellerDashboardData } from '../lib/api/seller';
+import {
+  getSellerDashboard,
+  type SellerDashboardData,
+} from '../lib/api/seller';
 
 interface UseSellerDashboardReturn {
   dashboard: SellerDashboardData | null;

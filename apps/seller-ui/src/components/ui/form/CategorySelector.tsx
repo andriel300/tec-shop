@@ -49,7 +49,9 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null
+  );
   const [breadcrumb, setBreadcrumb] = useState<Category[]>([]);
 
   // Fetch categories from API
@@ -79,11 +81,41 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
             brand: { required: true, type: 'select' },
           },
           children: [
-            { id: '11', name: 'Smartphones & Accessories', slug: 'smartphones-accessories', parentId: '1', isActive: true },
-            { id: '12', name: 'Computers & Laptops', slug: 'computers-laptops', parentId: '1', isActive: true },
-            { id: '13', name: 'Cameras & Photography', slug: 'cameras-photography', parentId: '1', isActive: true },
-            { id: '14', name: 'TV & Home Theater', slug: 'tv-home-theater', parentId: '1', isActive: true },
-            { id: '15', name: 'Headphones & Audio', slug: 'headphones-audio', parentId: '1', isActive: true },
+            {
+              id: '11',
+              name: 'Smartphones & Accessories',
+              slug: 'smartphones-accessories',
+              parentId: '1',
+              isActive: true,
+            },
+            {
+              id: '12',
+              name: 'Computers & Laptops',
+              slug: 'computers-laptops',
+              parentId: '1',
+              isActive: true,
+            },
+            {
+              id: '13',
+              name: 'Cameras & Photography',
+              slug: 'cameras-photography',
+              parentId: '1',
+              isActive: true,
+            },
+            {
+              id: '14',
+              name: 'TV & Home Theater',
+              slug: 'tv-home-theater',
+              parentId: '1',
+              isActive: true,
+            },
+            {
+              id: '15',
+              name: 'Headphones & Audio',
+              slug: 'headphones-audio',
+              parentId: '1',
+              isActive: true,
+            },
           ],
         },
         {
@@ -92,16 +124,50 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
           slug: 'clothing-shoes-jewelry',
           isActive: true,
           attributes: {
-            size: { required: true, type: 'select', values: ['XS', 'S', 'M', 'L', 'XL', 'XXL'] },
+            size: {
+              required: true,
+              type: 'select',
+              values: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+            },
             color: { required: true, type: 'text' },
             material: { required: true, type: 'text' },
           },
           children: [
-            { id: '21', name: "Men's Fashion", slug: 'mens-fashion', parentId: '2', isActive: true },
-            { id: '22', name: "Women's Fashion", slug: 'womens-fashion', parentId: '2', isActive: true },
-            { id: '23', name: "Kids' Fashion", slug: 'kids-fashion', parentId: '2', isActive: true },
-            { id: '24', name: 'Shoes', slug: 'shoes', parentId: '2', isActive: true },
-            { id: '25', name: 'Jewelry & Watches', slug: 'jewelry-watches', parentId: '2', isActive: true },
+            {
+              id: '21',
+              name: "Men's Fashion",
+              slug: 'mens-fashion',
+              parentId: '2',
+              isActive: true,
+            },
+            {
+              id: '22',
+              name: "Women's Fashion",
+              slug: 'womens-fashion',
+              parentId: '2',
+              isActive: true,
+            },
+            {
+              id: '23',
+              name: "Kids' Fashion",
+              slug: 'kids-fashion',
+              parentId: '2',
+              isActive: true,
+            },
+            {
+              id: '24',
+              name: 'Shoes',
+              slug: 'shoes',
+              parentId: '2',
+              isActive: true,
+            },
+            {
+              id: '25',
+              name: 'Jewelry & Watches',
+              slug: 'jewelry-watches',
+              parentId: '2',
+              isActive: true,
+            },
           ],
         },
         {
@@ -110,11 +176,41 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
           slug: 'home-kitchen',
           isActive: true,
           children: [
-            { id: '31', name: 'Furniture', slug: 'furniture', parentId: '3', isActive: true },
-            { id: '32', name: 'Kitchen & Dining', slug: 'kitchen-dining', parentId: '3', isActive: true },
-            { id: '33', name: 'Bedding & Bath', slug: 'bedding-bath', parentId: '3', isActive: true },
-            { id: '34', name: 'Home Decor', slug: 'home-decor', parentId: '3', isActive: true },
-            { id: '35', name: 'Storage & Organization', slug: 'storage-organization', parentId: '3', isActive: true },
+            {
+              id: '31',
+              name: 'Furniture',
+              slug: 'furniture',
+              parentId: '3',
+              isActive: true,
+            },
+            {
+              id: '32',
+              name: 'Kitchen & Dining',
+              slug: 'kitchen-dining',
+              parentId: '3',
+              isActive: true,
+            },
+            {
+              id: '33',
+              name: 'Bedding & Bath',
+              slug: 'bedding-bath',
+              parentId: '3',
+              isActive: true,
+            },
+            {
+              id: '34',
+              name: 'Home Decor',
+              slug: 'home-decor',
+              parentId: '3',
+              isActive: true,
+            },
+            {
+              id: '35',
+              name: 'Storage & Organization',
+              slug: 'storage-organization',
+              parentId: '3',
+              isActive: true,
+            },
           ],
         },
         {
@@ -123,10 +219,34 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
           slug: 'books-media',
           isActive: true,
           children: [
-            { id: '41', name: 'Books', slug: 'books', parentId: '4', isActive: true },
-            { id: '42', name: 'Movies & TV', slug: 'movies-tv', parentId: '4', isActive: true },
-            { id: '43', name: 'Music', slug: 'music', parentId: '4', isActive: true },
-            { id: '44', name: 'Video Games', slug: 'video-games', parentId: '4', isActive: true },
+            {
+              id: '41',
+              name: 'Books',
+              slug: 'books',
+              parentId: '4',
+              isActive: true,
+            },
+            {
+              id: '42',
+              name: 'Movies & TV',
+              slug: 'movies-tv',
+              parentId: '4',
+              isActive: true,
+            },
+            {
+              id: '43',
+              name: 'Music',
+              slug: 'music',
+              parentId: '4',
+              isActive: true,
+            },
+            {
+              id: '44',
+              name: 'Video Games',
+              slug: 'video-games',
+              parentId: '4',
+              isActive: true,
+            },
           ],
         },
         {
@@ -135,10 +255,34 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
           slug: 'sports-outdoors',
           isActive: true,
           children: [
-            { id: '51', name: 'Exercise & Fitness', slug: 'exercise-fitness', parentId: '5', isActive: true },
-            { id: '52', name: 'Outdoor Recreation', slug: 'outdoor-recreation', parentId: '5', isActive: true },
-            { id: '53', name: 'Sports Equipment', slug: 'sports-equipment', parentId: '5', isActive: true },
-            { id: '54', name: 'Camping & Hiking', slug: 'camping-hiking', parentId: '5', isActive: true },
+            {
+              id: '51',
+              name: 'Exercise & Fitness',
+              slug: 'exercise-fitness',
+              parentId: '5',
+              isActive: true,
+            },
+            {
+              id: '52',
+              name: 'Outdoor Recreation',
+              slug: 'outdoor-recreation',
+              parentId: '5',
+              isActive: true,
+            },
+            {
+              id: '53',
+              name: 'Sports Equipment',
+              slug: 'sports-equipment',
+              parentId: '5',
+              isActive: true,
+            },
+            {
+              id: '54',
+              name: 'Camping & Hiking',
+              slug: 'camping-hiking',
+              parentId: '5',
+              isActive: true,
+            },
           ],
         },
         {
@@ -147,10 +291,34 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
           slug: 'toys-games',
           isActive: true,
           children: [
-            { id: '61', name: 'Action Figures & Collectibles', slug: 'action-figures-collectibles', parentId: '6', isActive: true },
-            { id: '62', name: 'Board Games & Puzzles', slug: 'board-games-puzzles', parentId: '6', isActive: true },
-            { id: '63', name: 'Educational Toys', slug: 'educational-toys', parentId: '6', isActive: true },
-            { id: '64', name: 'Dolls & Accessories', slug: 'dolls-accessories', parentId: '6', isActive: true },
+            {
+              id: '61',
+              name: 'Action Figures & Collectibles',
+              slug: 'action-figures-collectibles',
+              parentId: '6',
+              isActive: true,
+            },
+            {
+              id: '62',
+              name: 'Board Games & Puzzles',
+              slug: 'board-games-puzzles',
+              parentId: '6',
+              isActive: true,
+            },
+            {
+              id: '63',
+              name: 'Educational Toys',
+              slug: 'educational-toys',
+              parentId: '6',
+              isActive: true,
+            },
+            {
+              id: '64',
+              name: 'Dolls & Accessories',
+              slug: 'dolls-accessories',
+              parentId: '6',
+              isActive: true,
+            },
           ],
         },
         {
@@ -159,10 +327,34 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
           slug: 'beauty-personal-care',
           isActive: true,
           children: [
-            { id: '71', name: 'Makeup', slug: 'makeup', parentId: '7', isActive: true },
-            { id: '72', name: 'Skin Care', slug: 'skin-care', parentId: '7', isActive: true },
-            { id: '73', name: 'Hair Care', slug: 'hair-care', parentId: '7', isActive: true },
-            { id: '74', name: 'Fragrances', slug: 'fragrances', parentId: '7', isActive: true },
+            {
+              id: '71',
+              name: 'Makeup',
+              slug: 'makeup',
+              parentId: '7',
+              isActive: true,
+            },
+            {
+              id: '72',
+              name: 'Skin Care',
+              slug: 'skin-care',
+              parentId: '7',
+              isActive: true,
+            },
+            {
+              id: '73',
+              name: 'Hair Care',
+              slug: 'hair-care',
+              parentId: '7',
+              isActive: true,
+            },
+            {
+              id: '74',
+              name: 'Fragrances',
+              slug: 'fragrances',
+              parentId: '7',
+              isActive: true,
+            },
           ],
         },
         {
@@ -171,9 +363,27 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
           slug: 'automotive',
           isActive: true,
           children: [
-            { id: '81', name: 'Car Parts & Accessories', slug: 'car-parts-accessories', parentId: '8', isActive: true },
-            { id: '82', name: 'Motorcycle & Powersports', slug: 'motorcycle-powersports', parentId: '8', isActive: true },
-            { id: '83', name: 'Tools & Equipment', slug: 'tools-equipment', parentId: '8', isActive: true },
+            {
+              id: '81',
+              name: 'Car Parts & Accessories',
+              slug: 'car-parts-accessories',
+              parentId: '8',
+              isActive: true,
+            },
+            {
+              id: '82',
+              name: 'Motorcycle & Powersports',
+              slug: 'motorcycle-powersports',
+              parentId: '8',
+              isActive: true,
+            },
+            {
+              id: '83',
+              name: 'Tools & Equipment',
+              slug: 'tools-equipment',
+              parentId: '8',
+              isActive: true,
+            },
           ],
         },
         {
@@ -182,10 +392,34 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
           slug: 'baby-products',
           isActive: true,
           children: [
-            { id: '91', name: 'Diapering', slug: 'diapering', parentId: '9', isActive: true },
-            { id: '92', name: 'Nursery', slug: 'nursery', parentId: '9', isActive: true },
-            { id: '93', name: 'Baby Care', slug: 'baby-care', parentId: '9', isActive: true },
-            { id: '94', name: 'Strollers & Car Seats', slug: 'strollers-car-seats', parentId: '9', isActive: true },
+            {
+              id: '91',
+              name: 'Diapering',
+              slug: 'diapering',
+              parentId: '9',
+              isActive: true,
+            },
+            {
+              id: '92',
+              name: 'Nursery',
+              slug: 'nursery',
+              parentId: '9',
+              isActive: true,
+            },
+            {
+              id: '93',
+              name: 'Baby Care',
+              slug: 'baby-care',
+              parentId: '9',
+              isActive: true,
+            },
+            {
+              id: '94',
+              name: 'Strollers & Car Seats',
+              slug: 'strollers-car-seats',
+              parentId: '9',
+              isActive: true,
+            },
           ],
         },
         {
@@ -194,10 +428,34 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
           slug: 'pet-supplies',
           isActive: true,
           children: [
-            { id: '101', name: 'Dog Supplies', slug: 'dog-supplies', parentId: '10', isActive: true },
-            { id: '102', name: 'Cat Supplies', slug: 'cat-supplies', parentId: '10', isActive: true },
-            { id: '103', name: 'Fish & Aquatic Pets', slug: 'fish-aquatic-pets', parentId: '10', isActive: true },
-            { id: '104', name: 'Bird Supplies', slug: 'bird-supplies', parentId: '10', isActive: true },
+            {
+              id: '101',
+              name: 'Dog Supplies',
+              slug: 'dog-supplies',
+              parentId: '10',
+              isActive: true,
+            },
+            {
+              id: '102',
+              name: 'Cat Supplies',
+              slug: 'cat-supplies',
+              parentId: '10',
+              isActive: true,
+            },
+            {
+              id: '103',
+              name: 'Fish & Aquatic Pets',
+              slug: 'fish-aquatic-pets',
+              parentId: '10',
+              isActive: true,
+            },
+            {
+              id: '104',
+              name: 'Bird Supplies',
+              slug: 'bird-supplies',
+              parentId: '10',
+              isActive: true,
+            },
           ],
         },
       ];
@@ -257,7 +515,8 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
 
     return cats.filter((cat) => {
       const matches = cat.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const childrenMatch = cat.children && filterCategories(cat.children).length > 0;
+      const childrenMatch =
+        cat.children && filterCategories(cat.children).length > 0;
       return matches || childrenMatch;
     });
   };
@@ -304,7 +563,9 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
 
   if (error) {
     return (
-      <div className={`p-4 bg-red-900/20 border border-red-700 rounded-lg ${className}`}>
+      <div
+        className={`p-4 bg-red-900/20 border border-red-700 rounded-lg ${className}`}
+      >
         <p className="text-red-400">{error}</p>
         <button
           type="button"
@@ -325,7 +586,9 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
           <span className="text-sm text-gray-400">Selected:</span>
           {breadcrumb.map((cat, index) => (
             <React.Fragment key={cat.id}>
-              {index > 0 && <ChevronRight size={14} className="text-gray-500" />}
+              {index > 0 && (
+                <ChevronRight size={14} className="text-gray-500" />
+              )}
               <span className="text-sm text-blue-400">{cat.name}</span>
             </React.Fragment>
           ))}
@@ -348,7 +611,8 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
 
       {/* Info Message */}
       <p className="text-xs text-gray-500 text-center">
-        Can&apos;t find your category? Contact support to request a new category.
+        Can&apos;t find your category? Contact support to request a new
+        category.
       </p>
     </div>
   );

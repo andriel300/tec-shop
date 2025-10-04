@@ -25,11 +25,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           const prefix = isProduction ? '__Host-' : '';
 
           // Try customer cookies first (most common)
-          const customerToken = request?.cookies?.[`${prefix}customer_access_token`];
+          const customerToken =
+            request?.cookies?.[`${prefix}customer_access_token`];
           if (customerToken) return customerToken;
 
           // Try seller cookies
-          const sellerToken = request?.cookies?.[`${prefix}seller_access_token`];
+          const sellerToken =
+            request?.cookies?.[`${prefix}seller_access_token`];
           if (sellerToken) return sellerToken;
 
           // Fallback to legacy cookie name for backward compatibility during migration
@@ -51,7 +53,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       userId: payload.sub,
       username: payload.username,
       role: payload.role,
-      userType: payload.userType
+      userType: payload.userType,
     };
   }
 }

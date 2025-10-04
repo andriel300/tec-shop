@@ -13,17 +13,31 @@ export class CategoryController {
   }
 
   @MessagePattern('product-get-all-categories')
-  findAll(@Payload() options?: {
-    includeChildren?: boolean;
-    onlyActive?: boolean;
-    parentId?: string | null;
-  }) {
+  findAll(
+    @Payload()
+    options?: {
+      includeChildren?: boolean;
+      onlyActive?: boolean;
+      parentId?: string | null;
+    }
+  ) {
     return this.categoryService.findAll(options);
   }
 
   @MessagePattern('product-get-category')
-  findOne(@Payload() data: { id: string; includeChildren?: boolean; includeProducts?: boolean }) {
-    return this.categoryService.findOne(data.id, data.includeChildren, data.includeProducts);
+  findOne(
+    @Payload()
+    data: {
+      id: string;
+      includeChildren?: boolean;
+      includeProducts?: boolean;
+    }
+  ) {
+    return this.categoryService.findOne(
+      data.id,
+      data.includeChildren,
+      data.includeProducts
+    );
   }
 
   @MessagePattern('product-get-category-by-slug')
@@ -32,7 +46,9 @@ export class CategoryController {
   }
 
   @MessagePattern('product-update-category')
-  update(@Payload() data: { id: string; updateCategoryDto: UpdateCategoryDto }) {
+  update(
+    @Payload() data: { id: string; updateCategoryDto: UpdateCategoryDto }
+  ) {
     return this.categoryService.update(data.id, data.updateCategoryDto);
   }
 

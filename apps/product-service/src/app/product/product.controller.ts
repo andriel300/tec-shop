@@ -21,7 +21,8 @@ export class ProductController {
    */
   @MessagePattern('product-create-product')
   async create(
-    @Payload() payload: {
+    @Payload()
+    payload: {
       sellerId: string;
       productData: CreateProductDto;
       files?: FileData[];
@@ -30,7 +31,8 @@ export class ProductController {
     const { sellerId, productData, files } = payload;
 
     // Extract file paths from uploaded files
-    const imagePaths = files?.map((file) => `/uploads/products/${file.filename}`) || [];
+    const imagePaths =
+      files?.map((file) => `/uploads/products/${file.filename}`) || [];
 
     // Validate at least one image
     if (imagePaths.length === 0) {
@@ -44,14 +46,17 @@ export class ProductController {
    * Get all products for a shop
    */
   @MessagePattern('product-get-products')
-  async findAll(@Payload() payload: {
-    shopId: string;
-    filters?: {
-      category?: string;
-      isActive?: boolean;
-      isFeatured?: boolean;
-    };
-  }) {
+  async findAll(
+    @Payload()
+    payload: {
+      shopId: string;
+      filters?: {
+        category?: string;
+        isActive?: boolean;
+        isFeatured?: boolean;
+      };
+    }
+  ) {
     return this.productService.findAll(payload.shopId, payload.filters);
   }
 
@@ -68,7 +73,8 @@ export class ProductController {
    */
   @MessagePattern('product-update-product')
   async update(
-    @Payload() payload: {
+    @Payload()
+    payload: {
       id: string;
       sellerId: string;
       productData: UpdateProductDto;
@@ -78,7 +84,9 @@ export class ProductController {
     const { id, sellerId, productData, files } = payload;
 
     // Extract new file paths if provided
-    const newImagePaths = files?.map((file) => `/uploads/products/${file.filename}`);
+    const newImagePaths = files?.map(
+      (file) => `/uploads/products/${file.filename}`
+    );
 
     return this.productService.update(id, sellerId, productData, newImagePaths);
   }

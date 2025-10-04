@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import type { CreateCategoryDto, UpdateCategoryDto } from '@tec-shop/dto';
 import { ProductPrismaService } from '../../prisma/prisma.service';
 
@@ -11,7 +15,8 @@ export class CategoryService {
    */
   async create(createCategoryDto: CreateCategoryDto) {
     // Generate slug if not provided
-    const slug = createCategoryDto.slug || this.generateSlug(createCategoryDto.name);
+    const slug =
+      createCategoryDto.slug || this.generateSlug(createCategoryDto.name);
 
     // Check if slug already exists
     const existing = await this.prisma.category.findUnique({
@@ -19,7 +24,9 @@ export class CategoryService {
     });
 
     if (existing) {
-      throw new ConflictException(`Category with slug '${slug}' already exists`);
+      throw new ConflictException(
+        `Category with slug '${slug}' already exists`
+      );
     }
 
     // If parentId is provided, verify it exists
@@ -29,7 +36,9 @@ export class CategoryService {
       });
 
       if (!parent) {
-        throw new NotFoundException(`Parent category with ID ${createCategoryDto.parentId} not found`);
+        throw new NotFoundException(
+          `Parent category with ID ${createCategoryDto.parentId} not found`
+        );
       }
     }
 
@@ -55,14 +64,22 @@ export class CategoryService {
     onlyActive?: boolean;
     parentId?: string | null;
   }) {
-    const { includeChildren = true, onlyActive = false, parentId } = options || {};
+    const {
+      includeChildren = true,
+      onlyActive = false,
+      parentId,
+    } = options || {};
 
     // If we want hierarchical structure
     if (includeChildren) {
       // Get root categories (no parent) or specific parent's children
       const categories = await this.prisma.category.findMany({
         where: {
-          ...(parentId === null ? { parentId: null } : parentId ? { parentId } : {}),
+          ...(parentId === null
+            ? { parentId: null }
+            : parentId
+            ? { parentId }
+            : {}),
           ...(onlyActive && { isActive: true }),
         },
         include: {
@@ -93,14 +110,18 @@ export class CategoryService {
     const category = await this.prisma.category.findUnique({
       where: { id },
       include: {
-        children: includeChildren ? {
-          orderBy: { position: 'asc' },
-        } : false,
+        children: includeChildren
+          ? {
+              orderBy: { position: 'asc' },
+            }
+          : false,
         parent: true,
-        products: includeProducts ? {
-          where: { isActive: true },
-          take: 10,
-        } : false,
+        products: includeProducts
+          ? {
+              where: { isActive: true },
+              take: 10,
+            }
+          : false,
       },
     });
 
@@ -118,9 +139,11 @@ export class CategoryService {
     const category = await this.prisma.category.findUnique({
       where: { slug },
       include: {
-        children: includeChildren ? {
-          orderBy: { position: 'asc' },
-        } : false,
+        children: includeChildren
+          ? {
+              orderBy: { position: 'asc' },
+            }
+          : false,
         parent: true,
       },
     });
@@ -159,7 +182,9 @@ export class CategoryService {
       });
 
       if (existing) {
-        throw new ConflictException(`Category with slug '${updateCategoryDto.slug}' already exists`);
+        throw new ConflictException(
+          `Category with slug '${updateCategoryDto.slug}' already exists`
+        );
       }
       updateData.slug = updateCategoryDto.slug;
     }
@@ -180,7 +205,9 @@ export class CategoryService {
         });
 
         if (!parent) {
-          throw new NotFoundException(`Parent category with ID ${updateCategoryDto.parentId} not found`);
+          throw new NotFoundException(
+            `Parent category with ID ${updateCategoryDto.parentId} not found`
+          );
         }
       }
 
@@ -218,7 +245,9 @@ export class CategoryService {
 
     // Check if category has children
     if (category.children && category.children.length > 0) {
-      throw new ConflictException('Cannot delete category with subcategories. Delete or reassign children first.');
+      throw new ConflictException(
+        'Cannot delete category with subcategories. Delete or reassign children first.'
+      );
     }
 
     // Check if category has products
@@ -227,7 +256,9 @@ export class CategoryService {
     });
 
     if (productsCount > 0) {
-      throw new ConflictException(`Cannot delete category with ${productsCount} products. Reassign products first.`);
+      throw new ConflictException(
+        `Cannot delete category with ${productsCount} products. Reassign products first.`
+      );
     }
 
     return this.prisma.category.delete({

@@ -51,9 +51,7 @@ const FormField: React.FC<FormFieldProps> = ({
       )}
 
       {!hasError && helperText && (
-        <p className="mt-2 text-xs text-gray-400">
-          {helperText}
-        </p>
+        <p className="mt-2 text-xs text-gray-400">{helperText}</p>
       )}
     </div>
   );
