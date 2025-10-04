@@ -4,6 +4,12 @@
   "include": [],
   "references": [
     {
+      "path": "../../libs/prisma-clients/product-client"
+    },
+    {
+      "path": "../../libs/shared/dto"
+    },
+    {
       "path": "./tsconfig.app.json"
     },
     {

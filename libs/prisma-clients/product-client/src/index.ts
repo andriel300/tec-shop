@@ -1,1 +1,1 @@
-export * from './lib/product-client.js';
+export * from '.prisma/product-client';
