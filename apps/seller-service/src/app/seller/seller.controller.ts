@@ -17,8 +17,14 @@ export class SellerController {
   @MessagePattern('create-seller-profile-signed')
   async createProfileSigned(@Payload() signedRequest: SignedRequest) {
     // Verify the signed request from auth-service (Security Hardened)
+    if (!process.env.SERVICE_MASTER_SECRET) {
+      throw new Error(
+        'SERVICE_MASTER_SECRET environment variable is not configured. This is required for secure service-to-service communication.'
+      );
+    }
+
     const authServiceSecret = ServiceAuthUtil.deriveServiceSecret(
-      process.env.SERVICE_MASTER_SECRET || 'default-secret',
+      process.env.SERVICE_MASTER_SECRET,
       'auth-service'
     );
 

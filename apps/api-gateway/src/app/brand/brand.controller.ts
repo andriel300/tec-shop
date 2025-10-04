@@ -14,6 +14,8 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
+import { RolesGuard } from '../../guards/roles.guard';
+import { Roles } from '../../decorators/roles.decorator';
 import { CreateBrandDto, UpdateBrandDto } from '@tec-shop/dto';
 
 @ApiTags('Brands')
@@ -103,9 +105,11 @@ export class BrandController {
   @Post()
   @ApiOperation({ summary: 'Create a new brand (admin only)' })
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @ApiResponse({ status: 201, description: 'Brand created successfully.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required.' })
   async createBrand(@Body() createBrandDto: CreateBrandDto) {
     return firstValueFrom(
       this.productService.send('product-create-brand', createBrandDto)
@@ -118,9 +122,11 @@ export class BrandController {
   @Put(':id')
   @ApiOperation({ summary: 'Update a brand (admin only)' })
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @ApiResponse({ status: 200, description: 'Brand updated successfully.' })
   @ApiResponse({ status: 404, description: 'Brand not found.' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required.' })
   async updateBrand(
     @Param('id') id: string,
     @Body() updateBrandDto: UpdateBrandDto
@@ -139,9 +145,11 @@ export class BrandController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a brand (admin only)' })
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN')
   @ApiResponse({ status: 200, description: 'Brand deleted successfully.' })
   @ApiResponse({ status: 404, description: 'Brand not found.' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required.' })
   async deleteBrand(@Param('id') id: string) {
     return firstValueFrom(
       this.productService.send('product-delete-brand', id)

@@ -330,8 +330,14 @@ export class AuthService implements OnModuleInit {
         country,
       };
 
+      if (!process.env.SERVICE_MASTER_SECRET) {
+        throw new Error(
+          'SERVICE_MASTER_SECRET environment variable is not configured. This is required for secure service-to-service communication.'
+        );
+      }
+
       const serviceSecret = ServiceAuthUtil.deriveServiceSecret(
-        process.env.SERVICE_MASTER_SECRET || 'default-secret',
+        process.env.SERVICE_MASTER_SECRET,
         'auth-service'
       );
 
