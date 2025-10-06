@@ -18,6 +18,7 @@ export interface CreateProductData {
   inventory?: unknown;
   warranty?: string;
   tags?: string[];
+  youtubeUrl?: string;
   status?: 'draft' | 'published' | 'scheduled';
   visibility?: 'public' | 'private' | 'password_protected';
   publishDate?: Date;
@@ -45,6 +46,7 @@ export interface ProductResponse {
   inventory?: Record<string, unknown> | null;
   warranty?: string | null;
   tags: string[];
+  youtubeUrl?: string | null;
   slug?: string | null;
   status: 'DRAFT' | 'PUBLISHED' | 'SCHEDULED';
   visibility: 'PUBLIC' | 'PRIVATE' | 'PASSWORD_PROTECTED';
@@ -96,6 +98,8 @@ export const createProduct = async (
   if (productData.warranty) formData.append('warranty', productData.warranty);
   if (productData.tags)
     formData.append('tags', JSON.stringify(productData.tags));
+  if (productData.youtubeUrl)
+    formData.append('youtubeUrl', productData.youtubeUrl);
   if (productData.status) formData.append('status', productData.status);
   if (productData.visibility)
     formData.append('visibility', productData.visibility);
@@ -199,6 +203,8 @@ export const updateProduct = async (
   if (productData.warranty) formData.append('warranty', productData.warranty);
   if (productData.tags)
     formData.append('tags', JSON.stringify(productData.tags));
+  if (productData.youtubeUrl)
+    formData.append('youtubeUrl', productData.youtubeUrl);
   if (productData.status) formData.append('status', productData.status);
   if (productData.visibility)
     formData.append('visibility', productData.visibility);

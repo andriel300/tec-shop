@@ -64,12 +64,21 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
       setLoading(true);
       setError(null);
 
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/categories');
-      // const data = await response.json();
+      // Fetch categories from API Gateway
+      const response = await fetch('http://localhost:8080/api/categories/tree');
 
-      // Mock data - Amazon-like category structure
-      // TODO: Replace with actual API call to GET /api/seller/categories
+      if (!response.ok) {
+        throw new Error('Failed to fetch categories');
+      }
+
+      const data = await response.json();
+      setCategories(data);
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+      setError('Failed to load categories. Using fallback data.');
+
+      // Fallback to mock data if API fails
       const mockCategories: Category[] = [
         {
           id: '1',
@@ -461,10 +470,6 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
       ];
 
       setCategories(mockCategories);
-    } catch (err) {
-      setError('Failed to load categories');
-      console.error('Category fetch error:', err);
-    } finally {
       setLoading(false);
     }
   };

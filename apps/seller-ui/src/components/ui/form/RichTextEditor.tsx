@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -67,7 +67,15 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           'prose prose-invert prose-sm max-w-none focus:outline-none min-h-[150px] px-4 py-3',
       },
     },
+    immediatelyRender: false,
   });
+
+  // Safely update editor content on value change
+  useEffect(() => {
+    if (editor && value !== editor.getHTML()) {
+      editor.commands.setContent(value || '', false);
+    }
+  }, [value, editor]);
 
   // Calculate word count
   const wordCount = editor?.getText().split(/\s+/).filter(Boolean).length || 0;
