@@ -84,10 +84,22 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // brand tokens (semantic)
+        // brand tokens (semantic) - expose full palette for gradients
         'brand-primary': designTokens.brand.primary,
         'brand-secondary': designTokens.brand.secondary,
-        'brand-accent': designTokens.brand.accent.DEFAULT,
+        'brand-accent': {
+          DEFAULT: designTokens.brand.accent.DEFAULT,
+          50: '#F0FDFA',
+          100: '#CCFBF1',
+          200: '#99F6E4',
+          300: '#5EEAD4',
+          400: designTokens.brand.accent[400],
+          500: designTokens.brand.accent[500],
+          600: designTokens.brand.accent[600],
+          700: '#0F766E',
+          800: '#115E59',
+          900: '#134E4A',
+        },
 
         // ui tokens
         'ui-background': designTokens.ui.background.light,

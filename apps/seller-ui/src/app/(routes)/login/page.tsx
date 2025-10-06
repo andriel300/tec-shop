@@ -8,8 +8,8 @@ import { LoginForm } from '../../../components/forms/login-form';
 export default function LoginPage() {
   return (
     <div>
-      <main className="flex items-center justify-center min-h-screen bg-ui-muted/50 py-12 px-4">
-        <div className="w-full max-w-md p-8 space-y-6 bg-ui-muted rounded-lg shadow-elev-lg border border-ui-divider">
+      <main className="flex items-center justify-center min-h-screen bg-gradient-to-br from-brand-primary-50 via-white to-brand-accent-50 py-12 px-4">
+        <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-elev-lg border border-ui-divider">
           <div>
             <h1 className="text-2xl font-bold text-center font- text-text-primary">
               Log in to TecShop
