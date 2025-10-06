@@ -402,9 +402,7 @@ export class ProductService {
     });
   }
 
-  // ============================================
   // Helper Methods
-  // ============================================
 
   /**
    * Generate URL-friendly slug from product name

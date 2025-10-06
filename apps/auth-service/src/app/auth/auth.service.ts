@@ -734,7 +734,7 @@ export class AuthService implements OnModuleInit {
     const payload = {
       sub: userId,
       username: email,
-      role: 'user',
+      role: 'CUSTOMER',
       userType: 'CUSTOMER' as const,
     };
 
@@ -773,7 +773,7 @@ export class AuthService implements OnModuleInit {
     const payload = {
       sub: userId,
       username: email,
-      role: 'seller',
+      role: 'SELLER',
       userType: 'SELLER' as const,
     };
 

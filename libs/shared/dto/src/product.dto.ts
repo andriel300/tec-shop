@@ -69,6 +69,7 @@ export interface ProductResponseDto {
   // Additional fields
   warranty?: string | null;
   tags: string[];
+  youtubeUrl?: string | null;
   slug?: string | null;
 
   // Status

@@ -23,6 +23,8 @@ import { RolesGuard } from '../../guards/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
 import * as Dto from '@tec-shop/dto';
 
+import { Throttle } from '@nestjs/throttler';
+
 @ApiTags('Categories')
 @Controller('categories')
 export class CategoryController {
@@ -57,6 +59,7 @@ export class CategoryController {
    * Returns hierarchical structure for navigation
    */
   @Get('tree')
+  @Throttle({ long: { limit: 100, ttl: 60000 } })
   @ApiOperation({ summary: 'Get category tree' })
   @ApiResponse({
     status: 200,
