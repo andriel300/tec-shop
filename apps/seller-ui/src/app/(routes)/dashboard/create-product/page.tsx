@@ -3,7 +3,6 @@
 import { useForm } from '@tanstack/react-form';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Toaster } from 'sonner';
 import { Package, DollarSign, Tag, Boxes } from 'lucide-react';
 import { createProduct } from '../../../../lib/api/products';
 import { Alert } from '../../../../components/ui/core/Alert';
@@ -23,6 +22,7 @@ import {
   BrandSelector,
   type Brand,
 } from '../../../../components/ui/form/BrandSelector';
+import { TagInput } from '../../../../components/ui/form/TagInput';
 import { Breadcrumb } from '../../../../components/navigation/Breadcrumb';
 
 const PRODUCT_TYPES = [
@@ -84,6 +84,7 @@ const Page = () => {
         keywords: [],
       },
       warranty: '',
+      youtubeUrl: '',
       tags: [],
       status: 'draft',
       isFeatured: false,
@@ -133,8 +134,6 @@ const Page = () => {
 
   return (
     <div className="w-full mx-auto p-8 text-white">
-      <Toaster position="top-right" richColors />
-
       <h2 className="text-2xl py-2 font-semibold font-heading text-white">
         Create Product
       </h2>
@@ -474,6 +473,42 @@ const Page = () => {
                           value={field.state.value}
                           onChange={(e) => field.handleChange(e.target.value)}
                           placeholder="e.g., 1 year manufacturer warranty"
+                          variant="dark"
+                        />
+                      </FormField>
+                    )}
+                  </form.Field>
+
+                  {/* Product Tags */}
+                  <form.Field name="tags">
+                    {(field) => (
+                      <TagInput
+                        value={field.state.value}
+                        onChange={(tags) => field.handleChange(tags)}
+                        maxTags={20}
+                        placeholder="Add tag (e.g., summer, sale, trending)"
+                      />
+                    )}
+                  </form.Field>
+
+                  <form.Field
+                    name="youtubeUrl"
+                    validators={{
+                      onBlur: ({ value }) =>
+                        value &&
+                        !/^https?:\/\/(?:www\.)?youtube\.com\/embed\/[A-Za-z0-9_-]+$/.test(
+                          value
+                        )
+                          ? 'Please enter a valid YouTube URL.'
+                          : undefined,
+                    }}
+                  >
+                    {(field) => (
+                      <FormField field={field} label="YouTube URL (Optional)">
+                        <Input
+                          value={field.state.value}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          placeholder="e.g., https://www.youtube.com/embed/xyz123"
                           variant="dark"
                         />
                       </FormField>
