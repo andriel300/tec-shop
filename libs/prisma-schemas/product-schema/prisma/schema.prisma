@@ -115,6 +115,7 @@ model Product {
   // Additional Fields
   warranty    String?
   tags        String[] @default([])
+  youtubeUrl  String?  // YouTube embed URL for product video
 
   // Status
   status      ProductStatus    @default(DRAFT)

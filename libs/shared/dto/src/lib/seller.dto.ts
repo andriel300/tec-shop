@@ -1,4 +1,17 @@
-import { IsString, IsOptional, IsUrl, Length, MaxLength, IsNotEmpty } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsUrl,
+  Length,
+  MaxLength,
+  IsNotEmpty,
+  IsBoolean,
+  IsDate,
+  Min,
+} from 'class-validator';
+
+import { PartialType } from '@nestjs/mapped-types';
 
 export class CreateSellerProfileDto {
   @IsString()
@@ -83,6 +96,92 @@ export class UpdateShopDto {
   @IsUrl()
   @MaxLength(255)
   website?: string;
+}
+
+// ============================================
+// Discount Code DTOs
+// ============================================
+
+export type DiscountType = 'PERCENTAGE' | 'FIXED_AMOUNT' | 'FREE_SHIPPING';
+
+export class CreateDiscountDto {
+  @IsString()
+  @IsNotEmpty()
+  sellerId!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  publicName!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  code!: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  discountType!: DiscountType;
+
+  @IsNumber()
+  @Min(0.01)
+  discountValue!: number;
+
+  @IsNumber()
+  @IsOptional()
+  usageLimit?: number;
+
+  @IsNumber()
+  @IsOptional()
+  maxUsesPerCustomer?: number;
+
+  @IsDate()
+  @IsOptional()
+  startDate?: Date;
+
+  @IsDate()
+  @IsOptional()
+  endDate?: Date;
+
+  @IsNumber()
+  @IsOptional()
+  minimumPurchase?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+}
+
+export class UpdateDiscountDto extends PartialType(CreateDiscountDto) {
+  @IsString()
+  @IsOptional()
+  override sellerId?: never; // Cannot update sellerId
+}
+
+export interface DiscountCodeResponse {
+  id: string;
+  sellerId: string;
+  publicName: string;
+  code: string;
+  description?: string | null;
+  discountType: DiscountType;
+  discountValue: number;
+  usageLimit?: number | null;
+  usageCount: number;
+  maxUsesPerCustomer?: number | null;
+  startDate: Date;
+  endDate?: Date | null;
+  minimumPurchase?: number | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  seller?: {
+    id: string;
+    name: string;
+    email: string;
+  };
 }
 
 export interface SellerProfileResponse {

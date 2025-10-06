@@ -23,6 +23,8 @@ import { RolesGuard } from '../../guards/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
 import * as Dto from '@tec-shop/dto';
 
+import { Throttle } from '@nestjs/throttler';
+
 @ApiTags('Brands')
 @Controller('brands')
 export class BrandController {
@@ -33,6 +35,7 @@ export class BrandController {
    * Used by product creation form to show brand options
    */
   @Get()
+  @Throttle({ long: { limit: 100, ttl: 60000 } })
   @ApiOperation({ summary: 'Get all brands' })
   @ApiResponse({ status: 200, description: 'Brands retrieved successfully.' })
   async getAllBrands(
@@ -108,18 +111,21 @@ export class BrandController {
   }
 
   /**
-   * Create brand (admin only - future enhancement)
+   * Create brand - Hybrid approach
+   * Sellers can create brands on-the-fly during product creation
+   * Admins can also create brands for better organization
    */
   @Post()
-  @ApiOperation({ summary: 'Create a new brand (admin only)' })
+  @ApiOperation({ summary: 'Create a new brand (sellers and admins)' })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN')
+  @Roles('SELLER', 'ADMIN')
   @ApiResponse({ status: 201, description: 'Brand created successfully.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 400, description: 'Brand already exists.' })
   @ApiResponse({
     status: 403,
-    description: 'Forbidden - Admin access required.',
+    description: 'Forbidden - Seller or Admin access required.',
   })
   async createBrand(@Body() createBrandDto: Dto.CreateBrandDto) {
     return firstValueFrom(

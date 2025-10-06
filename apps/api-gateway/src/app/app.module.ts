@@ -6,6 +6,7 @@ import { UserModule } from './user/user.module';
 import { SellerModule } from './seller/seller.module';
 import { ProductModule } from './product/product.module';
 import { CategoryModule } from './category/category.module';
+import { DiscountModule } from './discount/discount.module';
 import { BrandModule } from './brand/brand.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
@@ -25,6 +26,11 @@ import { APP_GUARD } from '@nestjs/core';
         name: 'medium',
         ttl: 900000, // 15 minutes
         limit: 10, // 10 attempts per 15 minutes for auth operations
+      },
+      {
+        name: 'long',
+        ttl: 60000, // 1 minute
+        limit: 100, // 100 requests per minute for high-frequency operations
       },
     ]),
     LoggerModule.forRootAsync({
@@ -55,6 +61,7 @@ import { APP_GUARD } from '@nestjs/core';
     ProductModule,
     CategoryModule,
     BrandModule,
+    DiscountModule,
   ],
   controllers: [AppController],
   providers: [

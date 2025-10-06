@@ -163,6 +163,14 @@ export const CreateProductSchema = z
     // Additional Fields
     warranty: z.string().max(500).optional(), // e.g., "1 year manufacturer warranty"
     tags: z.array(z.string()).max(20, 'Maximum 20 tags').default([]),
+    youtubeUrl: z
+      .string()
+      .url('Must be a valid URL')
+      .regex(
+        /^https?:\/\/(?:www\.)?youtube\.com\/embed\/[A-Za-z0-9_-]+$/,
+        'Must be a valid YouTube embed URL (e.g., https://www.youtube.com/embed/VIDEO_ID)'
+      )
+      .optional(),
 
     // Status
     status: z.enum(['draft', 'published', 'scheduled']).default('draft'),
@@ -263,6 +271,14 @@ export const UpdateProductSchema = z.object({
   // Additional Fields
   warranty: z.string().max(500).optional(),
   tags: z.array(z.string()).max(20, 'Maximum 20 tags').optional(),
+  youtubeUrl: z
+    .string()
+    .url('Must be a valid URL')
+    .regex(
+      /^https?:\/\/(?:www\.)?youtube\.com\/embed\/[A-Za-z0-9_-]+$/,
+      'Must be a valid YouTube embed URL (e.g., https://www.youtube.com/embed/VIDEO_ID)'
+    )
+    .optional(),
 
   // Status
   status: z.enum(['draft', 'published', 'scheduled']).optional(),
