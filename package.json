@@ -24,6 +24,7 @@
   "private": true,
   "dependencies": {
     "@faker-js/faker": "^10.0.0",
+    "@imagekit/nodejs": "^7.1.1",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.0.0",

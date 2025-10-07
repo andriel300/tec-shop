@@ -68,6 +68,9 @@
     },
     {
       "path": "./libs/prisma-clients/product-client"
+    },
+    {
+      "path": "./libs/shared/imagekit"
     }
   ]
 }

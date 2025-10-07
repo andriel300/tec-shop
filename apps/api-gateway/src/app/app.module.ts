@@ -12,10 +12,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { ImageKitModule } from '@tec-shop/shared/imagekit';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ImageKitModule.forRoot(),
     ThrottlerModule.forRoot([
       {
         name: 'short',
