@@ -28,55 +28,47 @@ import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
 import { RolesGuard } from '../../guards/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
 import * as Dto from '@tec-shop/dto';
-import * as multer from 'multer';
-import { extname } from 'path';
-import { existsSync, mkdirSync } from 'fs';
+import { ImageKitService } from '@tec-shop/shared/imagekit';
 
-// Multer configuration for local file storage
-const multerConfig = {
-  storage: multer.diskStorage({
-    destination: (
-      _req: Express.Request,
-      _file: Express.Multer.File,
-      cb: (error: Error | null, destination: string) => void
-    ) => {
-      const uploadPath = './uploads/products';
-      if (!existsSync(uploadPath)) {
-        mkdirSync(uploadPath, { recursive: true });
-      }
-      cb(null, uploadPath);
-    },
-    filename: (
-      _req: Express.Request,
-      file: Express.Multer.File,
-      cb: (error: Error | null, filename: string) => void
-    ) => {
-      const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-      const ext = extname(file.originalname);
-      const name = file.originalname.replace(ext, '').replace(/\s+/g, '-');
-      cb(null, `${name}-${uniqueSuffix}${ext}`);
-    },
-  }),
-  fileFilter: (
-    _req: Express.Request,
-    file: Express.Multer.File,
-    cb: (error: Error | null, acceptFile: boolean) => void
-  ) => {
-    if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
-      return cb(new BadRequestException('Only image files are allowed'), false);
-    }
-    cb(null, true);
-  },
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB max file size
-    files: 4, // Max 4 images
-  },
-};
+// File validation configuration
+const FILE_SIZE_LIMIT = 5 * 1024 * 1024; // 5MB
+const MAX_FILES = 4;
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
 
 @ApiTags('Products')
 @Controller('products')
 export class ProductController {
-  constructor(@Inject('PRODUCT_SERVICE') private productService: ClientProxy) {}
+  constructor(
+    @Inject('PRODUCT_SERVICE') private productService: ClientProxy,
+    private readonly imagekitService: ImageKitService
+  ) {}
+
+  /**
+   * Validate uploaded files
+   */
+  private validateFiles(files: Express.Multer.File[]): void {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('At least one product image is required');
+    }
+
+    if (files.length > MAX_FILES) {
+      throw new BadRequestException(`Maximum ${MAX_FILES} images allowed`);
+    }
+
+    files.forEach((file) => {
+      if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+        throw new BadRequestException(
+          `Invalid file type: ${file.originalname}. Only JPEG, PNG, GIF, and WebP images are allowed`
+        );
+      }
+
+      if (file.size > FILE_SIZE_LIMIT) {
+        throw new BadRequestException(
+          `File too large: ${file.originalname}. Maximum size is 5MB`
+        );
+      }
+    });
+  }
 
   @Post()
   @ApiOperation({ summary: 'Create a new product with images (seller only)' })
@@ -84,7 +76,7 @@ export class ProductController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SELLER')
-  @UseInterceptors(FilesInterceptor('images', 4, multerConfig))
+  @UseInterceptors(FilesInterceptor('images', 4))
   @ApiResponse({ status: 201, description: 'Product created successfully.' })
   @ApiResponse({
     status: 400,
@@ -107,11 +99,26 @@ export class ProductController {
       userType?: 'CUSTOMER' | 'SELLER' | 'ADMIN';
     };
 
+    // Validate files
+    this.validateFiles(files);
+
+    // Upload images to ImageKit
+    const uploadResults = await this.imagekitService.uploadMultipleFiles(
+      files.map((file) => ({
+        buffer: file.buffer,
+        originalname: file.originalname,
+      })),
+      'products'
+    );
+
+    // Extract URLs from upload results
+    const imageUrls = uploadResults.map((result) => result.url);
+
     return firstValueFrom(
       this.productService.send('product-create-product', {
         sellerId: user.userId,
         productData,
-        files,
+        imageUrls,
       })
     );
   }
@@ -185,7 +192,7 @@ export class ProductController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SELLER')
-  @UseInterceptors(FilesInterceptor('images', 4, multerConfig))
+  @UseInterceptors(FilesInterceptor('images', 4))
   @ApiResponse({ status: 200, description: 'Product updated successfully.' })
   @ApiResponse({ status: 404, description: 'Product not found.' })
   @ApiResponse({
@@ -205,12 +212,47 @@ export class ProductController {
       userType?: 'CUSTOMER' | 'SELLER' | 'ADMIN';
     };
 
+    let imageUrls: string[] | undefined;
+
+    // If files are provided, validate and upload to ImageKit
+    if (files && files.length > 0) {
+      // Validate files (but don't require at least one for updates)
+      if (files.length > MAX_FILES) {
+        throw new BadRequestException(`Maximum ${MAX_FILES} images allowed`);
+      }
+
+      files.forEach((file) => {
+        if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+          throw new BadRequestException(
+            `Invalid file type: ${file.originalname}. Only JPEG, PNG, GIF, and WebP images are allowed`
+          );
+        }
+
+        if (file.size > FILE_SIZE_LIMIT) {
+          throw new BadRequestException(
+            `File too large: ${file.originalname}. Maximum size is 5MB`
+          );
+        }
+      });
+
+      // Upload images to ImageKit
+      const uploadResults = await this.imagekitService.uploadMultipleFiles(
+        files.map((file) => ({
+          buffer: file.buffer,
+          originalname: file.originalname,
+        })),
+        'products'
+      );
+
+      imageUrls = uploadResults.map((result) => result.url);
+    }
+
     return firstValueFrom(
       this.productService.send('product-update-product', {
         id,
         sellerId: user.userId,
         productData,
-        files,
+        imageUrls,
       })
     );
   }

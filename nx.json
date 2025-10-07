@@ -40,7 +40,8 @@
         "libs/prisma-clients/auth-client/*",
         "libs/prisma-clients/user-client/*",
         "libs/prisma-clients/seller-client/*",
-        "libs/prisma-schemas/product-schema/*"
+        "libs/prisma-schemas/product-schema/*",
+        "libs/shared/imagekit/*"
       ]
     },
     {
@@ -94,7 +95,8 @@
         "libs/prisma-clients/auth-client/*",
         "libs/prisma-clients/user-client/*",
         "libs/prisma-clients/seller-client/*",
-        "libs/prisma-schemas/product-schema/*"
+        "libs/prisma-schemas/product-schema/*",
+        "libs/shared/imagekit/*"
       ],
       "options": {
         "typecheck": {

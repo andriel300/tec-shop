@@ -3,21 +3,13 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ProductService } from './product.service';
 import type { CreateProductDto, UpdateProductDto } from '@tec-shop/dto';
 
-// Type for file data received from API Gateway via TCP
-interface FileData {
-  filename: string;
-  originalname: string;
-  mimetype: string;
-  size: number;
-}
-
 @Controller()
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   /**
-   * Create a new product with image upload
-   * Handles multipart/form-data with files
+   * Create a new product with ImageKit URLs
+   * Receives image URLs from API Gateway after ImageKit upload
    */
   @MessagePattern('product-create-product')
   async create(
@@ -25,21 +17,17 @@ export class ProductController {
     payload: {
       sellerId: string;
       productData: CreateProductDto;
-      files?: FileData[];
+      imageUrls?: string[];
     }
   ) {
-    const { sellerId, productData, files } = payload;
+    const { sellerId, productData, imageUrls } = payload;
 
-    // Extract file paths from uploaded files
-    const imagePaths =
-      files?.map((file) => `/uploads/products/${file.filename}`) || [];
-
-    // Validate at least one image
-    if (imagePaths.length === 0) {
+    // Validate at least one image URL
+    if (!imageUrls || imageUrls.length === 0) {
       throw new BadRequestException('At least one product image is required');
     }
 
-    return this.productService.create(sellerId, productData, imagePaths);
+    return this.productService.create(sellerId, productData, imageUrls);
   }
 
   /**
@@ -69,7 +57,7 @@ export class ProductController {
   }
 
   /**
-   * Update product with optional new images
+   * Update product with optional new ImageKit URLs
    */
   @MessagePattern('product-update-product')
   async update(
@@ -78,17 +66,12 @@ export class ProductController {
       id: string;
       sellerId: string;
       productData: UpdateProductDto;
-      files?: FileData[];
+      imageUrls?: string[];
     }
   ) {
-    const { id, sellerId, productData, files } = payload;
+    const { id, sellerId, productData, imageUrls } = payload;
 
-    // Extract new file paths if provided
-    const newImagePaths = files?.map(
-      (file) => `/uploads/products/${file.filename}`
-    );
-
-    return this.productService.update(id, sellerId, productData, newImagePaths);
+    return this.productService.update(id, sellerId, productData, imageUrls);
   }
 
   /**

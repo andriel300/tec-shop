@@ -3,9 +3,11 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { ProductController } from './product.controller';
+import { ImageKitModule } from '@tec-shop/shared/imagekit';
 
 @Module({
   imports: [
+    ImageKitModule.forRoot(),
     ClientsModule.register([
       {
         name: 'PRODUCT_SERVICE',

@@ -38,6 +38,7 @@
       "@tec-shop/seller-prisma-client": ["node_modules/.prisma/seller-client"],
       "@tec-shop/seller-service/*": ["apps/seller-service/src/*"],
       "@tec-shop/shared-validation": ["libs/shared/validation/src/index.ts"],
+      "@tec-shop/shared/imagekit": ["libs/shared/imagekit/src/index.ts"],
       "@tec-shop/user-client": ["libs/prisma-clients/user-client/src/index.ts"],
       "@tec-shop/user-prisma-client": ["node_modules/.prisma/user-client"],
       "@tec-shop/user-service/*": ["apps/user-service/src/*"],
