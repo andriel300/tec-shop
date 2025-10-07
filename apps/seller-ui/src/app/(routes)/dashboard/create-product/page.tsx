@@ -23,6 +23,7 @@ import {
   type Brand,
 } from '../../../../components/ui/form/BrandSelector';
 import { TagInput } from '../../../../components/ui/form/TagInput';
+import { DiscountSelector } from '../../../../components/ui/form/DiscountSelector';
 import { Breadcrumb } from '../../../../components/navigation/Breadcrumb';
 
 const PRODUCT_TYPES = [
@@ -86,6 +87,7 @@ const Page = () => {
       warranty: '',
       youtubeUrl: '',
       tags: [],
+      discountCodeId: undefined as string | undefined,
       status: 'draft',
       isFeatured: false,
     },
@@ -108,6 +110,8 @@ const Page = () => {
           ...value,
           images: validImages,
           attributes: { ...dynamicAttributes, ...value.attributes },
+          productType: value.productType as 'simple' | 'variable' | 'digital',
+          status: value.status as 'draft' | 'published' | 'scheduled',
         };
 
         console.log('Submitting product:', productData);
@@ -464,6 +468,16 @@ const Page = () => {
                       )}
                     </form.Field>
                   </div>
+
+                  {/* Discount Code Selector */}
+                  <form.Field name="discountCodeId">
+                    {(field) => (
+                      <DiscountSelector
+                        value={field.state.value}
+                        onChange={(discountId) => field.handleChange(discountId)}
+                      />
+                    )}
+                  </form.Field>
 
                   {/* Warranty */}
                   <form.Field name="warranty">
