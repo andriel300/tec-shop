@@ -35,6 +35,7 @@ export class CategoryController {
    * Used by product creation form to show category options
    */
   @Get()
+  @Throttle({ long: { limit: 100, ttl: 60000 } }) // 100 requests per minute for read operations
   @ApiOperation({ summary: 'Get all categories' })
   @ApiResponse({
     status: 200,
@@ -78,6 +79,7 @@ export class CategoryController {
    * Get single category by ID (public)
    */
   @Get(':id')
+  @Throttle({ long: { limit: 100, ttl: 60000 } }) // 100 requests per minute for read operations
   @ApiOperation({ summary: 'Get category by ID' })
   @ApiResponse({ status: 200, description: 'Category retrieved successfully.' })
   @ApiResponse({ status: 404, description: 'Category not found.' })
@@ -99,6 +101,7 @@ export class CategoryController {
    * Get category by slug (public)
    */
   @Get('slug/:slug')
+  @Throttle({ long: { limit: 100, ttl: 60000 } }) // 100 requests per minute for read operations
   @ApiOperation({ summary: 'Get category by slug' })
   @ApiResponse({ status: 200, description: 'Category retrieved successfully.' })
   @ApiResponse({ status: 404, description: 'Category not found.' })

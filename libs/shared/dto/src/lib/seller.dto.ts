@@ -9,7 +9,9 @@ import {
   IsBoolean,
   IsDate,
   Min,
+  Max,
 } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 
 import { PartialType } from '@nestjs/mapped-types';
 
@@ -106,19 +108,25 @@ export type DiscountType = 'PERCENTAGE' | 'FIXED_AMOUNT' | 'FREE_SHIPPING';
 
 export class CreateDiscountDto {
   @IsString()
-  @IsNotEmpty()
-  sellerId!: string;
+  @IsOptional()
+  sellerId?: string;
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(100)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().replace(/[\x00-\x1F\x7F]/g, '') : value))
   publicName!: string;
 
   @IsString()
   @IsNotEmpty()
+  @MaxLength(50)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '') : value))
   code!: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(500)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().replace(/[\x00-\x1F\x7F]/g, '') : value))
   description?: string;
 
   @IsString()
@@ -131,22 +139,30 @@ export class CreateDiscountDto {
 
   @IsNumber()
   @IsOptional()
+  @Min(1)
+  @Max(1000000)
   usageLimit?: number;
 
   @IsNumber()
   @IsOptional()
+  @Min(1)
+  @Max(1000)
   maxUsesPerCustomer?: number;
 
+  @Type(() => Date)
   @IsDate()
   @IsOptional()
   startDate?: Date;
 
+  @Type(() => Date)
   @IsDate()
   @IsOptional()
   endDate?: Date;
 
   @IsNumber()
   @IsOptional()
+  @Min(0)
+  @Max(999999)
   minimumPurchase?: number;
 
   @IsBoolean()

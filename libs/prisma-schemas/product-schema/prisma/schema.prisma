@@ -117,6 +117,9 @@ model Product {
   tags        String[] @default([])
   youtubeUrl  String?  // YouTube embed URL for product video
 
+  // Discount Code (optional - references seller-service DiscountCode)
+  discountCodeId String? @db.ObjectId // Cross-service reference to DiscountCode
+
   // Status
   status      ProductStatus    @default(DRAFT)
   visibility  ProductVisibility @default(PUBLIC)

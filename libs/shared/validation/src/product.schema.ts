@@ -172,6 +172,9 @@ export const CreateProductSchema = z
       )
       .optional(),
 
+    // Discount Code
+    discountCodeId: z.string().optional(), // Optional discount code attached to product
+
     // Status
     status: z.enum(['draft', 'published', 'scheduled']).default('draft'),
     visibility: z
@@ -279,6 +282,9 @@ export const UpdateProductSchema = z.object({
       'Must be a valid YouTube embed URL (e.g., https://www.youtube.com/embed/VIDEO_ID)'
     )
     .optional(),
+
+  // Discount Code
+  discountCodeId: z.string().optional(), // Optional discount code attached to product
 
   // Status
   status: z.enum(['draft', 'published', 'scheduled']).optional(),

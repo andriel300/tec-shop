@@ -58,6 +58,7 @@ export class BrandController {
    * Get popular brands (public)
    */
   @Get('popular')
+  @Throttle({ long: { limit: 100, ttl: 60000 } }) // 100 requests per minute for read operations
   @ApiOperation({ summary: 'Get popular brands' })
   @ApiResponse({
     status: 200,
@@ -76,6 +77,7 @@ export class BrandController {
    * Get single brand by ID (public)
    */
   @Get(':id')
+  @Throttle({ long: { limit: 100, ttl: 60000 } }) // 100 requests per minute for read operations
   @ApiOperation({ summary: 'Get brand by ID' })
   @ApiResponse({ status: 200, description: 'Brand retrieved successfully.' })
   @ApiResponse({ status: 404, description: 'Brand not found.' })
@@ -95,6 +97,7 @@ export class BrandController {
    * Get brand by slug (public)
    */
   @Get('slug/:slug')
+  @Throttle({ long: { limit: 100, ttl: 60000 } }) // 100 requests per minute for read operations
   @ApiOperation({ summary: 'Get brand by slug' })
   @ApiResponse({ status: 200, description: 'Brand retrieved successfully.' })
   @ApiResponse({ status: 404, description: 'Brand not found.' })
