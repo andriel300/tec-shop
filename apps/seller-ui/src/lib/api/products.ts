@@ -19,6 +19,7 @@ export interface CreateProductData {
   warranty?: string;
   tags?: string[];
   youtubeUrl?: string;
+  discountCodeId?: string; // Optional discount code attached to product
   status?: 'draft' | 'published' | 'scheduled';
   visibility?: 'public' | 'private' | 'password_protected';
   publishDate?: Date;
@@ -100,6 +101,8 @@ export const createProduct = async (
     formData.append('tags', JSON.stringify(productData.tags));
   if (productData.youtubeUrl)
     formData.append('youtubeUrl', productData.youtubeUrl);
+  if (productData.discountCodeId)
+    formData.append('discountCodeId', productData.discountCodeId);
   if (productData.status) formData.append('status', productData.status);
   if (productData.visibility)
     formData.append('visibility', productData.visibility);
