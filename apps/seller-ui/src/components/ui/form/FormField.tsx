@@ -2,7 +2,8 @@ import React from 'react';
 import type { FieldApi } from '@tanstack/react-form';
 
 export interface FormFieldProps {
-  field: FieldApi<unknown, unknown, unknown, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  field: FieldApi<any, any, any, any, any, any, any, any, any, any, any, any, any, any, any, any, any, any, any, any, any, any, any>;
   label: string;
   required?: boolean;
   helperText?: string;
