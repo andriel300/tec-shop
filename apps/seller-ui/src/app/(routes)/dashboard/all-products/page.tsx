@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Package, Plus, Edit, Trash2, Search } from 'lucide-react';
 import { useProducts, useDeleteProduct } from '../../../../hooks/useProducts';
 import { Alert } from '../../../../components/ui/core/Alert';
@@ -11,6 +12,8 @@ import { Breadcrumb } from '../../../../components/navigation/Breadcrumb';
 const ProductsPage = () => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
+  const [hoveredImage, setHoveredImage] = useState<string | null>(null);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   // React Query hooks - no more useEffect for data fetching!
   const { data: products = [], isLoading: loading, error: fetchError } = useProducts({
@@ -19,6 +22,11 @@ const ProductsPage = () => {
   const { mutate: deleteProductMutation } = useDeleteProduct();
 
   const error = fetchError ? 'Failed to load products. Please try again.' : null;
+
+  // Handle mouse move for image preview positioning
+  const handleMouseMove = (e: React.MouseEvent) => {
+    setMousePosition({ x: e.clientX, y: e.clientY });
+  };
 
   const handleDelete = (productId: string) => {
     if (!confirm('Are you sure you want to delete this product?')) {
@@ -133,11 +141,20 @@ const ProductsPage = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
                       {product.images && product.images[0] ? (
-                        <img
-                          src={product.images[0]}
-                          alt={product.name}
-                          className="w-12 h-12 rounded object-cover"
-                        />
+                        <div
+                          className="relative w-12 h-12 rounded overflow-hidden cursor-pointer ring-2 ring-transparent hover:ring-blue-500 transition-all"
+                          onMouseEnter={() => setHoveredImage(product.images[0])}
+                          onMouseLeave={() => setHoveredImage(null)}
+                          onMouseMove={handleMouseMove}
+                        >
+                          <Image
+                            src={product.images[0]}
+                            alt={product.name}
+                            fill
+                            className="object-cover"
+                            sizes="48px"
+                          />
+                        </div>
                       ) : (
                         <div className="w-12 h-12 rounded bg-gray-700 flex items-center justify-center">
                           <Package size={24} className="text-gray-500" />
@@ -212,6 +229,31 @@ const ProductsPage = () => {
       {filteredProducts.length > 0 && (
         <div className="mt-4 text-sm text-gray-400">
           Showing {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}
+        </div>
+      )}
+
+      {/* Hover Image Preview */}
+      {hoveredImage && (
+        <div
+          className="fixed z-50 pointer-events-none"
+          style={{
+            left: `${mousePosition.x + 20}px`,
+            top: `${mousePosition.y + 20}px`,
+            transform: 'translate(0, -50%)',
+          }}
+        >
+          <div className="bg-gray-900 border-2 border-blue-500 rounded-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="relative w-64 h-64">
+              <Image
+                src={hoveredImage}
+                alt="Product preview"
+                fill
+                className="object-cover"
+                sizes="256px"
+                priority
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>
