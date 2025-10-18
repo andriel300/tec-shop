@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
@@ -12,36 +13,52 @@ import {
 
 @Injectable()
 export class SellerService {
+  private readonly logger = new Logger(SellerService.name);
+
   constructor(private prisma: SellerPrismaService) {}
 
   async createProfile(createProfileDto: CreateSellerProfileDto) {
-    const { authId, name, email, phoneNumber, country } = createProfileDto;
+    try {
+      this.logger.log(`Creating seller profile - authId: ${createProfileDto.authId}, email: ${createProfileDto.email}`);
+      const { authId, name, email, phoneNumber, country } = createProfileDto;
 
-    // Check if seller profile already exists
-    const existingSeller = await this.prisma.seller.findUnique({
-      where: { authId },
-    });
+      // Check if seller profile already exists
+      this.logger.debug(`Checking if seller profile already exists for authId: ${authId}`);
+      const existingSeller = await this.prisma.seller.findUnique({
+        where: { authId },
+      });
 
-    if (existingSeller) {
-      return existingSeller;
+      if (existingSeller) {
+        this.logger.log(`Seller profile already exists - sellerId: ${existingSeller.id}`);
+        return existingSeller;
+      }
+
+      // Create seller profile
+      this.logger.debug('Creating new seller profile');
+      const seller = await this.prisma.seller.create({
+        data: {
+          authId,
+          name,
+          email,
+          phoneNumber,
+          country,
+          isVerified: true, // Verified through auth-service
+        },
+        include: {
+          shop: true,
+        },
+      });
+
+      this.logger.log(`Seller profile created successfully - sellerId: ${seller.id}, email: ${email}`);
+
+      return seller;
+    } catch (error) {
+      this.logger.error(
+        `Failed to create seller profile: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      throw error;
     }
-
-    // Create seller profile
-    const seller = await this.prisma.seller.create({
-      data: {
-        authId,
-        name,
-        email,
-        phoneNumber,
-        country,
-        isVerified: true, // Verified through auth-service
-      },
-      include: {
-        shop: true,
-      },
-    });
-
-    return seller;
   }
 
   async getProfile(authId: string) {
@@ -249,16 +266,34 @@ export class SellerService {
    * Used by product-service for authorization checks
    */
   async verifyShopOwnership(
-    sellerId: string,
+    authId: string,
     shopId: string
   ): Promise<boolean> {
-    const shop = await this.prisma.shop.findUnique({
-      where: { id: shopId },
-      include: {
-        seller: true,
-      },
-    });
+    try {
+      this.logger.debug(`Verifying shop ownership - authId: ${authId}, shopId: ${shopId}`);
 
-    return shop?.seller.id === sellerId;
+      const shop = await this.prisma.shop.findUnique({
+        where: { id: shopId },
+        include: {
+          seller: true,
+        },
+      });
+
+      if (!shop) {
+        this.logger.debug(`Shop not found: ${shopId}`);
+        return false;
+      }
+
+      const owns = shop.seller.authId === authId;
+      this.logger.debug(`Ownership verification result - authId: ${authId}, shop.seller.authId: ${shop.seller.authId}, owns: ${owns}`);
+
+      return owns;
+    } catch (error) {
+      this.logger.error(
+        `Failed to verify shop ownership: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      return false;
+    }
   }
 }
