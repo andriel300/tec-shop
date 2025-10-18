@@ -5,7 +5,7 @@ import {
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import ImageKit from '@imagekit/nodejs';
+import { ImageKit } from '@imagekit/nodejs';
 
 interface ImageKitConfig {
   publicKey: string;
@@ -26,12 +26,17 @@ export class ImageKitService {
   private readonly imagekit: ImageKit;
 
   constructor(@Inject('IMAGEKIT_CONFIG') private config: ImageKitConfig) {
+    this.logger.debug(`ImageKit config - publicKey: ${config?.publicKey ? '***' + config.publicKey.slice(-4) : 'MISSING'}, privateKey: ${config?.privateKey ? '***' + config.privateKey.slice(-4) : 'MISSING'}, urlEndpoint: ${config?.urlEndpoint || 'MISSING'}`);
+
     if (!config.publicKey || !config.privateKey || !config.urlEndpoint) {
       throw new Error(
         'ImageKit configuration is incomplete. Please check environment variables.'
       );
     }
 
+    this.logger.debug(`Creating ImageKit instance...`);
+
+    // Use named import syntax for v7.x
     this.imagekit = new ImageKit({
       publicKey: config.publicKey,
       privateKey: config.privateKey,
@@ -39,6 +44,10 @@ export class ImageKitService {
     });
 
     this.logger.log('ImageKit service initialized successfully');
+    this.logger.debug(`ImageKit instance type: ${typeof this.imagekit}`);
+    this.logger.debug(`ImageKit instance keys: ${Object.keys(this.imagekit).join(', ')}`);
+    this.logger.debug(`ImageKit upload exists: ${typeof this.imagekit.upload}`);
+    this.logger.debug(`ImageKit upload is function: ${typeof this.imagekit.upload === 'function'}`);
   }
 
   /**
@@ -65,7 +74,7 @@ export class ImageKitService {
         `Uploading file to ImageKit: ${uniqueFileName} in folder ${folder}`
       );
 
-      const response = await this.imagekit.upload({
+      const response = await this.imagekit.files.upload({
         file: file.toString('base64'),
         fileName: uniqueFileName,
         folder: `/${folder}`,
@@ -137,7 +146,7 @@ export class ImageKitService {
   async deleteFile(fileId: string): Promise<void> {
     try {
       this.logger.debug(`Deleting file from ImageKit: ${fileId}`);
-      await this.imagekit.deleteFile(fileId);
+      await this.imagekit.files.delete(fileId);
       this.logger.log(`File deleted successfully: ${fileId}`);
     } catch (error) {
       this.logger.error(
