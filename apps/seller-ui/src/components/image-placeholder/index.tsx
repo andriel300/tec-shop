@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
+import { IKImage } from 'imagekitio-next';
 import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { imagekitConfig, getImageKitPath } from '../../lib/imagekit-config';
 
 const ImagePlaceHolder = ({
   size,
@@ -183,14 +184,33 @@ const ImagePlaceHolder = ({
 
       {imagePreview ? (
         <>
-          {/* Image Preview */}
-          <Image
-            src={imagePreview}
-            alt={`Product ${index}`}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
+          {/* Image Preview - Use regular img for blob URLs (local previews) */}
+          {imagePreview.startsWith('blob:') ? (
+            <img
+              src={imagePreview}
+              alt={`Product ${index}`}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            /* Use IKImage only for uploaded ImageKit URLs */
+            <IKImage
+              urlEndpoint={imagekitConfig.urlEndpoint}
+              path={getImageKitPath(imagePreview)}
+              alt={`Product ${index}`}
+              width={400}
+              height={400}
+              transformation={[{
+                width: '400',
+                height: '400',
+                crop: 'at_max',
+                quality: '85',
+                focus: 'auto'
+              }]}
+              loading="eager"
+              lqip={{ active: true, quality: 20 }}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          )}
 
           {/* Overlay on Hover */}
           <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-200 flex items-center justify-center">

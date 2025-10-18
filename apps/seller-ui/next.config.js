@@ -14,25 +14,9 @@ const nextConfig = {
   // Set custom port for seller-ui
   env: {
     PORT: '3001',
-  },
-  // Image optimization configuration
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'ik.imagekit.io',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: '**.imagekit.io',
-        pathname: '/**',
-      },
-      // Add other CDN domains as needed
-    ],
-    formats: ['image/avif', 'image/webp'],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // Expose ImageKit credentials from root .env to client-side
+    NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT: process.env.IMAGEKIT_URL_ENDPOINT,
+    NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY: process.env.IMAGEKIT_PUBLIC_KEY,
   },
 };
 

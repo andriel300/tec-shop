@@ -3,11 +3,12 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
+import { IKImage } from 'imagekitio-next';
 import { Package, Plus, Edit, Trash2, Search } from 'lucide-react';
 import { useProducts, useDeleteProduct } from '../../../../hooks/useProducts';
 import { Alert } from '../../../../components/ui/core/Alert';
 import { Breadcrumb } from '../../../../components/navigation/Breadcrumb';
+import { imagekitConfig, getImageKitPath } from '../../../../lib/imagekit-config';
 
 const ProductsPage = () => {
   const router = useRouter();
@@ -147,12 +148,20 @@ const ProductsPage = () => {
                           onMouseLeave={() => setHoveredImage(null)}
                           onMouseMove={handleMouseMove}
                         >
-                          <Image
-                            src={product.images[0]}
+                          <IKImage
+                            urlEndpoint={imagekitConfig.urlEndpoint}
+                            path={getImageKitPath(product.images[0])}
                             alt={product.name}
-                            fill
-                            className="object-cover"
-                            sizes="48px"
+                            width={48}
+                            height={48}
+                            transformation={[{
+                              width: '48',
+                              height: '48',
+                              crop: 'at_max',
+                              quality: '80'
+                            }]}
+                            loading="lazy"
+                            className="object-cover w-full h-full"
                           />
                         </div>
                       ) : (
@@ -235,27 +244,62 @@ const ProductsPage = () => {
       {/* Hover Image Preview */}
       {hoveredImage && (
         <div
-          className="fixed z-50 pointer-events-none"
+          className="fixed z-[9999] pointer-events-none"
           style={{
-            left: `${mousePosition.x + 20}px`,
-            top: `${mousePosition.y + 20}px`,
-            transform: 'translate(0, -50%)',
+            left: `${mousePosition.x - 276}px`,
+            top: `${mousePosition.y - 128}px`,
+            animation: 'fadeInZoom 150ms ease-out',
           }}
         >
-          <div className="bg-gray-900 border-2 border-blue-500 rounded-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="relative w-64 h-64">
-              <Image
-                src={hoveredImage}
+          <div className="relative">
+            {/* Glow effect */}
+            <div
+              className="absolute -inset-2 bg-gradient-to-br from-blue-500/30 to-purple-500/30 rounded-2xl blur-lg"
+              style={{ animation: 'pulse 2s ease-in-out infinite' }}
+            />
+
+            {/* Main preview card */}
+            <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border border-blue-400/60 rounded-xl shadow-[0_0_30px_rgba(59,130,246,0.3)] overflow-hidden w-64 h-64">
+              {/* Bottom gradient overlay for depth */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none z-10" />
+
+              {/* Top shine effect */}
+              <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-white/10 to-transparent pointer-events-none z-10" />
+
+              <IKImage
+                urlEndpoint={imagekitConfig.urlEndpoint}
+                path={getImageKitPath(hoveredImage)}
                 alt="Product preview"
-                fill
-                className="object-cover"
-                sizes="256px"
-                priority
+                width={256}
+                height={256}
+                transformation={[{
+                  width: '256',
+                  height: '256',
+                  crop: 'at_max',
+                  quality: '90',
+                  focus: 'auto'
+                }]}
+                loading="eager"
+                className="object-cover w-full h-full"
               />
             </div>
           </div>
         </div>
       )}
+
+      {/* CSS Animations */}
+      <style jsx>{`
+        @keyframes fadeInZoom {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+      `}</style>
     </div>
   );
 };
