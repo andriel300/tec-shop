@@ -1,20 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ChevronRight, Folder, Loader2 } from 'lucide-react';
 import { Input } from '../core/Input';
+import { useCategories, type Category } from '../../../hooks/useCategories';
 
-export interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  parentId?: string;
-  children?: Category[];
-  attributes?: Record<string, unknown>;
-  image?: string;
-  isActive: boolean;
-}
+export type { Category };
 
 export interface CategorySelectorProps {
   value: string;
@@ -27,6 +18,8 @@ export interface CategorySelectorProps {
 /**
  * CategorySelector Component
  * Hierarchical category selector with breadcrumb navigation
+ *
+ * Uses React Query for data fetching and caching
  *
  * @example
  * <CategorySelector
@@ -45,433 +38,27 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
   className = '',
   variant = 'dark',
 }) => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     null
   );
   const [breadcrumb, setBreadcrumb] = useState<Category[]>([]);
 
-  // Fetch categories from API
-  useEffect(() => {
-    fetchCategories();
-  }, []);
+  // React Query hook
+  const { data: categories = [], isLoading: loading, error: fetchError } = useCategories();
 
-  const fetchCategories = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  const error = fetchError ? 'Failed to load categories.' : null;
 
-      // Fetch categories from API Gateway
-      const response = await fetch('http://localhost:8080/api/categories/tree');
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch categories');
+  // Helper function to find category by ID recursively
+  const findCategoryById = (id: string, cats: Category[]): Category | null => {
+    for (const cat of cats) {
+      if (cat.id === id) return cat;
+      if (cat.children) {
+        const found = findCategoryById(id, cat.children);
+        if (found) return found;
       }
-
-      const data = await response.json();
-      setCategories(data);
-      setLoading(false);
-    } catch (err) {
-      console.error('Error fetching categories:', err);
-      setError('Failed to load categories. Using fallback data.');
-
-      // Fallback to mock data if API fails
-      const mockCategories: Category[] = [
-        {
-          id: '1',
-          name: 'Electronics',
-          slug: 'electronics',
-          isActive: true,
-          attributes: {
-            warranty: { required: true, type: 'text' },
-            brand: { required: true, type: 'select' },
-          },
-          children: [
-            {
-              id: '11',
-              name: 'Smartphones & Accessories',
-              slug: 'smartphones-accessories',
-              parentId: '1',
-              isActive: true,
-            },
-            {
-              id: '12',
-              name: 'Computers & Laptops',
-              slug: 'computers-laptops',
-              parentId: '1',
-              isActive: true,
-            },
-            {
-              id: '13',
-              name: 'Cameras & Photography',
-              slug: 'cameras-photography',
-              parentId: '1',
-              isActive: true,
-            },
-            {
-              id: '14',
-              name: 'TV & Home Theater',
-              slug: 'tv-home-theater',
-              parentId: '1',
-              isActive: true,
-            },
-            {
-              id: '15',
-              name: 'Headphones & Audio',
-              slug: 'headphones-audio',
-              parentId: '1',
-              isActive: true,
-            },
-          ],
-        },
-        {
-          id: '2',
-          name: 'Clothing, Shoes & Jewelry',
-          slug: 'clothing-shoes-jewelry',
-          isActive: true,
-          attributes: {
-            size: {
-              required: true,
-              type: 'select',
-              values: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
-            },
-            color: { required: true, type: 'text' },
-            material: { required: true, type: 'text' },
-          },
-          children: [
-            {
-              id: '21',
-              name: "Men's Fashion",
-              slug: 'mens-fashion',
-              parentId: '2',
-              isActive: true,
-            },
-            {
-              id: '22',
-              name: "Women's Fashion",
-              slug: 'womens-fashion',
-              parentId: '2',
-              isActive: true,
-            },
-            {
-              id: '23',
-              name: "Kids' Fashion",
-              slug: 'kids-fashion',
-              parentId: '2',
-              isActive: true,
-            },
-            {
-              id: '24',
-              name: 'Shoes',
-              slug: 'shoes',
-              parentId: '2',
-              isActive: true,
-            },
-            {
-              id: '25',
-              name: 'Jewelry & Watches',
-              slug: 'jewelry-watches',
-              parentId: '2',
-              isActive: true,
-            },
-          ],
-        },
-        {
-          id: '3',
-          name: 'Home & Kitchen',
-          slug: 'home-kitchen',
-          isActive: true,
-          children: [
-            {
-              id: '31',
-              name: 'Furniture',
-              slug: 'furniture',
-              parentId: '3',
-              isActive: true,
-            },
-            {
-              id: '32',
-              name: 'Kitchen & Dining',
-              slug: 'kitchen-dining',
-              parentId: '3',
-              isActive: true,
-            },
-            {
-              id: '33',
-              name: 'Bedding & Bath',
-              slug: 'bedding-bath',
-              parentId: '3',
-              isActive: true,
-            },
-            {
-              id: '34',
-              name: 'Home Decor',
-              slug: 'home-decor',
-              parentId: '3',
-              isActive: true,
-            },
-            {
-              id: '35',
-              name: 'Storage & Organization',
-              slug: 'storage-organization',
-              parentId: '3',
-              isActive: true,
-            },
-          ],
-        },
-        {
-          id: '4',
-          name: 'Books & Media',
-          slug: 'books-media',
-          isActive: true,
-          children: [
-            {
-              id: '41',
-              name: 'Books',
-              slug: 'books',
-              parentId: '4',
-              isActive: true,
-            },
-            {
-              id: '42',
-              name: 'Movies & TV',
-              slug: 'movies-tv',
-              parentId: '4',
-              isActive: true,
-            },
-            {
-              id: '43',
-              name: 'Music',
-              slug: 'music',
-              parentId: '4',
-              isActive: true,
-            },
-            {
-              id: '44',
-              name: 'Video Games',
-              slug: 'video-games',
-              parentId: '4',
-              isActive: true,
-            },
-          ],
-        },
-        {
-          id: '5',
-          name: 'Sports & Outdoors',
-          slug: 'sports-outdoors',
-          isActive: true,
-          children: [
-            {
-              id: '51',
-              name: 'Exercise & Fitness',
-              slug: 'exercise-fitness',
-              parentId: '5',
-              isActive: true,
-            },
-            {
-              id: '52',
-              name: 'Outdoor Recreation',
-              slug: 'outdoor-recreation',
-              parentId: '5',
-              isActive: true,
-            },
-            {
-              id: '53',
-              name: 'Sports Equipment',
-              slug: 'sports-equipment',
-              parentId: '5',
-              isActive: true,
-            },
-            {
-              id: '54',
-              name: 'Camping & Hiking',
-              slug: 'camping-hiking',
-              parentId: '5',
-              isActive: true,
-            },
-          ],
-        },
-        {
-          id: '6',
-          name: 'Toys & Games',
-          slug: 'toys-games',
-          isActive: true,
-          children: [
-            {
-              id: '61',
-              name: 'Action Figures & Collectibles',
-              slug: 'action-figures-collectibles',
-              parentId: '6',
-              isActive: true,
-            },
-            {
-              id: '62',
-              name: 'Board Games & Puzzles',
-              slug: 'board-games-puzzles',
-              parentId: '6',
-              isActive: true,
-            },
-            {
-              id: '63',
-              name: 'Educational Toys',
-              slug: 'educational-toys',
-              parentId: '6',
-              isActive: true,
-            },
-            {
-              id: '64',
-              name: 'Dolls & Accessories',
-              slug: 'dolls-accessories',
-              parentId: '6',
-              isActive: true,
-            },
-          ],
-        },
-        {
-          id: '7',
-          name: 'Beauty & Personal Care',
-          slug: 'beauty-personal-care',
-          isActive: true,
-          children: [
-            {
-              id: '71',
-              name: 'Makeup',
-              slug: 'makeup',
-              parentId: '7',
-              isActive: true,
-            },
-            {
-              id: '72',
-              name: 'Skin Care',
-              slug: 'skin-care',
-              parentId: '7',
-              isActive: true,
-            },
-            {
-              id: '73',
-              name: 'Hair Care',
-              slug: 'hair-care',
-              parentId: '7',
-              isActive: true,
-            },
-            {
-              id: '74',
-              name: 'Fragrances',
-              slug: 'fragrances',
-              parentId: '7',
-              isActive: true,
-            },
-          ],
-        },
-        {
-          id: '8',
-          name: 'Automotive',
-          slug: 'automotive',
-          isActive: true,
-          children: [
-            {
-              id: '81',
-              name: 'Car Parts & Accessories',
-              slug: 'car-parts-accessories',
-              parentId: '8',
-              isActive: true,
-            },
-            {
-              id: '82',
-              name: 'Motorcycle & Powersports',
-              slug: 'motorcycle-powersports',
-              parentId: '8',
-              isActive: true,
-            },
-            {
-              id: '83',
-              name: 'Tools & Equipment',
-              slug: 'tools-equipment',
-              parentId: '8',
-              isActive: true,
-            },
-          ],
-        },
-        {
-          id: '9',
-          name: 'Baby Products',
-          slug: 'baby-products',
-          isActive: true,
-          children: [
-            {
-              id: '91',
-              name: 'Diapering',
-              slug: 'diapering',
-              parentId: '9',
-              isActive: true,
-            },
-            {
-              id: '92',
-              name: 'Nursery',
-              slug: 'nursery',
-              parentId: '9',
-              isActive: true,
-            },
-            {
-              id: '93',
-              name: 'Baby Care',
-              slug: 'baby-care',
-              parentId: '9',
-              isActive: true,
-            },
-            {
-              id: '94',
-              name: 'Strollers & Car Seats',
-              slug: 'strollers-car-seats',
-              parentId: '9',
-              isActive: true,
-            },
-          ],
-        },
-        {
-          id: '10',
-          name: 'Pet Supplies',
-          slug: 'pet-supplies',
-          isActive: true,
-          children: [
-            {
-              id: '101',
-              name: 'Dog Supplies',
-              slug: 'dog-supplies',
-              parentId: '10',
-              isActive: true,
-            },
-            {
-              id: '102',
-              name: 'Cat Supplies',
-              slug: 'cat-supplies',
-              parentId: '10',
-              isActive: true,
-            },
-            {
-              id: '103',
-              name: 'Fish & Aquatic Pets',
-              slug: 'fish-aquatic-pets',
-              parentId: '10',
-              isActive: true,
-            },
-            {
-              id: '104',
-              name: 'Bird Supplies',
-              slug: 'bird-supplies',
-              parentId: '10',
-              isActive: true,
-            },
-          ],
-        },
-      ];
-
-      setCategories(mockCategories);
-      setLoading(false);
     }
+    return null;
   };
 
   // Build breadcrumb path
@@ -490,17 +77,6 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
     }
 
     return path;
-  };
-
-  const findCategoryById = (id: string, cats: Category[]): Category | null => {
-    for (const cat of cats) {
-      if (cat.id === id) return cat;
-      if (cat.children) {
-        const found = findCategoryById(id, cat.children);
-        if (found) return found;
-      }
-    }
-    return null;
   };
 
   const handleCategorySelect = (category: Category) => {
@@ -572,13 +148,6 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
         className={`p-4 bg-red-900/20 border border-red-700 rounded-lg ${className}`}
       >
         <p className="text-red-400">{error}</p>
-        <button
-          type="button"
-          onClick={fetchCategories}
-          className="mt-2 text-sm text-red-300 hover:text-red-200 underline"
-        >
-          Retry
-        </button>
       </div>
     );
   }

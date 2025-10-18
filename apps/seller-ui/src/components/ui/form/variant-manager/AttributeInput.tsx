@@ -60,7 +60,7 @@ export const AttributeInput: React.FC<AttributeInputProps> = ({
       />
       <button
         type="button"
-        onClick={onAddValue}
+        onClick={() => onAddValue()}
         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
       >
         <Plus size={18} />

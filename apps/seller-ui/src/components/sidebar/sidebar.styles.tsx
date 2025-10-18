@@ -4,7 +4,7 @@ import styled from 'styled-components';
 
 // SidebarWrapper component
 
-export const SidebarWrapper = styled.div`
+export const SidebarWrapper = styled.div<{ collapsed?: boolean }>`
   background-color: var(--background); // Update your CSS variables as needed
   transition: transform 0.2s ease;
   height: 100%;
@@ -34,7 +34,7 @@ export const SidebarWrapper = styled.div`
   }
 
   /* Variants for collapsed */
-  ${(props: { collapsed?: boolean }) =>
+  ${props =>
     props.collapsed &&
     `
     display: inherit;

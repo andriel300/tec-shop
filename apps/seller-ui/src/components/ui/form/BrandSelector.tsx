@@ -3,17 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Loader2, Award, CheckCircle } from 'lucide-react';
 import { Input } from '../core/Input';
-import apiClient from '../../../lib/api/client';
+import { useBrands, useCreateBrand, type Brand } from '../../../hooks/useBrands';
 
-export interface Brand {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  logo?: string;
-  website?: string;
-  isActive: boolean;
-}
+export type { Brand };
 
 export interface BrandSelectorProps {
   value: string;
@@ -26,6 +18,8 @@ export interface BrandSelectorProps {
 /**
  * BrandSelector Component - Hybrid Autocomplete
  * Allows searching existing brands AND creating new brands on-the-fly
+ *
+ * Uses React Query for data fetching and caching
  *
  * @example
  * <BrandSelector
@@ -43,18 +37,15 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
   variant = 'dark',
   required = false,
 }) => {
-  const [brands, setBrands] = useState<Brand[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  // Fetch brands from API
-  useEffect(() => {
-    fetchBrands();
-  }, []);
+  // React Query hooks
+  const { data: brands = [], isLoading: loading, error: fetchError } = useBrands();
+  const { mutate: createBrand, isPending: creating } = useCreateBrand();
+
+  const error = fetchError ? 'Failed to load brands.' : null;
 
   // Update selected brand when value changes
   useEffect(() => {
@@ -66,25 +57,6 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
       }
     }
   }, [value, brands]);
-
-  const fetchBrands = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await apiClient.get('/brands');
-      const data = response.data;
-
-      // Handle both array and object with brands array
-      const brandsArray = Array.isArray(data) ? data : data.brands || [];
-      setBrands(brandsArray);
-      setLoading(false);
-    } catch (err) {
-      console.error('Error fetching brands:', err);
-      setError('Failed to load brands.');
-      setLoading(false);
-    }
-  };
 
   const handleBrandSelect = (brand: Brand) => {
     setSelectedBrand(brand);
@@ -101,35 +73,19 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
     }
   };
 
-  const handleCreateBrand = async (brandName: string) => {
-    try {
-      setCreating(true);
-      setError(null);
-
-      // Create brand via API
-      const response = await apiClient.post('/brands', {
+  const handleCreateBrand = (brandName: string) => {
+    createBrand(
+      {
         name: brandName,
         isActive: true,
-      });
-
-      const newBrand = response.data;
-
-      // Add to local brands list
-      setBrands([...brands, newBrand]);
-
-      // Select the newly created brand
-      handleBrandSelect(newBrand);
-
-      setCreating(false);
-    } catch (err: unknown) {
-      console.error('Error creating brand:', err);
-      if (err instanceof Error) {
-        setError(err.message || 'Failed to create brand');
-      } else {
-        setError('Failed to create brand');
+      },
+      {
+        onSuccess: (newBrand: Brand) => {
+          // Select the newly created brand
+          handleBrandSelect(newBrand);
+        },
       }
-      setCreating(false);
-    }
+    );
   };
 
   // Filter brands by search term (case-insensitive)
