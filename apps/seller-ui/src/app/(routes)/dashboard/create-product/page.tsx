@@ -11,7 +11,7 @@ import { Select } from '../../../../components/ui/core/Select';
 import { FormField } from '../../../../components/ui/form/FormField';
 import { ProductImageUploader } from '../../../../components/ui/form/ProductImageUploader';
 import { RichTextEditor } from '../../../../components/ui/form/RichTextEditor';
-import { VariantManager } from '../../../../components/ui/form/VariantManager';
+import { VariantManager, type ProductVariant } from '../../../../components/ui/form/VariantManager';
 import { DimensionsInput } from '../../../../components/ui/form/DimensionsInput';
 import { SEOFields } from '../../../../components/ui/form/SEOFields';
 import {
@@ -64,31 +64,31 @@ const Page = () => {
       description: '',
       categoryId: '',
       brandId: '',
-      productType: 'simple',
+      productType: 'simple' as 'simple' | 'variable' | 'digital',
       price: 0,
-      salePrice: undefined,
+      salePrice: undefined as number | undefined,
       stock: 0,
-      images: [],
+      images: [] as File[],
       hasVariants: false,
-      variants: [],
-      attributes: {},
+      variants: [] as ProductVariant[],
+      attributes: {} as Record<string, unknown>,
       shipping: {
         weight: 0,
         dimensions: { length: 0, width: 0, height: 0 },
         freeShipping: false,
-        shippingClass: 'standard',
+        shippingClass: 'standard' as 'standard' | 'express' | 'fragile' | 'heavy',
       },
       seo: {
         title: '',
         description: '',
         slug: '',
-        keywords: [],
+        keywords: [] as string[],
       },
       warranty: '',
       youtubeUrl: '',
-      tags: [],
+      tags: [] as string[],
       discountCodeId: undefined as string | undefined,
-      status: 'draft',
+      status: 'draft' as 'draft' | 'published' | 'scheduled',
       isFeatured: false,
     },
     onSubmit: async ({ value }) => {
@@ -123,7 +123,7 @@ const Page = () => {
         setTimeout(() => {
           form.reset();
           setProductImages([null, null, null, null]);
-          router.push('/dashboard/products');
+          router.push('/dashboard/all-products');
         }, 2000);
       } catch (error) {
         console.error('Failed to create product:', error);
@@ -629,7 +629,7 @@ const Page = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => router.push('/dashboard/products')}
+                    onClick={() => router.push('/dashboard/all-products')}
                     className="px-8 py-3 border border-gray-600 text-gray-300 rounded-lg font-medium hover:bg-gray-800 transition-colors"
                   >
                     Cancel

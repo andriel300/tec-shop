@@ -6,8 +6,15 @@ import { Modal } from '../../../../components/ui/core/Modal';
 import { DiscountForm } from '../../../../components/forms/DiscountForm';
 import { Plus, Pencil, Trash2, Copy, Eye, EyeOff } from 'lucide-react';
 import React, { useState } from 'react';
-import { useDiscounts, useDeleteDiscount, useCreateDiscount } from '../../../../hooks/useDiscounts';
-import type { DiscountResponse, CreateDiscountData } from '../../../../lib/api/discounts';
+import {
+  useDiscounts,
+  useDeleteDiscount,
+  useCreateDiscount,
+} from '../../../../hooks/useDiscounts';
+import type {
+  DiscountResponse,
+  CreateDiscountData,
+} from '../../../../lib/api/discounts';
 import { toast } from 'sonner';
 
 const Page = () => {
@@ -122,7 +129,8 @@ const Page = () => {
               No discount codes yet
             </h3>
             <p className="text-gray-500 mb-4">
-              Create your first discount code to start offering deals to customers
+              Create your first discount code to start offering deals to
+              customers
             </p>
             <Button onClick={() => setShowModal(true)}>
               <Plus size={18} className="mr-2" /> Create Your First Discount
@@ -136,14 +144,30 @@ const Page = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-800">
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Code</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Name</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Type</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Value</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Usage</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Valid Until</th>
-                  <th className="text-left py-3 px-4 text-gray-400 font-medium">Status</th>
-                  <th className="text-right py-3 px-4 text-gray-400 font-medium">Actions</th>
+                  <th className="text-left py-3 px-4 text-gray-400 font-medium">
+                    Code
+                  </th>
+                  <th className="text-left py-3 px-4 text-gray-400 font-medium">
+                    Name
+                  </th>
+                  <th className="text-left py-3 px-4 text-gray-400 font-medium">
+                    Type
+                  </th>
+                  <th className="text-left py-3 px-4 text-gray-400 font-medium">
+                    Value
+                  </th>
+                  <th className="text-left py-3 px-4 text-gray-400 font-medium">
+                    Usage
+                  </th>
+                  <th className="text-left py-3 px-4 text-gray-400 font-medium">
+                    Valid Until
+                  </th>
+                  <th className="text-left py-3 px-4 text-gray-400 font-medium">
+                    Status
+                  </th>
+                  <th className="text-right py-3 px-4 text-gray-400 font-medium">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -166,7 +190,9 @@ const Page = () => {
                         </button>
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-white">{discount.publicName}</td>
+                    <td className="py-3 px-4 text-white">
+                      {discount.publicName}
+                    </td>
                     <td className="py-3 px-4">
                       <span className="text-gray-300 text-sm">
                         {discount.discountType.replace('_', ' ')}
@@ -193,7 +219,9 @@ const Page = () => {
                         )}
                         <span
                           className={
-                            discount.isActive ? 'text-green-400' : 'text-gray-500'
+                            discount.isActive
+                              ? 'text-green-400'
+                              : 'text-gray-500'
                           }
                         >
                           {discount.isActive ? 'Active' : 'Inactive'}
@@ -210,7 +238,11 @@ const Page = () => {
                         </button>
                         <button
                           onClick={() => {
-                            if (confirm('Are you sure you want to delete this discount code?')) {
+                            if (
+                              confirm(
+                                'Are you sure you want to delete this discount code?'
+                              )
+                            ) {
                               deleteMutation.mutate(discount.id);
                             }
                           }}
