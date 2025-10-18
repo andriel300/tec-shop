@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import type {
   CreateProductDto,
@@ -19,6 +20,8 @@ import { SellerServiceClient } from '../../clients/seller.client';
 
 @Injectable()
 export class ProductService {
+  private readonly logger = new Logger(ProductService.name);
+
   constructor(
     private readonly prisma: ProductPrismaService,
     private readonly sellerClient: SellerServiceClient
@@ -26,162 +29,215 @@ export class ProductService {
 
   async create(
     sellerId: string,
-    createProductDto: CreateProductDto,
+    createProductDto: CreateProductDto & { shopId: string },
     imagePaths: string[]
   ) {
-    // Verify shop exists via seller-service
-    // Note: shopId should be passed in the createProductDto or we need to get it from seller profile
-    // For now, assuming shopId is in createProductDto or we fetch from seller-service
-    const shopId = (createProductDto as CreateProductDto & { shopId?: string })
-      .shopId;
+    try {
+      this.logger.log(`Starting product creation for seller: ${sellerId}`);
 
-    if (!shopId) {
-      throw new BadRequestException('Shop ID is required');
-    }
+      // Extract shopId from productData (added by API Gateway)
+      const { shopId } = createProductDto;
 
-    // Verify shop exists and seller owns it
-    const [shopExists, ownsShop] = await Promise.all([
-      this.sellerClient.verifyShopExists(shopId),
-      this.sellerClient.verifyShopOwnership(sellerId, shopId),
-    ]);
+      if (!shopId) {
+        this.logger.error('Product creation failed: No shopId provided');
+        throw new BadRequestException('Shop ID is required');
+      }
 
-    if (!shopExists) {
-      throw new NotFoundException('Shop not found');
-    }
+      this.logger.debug(`Verifying shop ownership - shopId: ${shopId}`);
 
-    if (!ownsShop) {
-      throw new ForbiddenException('You do not have access to this shop');
-    }
+      // Verify shop exists and seller owns it
+      const [shopExists, ownsShop] = await Promise.all([
+        this.sellerClient.verifyShopExists(shopId),
+        this.sellerClient.verifyShopOwnership(sellerId, shopId),
+      ]);
 
-    // Verify category exists
-    const category = await this.prisma.category.findUnique({
-      where: { id: createProductDto.categoryId },
-    });
-
-    if (!category) {
-      throw new NotFoundException(
-        `Category with ID ${createProductDto.categoryId} not found`
+      this.logger.debug(
+        `Shop verification result - exists: ${shopExists}, owns: ${ownsShop}`
       );
-    }
 
-    // Verify brand if provided
-    if (createProductDto.brandId) {
-      const brand = await this.prisma.brand.findUnique({
-        where: { id: createProductDto.brandId },
+      if (!shopExists) {
+        this.logger.error(`Shop not found: ${shopId}`);
+        throw new NotFoundException('Shop not found');
+      }
+
+      if (!ownsShop) {
+        this.logger.error(
+          `Seller ${sellerId} does not own shop ${shopId}`
+        );
+        throw new ForbiddenException('You do not have access to this shop');
+      }
+
+      // Verify category exists
+      this.logger.debug(
+        `Verifying category exists - categoryId: ${createProductDto.categoryId}`
+      );
+      const category = await this.prisma.category.findUnique({
+        where: { id: createProductDto.categoryId },
       });
 
-      if (!brand) {
+      if (!category) {
+        this.logger.error(
+          `Category not found: ${createProductDto.categoryId}`
+        );
         throw new NotFoundException(
-          `Brand with ID ${createProductDto.brandId} not found`
-        );
-      }
-    }
-
-    // Generate slug from SEO slug or product name
-    const slug =
-      createProductDto.seo?.slug || this.generateSlug(createProductDto.name);
-
-    // Check if slug already exists
-    const existingProduct = await this.prisma.product.findUnique({
-      where: { slug },
-    });
-
-    if (existingProduct) {
-      throw new BadRequestException(
-        `Product with slug '${slug}' already exists`
-      );
-    }
-
-    // Validate variants for variable products
-    if (createProductDto.productType === 'variable') {
-      if (
-        !createProductDto.variants ||
-        createProductDto.variants.length === 0
-      ) {
-        throw new BadRequestException(
-          'Variable products must have at least one variant'
+          `Category with ID ${createProductDto.categoryId} not found`
         );
       }
 
-      // Validate unique SKUs
-      const skus = createProductDto.variants.map((v) => v.sku);
-      const duplicates = skus.filter(
-        (sku, index) => skus.indexOf(sku) !== index
-      );
-      if (duplicates.length > 0) {
-        throw new BadRequestException(
-          `Duplicate SKUs found: ${duplicates.join(', ')}`
+      // Verify brand if provided
+      if (createProductDto.brandId) {
+        this.logger.debug(
+          `Verifying brand exists - brandId: ${createProductDto.brandId}`
         );
-      }
-
-      // Check if SKUs already exist
-      const existingSkus = await this.prisma.productVariant.findMany({
-        where: { sku: { in: skus } },
-      });
-
-      if (existingSkus.length > 0) {
-        throw new BadRequestException(
-          `SKUs already exist: ${existingSkus.map((v) => v.sku).join(', ')}`
-        );
-      }
-    }
-
-    // Create product with variants in a transaction
-    const product = await this.prisma.$transaction(async (tx) => {
-      // Create the product
-      const newProduct = await tx.product.create({
-        data: {
-          shopId,
-          name: createProductDto.name,
-          description: createProductDto.description,
-          categoryId: createProductDto.categoryId,
-          brandId: createProductDto.brandId,
-          productType: this.mapProductType(createProductDto.productType),
-          price: createProductDto.price,
-          salePrice: createProductDto.salePrice,
-          stock: createProductDto.stock,
-          images: imagePaths,
-          hasVariants: createProductDto.hasVariants || false,
-          attributes: createProductDto.attributes || undefined,
-          shipping: createProductDto.shipping || undefined,
-          seo: createProductDto.seo || undefined,
-          inventory: createProductDto.inventory || undefined,
-          warranty: createProductDto.warranty,
-          tags: createProductDto.tags || [],
-          slug,
-          status: this.mapProductStatus(createProductDto.status),
-          visibility: this.mapProductVisibility(createProductDto.visibility),
-          publishDate: createProductDto.publishDate,
-          isFeatured: createProductDto.isFeatured || false,
-          isActive: createProductDto.isActive ?? true,
-        },
-      });
-
-      // Create variants if it's a variable product
-      if (
-        createProductDto.hasVariants &&
-        createProductDto.variants &&
-        createProductDto.variants.length > 0
-      ) {
-        await tx.productVariant.createMany({
-          data: createProductDto.variants.map((variant: ProductVariantDto) => ({
-            productId: newProduct.id,
-            sku: variant.sku,
-            attributes: variant.attributes,
-            price: variant.price,
-            salePrice: variant.salePrice,
-            stock: variant.stock,
-            image: variant.image,
-            isActive: variant.isActive ?? true,
-          })),
+        const brand = await this.prisma.brand.findUnique({
+          where: { id: createProductDto.brandId },
         });
+
+        if (!brand) {
+          this.logger.error(`Brand not found: ${createProductDto.brandId}`);
+          throw new NotFoundException(
+            `Brand with ID ${createProductDto.brandId} not found`
+          );
+        }
       }
 
-      return newProduct;
-    });
+      // Sanitize data types FIRST (multipart/form-data sends everything as strings)
+      this.logger.debug(`Sanitizing product data - price: ${createProductDto.price} (${typeof createProductDto.price}), stock: ${createProductDto.stock} (${typeof createProductDto.stock})`);
+      const sanitizedData = this.sanitizeProductData(createProductDto);
 
-    // Fetch the complete product with variants
-    return this.findOne(product.id, sellerId);
+      // Generate slug from SEO slug or product name
+      this.logger.debug(`Generating slug for product: ${sanitizedData.name}`);
+      const slug =
+        sanitizedData.seo?.slug || this.generateSlug(sanitizedData.name);
+
+      // Check if slug already exists
+      this.logger.debug(`Checking if slug already exists: ${slug}`);
+      const existingProduct = await this.prisma.product.findUnique({
+        where: { slug },
+      });
+
+      if (existingProduct) {
+        this.logger.error(`Product with slug '${slug}' already exists`);
+        throw new BadRequestException(
+          `Product with slug '${slug}' already exists`
+        );
+      }
+
+      // Validate variants for variable products
+      if (sanitizedData.productType === 'variable') {
+        this.logger.debug('Validating variants for variable product');
+        if (
+          !Array.isArray(sanitizedData.variants) ||
+          sanitizedData.variants.length === 0
+        ) {
+          this.logger.error('Variable product has no variants');
+          throw new BadRequestException(
+            'Variable products must have at least one variant'
+          );
+        }
+
+        // Validate unique SKUs
+        const skus = sanitizedData.variants.map((v) => v.sku);
+        const duplicates = skus.filter(
+          (sku, index) => skus.indexOf(sku) !== index
+        );
+        if (duplicates.length > 0) {
+          this.logger.error(`Duplicate SKUs found: ${duplicates.join(', ')}`);
+          throw new BadRequestException(
+            `Duplicate SKUs found: ${duplicates.join(', ')}`
+          );
+        }
+
+        // Check if SKUs already exist
+        const existingSkus = await this.prisma.productVariant.findMany({
+          where: { sku: { in: skus } },
+        });
+
+        if (existingSkus.length > 0) {
+          this.logger.error(
+            `SKUs already exist: ${existingSkus.map((v) => v.sku).join(', ')}`
+          );
+          throw new BadRequestException(
+            `SKUs already exist: ${existingSkus.map((v) => v.sku).join(', ')}`
+          );
+        }
+      }
+
+      // Create product with variants in a transaction
+      this.logger.log('Creating product in database transaction');
+
+      const product = await this.prisma.$transaction(async (tx) => {
+        // Create the product
+        this.logger.debug('Creating product record');
+        const newProduct = await tx.product.create({
+          data: {
+            shopId,
+            name: sanitizedData.name,
+            description: sanitizedData.description,
+            categoryId: sanitizedData.categoryId,
+            brandId: sanitizedData.brandId,
+            productType: this.mapProductType(sanitizedData.productType),
+            price: sanitizedData.price,
+            salePrice: sanitizedData.salePrice,
+            stock: sanitizedData.stock,
+            images: imagePaths,
+            hasVariants: sanitizedData.hasVariants,
+            attributes: sanitizedData.attributes,
+            shipping: sanitizedData.shipping,
+            seo: sanitizedData.seo,
+            inventory: sanitizedData.inventory,
+            warranty: sanitizedData.warranty,
+            tags: sanitizedData.tags,
+            slug,
+            status: this.mapProductStatus(sanitizedData.status),
+            visibility: this.mapProductVisibility(sanitizedData.visibility),
+            publishDate: sanitizedData.publishDate,
+            isFeatured: sanitizedData.isFeatured,
+            isActive: sanitizedData.isActive,
+          },
+        });
+
+        this.logger.debug(`Product record created - ID: ${newProduct.id}`);
+
+        // Create variants if it's a variable product
+        if (
+          sanitizedData.hasVariants &&
+          Array.isArray(sanitizedData.variants) &&
+          sanitizedData.variants.length > 0
+        ) {
+          this.logger.debug(
+            `Creating ${sanitizedData.variants.length} product variants`
+          );
+          await tx.productVariant.createMany({
+            data: sanitizedData.variants.map((variant: ProductVariantDto) => ({
+              productId: newProduct.id,
+              sku: variant.sku,
+              attributes: variant.attributes,
+              price: variant.price,
+              salePrice: variant.salePrice,
+              stock: variant.stock,
+              image: variant.image,
+              isActive: variant.isActive ?? true,
+            })),
+          });
+          this.logger.debug('Product variants created successfully');
+        }
+
+        return newProduct;
+      });
+
+      this.logger.log(`Product created successfully - ID: ${product.id}`);
+
+      // Fetch the complete product with variants
+      this.logger.debug('Fetching complete product with relations');
+      return this.findOne(product.id, sellerId);
+    } catch (error) {
+      this.logger.error(
+        `Product creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      throw error;
+    }
   }
 
   async findAll(
@@ -424,6 +480,63 @@ export class ProductService {
   // ============================================
   // Helper Methods
   // ============================================
+
+  /**
+   * Sanitize product data types from multipart/form-data
+   * Form data sends everything as strings, need to convert to proper types
+   */
+  private sanitizeProductData(dto: Record<string, unknown>) {
+    // Helper to parse JSON strings safely
+    const parseJSON = (value: unknown) => {
+      if (typeof value === 'string') {
+        try {
+          return JSON.parse(value);
+        } catch {
+          return value;
+        }
+      }
+      return value;
+    };
+
+    // Helper to convert to number
+    const toNumber = (value: unknown): number | undefined => {
+      if (value === null || value === undefined || value === '') return undefined;
+      const num = typeof value === 'string' ? parseFloat(value) : Number(value);
+      return isNaN(num) ? undefined : num;
+    };
+
+    // Helper to convert to boolean
+    const toBoolean = (value: unknown): boolean => {
+      if (typeof value === 'boolean') return value;
+      if (typeof value === 'string') {
+        return value.toLowerCase() === 'true' || value === '1';
+      }
+      return Boolean(value);
+    };
+
+    return {
+      ...dto,
+      // Numbers
+      price: toNumber(dto.price),
+      salePrice: toNumber(dto.salePrice),
+      stock: toNumber(dto.stock) || 0,
+
+      // Booleans
+      hasVariants: toBoolean(dto.hasVariants),
+      isFeatured: toBoolean(dto.isFeatured),
+      isActive: dto.isActive !== undefined ? toBoolean(dto.isActive) : true,
+
+      // JSON objects
+      attributes: parseJSON(dto.attributes) || undefined,
+      shipping: parseJSON(dto.shipping) || undefined,
+      seo: parseJSON(dto.seo) || undefined,
+      inventory: parseJSON(dto.inventory) || undefined,
+
+      // Arrays
+      tags: parseJSON(dto.tags) || [],
+      variants: parseJSON(dto.variants) || [],
+    };
+  }
 
   /**
    * Generate URL-friendly slug from product name
