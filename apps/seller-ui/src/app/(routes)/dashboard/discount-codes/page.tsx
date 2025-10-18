@@ -10,6 +10,7 @@ import {
   useDiscounts,
   useDeleteDiscount,
   useCreateDiscount,
+  useUpdateDiscount,
 } from '../../../../hooks/useDiscounts';
 import type {
   DiscountResponse,
@@ -19,19 +20,50 @@ import { toast } from 'sonner';
 
 const Page = () => {
   const [showModal, setShowModal] = useState(false);
+  const [editingDiscount, setEditingDiscount] = useState<DiscountResponse | null>(null);
 
   // Fetch discount codes using TanStack Query
   const { data: discounts, isLoading, error } = useDiscounts();
   const deleteMutation = useDeleteDiscount();
   const createMutation = useCreateDiscount();
+  const updateMutation = useUpdateDiscount(editingDiscount?.id || '');
 
-  // Handle form submission
-  const handleCreateDiscount = (data: CreateDiscountData) => {
-    createMutation.mutate(data, {
-      onSuccess: () => {
-        setShowModal(false);
-      },
-    });
+  // Handle form submission (create or update)
+  const handleSubmitDiscount = (data: CreateDiscountData) => {
+    if (editingDiscount) {
+      // Update existing discount
+      updateMutation.mutate(data, {
+        onSuccess: () => {
+          setShowModal(false);
+          setEditingDiscount(null);
+        },
+      });
+    } else {
+      // Create new discount
+      createMutation.mutate(data, {
+        onSuccess: () => {
+          setShowModal(false);
+        },
+      });
+    }
+  };
+
+  // Open modal for creating new discount
+  const handleCreateClick = () => {
+    setEditingDiscount(null);
+    setShowModal(true);
+  };
+
+  // Open modal for editing existing discount
+  const handleEditClick = (discount: DiscountResponse) => {
+    setEditingDiscount(discount);
+    setShowModal(true);
+  };
+
+  // Close modal and reset editing state
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingDiscount(null);
   };
 
   // Copy discount code to clipboard
@@ -72,7 +104,7 @@ const Page = () => {
         <h2 className="text-2xl text-white font-semibold">Discount Codes</h2>
         <Button
           className="px-4 py-2 gap-2 items-center"
-          onClick={() => setShowModal(true)}
+          onClick={handleCreateClick}
         >
           <Plus size={18} /> Create Discount
         </Button>
@@ -132,7 +164,7 @@ const Page = () => {
               Create your first discount code to start offering deals to
               customers
             </p>
-            <Button onClick={() => setShowModal(true)}>
+            <Button onClick={handleCreateClick}>
               <Plus size={18} className="mr-2" /> Create Your First Discount
             </Button>
           </div>
@@ -231,8 +263,9 @@ const Page = () => {
                     <td className="py-3 px-4">
                       <div className="flex items-center justify-end gap-2">
                         <button
+                          onClick={() => handleEditClick(discount)}
                           className="p-2 text-gray-400 hover:text-blue-400 hover:bg-blue-900/20 rounded transition-colors"
-                          title="Edit"
+                          title="Edit discount"
                         >
                           <Pencil size={16} />
                         </button>
@@ -248,7 +281,7 @@ const Page = () => {
                           }}
                           disabled={deleteMutation.isPending}
                           className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-900/20 rounded transition-colors disabled:opacity-50"
-                          title="Delete"
+                          title="Delete discount"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -265,14 +298,15 @@ const Page = () => {
       {/* Create/Edit Discount Modal */}
       <Modal
         isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        title="Create Discount Code"
+        onClose={handleCloseModal}
+        title={editingDiscount ? 'Edit Discount Code' : 'Create Discount Code'}
         size="lg"
       >
         <DiscountForm
-          onSubmit={handleCreateDiscount}
-          onCancel={() => setShowModal(false)}
-          isLoading={createMutation.isPending}
+          onSubmit={handleSubmitDiscount}
+          onCancel={handleCloseModal}
+          isLoading={editingDiscount ? updateMutation.isPending : createMutation.isPending}
+          initialData={editingDiscount || undefined}
         />
       </Modal>
     </div>
