@@ -17,18 +17,20 @@ export const ProductVariantSchema = z.object({
 
 /**
  * Shipping Information Schema
+ * All fields are optional to support digital products and products without shipping info
  */
 export const ShippingInfoSchema = z.object({
-  weight: z.number().positive('Weight must be positive'), // in kg
+  weight: z.number().min(0, 'Weight cannot be negative').optional().nullable(), // in kg
   dimensions: z.object({
-    length: z.number().positive('Length must be positive'), // in cm
-    width: z.number().positive('Width must be positive'),
-    height: z.number().positive('Height must be positive'),
-  }),
-  freeShipping: z.boolean().default(false),
+    length: z.number().min(0, 'Length cannot be negative').optional().nullable(), // in cm
+    width: z.number().min(0, 'Width cannot be negative').optional().nullable(),
+    height: z.number().min(0, 'Height cannot be negative').optional().nullable(),
+  }).optional().nullable(),
+  freeShipping: z.boolean().default(false).optional(),
   shippingClass: z
     .enum(['standard', 'express', 'fragile', 'heavy'])
-    .default('standard'),
+    .default('standard')
+    .optional(),
 });
 
 /**
