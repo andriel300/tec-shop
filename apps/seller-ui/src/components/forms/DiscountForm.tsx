@@ -29,6 +29,13 @@ export function DiscountForm({
   isLoading = false,
   initialData,
 }: DiscountFormProps) {
+  // Helper to convert string dates to Date objects
+  const parseDate = (dateString?: string | Date | null): Date | undefined => {
+    if (!dateString) return undefined;
+    if (dateString instanceof Date) return dateString;
+    return new Date(dateString);
+  };
+
   const [formData, setFormData] = useState<CreateDiscountData>({
     publicName: initialData?.publicName || '',
     code: initialData?.code || '',
@@ -37,8 +44,8 @@ export function DiscountForm({
     discountValue: initialData?.discountValue || 0.01,
     usageLimit: initialData?.usageLimit,
     maxUsesPerCustomer: initialData?.maxUsesPerCustomer,
-    startDate: initialData?.startDate,
-    endDate: initialData?.endDate,
+    startDate: parseDate(initialData?.startDate),
+    endDate: parseDate(initialData?.endDate),
     minimumPurchase: initialData?.minimumPurchase,
     isActive: initialData?.isActive ?? true,
   });
@@ -325,6 +332,11 @@ export function DiscountForm({
             </label>
             <input
               type="date"
+              value={
+                formData.startDate
+                  ? new Date(formData.startDate).toISOString().split('T')[0]
+                  : ''
+              }
               className="flex h-10 w-full rounded-md border bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-3 disabled:cursor-not-allowed disabled:opacity-50 border-gray-700 bg-gray-800 text-white placeholder-gray-500 focus-visible:ring-blue-500 focus-visible:ring-offset-0"
               onChange={(e) => {
                 const value = e.target.value;
@@ -354,6 +366,11 @@ export function DiscountForm({
             </label>
             <input
               type="date"
+              value={
+                formData.endDate
+                  ? new Date(formData.endDate).toISOString().split('T')[0]
+                  : ''
+              }
               className={`flex h-10 w-full rounded-md border bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-3 disabled:cursor-not-allowed disabled:opacity-50 border-gray-700 bg-gray-800 text-white placeholder-gray-500 focus-visible:ring-blue-500 focus-visible:ring-offset-0 ${
                 errors.endDate ? 'border-red-500' : ''
               }`}
