@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -183,10 +184,12 @@ const ImagePlaceHolder = ({
       {imagePreview ? (
         <>
           {/* Image Preview */}
-          <img
+          <Image
             src={imagePreview}
             alt={`Product ${index}`}
-            className="absolute inset-0 w-full h-full object-cover"
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
 
           {/* Overlay on Hover */}
