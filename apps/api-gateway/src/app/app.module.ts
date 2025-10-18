@@ -18,23 +18,34 @@ import { ImageKitModule } from '@tec-shop/shared/imagekit';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ImageKitModule.forRoot(),
-    ThrottlerModule.forRoot([
-      {
-        name: 'short',
-        ttl: 60000, // 1 minute
-        limit: 20, // 20 requests per minute for general operations
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const isDevelopment = config.get<string>('NODE_ENV') !== 'production';
+
+        return [
+          {
+            name: 'short',
+            ttl: 60000, // 1 minute
+            // Dev: 1000 req/min (unobtrusive), Prod: 100 req/min (protected)
+            limit: isDevelopment ? 1000 : 100,
+          },
+          {
+            name: 'medium',
+            ttl: 900000, // 15 minutes
+            // Dev: 100 attempts/15min, Prod: 20 attempts/15min (auth protection)
+            limit: isDevelopment ? 100 : 20,
+          },
+          {
+            name: 'long',
+            ttl: 60000, // 1 minute
+            // Dev: 2000 req/min (search-friendly), Prod: 200 req/min (protected)
+            limit: isDevelopment ? 2000 : 200,
+          },
+        ];
       },
-      {
-        name: 'medium',
-        ttl: 900000, // 15 minutes
-        limit: 10, // 10 attempts per 15 minutes for auth operations
-      },
-      {
-        name: 'long',
-        ttl: 60000, // 1 minute
-        limit: 100, // 100 requests per minute for high-frequency operations
-      },
-    ]),
+    }),
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
