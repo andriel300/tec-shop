@@ -11,11 +11,12 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFiles,
+  UploadedFile,
   Req,
   BadRequestException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { firstValueFrom } from 'rxjs';
 import {
   ApiOperation,
@@ -176,6 +177,79 @@ export class SellerController {
     return await firstValueFrom(
       this.sellerService.send('get-seller-dashboard', request.user.userId)
     );
+  }
+
+  // ============================================
+  // IMAGE UPLOAD ENDPOINT
+  // ============================================
+
+  @Post('upload-image')
+  @ApiOperation({ summary: 'Upload a single image to ImageKit (seller only)' })
+  @ApiConsumes('multipart/form-data')
+  @UseGuards(RolesGuard)
+  @Roles('SELLER')
+  @UseInterceptors(FileInterceptor('image'))
+  @ApiResponse({
+    status: 201,
+    description: 'Image uploaded successfully.',
+    schema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'ImageKit URL of uploaded image' },
+        fileId: { type: 'string', description: 'ImageKit file ID' },
+        name: { type: 'string', description: 'File name' },
+        size: { type: 'number', description: 'File size in bytes' },
+        filePath: { type: 'string', description: 'File path in ImageKit' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid file or file too large.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Seller access required.',
+  })
+  async uploadImage(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('folder') folder = 'products'
+  ) {
+    // Validate file exists
+    if (!file) {
+      throw new BadRequestException('No image file provided');
+    }
+
+    // Validate file type
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+      throw new BadRequestException(
+        `Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed`
+      );
+    }
+
+    // Validate file size
+    if (file.size > FILE_SIZE_LIMIT) {
+      throw new BadRequestException(
+        `File too large. Maximum size is 5MB`
+      );
+    }
+
+    // Upload to ImageKit
+    const uploadResult = await this.imagekitService.uploadFile(
+      file.buffer,
+      file.originalname,
+      folder
+    );
+
+    // Return ImageKit metadata
+    return {
+      url: uploadResult.url,
+      fileId: uploadResult.fileId,
+      name: uploadResult.name,
+      size: file.size,
+      filePath: uploadResult.filePath,
+    };
   }
 
   // ============================================
