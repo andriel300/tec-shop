@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { IKImage } from 'imagekitio-next';
-import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Loader2, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { imagekitConfig, getImageKitPath } from '../../lib/imagekit-config';
+import { enhancements } from '../../lib/utils/AI.enhancements';
+import { uploadImage } from '../../lib/api/upload';
 
 const ImagePlaceHolder = ({
   size,
@@ -14,6 +16,7 @@ const ImagePlaceHolder = ({
   defaultImage = null,
   index = 0,
   setOpenImageModal,
+  onImageUploaded,
 }: {
   size: string;
   small?: boolean;
@@ -22,10 +25,15 @@ const ImagePlaceHolder = ({
   defaultImage?: string | null;
   setOpenImageModal: (OpenImageModal: boolean) => void;
   index?: number;
+  onImageUploaded?: (url: string, index: number) => void;
 }) => {
   const [imagePreview, setImagePreview] = useState<string | null>(defaultImage);
   const [isLoading, setIsLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [showEnhancementModal, setShowEnhancementModal] = useState(false);
+  const [selectedEnhancement, setSelectedEnhancement] = useState<string | null>(null);
+  const [tempEnhancement, setTempEnhancement] = useState<string | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   // Update preview when defaultImage changes
   useEffect(() => {
@@ -40,6 +48,32 @@ const ImagePlaceHolder = ({
       }
     };
   }, [imagePreview]);
+
+  // Close modal when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        setShowEnhancementModal(false);
+        setTempEnhancement(selectedEnhancement);
+      }
+    };
+
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowEnhancementModal(false);
+        setTempEnhancement(selectedEnhancement);
+      }
+    };
+
+    if (showEnhancementModal) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscKey);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('keydown', handleEscKey);
+      };
+    }
+  }, [showEnhancementModal, selectedEnhancement]);
 
   // Validate and process file
   const processFile = async (file: File) => {
@@ -62,26 +96,40 @@ const ImagePlaceHolder = ({
     try {
       setIsLoading(true);
 
-      // Simulate small delay for loading state (optional, can remove in production)
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      // Show temporary blob preview for immediate feedback
+      const tempPreview = URL.createObjectURL(file);
+      setImagePreview(tempPreview);
 
-      // Cleanup old preview URL if exists
-      if (imagePreview && imagePreview.startsWith('blob:')) {
-        URL.revokeObjectURL(imagePreview);
-      }
-
-      const preview = URL.createObjectURL(file);
-      setImagePreview(preview);
+      // Notify parent of File selection (for form submission)
       onImageChange(file, index);
+
+      // Upload to ImageKit
+      const uploadResult = await uploadImage(file, 'products');
+
+      // Cleanup blob URL and set ImageKit URL
+      URL.revokeObjectURL(tempPreview);
+      setImagePreview(uploadResult.url);
+
+      // Notify parent of ImageKit URL
+      if (onImageUploaded) {
+        onImageUploaded(uploadResult.url, index);
+      }
 
       toast.success('Image uploaded', {
         description: `${file.name} (${(file.size / 1024).toFixed(1)}KB)`,
       });
     } catch (error) {
       toast.error('Upload failed', {
-        description: 'Failed to process image. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to upload image. Please try again.',
       });
-      console.error('Error processing image:', error);
+      console.error('Error uploading image:', error);
+
+      // Clear preview on error
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
+      setImagePreview(null);
+      onImageChange(null, index);
     } finally {
       setIsLoading(false);
     }
@@ -146,6 +194,40 @@ const ImagePlaceHolder = ({
     }
   };
 
+  // Enhancement modal handlers
+  const handleSelectEnhancement = (effect: string) => {
+    // Toggle: if same effect is clicked, deselect it
+    setTempEnhancement((prev) => (prev === effect ? null : effect));
+  };
+
+  const handleWandClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setTempEnhancement(selectedEnhancement);
+    setShowEnhancementModal(true);
+  };
+
+  const handleApplyEnhancements = () => {
+    setSelectedEnhancement(tempEnhancement);
+    setShowEnhancementModal(false);
+
+    if (tempEnhancement) {
+      const enhancementLabel = enhancements.find(e => e.effect === tempEnhancement)?.label || 'Enhancement';
+      toast.success('Enhancement applied', {
+        description: enhancementLabel,
+      });
+    } else {
+      toast.info('Enhancement cleared');
+    }
+  };
+
+  const handleCancelEnhancements = () => {
+    setTempEnhancement(selectedEnhancement);
+    setShowEnhancementModal(false);
+  };
+
+  // Check if image is uploaded (not a blob URL)
+  const isImageUploaded = imagePreview && !imagePreview.startsWith('blob:');
+
   return (
     <div
       onClick={handleClick}
@@ -204,7 +286,10 @@ const ImagePlaceHolder = ({
                 height: '400',
                 crop: 'at_max',
                 quality: '85',
-                focus: 'auto'
+                focus: 'auto',
+                ...(selectedEnhancement && {
+                  e: selectedEnhancement.replace('e-', '')
+                })
               }]}
               loading="eager"
               lqip={{ active: true, quality: 20 }}
@@ -224,6 +309,30 @@ const ImagePlaceHolder = ({
               >
                 <Upload size={small ? 16 : 20} />
               </button>
+              {isImageUploaded && (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={handleWandClick}
+                    disabled={isLoading}
+                    className={`p-2 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      selectedEnhancement
+                        ? 'bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700'
+                        : 'bg-purple-600 hover:bg-purple-700'
+                    }`}
+                    title="AI Enhancements"
+                  >
+                    <Wand2 size={small ? 16 : 20} />
+                  </button>
+                  {selectedEnhancement && (
+                    <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                      <svg className="w-2 h-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </span>
+                  )}
+                </div>
+              )}
               <button
                 type="button"
                 onClick={handleRemove}
@@ -235,6 +344,125 @@ const ImagePlaceHolder = ({
               </button>
             </div>
           </div>
+
+          {/* AI Enhancement Modal */}
+          {isImageUploaded && showEnhancementModal && (
+            <div
+              className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-75"
+              style={{ animation: 'fadeIn 200ms ease-out' }}
+            >
+              <div
+                ref={modalRef}
+                className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-2xl mx-4"
+                style={{ animation: 'slideUp 200ms ease-out' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Modal Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg">
+                      <Wand2 size={20} className="text-white" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-white">
+                      Enhance Product Image
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCancelEnhancements}
+                    className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                {/* Modal Body */}
+                <div className="p-6">
+                  {/* Image Preview */}
+                  <div className="mb-6 flex justify-center">
+                    <div className="relative w-full max-w-md h-64 bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-700">
+                      <IKImage
+                        urlEndpoint={imagekitConfig.urlEndpoint}
+                        path={getImageKitPath(imagePreview)}
+                        alt="Preview"
+                        width={400}
+                        height={400}
+                        transformation={[{
+                          width: '400',
+                          height: '400',
+                          crop: 'at_max',
+                          quality: '90',
+                          focus: 'auto',
+                          ...(tempEnhancement && {
+                            e: tempEnhancement.replace('e-', '')
+                          })
+                        }]}
+                        loading="eager"
+                        className="absolute inset-0 w-full h-full object-contain"
+                      />
+                    </div>
+                  </div>
+
+                  {/* AI Enhancements Grid */}
+                  <div className="mb-6">
+                    <h4 className="text-sm font-medium text-gray-300 mb-3">
+                      AI Enhancements
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      {enhancements.map((enhancement) => {
+                        const isSelected = tempEnhancement === enhancement.effect;
+                        return (
+                          <button
+                            key={enhancement.effect}
+                            type="button"
+                            onClick={() => handleSelectEnhancement(enhancement.effect)}
+                            className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all ${
+                              isSelected
+                                ? 'bg-gradient-to-br from-purple-600/20 to-blue-600/20 border-purple-500'
+                                : 'bg-gray-800 border-gray-700 hover:border-gray-600'
+                            }`}
+                          >
+                            <div className={`flex items-center justify-center w-5 h-5 rounded-full border-2 transition-colors ${
+                              isSelected
+                                ? 'bg-purple-600 border-purple-600'
+                                : 'border-gray-600'
+                            }`}>
+                              {isSelected && (
+                                <div className="w-2.5 h-2.5 bg-white rounded-full" />
+                              )}
+                            </div>
+                            <span className={`text-sm font-medium ${
+                              isSelected ? 'text-white' : 'text-gray-300'
+                            }`}>
+                              {enhancement.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-700 bg-gray-800/50">
+                  <button
+                    type="button"
+                    onClick={handleCancelEnhancements}
+                    className="px-4 py-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleApplyEnhancements}
+                    className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg"
+                  >
+                    Apply{tempEnhancement ? ' Enhancement' : ''}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       ) : (
         <>
@@ -272,6 +500,29 @@ const ImagePlaceHolder = ({
           </div>
         </>
       )}
+
+      {/* CSS Animations */}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+      `}</style>
     </div>
   );
 };

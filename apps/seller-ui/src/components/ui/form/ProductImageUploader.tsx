@@ -5,6 +5,7 @@ export interface ProductImageUploaderProps {
   images: (File | null)[];
   onChange: (images: (File | null)[]) => void;
   className?: string;
+  onImageUploaded?: (url: string, index: number) => void;
 }
 
 /**
@@ -19,6 +20,7 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
   images,
   onChange,
   className = '',
+  onImageUploaded,
 }) => {
   const [_openImageModal, setOpenImageModal] = useState(false);
 
@@ -52,6 +54,7 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
           onImageChange={handleImageChange}
           onRemove={handleImageRemove}
           setOpenImageModal={setOpenImageModal}
+          onImageUploaded={onImageUploaded}
           defaultImage={images[0] ? URL.createObjectURL(images[0]) : null}
         />
         <p className="mt-2 text-xs text-gray-400">
@@ -74,6 +77,7 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
               onImageChange={handleImageChange}
               onRemove={handleImageRemove}
               setOpenImageModal={setOpenImageModal}
+              onImageUploaded={onImageUploaded}
               defaultImage={
                 images[idx] ? URL.createObjectURL(images[idx]) : null
               }
