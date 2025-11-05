@@ -298,6 +298,45 @@ export class ProductService {
     return products;
   }
 
+  async findDeleted(
+    shopId: string,
+    filters?: {
+      categoryId?: string;
+      brandId?: string;
+      search?: string;
+    }
+  ) {
+    this.logger.debug(
+      `findDeleted called with shopId: ${shopId}, filters: ${JSON.stringify(filters)}`
+    );
+
+    const products = await this.prisma.product.findMany({
+      where: {
+        shopId,
+        // Only show deleted products (deletedAt is not null)
+        deletedAt: { not: null },
+        ...(filters?.categoryId && { categoryId: filters.categoryId }),
+        ...(filters?.brandId && { brandId: filters.brandId }),
+        ...(filters?.search && {
+          OR: [
+            { name: { contains: filters.search, mode: 'insensitive' } },
+            { description: { contains: filters.search, mode: 'insensitive' } },
+          ],
+        }),
+      },
+      include: {
+        category: true,
+        brand: true,
+        variants: true,
+      },
+      orderBy: { deletedAt: 'desc' }, // Most recently deleted first
+    });
+
+    this.logger.debug(`findDeleted returning ${products.length} deleted products`);
+
+    return products;
+  }
+
   async findOne(id: string, sellerId: string) {
     const product = await this.prisma.product.findUnique({
       where: { id },
@@ -473,6 +512,43 @@ export class ProductService {
     return this.prisma.product.update({
       where: { id },
       data: { deletedAt: new Date() },
+    });
+  }
+
+  async restore(id: string, sellerId: string) {
+    // Find the product (including deleted ones)
+    const product = await this.prisma.product.findUnique({
+      where: { id },
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${id} not found`);
+    }
+
+    // Verify ownership via seller-service
+    const ownsShop = await this.sellerClient.verifyShopOwnership(
+      sellerId,
+      product.shopId
+    );
+    if (!ownsShop) {
+      throw new ForbiddenException('You do not have access to this product');
+    }
+
+    // Check if product is actually deleted
+    if (!product.deletedAt) {
+      throw new BadRequestException('Product is not deleted');
+    }
+
+    // Restore product by setting deletedAt to null
+    this.logger.log(`Restoring product ${id} for seller ${sellerId}`);
+    return this.prisma.product.update({
+      where: { id },
+      data: { deletedAt: null },
+      include: {
+        category: true,
+        brand: true,
+        variants: true,
+      },
     });
   }
 

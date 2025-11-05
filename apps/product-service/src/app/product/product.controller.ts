@@ -154,6 +154,56 @@ export class ProductController {
   }
 
   /**
+   * Get deleted products (trash)
+   */
+  @MessagePattern('product-get-deleted-products')
+  async findDeleted(
+    @Payload()
+    payload: {
+      shopId: string;
+      filters?: {
+        categoryId?: string;
+        brandId?: string;
+        search?: string;
+      };
+    }
+  ) {
+    this.logger.log(
+      `Received product-get-deleted-products request - shopId: ${payload.shopId}`
+    );
+
+    const products = await this.productService.findDeleted(
+      payload.shopId,
+      payload.filters
+    );
+
+    this.logger.log(
+      `Returning ${products.length} deleted products for shopId: ${payload.shopId}`
+    );
+
+    return products;
+  }
+
+  /**
+   * Restore deleted product
+   */
+  @MessagePattern('product-restore-product')
+  async restore(@Payload() payload: { id: string; sellerId: string }) {
+    this.logger.log(
+      `Received product-restore-product request - productId: ${payload.id}, sellerId: ${payload.sellerId}`
+    );
+
+    const result = await this.productService.restore(
+      payload.id,
+      payload.sellerId
+    );
+
+    this.logger.log(`Product restored successfully - productId: ${result.id}`);
+
+    return result;
+  }
+
+  /**
    * Increment product views
    */
   @MessagePattern('product-increment-product-views')

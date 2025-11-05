@@ -22,13 +22,16 @@ import {
   Settings,
   SquarePlus,
   TicketPercent,
+  Trash2,
 } from 'lucide-react';
 import { Payment } from '../../assets/svgs/icons/payment-icon';
+import { useDeletedProducts } from '../../hooks/useProducts';
 
 const SidebarBarWrapper = () => {
   const { activeSidebar, setActiveSidebar } = useSidebar();
   const pathName = usePathname();
   const { seller, isLoading, isError } = useSeller();
+  const { data: deletedProducts } = useDeletedProducts();
 
   useEffect(() => {
     setActiveSidebar(pathName);
@@ -40,6 +43,9 @@ const SidebarBarWrapper = () => {
   // Display shop name or seller name, with fallback
   const displayName =
     seller?.shop?.businessName || seller?.name || 'TecShop Seller';
+
+  // Get count of deleted products for badge
+  const deletedCount = deletedProducts?.length || 0;
 
   return (
     <Box
@@ -134,6 +140,18 @@ const SidebarBarWrapper = () => {
                     color={getIconColor('/dashboard/all-products')}
                   />
                 }
+              />
+              <SidebarItems
+                isActive={activeSidebar === '/dashboard/trash'}
+                title="Trash"
+                href="/dashboard/trash"
+                icon={
+                  <Trash2
+                    size={22}
+                    color={getIconColor('/dashboard/trash')}
+                  />
+                }
+                badge={deletedCount}
               />
             </SidebarMenu>
             <SidebarMenu title="Events">
