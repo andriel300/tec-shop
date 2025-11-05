@@ -8,7 +8,10 @@ import { Package, Plus, Edit, Trash2, Search } from 'lucide-react';
 import { useProducts, useDeleteProduct } from '../../../../hooks/useProducts';
 import { Alert } from '../../../../components/ui/core/Alert';
 import { Breadcrumb } from '../../../../components/navigation/Breadcrumb';
-import { imagekitConfig, getImageKitPath } from '../../../../lib/imagekit-config';
+import {
+  imagekitConfig,
+  getImageKitPath,
+} from '../../../../lib/imagekit-config';
 
 const ProductsPage = () => {
   const router = useRouter();
@@ -16,13 +19,19 @@ const ProductsPage = () => {
   const [hoveredImage, setHoveredImage] = useState<string | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-  // React Query hooks - no more useEffect for data fetching!
-  const { data: products = [], isLoading: loading, error: fetchError } = useProducts({
-    search: searchTerm || undefined
+  // React Query hooks
+  const {
+    data: products = [],
+    isLoading: loading,
+    error: fetchError,
+  } = useProducts({
+    search: searchTerm || undefined,
   });
   const { mutate: deleteProductMutation } = useDeleteProduct();
 
-  const error = fetchError ? 'Failed to load products. Please try again.' : null;
+  const error = fetchError
+    ? 'Failed to load products. Please try again.'
+    : null;
 
   // Handle mouse move for image preview positioning
   const handleMouseMove = (e: React.MouseEvent) => {
@@ -68,9 +77,7 @@ const ProductsPage = () => {
         ]}
       />
 
-      {error && (
-        <Alert variant="error" title="Error" description={error} />
-      )}
+      {error && <Alert variant="error" title="Error" description={error} />}
 
       {/* Delete errors are now handled by toast notifications via React Query */}
 
@@ -78,7 +85,10 @@ const ProductsPage = () => {
       <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-6">
         <div className="flex gap-4 items-center">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <Search
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              size={20}
+            />
             <input
               type="text"
               placeholder="Search products..."
@@ -128,8 +138,12 @@ const ProductsPage = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Stock
                 </th>
+
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Category
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Actions
@@ -138,13 +152,18 @@ const ProductsPage = () => {
             </thead>
             <tbody className="divide-y divide-gray-700">
               {filteredProducts.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-700/50 transition-colors">
+                <tr
+                  key={product.id}
+                  className="hover:bg-gray-700/50 transition-colors"
+                >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
                       {product.images && product.images[0] ? (
                         <div
                           className="relative w-12 h-12 rounded overflow-hidden cursor-pointer ring-2 ring-transparent hover:ring-blue-500 transition-all"
-                          onMouseEnter={() => setHoveredImage(product.images[0])}
+                          onMouseEnter={() =>
+                            setHoveredImage(product.images[0])
+                          }
                           onMouseLeave={() => setHoveredImage(null)}
                           onMouseMove={handleMouseMove}
                         >
@@ -154,12 +173,14 @@ const ProductsPage = () => {
                             alt={product.name}
                             width={48}
                             height={48}
-                            transformation={[{
-                              width: '48',
-                              height: '48',
-                              crop: 'at_max',
-                              quality: '80'
-                            }]}
+                            transformation={[
+                              {
+                                width: '48',
+                                height: '48',
+                                crop: 'at_max',
+                                quality: '80',
+                              },
+                            ]}
                             loading="lazy"
                             className="object-cover w-full h-full"
                           />
@@ -170,8 +191,12 @@ const ProductsPage = () => {
                         </div>
                       )}
                       <div>
-                        <div className="font-medium text-white">{product.name}</div>
-                        <div className="text-sm text-gray-400">{product.productType}</div>
+                        <div className="font-medium text-white">
+                          {product.name}
+                        </div>
+                        <div className="text-sm text-gray-400">
+                          {product.productType}
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -209,10 +234,17 @@ const ProductsPage = () => {
                       {product.status}
                     </span>
                   </td>
+                  <td className="px-6 py-4">
+                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-900 text-purple-300">
+                      {product.category?.name || 'Uncategorized'}
+                    </span>
+                  </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
                       <button
-                        onClick={() => router.push(`/dashboard/products/edit/${product.id}`)}
+                        onClick={() =>
+                          router.push(`/dashboard/products/edit/${product.id}`)
+                        }
                         className="p-2 text-blue-400 hover:bg-blue-900/30 rounded transition-colors"
                         title="Edit product"
                       >
@@ -237,7 +269,8 @@ const ProductsPage = () => {
       {/* Summary */}
       {filteredProducts.length > 0 && (
         <div className="mt-4 text-sm text-gray-400">
-          Showing {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}
+          Showing {filteredProducts.length} product
+          {filteredProducts.length !== 1 ? 's' : ''}
         </div>
       )}
 
@@ -272,13 +305,15 @@ const ProductsPage = () => {
                 alt="Product preview"
                 width={256}
                 height={256}
-                transformation={[{
-                  width: '256',
-                  height: '256',
-                  crop: 'at_max',
-                  quality: '90',
-                  focus: 'auto'
-                }]}
+                transformation={[
+                  {
+                    width: '256',
+                    height: '256',
+                    crop: 'at_max',
+                    quality: '90',
+                    focus: 'auto',
+                  },
+                ]}
                 loading="eager"
                 className="object-cover w-full h-full"
               />
