@@ -6,8 +6,9 @@ const inputVariants = cva(
   {
     variants: {
       variant: {
-        default: 'border-gray-300',
-        destructive: 'border-feedback-error',
+        default: 'border-gray-300 text-text-primary',
+        destructive: 'border-feedback-error text-text-primary',
+        dark: 'border-gray-700 bg-gray-800 text-white placeholder-gray-500 focus-visible:ring-blue-500 focus-visible:ring-offset-0',
       },
     },
     defaultVariants: {

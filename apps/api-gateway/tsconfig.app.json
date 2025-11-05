@@ -22,6 +22,9 @@
   ],
   "references": [
     {
+      "path": "../../libs/shared/imagekit/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/shared/dto/tsconfig.lib.json"
     }
   ]

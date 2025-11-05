@@ -53,6 +53,24 @@
     },
     {
       "path": "./libs/prisma-schemas/user-schema"
+    },
+    {
+      "path": "./libs/shared/validation"
+    },
+    {
+      "path": "./apps/product-service-e2e"
+    },
+    {
+      "path": "./apps/product-service"
+    },
+    {
+      "path": "./libs/prisma-schemas/product-schema"
+    },
+    {
+      "path": "./libs/prisma-clients/product-client"
+    },
+    {
+      "path": "./libs/shared/imagekit"
     }
   ]
 }
