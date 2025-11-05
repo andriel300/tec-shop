@@ -31,7 +31,7 @@ export type PricingDto = z.infer<typeof PricingSchema>;
 
 /**
  * Product Response DTO
- * Matches Prisma Product model structure
+ * Matches Prisma Product model structure with relations
  */
 export interface ProductResponseDto {
   id: string;
@@ -39,9 +39,11 @@ export interface ProductResponseDto {
   name: string;
   description: string;
 
-  // Category & Brand
+  // Category & Brand (with relations)
   categoryId: string;
+  category?: CategoryResponseDto; // Populated when fetched with relations
   brandId?: string | null;
+  brand?: BrandResponseDto | null; // Populated when fetched with relations
 
   // Product Type
   productType: 'SIMPLE' | 'VARIABLE' | 'DIGITAL';

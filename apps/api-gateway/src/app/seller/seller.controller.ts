@@ -379,12 +379,11 @@ export class SellerController {
 
   @Put('products/:id')
   @ApiOperation({
-    summary: 'Update a product with optional new images (seller only)',
+    summary: 'Update a product (seller only)',
+    description: 'Updates product with JSON payload. Since eager upload is used, all images are already ImageKit URLs.',
   })
-  @ApiConsumes('multipart/form-data')
   @UseGuards(RolesGuard)
   @Roles('SELLER')
-  @UseInterceptors(FilesInterceptor('images', 4))
   @ApiResponse({ status: 200, description: 'Product updated successfully.' })
   @ApiResponse({ status: 404, description: 'Product not found.' })
   @ApiResponse({
@@ -394,52 +393,19 @@ export class SellerController {
   async updateProduct(
     @Req() req: Record<string, unknown>,
     @Param('id') id: string,
-    @Body() productData: Dto.UpdateProductDto,
-    @UploadedFiles() files?: Express.Multer.File[]
+    @Body() productData: Dto.UpdateProductDto & { images?: string[] }
   ) {
     const user = req.user as { userId: string };
 
-    let imageUrls: string[] | undefined;
-
-    // If files are provided, validate and upload to ImageKit
-    if (files && files.length > 0) {
-      // Validate files (but don't require at least one for updates)
-      if (files.length > MAX_FILES) {
-        throw new BadRequestException(`Maximum ${MAX_FILES} images allowed`);
-      }
-
-      files.forEach((file) => {
-        if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
-          throw new BadRequestException(
-            `Invalid file type: ${file.originalname}. Only JPEG, PNG, GIF, and WebP images are allowed`
-          );
-        }
-
-        if (file.size > FILE_SIZE_LIMIT) {
-          throw new BadRequestException(
-            `File too large: ${file.originalname}. Maximum size is 5MB`
-          );
-        }
-      });
-
-      // Upload images to ImageKit
-      const uploadResults = await this.imagekitService.uploadMultipleFiles(
-        files.map((file) => ({
-          buffer: file.buffer,
-          originalname: file.originalname,
-        })),
-        'products'
-      );
-
-      imageUrls = uploadResults.map((result) => result.url);
-    }
+    // Extract images array from productData (already ImageKit URLs via eager upload)
+    const { images, ...cleanProductData } = productData;
 
     return firstValueFrom(
       this.productService.send('product-update-product', {
         id,
         sellerId: user.userId,
-        productData,
-        imageUrls,
+        productData: cleanProductData,
+        imageUrls: images, // Pass images as imageUrls to microservice
       })
     );
   }
