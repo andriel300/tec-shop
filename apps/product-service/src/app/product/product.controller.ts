@@ -115,9 +115,25 @@ export class ProductController {
       imageUrls?: string[];
     }
   ) {
-    const { id, sellerId, productData, imageUrls } = payload;
+    try {
+      this.logger.log(
+        `Received product update request - productId: ${payload.id}, sellerId: ${payload.sellerId}, hasImages: ${!!payload.imageUrls}`
+      );
 
-    return this.productService.update(id, sellerId, productData, imageUrls);
+      const { id, sellerId, productData, imageUrls } = payload;
+
+      const result = await this.productService.update(id, sellerId, productData, imageUrls);
+
+      this.logger.log(`Product updated successfully - productId: ${result.id}`);
+
+      return result;
+    } catch (error) {
+      this.logger.error(
+        `Product update failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      throw error;
+    }
   }
 
   /**
