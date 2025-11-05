@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { LoggerModule } from 'nestjs-pino';
@@ -16,6 +17,7 @@ import { SellerClientModule } from '../clients/seller.client';
       expandVariables: true,
       envFilePath: process.env.NODE_ENV === 'production' ? '' : '.env',
     }),
+    ScheduleModule.forRoot(),
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

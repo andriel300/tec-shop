@@ -8,6 +8,7 @@ import { Package, Plus, Edit, Trash2, Search } from 'lucide-react';
 import { useProducts, useDeleteProduct } from '../../../../hooks/useProducts';
 import { Alert } from '../../../../components/ui/core/Alert';
 import { Breadcrumb } from '../../../../components/navigation/Breadcrumb';
+import { DeleteConfirmationModal } from '../../../../components/ui/modal/DeleteConfirmationModal';
 import {
   imagekitConfig,
   getImageKitPath,
@@ -18,6 +19,15 @@ const ProductsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [hoveredImage, setHoveredImage] = useState<string | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    productId: string | null;
+    productName: string;
+  }>({
+    isOpen: false,
+    productId: null,
+    productName: '',
+  });
 
   // React Query hooks
   const {
@@ -27,7 +37,7 @@ const ProductsPage = () => {
   } = useProducts({
     search: searchTerm || undefined,
   });
-  const { mutate: deleteProductMutation } = useDeleteProduct();
+  const { mutate: deleteProductMutation, isPending: isDeleting } = useDeleteProduct();
 
   const error = fetchError
     ? 'Failed to load products. Please try again.'
@@ -38,12 +48,30 @@ const ProductsPage = () => {
     setMousePosition({ x: e.clientX, y: e.clientY });
   };
 
-  const handleDelete = (productId: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) {
-      return;
-    }
+  const openDeleteModal = (productId: string, productName: string) => {
+    setDeleteModal({
+      isOpen: true,
+      productId,
+      productName,
+    });
+  };
 
-    deleteProductMutation(productId);
+  const closeDeleteModal = () => {
+    setDeleteModal({
+      isOpen: false,
+      productId: null,
+      productName: '',
+    });
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!deleteModal.productId) return;
+
+    deleteProductMutation(deleteModal.productId, {
+      onSuccess: () => {
+        closeDeleteModal();
+      },
+    });
   };
 
   const filteredProducts = products.filter((product) => {
@@ -251,7 +279,7 @@ const ProductsPage = () => {
                         <Edit size={18} />
                       </button>
                       <button
-                        onClick={() => handleDelete(product.id)}
+                        onClick={() => openDeleteModal(product.id, product.name)}
                         className="p-2 text-red-400 hover:bg-red-900/30 rounded transition-colors"
                         title="Delete product"
                       >
@@ -321,6 +349,15 @@ const ProductsPage = () => {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={closeDeleteModal}
+        onConfirm={handleDeleteConfirm}
+        productName={deleteModal.productName}
+        isDeleting={isDeleting}
+      />
 
       {/* CSS Animations */}
       <style jsx>{`

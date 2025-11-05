@@ -194,6 +194,7 @@ export class ProductService {
             publishDate: sanitizedData.publishDate,
             isFeatured: sanitizedData.isFeatured,
             isActive: sanitizedData.isActive,
+            deletedAt: null, // Explicitly set to null for soft-delete support
           },
         });
 
@@ -252,9 +253,15 @@ export class ProductService {
       search?: string;
     }
   ) {
-    return this.prisma.product.findMany({
+    this.logger.debug(
+      `findAll called with shopId: ${shopId}, filters: ${JSON.stringify(filters)}`
+    );
+
+    const products = await this.prisma.product.findMany({
       where: {
         shopId,
+        // Only show non-deleted products
+        deletedAt: null,
         ...(filters?.categoryId && { categoryId: filters.categoryId }),
         ...(filters?.brandId && { brandId: filters.brandId }),
         ...(filters?.productType && {
@@ -285,6 +292,10 @@ export class ProductService {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    this.logger.debug(`findAll returning ${products.length} products`);
+
+    return products;
   }
 
   async findOne(id: string, sellerId: string) {
@@ -457,9 +468,11 @@ export class ProductService {
     // Verify ownership first
     await this.findOne(id, sellerId);
 
-    // Delete product (variants will be cascade deleted)
-    return this.prisma.product.delete({
+    // Soft delete product (set deletedAt timestamp)
+    // Product will be permanently deleted after 24 hours by scheduled task
+    return this.prisma.product.update({
       where: { id },
+      data: { deletedAt: new Date() },
     });
   }
 

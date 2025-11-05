@@ -14,6 +14,7 @@ import {
   UploadedFile,
   Req,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { FilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
@@ -46,6 +47,8 @@ const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif',
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class SellerController {
+  private readonly logger = new Logger(SellerController.name);
+
   constructor(
     @Inject('SELLER_SERVICE') private readonly sellerService: ClientProxy,
     @Inject('PRODUCT_SERVICE') private readonly productService: ClientProxy,
@@ -331,7 +334,6 @@ export class SellerController {
   })
   async getProducts(
     @Req() req: Record<string, unknown>,
-    @Query('shopId') shopId?: string,
     @Query('category') category?: string,
     @Query('isActive') isActive?: boolean,
     @Query('isFeatured') isFeatured?: boolean,
@@ -339,10 +341,25 @@ export class SellerController {
   ) {
     const user = req.user as { userId: string };
 
-    return firstValueFrom(
+    // Get seller's shop (one seller = one shop)
+    const shop = await firstValueFrom(
+      this.sellerService.send('get-seller-shop', user.userId)
+    );
+
+    if (!shop || !shop.id) {
+      throw new BadRequestException(
+        'Shop not found. Please set up your shop first.'
+      );
+    }
+
+    this.logger.debug(
+      `Fetching products for seller: ${user.userId}, shop: ${shop.id}`
+    );
+
+    const products = await firstValueFrom(
       this.productService.send('product-get-products', {
         sellerId: user.userId,
-        shopId,
+        shopId: shop.id, // Auto-populated from seller's shop
         filters: {
           category,
           isActive,
@@ -351,6 +368,10 @@ export class SellerController {
         },
       })
     );
+
+    this.logger.debug(`Found ${products.length} products`);
+
+    return products;
   }
 
   @Get('products/:id')

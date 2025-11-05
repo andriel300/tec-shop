@@ -88,10 +88,19 @@ export class ProductController {
         category?: string;
         isActive?: boolean;
         isFeatured?: boolean;
+        search?: string;
       };
     }
   ) {
-    return this.productService.findAll(payload.shopId, payload.filters);
+    this.logger.log(
+      `Received product-get-products request - shopId: ${payload.shopId}, filters: ${JSON.stringify(payload.filters)}`
+    );
+
+    const products = await this.productService.findAll(payload.shopId, payload.filters);
+
+    this.logger.log(`Returning ${products.length} products for shopId: ${payload.shopId}`);
+
+    return products;
   }
 
   /**
