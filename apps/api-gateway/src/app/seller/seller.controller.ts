@@ -374,6 +374,52 @@ export class SellerController {
     return products;
   }
 
+  @Get('products/trash')
+  @ApiOperation({ summary: 'Get deleted products (trash) for seller shop' })
+  @UseGuards(RolesGuard)
+  @Roles('SELLER')
+  @ApiResponse({ status: 200, description: 'Deleted products retrieved successfully.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Seller access required.',
+  })
+  async getDeletedProducts(
+    @Req() req: Record<string, unknown>,
+    @Query('category') category?: string,
+    @Query('search') search?: string
+  ) {
+    const user = req.user as { userId: string };
+
+    // Get seller's shop (one seller = one shop)
+    const shop = await firstValueFrom(
+      this.sellerService.send('get-seller-shop', user.userId)
+    );
+
+    if (!shop || !shop.id) {
+      throw new BadRequestException(
+        'Shop not found. Please set up your shop first.'
+      );
+    }
+
+    this.logger.debug(
+      `Fetching deleted products for seller: ${user.userId}, shop: ${shop.id}`
+    );
+
+    const products = await firstValueFrom(
+      this.productService.send('product-get-deleted-products', {
+        shopId: shop.id,
+        filters: {
+          categoryId: category,
+          search,
+        },
+      })
+    );
+
+    this.logger.debug(`Found ${products.length} deleted products`);
+
+    return products;
+  }
+
   @Get('products/:id')
   @ApiOperation({ summary: 'Get a single product by ID (seller only)' })
   @UseGuards(RolesGuard)
@@ -449,6 +495,31 @@ export class SellerController {
 
     return firstValueFrom(
       this.productService.send('product-delete-product', {
+        id,
+        sellerId: user.userId,
+      })
+    );
+  }
+
+  @Post('products/:id/restore')
+  @ApiOperation({ summary: 'Restore a deleted product (seller only)' })
+  @UseGuards(RolesGuard)
+  @Roles('SELLER')
+  @ApiResponse({ status: 200, description: 'Product restored successfully.' })
+  @ApiResponse({ status: 404, description: 'Product not found.' })
+  @ApiResponse({ status: 400, description: 'Product is not deleted.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Seller access required.',
+  })
+  async restoreProduct(
+    @Req() req: Record<string, unknown>,
+    @Param('id') id: string
+  ) {
+    const user = req.user as { userId: string };
+
+    return firstValueFrom(
+      this.productService.send('product-restore-product', {
         id,
         sellerId: user.userId,
       })

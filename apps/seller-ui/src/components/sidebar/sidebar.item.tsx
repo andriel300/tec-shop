@@ -6,9 +6,10 @@ interface Props {
   title: string;
   isActive: boolean;
   href: string;
+  badge?: number; // Optional badge count
 }
 
-const SidebarItems = ({ icon, title, isActive, href }: Props) => {
+const SidebarItems = ({ icon, title, isActive, href, badge }: Props) => {
   return (
     <Link href={href} className="my-2 block">
       <div
@@ -18,7 +19,12 @@ const SidebarItems = ({ icon, title, isActive, href }: Props) => {
         }`}
       >
         {icon}
-        <h5 className="text-slate-200 text-lg">{title}</h5>
+        <h5 className="text-slate-200 text-lg flex-1">{title}</h5>
+        {badge !== undefined && badge > 0 && (
+          <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-semibold rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
+            {badge}
+          </span>
+        )}
       </div>
     </Link>
   );

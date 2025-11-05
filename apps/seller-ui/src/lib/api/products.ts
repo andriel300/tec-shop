@@ -272,3 +272,26 @@ export const updateProduct = async (
 export const deleteProduct = async (id: string): Promise<void> => {
   await apiClient.delete(`/seller/products/${id}`);
 };
+
+/**
+ * Get deleted products (trash) for the seller's shop
+ */
+export const getDeletedProducts = async (filters?: {
+  category?: string;
+  search?: string;
+}): Promise<ProductResponse[]> => {
+  const params = new URLSearchParams();
+  if (filters?.category) params.append('category', filters.category);
+  if (filters?.search) params.append('search', filters.search);
+
+  const response = await apiClient.get(`/seller/products/trash?${params.toString()}`);
+  return response.data;
+};
+
+/**
+ * Restore a deleted product
+ */
+export const restoreProduct = async (id: string): Promise<ProductResponse> => {
+  const response = await apiClient.post(`/seller/products/${id}/restore`);
+  return response.data;
+};
