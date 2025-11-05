@@ -133,6 +133,9 @@ model Product {
   views       Int      @default(0)
   sales       Int      @default(0)
 
+  // Soft delete (for 24-hour recovery window)
+  deletedAt   DateTime?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -142,6 +145,7 @@ model Product {
   @@index([isActive])
   @@index([status])
   @@index([productType])
+  @@index([deletedAt])
 }
 
 // ============================================
