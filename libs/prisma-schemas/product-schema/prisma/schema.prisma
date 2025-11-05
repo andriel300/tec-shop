@@ -1,0 +1,204 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../../node_modules/.prisma/product-client"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("PRODUCT_SERVICE_DB_URL")
+}
+
+// ============================================
+// Category Model (Admin-controlled taxonomy)
+// ============================================
+
+model Category {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  slug        String     @unique
+  description String?
+
+  // Hierarchical categories
+  parentId    String?    @db.ObjectId
+  parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children    Category[] @relation("CategoryTree")
+
+  // Category-specific attributes definition
+  // e.g., { "brand": { "required": true, "type": "select" }, "warranty": { "required": false, "type": "text" } }
+  attributes  Json?
+
+  image       String?
+  isActive    Boolean    @default(true)
+  position    Int        @default(0)
+
+  products    Product[]
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([parentId])
+  @@index([isActive])
+}
+
+// ============================================
+// Brand Model (Admin-controlled)
+// ============================================
+
+model Brand {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  logo        String?
+  website     String?
+  isActive    Boolean   @default(true)
+
+  products    Product[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([isActive])
+}
+
+// ============================================
+// Product Model
+// ============================================
+
+model Product {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Reference to seller-service Shop (cross-service reference)
+  shopId      String   @db.ObjectId
+
+  // Basic Information
+  name        String
+  description String   // Rich text (HTML)
+
+  // Category & Brand
+  categoryId  String   @db.ObjectId
+  category    Category @relation(fields: [categoryId], references: [id])
+  brandId     String?  @db.ObjectId
+  brand       Brand?   @relation(fields: [brandId], references: [id])
+
+  // Product Type
+  productType ProductType @default(SIMPLE)
+
+  // Pricing (for simple products, variants have their own pricing)
+  price       Float
+  salePrice   Float?
+
+  // Stock (for simple products)
+  stock       Int      @default(0)
+
+  // Images stored as array of file paths
+  images      String[] // e.g., ["/uploads/product-123-0.jpg"]
+
+  // Product Variants (for variable products)
+  hasVariants Boolean          @default(false)
+  variants    ProductVariant[]
+
+  // Dynamic Attributes (category-specific)
+  // e.g., { "warranty": "1 year", "material": "Cotton", "color": "Red" }
+  attributes  Json?
+
+  // Shipping Information
+  shipping    Json?    // { weight, dimensions: { length, width, height }, freeShipping, shippingClass }
+
+  // SEO
+  seo         Json?    // { title, description, slug, keywords }
+  slug        String?  @unique
+
+  // Inventory
+  inventory   Json?    // { sku, trackInventory, lowStockThreshold, allowBackorders, stockStatus }
+
+  // Additional Fields
+  warranty    String?
+  tags        String[] @default([])
+  youtubeUrl  String?  // YouTube embed URL for product video
+
+  // Discount Code (optional - references seller-service DiscountCode)
+  discountCodeId String? @db.ObjectId // Cross-service reference to DiscountCode
+
+  // Status
+  status      ProductStatus    @default(DRAFT)
+  visibility  ProductVisibility @default(PUBLIC)
+  publishDate DateTime?
+
+  // Flags
+  isActive    Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+
+  // Sales metrics
+  views       Int      @default(0)
+  sales       Int      @default(0)
+
+  // Soft delete (for 24-hour recovery window)
+  deletedAt   DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([shopId])
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([isActive])
+  @@index([status])
+  @@index([productType])
+  @@index([deletedAt])
+}
+
+// ============================================
+// Product Variant Model
+// ============================================
+
+model ProductVariant {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  productId   String   @db.ObjectId
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  sku         String   @unique
+
+  // Variant attributes (e.g., { "size": "M", "color": "Red" })
+  attributes  Json
+
+  // Pricing
+  price       Float
+  salePrice   Float?
+
+  // Stock
+  stock       Int      @default(0)
+
+  // Image (optional, specific to this variant)
+  image       String?
+
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([productId])
+  @@index([isActive])
+}
+
+// ============================================
+// Enums
+// ============================================
+
+enum ProductType {
+  SIMPLE      // Single product, no variants
+  VARIABLE    // Product with variants (size, color, etc.)
+  DIGITAL     // Digital/downloadable product
+}
+
+enum ProductStatus {
+  DRAFT       // Not published yet
+  PUBLISHED   // Live and visible
+  SCHEDULED   // Scheduled for future publish
+}
+
+enum ProductVisibility {
+  PUBLIC              // Visible to everyone
+  PRIVATE             // Only visible to shop owner
+  PASSWORD_PROTECTED  // Requires password to view
+}

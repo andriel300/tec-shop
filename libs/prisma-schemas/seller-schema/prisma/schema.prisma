@@ -30,6 +30,9 @@ model Seller {
   // Business info
   shop Shop?
 
+  // Discount codes
+  discountCodes DiscountCode[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -64,4 +67,50 @@ enum StripeStatus {
   COMPLETE        // Fully onboarded and can accept payments
   RESTRICTED      // Account restricted due to issues
   REJECTED        // Account rejected by Stripe
+}
+
+enum DiscountType {
+  PERCENTAGE   // Percentage off (e.g., 10% off)
+  FIXED_AMOUNT // Fixed amount off (e.g., $5 off)
+  FREE_SHIPPING // Free shipping
+}
+
+model DiscountCode {
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Seller relation
+  sellerId      String       @db.ObjectId
+  seller        Seller       @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  // Basic info
+  publicName    String       // Display name for customers (e.g., "Summer Sale")
+  code          String       @unique // The actual discount code (e.g., "SUMMER2025")
+  description   String?      // Optional description
+
+  // Discount configuration
+  discountType  DiscountType
+  discountValue Float        // Percentage (0-100) or fixed amount
+
+  // Usage limits
+  usageLimit    Int?         // Max total uses (null = unlimited)
+  usageCount    Int          @default(0) // Current usage count
+  maxUsesPerCustomer Int?    // Max uses per customer (null = unlimited)
+
+  // Validity period
+  startDate     DateTime     @default(now())
+  endDate       DateTime?    // null = no expiration
+
+  // Conditions
+  minimumPurchase Float?     // Minimum order value required (null = no minimum)
+
+  // Status
+  isActive      Boolean      @default(true)
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([sellerId])
+  @@index([isActive])
+  @@index([startDate])
+  @@index([endDate])
 }

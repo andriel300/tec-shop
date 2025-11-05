@@ -2,6 +2,7 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  Logger,
   OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -27,6 +28,8 @@ import { ServiceAuthUtil } from './service-auth.util';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private jwtService: JwtService,
     private prisma: AuthPrismaService,
@@ -37,170 +40,235 @@ export class AuthService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    console.log('AuthService: Initializing module...');
+    this.logger.log('Initializing AuthService module...');
 
     // 1. Test User Service connection
     try {
       await this.userClient.connect();
-      console.log('AuthService: User Service client connected successfully.');
+      this.logger.log('User Service client connected successfully');
     } catch (err) {
-      console.error(
-        'AuthService: FAILED to connect to User Service client.',
-        err
-      );
+      this.logger.error('FAILED to connect to User Service client', err);
     }
 
     // 2. Test Redis connection
     try {
-      await this.redisService.get('ping'); // Use a simple command to check connection
-      console.log('AuthService: Redis connected successfully.');
+      await this.redisService.get('ping');
+      this.logger.log('Redis connected successfully');
     } catch (err) {
-      console.error('AuthService: FAILED to connect to Redis.', err);
+      this.logger.error('FAILED to connect to Redis', err);
     }
   }
 
   async signup(signupDto: SignupDto) {
-    const { email, password, name } = signupDto;
+    try {
+      this.logger.log(`Customer signup attempt - email: ${signupDto.email}`);
+      const { email, password, name } = signupDto;
 
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email },
-    });
+      this.logger.debug('Checking if user already exists');
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email },
+      });
 
-    if (existingUser) {
-      throw new ConflictException('User with this email already exists');
+      if (existingUser) {
+        this.logger.warn(`Signup failed - email already exists: ${email}`);
+        throw new ConflictException('User with this email already exists');
+      }
+
+      this.logger.debug('Hashing password');
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      this.logger.debug('Creating user record');
+      const user = await this.prisma.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          isEmailVerified: false,
+        },
+      });
+
+      this.logger.debug(`User created - ID: ${user.id}`);
+
+      // Generate and store OTP and name using cryptographically secure random
+      this.logger.debug('Generating OTP');
+      const otp = randomInt(100000, 1000000).toString().padStart(6, '0');
+      const redisPayload = JSON.stringify({ otp, name });
+      await this.redisService.set(
+        `verification-otp:${user.id}`,
+        redisPayload,
+        600
+      );
+
+      // Send verification email
+      this.logger.debug(`Sending verification email to: ${user.email}`);
+      await this.emailService.sendOtp(user.email, otp);
+
+      this.logger.log(`Customer signup successful - userId: ${user.id}, email: ${email}`);
+
+      // We will not emit an event or return a token until the user is verified.
+      return {
+        message:
+          'Signup successful. Please check your email to verify your account.',
+      };
+    } catch (error) {
+      this.logger.error(
+        `Customer signup failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      throw error;
     }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        isEmailVerified: false,
-      },
-    });
-
-    // Generate and store OTP and name using cryptographically secure random
-    const otp = randomInt(100000, 1000000).toString().padStart(6, '0');
-    const redisPayload = JSON.stringify({ otp, name });
-    await this.redisService.set(
-      `verification-otp:${user.id}`,
-      redisPayload,
-      600
-    );
-
-    // Send verification email
-    await this.emailService.sendOtp(user.email, otp);
-
-    // We will not emit an event or return a token until the user is verified.
-    return {
-      message:
-        'Signup successful. Please check your email to verify your account.',
-    };
   }
 
   async sellerSignup(sellerSignupDto: SellerSignupDto) {
-    const { email, password, name, phoneNumber, country } = sellerSignupDto;
+    try {
+      this.logger.log(`Seller signup attempt - email: ${sellerSignupDto.email}`);
+      const { email, password, name, phoneNumber, country } = sellerSignupDto;
 
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email },
-    });
+      this.logger.debug('Checking if seller already exists');
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email },
+      });
 
-    if (existingUser) {
-      throw new ConflictException('User with this email already exists');
+      if (existingUser) {
+        this.logger.warn(`Seller signup failed - email already exists: ${email}`);
+        throw new ConflictException('User with this email already exists');
+      }
+
+      this.logger.debug('Hashing seller password');
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      this.logger.debug('Creating seller user record');
+      const user = await this.prisma.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          isEmailVerified: false,
+          userType: 'SELLER', // Mark as seller type
+        },
+      });
+
+      this.logger.debug(`Seller user created - ID: ${user.id}`);
+
+      // Generate and store OTP with seller profile data
+      this.logger.debug('Generating OTP with seller profile data');
+      const otp = randomInt(100000, 1000000).toString().padStart(6, '0');
+      const redisPayload = JSON.stringify({
+        otp,
+        name,
+        phoneNumber,
+        country,
+        userType: 'SELLER',
+      });
+      await this.redisService.set(
+        `verification-otp:${user.id}`,
+        redisPayload,
+        600
+      );
+
+      // Send verification email
+      this.logger.debug(`Sending verification email to seller: ${user.email}`);
+      await this.emailService.sendOtp(user.email, otp);
+
+      this.logger.log(`Seller signup successful - userId: ${user.id}, email: ${email}`);
+
+      return {
+        message:
+          'Seller signup successful. Please check your email to verify your account.',
+      };
+    } catch (error) {
+      this.logger.error(
+        `Seller signup failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      throw error;
     }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        isEmailVerified: false,
-        userType: 'SELLER', // Mark as seller type
-      },
-    });
-
-    // Generate and store OTP with seller profile data
-    const otp = randomInt(100000, 1000000).toString().padStart(6, '0');
-    const redisPayload = JSON.stringify({
-      otp,
-      name,
-      phoneNumber,
-      country,
-      userType: 'SELLER'
-    });
-    await this.redisService.set(
-      `verification-otp:${user.id}`,
-      redisPayload,
-      600
-    );
-
-    // Send verification email
-    await this.emailService.sendOtp(user.email, otp);
-
-    return {
-      message:
-        'Seller signup successful. Please check your email to verify your account.',
-    };
   }
 
   async login(credential: LoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { email: credential.email },
-    });
+    try {
+      this.logger.log(`Customer login attempt - email: ${credential.email}`);
 
-    // Generic error message to prevent email enumeration
-    const genericError = 'Invalid credentials';
+      const user = await this.prisma.user.findUnique({
+        where: { email: credential.email },
+      });
 
-    if (!user || !user.password || !user.isEmailVerified) {
-      throw new UnauthorizedException(genericError);
+      // Generic error message to prevent email enumeration
+      const genericError = 'Invalid credentials';
+
+      if (!user || !user.password || !user.isEmailVerified) {
+        this.logger.warn(`Customer login failed - invalid credentials or unverified email: ${credential.email}`);
+        throw new UnauthorizedException(genericError);
+      }
+
+      this.logger.debug(`Verifying password for user: ${user.id}`);
+      const isPasswordMatching = await bcrypt.compare(
+        credential.password,
+        user.password
+      );
+
+      if (!isPasswordMatching) {
+        this.logger.warn(`Customer login failed - password mismatch: ${credential.email}`);
+        throw new UnauthorizedException(genericError);
+      }
+
+      this.logger.log(`Customer login successful - userId: ${user.id}, email: ${credential.email}`);
+
+      // Pass rememberMe flag to token generation for extended session
+      return this.generateTokens(user.id, user.email, credential.rememberMe);
+    } catch (error) {
+      this.logger.error(
+        `Customer login failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      throw error;
     }
-
-    const isPasswordMatching = await bcrypt.compare(
-      credential.password,
-      user.password
-    );
-
-    if (!isPasswordMatching) {
-      throw new UnauthorizedException(genericError);
-    }
-
-    // Pass rememberMe flag to token generation for extended session
-    return this.generateTokens(user.id, user.email, credential.rememberMe);
   }
 
   async sellerLogin(credential: LoginDto) {
-    // Find user by email with seller userType
-    const user = await this.prisma.user.findUnique({
-      where: {
-        email: credential.email,
-        userType: 'SELLER',
-      },
-    });
+    try {
+      this.logger.log(`Seller login attempt - email: ${credential.email}`);
 
-    // Generic error message to prevent email enumeration
-    const genericError = 'Invalid credentials';
+      // Find user by email with seller userType
+      const user = await this.prisma.user.findUnique({
+        where: {
+          email: credential.email,
+          userType: 'SELLER',
+        },
+      });
 
-    if (!user || !user.password || !user.isEmailVerified) {
-      throw new UnauthorizedException(genericError);
+      // Generic error message to prevent email enumeration
+      const genericError = 'Invalid credentials';
+
+      if (!user || !user.password || !user.isEmailVerified) {
+        this.logger.warn(`Seller login failed - invalid credentials or unverified email: ${credential.email}`);
+        throw new UnauthorizedException(genericError);
+      }
+
+      this.logger.debug(`Verifying password for seller: ${user.id}`);
+      const isPasswordMatching = await bcrypt.compare(
+        credential.password,
+        user.password
+      );
+
+      if (!isPasswordMatching) {
+        this.logger.warn(`Seller login failed - password mismatch: ${credential.email}`);
+        throw new UnauthorizedException(genericError);
+      }
+
+      this.logger.log(`Seller login successful - userId: ${user.id}, email: ${credential.email}`);
+
+      // Generate tokens for seller with proper role and userType
+      return this.generateSellerTokens(
+        user.id,
+        user.email,
+        credential.rememberMe
+      );
+    } catch (error) {
+      this.logger.error(
+        `Seller login failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      throw error;
     }
-
-    const isPasswordMatching = await bcrypt.compare(
-      credential.password,
-      user.password
-    );
-
-    if (!isPasswordMatching) {
-      throw new UnauthorizedException(genericError);
-    }
-
-    // Generate tokens for seller with proper role and userType
-    return this.generateSellerTokens(
-      user.id,
-      user.email,
-      credential.rememberMe
-    );
   }
 
   async verifyEmail(verifyEmailDto: VerifyEmailDto) {
@@ -300,7 +368,13 @@ export class AuthService implements OnModuleInit {
       throw new UnauthorizedException('Invalid verification details');
     }
 
-    const { otp: storedOtp, name, phoneNumber, country, userType } = JSON.parse(redisPayload);
+    const {
+      otp: storedOtp,
+      name,
+      phoneNumber,
+      country,
+      userType,
+    } = JSON.parse(redisPayload);
 
     if (storedOtp !== otp) {
       await this.redisService.set(attemptKey, (attempts + 1).toString(), 600);
@@ -330,8 +404,14 @@ export class AuthService implements OnModuleInit {
         country,
       };
 
+      if (!process.env.SERVICE_MASTER_SECRET) {
+        throw new Error(
+          'SERVICE_MASTER_SECRET environment variable is not configured. This is required for secure service-to-service communication.'
+        );
+      }
+
       const serviceSecret = ServiceAuthUtil.deriveServiceSecret(
-        process.env.SERVICE_MASTER_SECRET || 'default-secret',
+        process.env.SERVICE_MASTER_SECRET,
         'auth-service'
       );
 
@@ -346,7 +426,10 @@ export class AuthService implements OnModuleInit {
       );
       console.log(`Seller profile created successfully for user ${user.id}`);
     } catch (error) {
-      console.error('Failed to create seller profile in seller-service:', error);
+      console.error(
+        'Failed to create seller profile in seller-service:',
+        error
+      );
       // Log the error but don't fail the email verification process
     }
 
@@ -719,7 +802,7 @@ export class AuthService implements OnModuleInit {
     const payload = {
       sub: userId,
       username: email,
-      role: 'user',
+      role: 'CUSTOMER',
       userType: 'CUSTOMER' as const,
     };
 
@@ -758,7 +841,7 @@ export class AuthService implements OnModuleInit {
     const payload = {
       sub: userId,
       username: email,
-      role: 'seller',
+      role: 'SELLER',
       userType: 'SELLER' as const,
     };
 

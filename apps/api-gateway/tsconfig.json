@@ -4,6 +4,9 @@
   "include": [],
   "references": [
     {
+      "path": "../../libs/shared/imagekit"
+    },
+    {
       "path": "../../libs/shared/dto"
     },
     {

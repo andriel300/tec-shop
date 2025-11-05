@@ -33,12 +33,15 @@
         "libs/shared/exceptions/*",
         "libs/shared/middleware/*",
         "libs/shared/dto/*",
+        "libs/shared/validation/*",
         "libs/prisma-schemas/auth-schema/*",
         "libs/prisma-schemas/user-schema/*",
         "libs/prisma-schemas/seller-schema/*",
         "libs/prisma-clients/auth-client/*",
         "libs/prisma-clients/user-client/*",
-        "libs/prisma-clients/seller-client/*"
+        "libs/prisma-clients/seller-client/*",
+        "libs/prisma-schemas/product-schema/*",
+        "libs/shared/imagekit/*"
       ]
     },
     {
@@ -69,7 +72,8 @@
         "apps/api-gateway-e2e/**/*",
         "apps/auth-service-e2e/**/*",
         "apps/user-service-e2e/**/*",
-        "apps/seller-service-e2e/**/*"
+        "apps/seller-service-e2e/**/*",
+        "apps/product-service-e2e/**/*"
       ]
     },
     {
@@ -90,7 +94,9 @@
         "libs/prisma-schemas/seller-schema/*",
         "libs/prisma-clients/auth-client/*",
         "libs/prisma-clients/user-client/*",
-        "libs/prisma-clients/seller-client/*"
+        "libs/prisma-clients/seller-client/*",
+        "libs/prisma-schemas/product-schema/*",
+        "libs/shared/imagekit/*"
       ],
       "options": {
         "typecheck": {

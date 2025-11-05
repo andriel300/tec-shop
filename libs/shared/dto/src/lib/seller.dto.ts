@@ -1,4 +1,19 @@
-import { IsString, IsOptional, IsUrl, Length, MaxLength, IsNotEmpty } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsUrl,
+  Length,
+  MaxLength,
+  IsNotEmpty,
+  IsBoolean,
+  IsDate,
+  Min,
+  Max,
+} from 'class-validator';
+import { Type, Transform } from 'class-transformer';
+
+import { PartialType } from '@nestjs/mapped-types';
 
 export class CreateSellerProfileDto {
   @IsString()
@@ -83,6 +98,106 @@ export class UpdateShopDto {
   @IsUrl()
   @MaxLength(255)
   website?: string;
+}
+
+// ============================================
+// Discount Code DTOs
+// ============================================
+
+export type DiscountType = 'PERCENTAGE' | 'FIXED_AMOUNT' | 'FREE_SHIPPING';
+
+export class CreateDiscountDto {
+  @IsString()
+  @IsOptional()
+  sellerId?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().replace(/[\x00-\x1F\x7F]/g, '') : value))
+  publicName!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(50)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '') : value))
+  code!: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(500)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().replace(/[\x00-\x1F\x7F]/g, '') : value))
+  description?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  discountType!: DiscountType;
+
+  @IsNumber()
+  @Min(0.01)
+  discountValue!: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  @Max(1000000)
+  usageLimit?: number;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(1)
+  @Max(1000)
+  maxUsesPerCustomer?: number;
+
+  @Type(() => Date)
+  @IsDate()
+  @IsOptional()
+  startDate?: Date;
+
+  @Type(() => Date)
+  @IsDate()
+  @IsOptional()
+  endDate?: Date;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  @Max(999999)
+  minimumPurchase?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+}
+
+export class UpdateDiscountDto extends PartialType(CreateDiscountDto) {
+  @IsString()
+  @IsOptional()
+  override sellerId?: never; // Cannot update sellerId
+}
+
+export interface DiscountCodeResponse {
+  id: string;
+  sellerId: string;
+  publicName: string;
+  code: string;
+  description?: string | null;
+  discountType: DiscountType;
+  discountValue: number;
+  usageLimit?: number | null;
+  usageCount: number;
+  maxUsesPerCustomer?: number | null;
+  startDate: Date;
+  endDate?: Date | null;
+  minimumPurchase?: number | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  seller?: {
+    id: string;
+    name: string;
+    email: string;
+  };
 }
 
 export interface SellerProfileResponse {

@@ -22,7 +22,7 @@ import { toast } from 'sonner';
 function SignupPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeStep, setActiveStep] = useState(3);
+  const [activeStep, setActiveStep] = useState(1);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showOtp, setShowOtp] = useState(false);
@@ -97,21 +97,52 @@ function SignupPageContent() {
 
   return (
     <ProtectedRoute requireAuth={false}>
-      <main className="w-full flex flex-col justify-center min-h-screen bg-ui-muted/50 px-4 py-4 sm:px-6 lg:px-8">
+      <main className="w-full flex flex-col justify-center min-h-screen bg-gradient-to-br from-brand-primary-50 via-white to-brand-accent-50 px-4 py-4 sm:px-6 lg:px-8">
         <div className="max-w-md mx-auto w-full">
           {/* Stepper */}
           <div className="relative flex items-center justify-between w-full px-4 mb-6">
-            <div className="absolute top-5 left-[15%] right-[15%] h-0.5 bg-gray-300 -z-10" />
+            {/* Progress line */}
+            <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200" />
+            <div
+              className="absolute top-5 left-0 h-0.5 bg-brand-primary transition-all duration-500"
+              style={{
+                width: activeStep === 1 ? '0%' : activeStep === 2 ? '50%' : '100%',
+              }}
+            />
             {[1, 2, 3].map((step) => (
-              <div key={step} className="flex flex-col items-center flex-1">
+              <div key={step} className="flex flex-col items-center flex-1 relative">
                 <div
-                  className={`flex items-center justify-center w-10 h-10 rounded-full text-white font-bold text-sm ${
-                    step <= activeStep ? 'bg-brand-primary' : 'bg-gray-300'
+                  className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm transition-all duration-300 ${
+                    step < activeStep
+                      ? 'bg-brand-primary text-white'
+                      : step === activeStep
+                      ? 'bg-brand-primary text-white shadow-lg ring-4 ring-brand-primary-200'
+                      : 'bg-gray-200 text-gray-500'
                   } relative z-10`}
                 >
-                  {step}
+                  {step < activeStep ? (
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={3}
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  ) : (
+                    step
+                  )}
                 </div>
-                <span className="text-xs sm:text-sm mt-3 text-center leading-tight px-1">
+                <span
+                  className={`text-xs sm:text-sm mt-3 text-center leading-tight px-1 font-medium transition-colors ${
+                    step <= activeStep ? 'text-brand-primary' : 'text-gray-400'
+                  }`}
+                >
                   {step === 1
                     ? 'Create Account'
                     : step === 2
@@ -123,7 +154,7 @@ function SignupPageContent() {
           </div>
 
           {/* Steps Content */}
-          <div className="w-full bg-ui-muted shadow rounded-lg">
+          <div className="w-full bg-white shadow-elev-lg rounded-lg border border-ui-divider">
             <div className="p-4 sm:p-6">
               {activeStep === 1 && (
                 <>
