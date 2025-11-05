@@ -27,13 +27,35 @@ export interface CreateProductData {
   isActive?: boolean;
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  parentId?: string | null;
+  image?: string | null;
+  isActive: boolean;
+}
+
+export interface Brand {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  logo?: string | null;
+  website?: string | null;
+  isActive: boolean;
+}
+
 export interface ProductResponse {
   id: string;
   shopId: string;
   name: string;
   description: string;
   categoryId: string;
+  category?: Category; // Populated when fetched with relations
   brandId?: string | null;
+  brand?: Brand | null; // Populated when fetched with relations
   productType: 'SIMPLE' | 'VARIABLE' | 'DIGITAL';
   price: number;
   salePrice?: number | null;
@@ -162,72 +184,82 @@ export const getProduct = async (id: string): Promise<ProductResponse> => {
   return response.data;
 };
 
+export interface UpdateProductData {
+  name?: string;
+  description?: string;
+  categoryId?: string;
+  brandId?: string;
+  productType?: 'simple' | 'variable' | 'digital';
+  price?: number;
+  salePrice?: number;
+  stock?: number;
+  hasVariants?: boolean;
+  variants?: unknown[];
+  attributes?: Record<string, unknown>;
+  shipping?: unknown;
+  seo?: unknown;
+  inventory?: unknown;
+  warranty?: string;
+  tags?: string[];
+  youtubeUrl?: string;
+  discountCodeId?: string;
+  status?: 'draft' | 'published' | 'scheduled';
+  visibility?: 'public' | 'private' | 'password_protected';
+  publishDate?: Date;
+  isFeatured?: boolean;
+  isActive?: boolean;
+  imageUrls?: string[]; // Existing ImageKit URLs to keep
+  newImages?: File[]; // New files to upload
+}
+
 /**
  * Update a product
+ * Since we use eager upload, all images are already URLs by submit time
+ * So we can use JSON instead of FormData for cleaner type handling
  */
 export const updateProduct = async (
   id: string,
-  productData: Partial<CreateProductData>
+  productData: UpdateProductData
 ): Promise<ProductResponse> => {
-  const formData = new FormData();
+  // Since we use eager upload, newImages should always be empty or undefined
+  // All images are already uploaded to ImageKit and exist as URLs in imageUrls
 
-  // Append updated fields
-  if (productData.name) formData.append('name', productData.name);
-  if (productData.description)
-    formData.append('description', productData.description);
-  if (productData.categoryId)
-    formData.append('categoryId', productData.categoryId);
-  if (productData.brandId) formData.append('brandId', productData.brandId);
-  if (productData.productType)
-    formData.append('productType', productData.productType);
-  if (productData.price !== undefined)
-    formData.append('price', productData.price.toString());
-  if (productData.salePrice)
-    formData.append('salePrice', productData.salePrice.toString());
-  if (productData.stock !== undefined)
-    formData.append('stock', productData.stock.toString());
+  // Build clean JSON payload
+  const payload: Record<string, unknown> = {};
 
-  // Append variant data
-  if (productData.hasVariants !== undefined)
-    formData.append('hasVariants', productData.hasVariants.toString());
-  if (productData.variants)
-    formData.append('variants', JSON.stringify(productData.variants));
+  // Add all defined fields
+  if (productData.name !== undefined) payload.name = productData.name;
+  if (productData.description !== undefined) payload.description = productData.description;
+  if (productData.categoryId !== undefined) payload.categoryId = productData.categoryId;
+  if (productData.brandId !== undefined) payload.brandId = productData.brandId;
+  if (productData.productType !== undefined) payload.productType = productData.productType;
+  if (productData.price !== undefined) payload.price = productData.price;
+  if (productData.salePrice !== undefined) payload.salePrice = productData.salePrice;
+  if (productData.stock !== undefined) payload.stock = productData.stock;
+  if (productData.hasVariants !== undefined) payload.hasVariants = productData.hasVariants;
+  if (productData.variants !== undefined) payload.variants = productData.variants;
+  if (productData.attributes !== undefined) payload.attributes = productData.attributes;
+  if (productData.shipping !== undefined) payload.shipping = productData.shipping;
+  if (productData.seo !== undefined) payload.seo = productData.seo;
+  if (productData.inventory !== undefined) payload.inventory = productData.inventory;
+  if (productData.warranty !== undefined) payload.warranty = productData.warranty;
+  if (productData.tags !== undefined) payload.tags = productData.tags;
+  if (productData.youtubeUrl !== undefined) payload.youtubeUrl = productData.youtubeUrl;
+  if (productData.discountCodeId !== undefined) payload.discountCodeId = productData.discountCodeId;
+  if (productData.status !== undefined) payload.status = productData.status;
+  if (productData.visibility !== undefined) payload.visibility = productData.visibility;
+  if (productData.publishDate !== undefined) payload.publishDate = productData.publishDate;
+  if (productData.isFeatured !== undefined) payload.isFeatured = productData.isFeatured;
+  if (productData.isActive !== undefined) payload.isActive = productData.isActive;
 
-  // Append dynamic fields
-  if (productData.attributes)
-    formData.append('attributes', JSON.stringify(productData.attributes));
-  if (productData.shipping)
-    formData.append('shipping', JSON.stringify(productData.shipping));
-  if (productData.seo) formData.append('seo', JSON.stringify(productData.seo));
-  if (productData.inventory)
-    formData.append('inventory', JSON.stringify(productData.inventory));
-
-  // Append additional fields
-  if (productData.warranty) formData.append('warranty', productData.warranty);
-  if (productData.tags)
-    formData.append('tags', JSON.stringify(productData.tags));
-  if (productData.youtubeUrl)
-    formData.append('youtubeUrl', productData.youtubeUrl);
-  if (productData.status) formData.append('status', productData.status);
-  if (productData.visibility)
-    formData.append('visibility', productData.visibility);
-  if (productData.publishDate)
-    formData.append('publishDate', productData.publishDate.toISOString());
-  if (productData.isFeatured !== undefined)
-    formData.append('isFeatured', productData.isFeatured.toString());
-  if (productData.isActive !== undefined)
-    formData.append('isActive', productData.isActive.toString());
-
-  // Append new images if provided
-  if (productData.images && productData.images.length > 0) {
-    productData.images.forEach((image) => {
-      formData.append('images', image);
-    });
+  // Add image URLs if provided (all images are already uploaded via eager upload)
+  if (productData.imageUrls !== undefined && productData.imageUrls.length > 0) {
+    payload.images = productData.imageUrls;
   }
 
-  const response = await apiClient.put(`/seller/products/${id}`, formData, {
+  const response = await apiClient.put(`/seller/products/${id}`, payload, {
     headers: {
-      'Content-Type': 'multipart/form-data',
+      'Content-Type': 'application/json',
     },
   });
 
