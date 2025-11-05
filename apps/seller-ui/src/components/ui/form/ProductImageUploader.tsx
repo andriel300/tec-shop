@@ -6,6 +6,7 @@ export interface ProductImageUploaderProps {
   onChange: (images: (File | null)[]) => void;
   className?: string;
   onImageUploaded?: (url: string, index: number) => void;
+  initialUrls?: string[]; // ImageKit URLs from existing product
 }
 
 /**
@@ -21,6 +22,7 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
   onChange,
   className = '',
   onImageUploaded,
+  initialUrls = [],
 }) => {
   const [_openImageModal, setOpenImageModal] = useState(false);
 
@@ -34,6 +36,14 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
     const updated = [...images];
     updated[index] = null;
     onChange(updated);
+  };
+
+  // Get default image: prioritize File object, fallback to initialUrl
+  const getDefaultImage = (index: number): string | null => {
+    if (images[index]) {
+      return URL.createObjectURL(images[index]);
+    }
+    return initialUrls[index] || null;
   };
 
   return (
@@ -55,7 +65,7 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
           onRemove={handleImageRemove}
           setOpenImageModal={setOpenImageModal}
           onImageUploaded={onImageUploaded}
-          defaultImage={images[0] ? URL.createObjectURL(images[0]) : null}
+          defaultImage={getDefaultImage(0)}
         />
         <p className="mt-2 text-xs text-gray-400">
           Upload the main product image (Required)
@@ -78,9 +88,7 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
               onRemove={handleImageRemove}
               setOpenImageModal={setOpenImageModal}
               onImageUploaded={onImageUploaded}
-              defaultImage={
-                images[idx] ? URL.createObjectURL(images[idx]) : null
-              }
+              defaultImage={getDefaultImage(idx)}
             />
           ))}
         </div>
