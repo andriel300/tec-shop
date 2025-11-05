@@ -103,7 +103,20 @@ export class ProductService {
 
       // Sanitize data types FIRST (multipart/form-data sends everything as strings)
       this.logger.debug(`Sanitizing product data - price: ${createProductDto.price} (${typeof createProductDto.price}), stock: ${createProductDto.stock} (${typeof createProductDto.stock})`);
-      const sanitizedData = this.sanitizeProductData(createProductDto);
+      const sanitizedData = this.sanitizeProductData(createProductDto) as CreateProductDto & {
+        price: number | undefined;
+        salePrice: number | undefined;
+        stock: number;
+        hasVariants: boolean;
+        isFeatured: boolean;
+        isActive: boolean;
+      };
+
+      // Validate required numeric fields
+      if (!sanitizedData.price || sanitizedData.price <= 0) {
+        this.logger.error('Invalid price value');
+        throw new BadRequestException('Product price is required and must be greater than 0');
+      }
 
       // Generate slug from SEO slug or product name
       this.logger.debug(`Generating slug for product: ${sanitizedData.name}`);
@@ -574,7 +587,14 @@ export class ProductService {
    * Sanitize product data types from multipart/form-data
    * Form data sends everything as strings, need to convert to proper types
    */
-  private sanitizeProductData(dto: Record<string, unknown>) {
+  private sanitizeProductData(dto: Record<string, unknown>): Record<string, unknown> & {
+    price: number | undefined;
+    salePrice: number | undefined;
+    stock: number;
+    hasVariants: boolean;
+    isFeatured: boolean;
+    isActive: boolean;
+  } {
     // Helper to parse JSON strings safely
     const parseJSON = (value: unknown) => {
       if (typeof value === 'string') {

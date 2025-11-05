@@ -114,6 +114,7 @@ export class CreateDiscountDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
+  // eslint-disable-next-line no-control-regex
   @Transform(({ value }) => (typeof value === 'string' ? value.trim().replace(/[\x00-\x1F\x7F]/g, '') : value))
   publicName!: string;
 
@@ -126,6 +127,7 @@ export class CreateDiscountDto {
   @IsString()
   @IsOptional()
   @MaxLength(500)
+  // eslint-disable-next-line no-control-regex
   @Transform(({ value }) => (typeof value === 'string' ? value.trim().replace(/[\x00-\x1F\x7F]/g, '') : value))
   description?: string;
 
