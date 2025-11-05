@@ -1,17 +1,11 @@
 import {
-  Inject,
   Injectable,
   Logger,
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { ImageKit } from '@imagekit/nodejs';
-
-interface ImageKitConfig {
-  publicKey: string;
-  privateKey: string;
-  urlEndpoint: string;
-}
+import type { ConfigService } from '@nestjs/config';
 
 interface UploadResult {
   url: string;
@@ -24,30 +18,27 @@ interface UploadResult {
 export class ImageKitService {
   private readonly logger = new Logger(ImageKitService.name);
   private readonly imagekit: ImageKit;
+  private readonly urlEndpoint: string;
 
-  constructor(@Inject('IMAGEKIT_CONFIG') private config: ImageKitConfig) {
-    this.logger.debug(`ImageKit config - publicKey: ${config?.publicKey ? '***' + config.publicKey.slice(-4) : 'MISSING'}, privateKey: ${config?.privateKey ? '***' + config.privateKey.slice(-4) : 'MISSING'}, urlEndpoint: ${config?.urlEndpoint || 'MISSING'}`);
+  constructor(private readonly configService: ConfigService) {
+    const privateKey = this.configService.get<string>('IMAGEKIT_PRIVATE_KEY');
+    const urlEndpoint = this.configService.get<string>('IMAGEKIT_URL_ENDPOINT');
 
-    if (!config.publicKey || !config.privateKey || !config.urlEndpoint) {
+    if (!privateKey || !urlEndpoint) {
       throw new Error(
-        'ImageKit configuration is incomplete. Please check environment variables.'
+        'ImageKit configuration is incomplete. IMAGEKIT_PRIVATE_KEY and IMAGEKIT_URL_ENDPOINT are required.'
       );
     }
 
+    this.urlEndpoint = urlEndpoint;
+
     this.logger.debug(`Creating ImageKit instance...`);
 
-    // Use named import syntax for v7.x
     this.imagekit = new ImageKit({
-      publicKey: config.publicKey,
-      privateKey: config.privateKey,
-      urlEndpoint: config.urlEndpoint,
+      privateKey,
     });
 
     this.logger.log('ImageKit service initialized successfully');
-    this.logger.debug(`ImageKit instance type: ${typeof this.imagekit}`);
-    this.logger.debug(`ImageKit instance keys: ${Object.keys(this.imagekit).join(', ')}`);
-    this.logger.debug(`ImageKit upload exists: ${typeof this.imagekit.upload}`);
-    this.logger.debug(`ImageKit upload is function: ${typeof this.imagekit.upload === 'function'}`);
   }
 
   /**
@@ -85,8 +76,20 @@ export class ImageKitService {
         `File uploaded successfully: ${response.url} (ID: ${response.fileId})`
       );
 
+      // Construct full URL using urlEndpoint if response.url is relative
+      const fullUrl = response.url?.startsWith('http')
+        ? response.url
+        : `${this.urlEndpoint}${response.filePath}`;
+
+      // Ensure all required fields are present
+      if (!response.fileId || !response.name || !response.filePath) {
+        throw new InternalServerErrorException(
+          'ImageKit upload response is missing required fields'
+        );
+      }
+
       return {
-        url: response.url,
+        url: fullUrl,
         fileId: response.fileId,
         name: response.name,
         filePath: response.filePath,
@@ -174,15 +177,9 @@ export class ImageKitService {
   }
 
   /**
-   * Get authentication parameters for client-side upload (if needed)
+   * Get URL endpoint for constructing image URLs
    */
-  getAuthenticationParameters(): {
-    publicKey: string;
-    urlEndpoint: string;
-  } {
-    return {
-      publicKey: this.config.publicKey,
-      urlEndpoint: this.config.urlEndpoint,
-    };
+  getUrlEndpoint(): string {
+    return this.urlEndpoint;
   }
 }
