@@ -12,6 +12,7 @@ export interface UserProfile {
   userId: string;
   name: string;
   bio?: string;
+  picture?: string; // Google profile picture URL
   dateOfBirth?: string;
   followersCount: number;
   followingCount: number;
