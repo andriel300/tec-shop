@@ -1,6 +1,6 @@
 import Header from '../shared/widgets/header';
 import './global.css';
-import { Inter, Poppins, Roboto } from 'next/font/google';
+import { Inter, Poppins, Roboto, Oregano } from 'next/font/google';
 import { Providers } from './providers';
 
 // Configure your fonts
@@ -24,6 +24,13 @@ const roboto = Roboto({
   display: 'swap',
 });
 
+const oregano = Oregano({
+  subsets: ['latin'],
+  weight: ['400'],
+  variable: '--font-oregano',
+  display: 'swap',
+});
+
 export const metadata = {
   title: 'Welcome to TecShop',
 
@@ -38,7 +45,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${poppins.variable} ${roboto.variable}`}
+      className={`${inter.variable} ${poppins.variable} ${roboto.variable} ${oregano.variable}`}
     >
       <body>
         <Providers>

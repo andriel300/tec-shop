@@ -126,6 +126,8 @@ module.exports = {
           'Arial',
         ],
         heading: ['var(--font-poppins)', 'var(--font-inter)', 'ui-sans-serif'],
+        Roboto: ['var(--font-roboto)', 'ui-sans-serif'],
+        Oregano: ['var(--font-oregano)', 'cursive'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
 
