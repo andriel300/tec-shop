@@ -3,6 +3,12 @@ generator client {
   output   = "../../../../node_modules/.prisma/seller-client"
 }
 
+generator dbml {
+  provider   = "prisma-dbml-generator"
+  output     = "../../../../dbml"
+  outputName = "seller-schema.dbml"
+}
+
 datasource db {
   provider = "mongodb"
   url      = env("SELLER_SERVICE_DB_URL")
