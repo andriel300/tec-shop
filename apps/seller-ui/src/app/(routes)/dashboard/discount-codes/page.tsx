@@ -306,7 +306,19 @@ const Page = () => {
           onSubmit={handleSubmitDiscount}
           onCancel={handleCloseModal}
           isLoading={editingDiscount ? updateMutation.isPending : createMutation.isPending}
-          initialData={editingDiscount || undefined}
+          initialData={editingDiscount ? {
+            publicName: editingDiscount.publicName,
+            code: editingDiscount.code,
+            description: editingDiscount.description ?? undefined,
+            discountType: editingDiscount.discountType,
+            discountValue: editingDiscount.discountValue,
+            usageLimit: editingDiscount.usageLimit ?? undefined,
+            minimumPurchase: editingDiscount.minimumPurchase ?? undefined,
+            maxUsesPerCustomer: editingDiscount.maxUsesPerCustomer ?? undefined,
+            startDate: new Date(editingDiscount.startDate),
+            endDate: editingDiscount.endDate ? new Date(editingDiscount.endDate) : undefined,
+            isActive: editingDiscount.isActive,
+          } : undefined}
         />
       </Modal>
     </div>

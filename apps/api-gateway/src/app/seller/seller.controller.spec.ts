@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SellerController } from './seller.controller';
 import { ClientProxy } from '@nestjs/microservices';
 import { of, throwError } from 'rxjs';
+import { ImageKitService } from '@tec-shop/shared/imagekit';
 
 describe('SellerController', () => {
   let controller: SellerController;
@@ -19,6 +20,20 @@ describe('SellerController', () => {
           provide: 'SELLER_SERVICE',
           useValue: {
             send: jest.fn(),
+          },
+        },
+        {
+          provide: 'PRODUCT_SERVICE',
+          useValue: {
+            send: jest.fn(),
+          },
+        },
+        {
+          provide: ImageKitService,
+          useValue: {
+            uploadFile: jest.fn(),
+            deleteFile: jest.fn(),
+            getUrlEndpoint: jest.fn().mockReturnValue('https://ik.imagekit.io/test'),
           },
         },
       ],

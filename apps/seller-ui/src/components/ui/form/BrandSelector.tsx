@@ -42,7 +42,7 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
   const [showDropdown, setShowDropdown] = useState(false);
 
   // React Query hooks
-  const { data: brands = [], isLoading: loading, error: fetchError } = useBrands();
+  const { data: brands = [] as Brand[], isLoading: loading, error: fetchError } = useBrands();
   const { mutate: createBrand, isPending: creating } = useCreateBrand();
 
   const error = fetchError ? 'Failed to load brands.' : null;
@@ -50,7 +50,7 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
   // Update selected brand when value changes
   useEffect(() => {
     if (value && brands.length > 0) {
-      const brand = brands.find((b) => b.id === value);
+      const brand = brands.find((b: Brand) => b.id === value);
       setSelectedBrand(brand || null);
       if (brand) {
         setSearchTerm(brand.name);
@@ -89,13 +89,13 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
   };
 
   // Filter brands by search term (case-insensitive)
-  const filteredBrands = brands.filter((brand) =>
+  const filteredBrands = brands.filter((brand: Brand) =>
     brand.name.toLowerCase().includes(searchTerm.toLowerCase().trim())
   );
 
   // Check if search term matches any existing brand exactly
   const exactMatch = brands.find(
-    (brand) => brand.name.toLowerCase() === searchTerm.toLowerCase().trim()
+    (brand: Brand) => brand.name.toLowerCase() === searchTerm.toLowerCase().trim()
   );
 
   // Show "Create" option if there's a search term and no exact match
@@ -176,7 +176,7 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
             {/* Existing brands */}
             {filteredBrands.length > 0 ? (
               <div className="divide-y divide-gray-700">
-                {filteredBrands.map((brand) => (
+                {filteredBrands.map((brand: Brand) => (
                   <button
                     key={brand.id}
                     type="button"

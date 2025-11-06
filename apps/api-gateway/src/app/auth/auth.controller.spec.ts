@@ -128,20 +128,21 @@ describe('AuthController', () => {
 
       // Assert
       expect(authServiceClient.send).toHaveBeenCalledWith('auth-login', loginDto);
-      expect(res.cookie).toHaveBeenCalledWith('access_token', 'access-token-123', {
+      expect(res.cookie).toHaveBeenCalledWith('customer_access_token', 'access-token-123', {
         httpOnly: true,
         secure: false,
         sameSite: 'strict',
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        path: '/api',
       });
-      expect(res.cookie).toHaveBeenCalledWith('refresh_token', 'refresh-token-456', {
+      expect(res.cookie).toHaveBeenCalledWith('customer_refresh_token', 'refresh-token-456', {
         httpOnly: true,
         secure: false,
         sameSite: 'strict',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        path: '/api/auth/refresh',
+        path: '/api',
       });
-      expect(result).toEqual({ message: 'Login successful' });
+      expect(result).toEqual({ message: 'Login successful', userType: 'customer' });
 
       process.env.NODE_ENV = originalEnv;
     });
@@ -162,10 +163,10 @@ describe('AuthController', () => {
       await controller.login(loginDto, res);
 
       // Assert
-      expect(res.cookie).toHaveBeenCalledWith('access_token', 'access-token-123', expect.objectContaining({
+      expect(res.cookie).toHaveBeenCalledWith('customer_access_token', 'access-token-123', expect.objectContaining({
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days for remember me
       }));
-      expect(res.cookie).toHaveBeenCalledWith('refresh_token', 'refresh-token-456', expect.objectContaining({
+      expect(res.cookie).toHaveBeenCalledWith('customer_refresh_token', 'refresh-token-456', expect.objectContaining({
         maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days for remember me
       }));
     });
@@ -188,7 +189,7 @@ describe('AuthController', () => {
       await controller.login(loginDto, res);
 
       // Assert
-      expect(res.cookie).toHaveBeenCalledWith('access_token', 'access-token-123', expect.objectContaining({
+      expect(res.cookie).toHaveBeenCalledWith('__Host-customer_access_token', 'access-token-123', expect.objectContaining({
         secure: true,
       }));
 
@@ -200,8 +201,8 @@ describe('AuthController', () => {
     it('should refresh tokens and set new cookies', async () => {
       // Arrange
       const req = mockRequest({
-        refresh_token: 'old-refresh-token',
-        access_token: 'old-access-token',
+        customer_refresh_token: 'old-refresh-token',
+        customer_access_token: 'old-access-token',
       });
       const authResult = {
         access_token: 'new-access-token',
@@ -220,9 +221,9 @@ describe('AuthController', () => {
         refreshToken: 'old-refresh-token',
         currentAccessToken: 'old-access-token',
       });
-      expect(res.cookie).toHaveBeenCalledWith('access_token', 'new-access-token', expect.any(Object));
-      expect(res.cookie).toHaveBeenCalledWith('refresh_token', 'new-refresh-token', expect.any(Object));
-      expect(result).toEqual({ message: 'Token refreshed successfully' });
+      expect(res.cookie).toHaveBeenCalledWith('customer_access_token', 'new-access-token', expect.any(Object));
+      expect(res.cookie).toHaveBeenCalledWith('customer_refresh_token', 'new-refresh-token', expect.any(Object));
+      expect(result).toEqual({ message: 'Token refreshed successfully', userType: 'customer' });
     });
 
     it('should throw error when refresh token is missing', async () => {
@@ -231,7 +232,7 @@ describe('AuthController', () => {
       const res = mockResponse();
 
       // Act & Assert
-      await expect(controller.refreshToken(req, res)).rejects.toThrow('Refresh token not found');
+      await expect(controller.refreshToken(req, res)).rejects.toThrow('Authentication failed');
     });
   });
 
@@ -272,7 +273,7 @@ describe('AuthController', () => {
 
       // Assert
       expect(consoleErrorSpy).toHaveBeenCalled();
-      expect(res.clearCookie).toHaveBeenCalledTimes(2);
+      expect(res.clearCookie).toHaveBeenCalledTimes(6); // Clears customer, seller, and legacy cookies
       expect(result).toEqual({ message: 'Logout successful' });
 
       consoleErrorSpy.mockRestore();
@@ -397,7 +398,7 @@ describe('AuthController', () => {
       // Assert
       expect(authServiceClient.send).toHaveBeenCalledWith('seller-auth-login', loginDto);
       expect(res.cookie).toHaveBeenCalledTimes(2);
-      expect(result).toEqual({ message: 'Seller login successful' });
+      expect(result).toEqual({ message: 'Seller login successful', userType: 'seller' });
     });
   });
 });

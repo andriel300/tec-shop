@@ -1,12 +1,26 @@
-import { readFileSync } from 'fs';
-
-// Reading the SWC compilation config for the spec files
-const swcJestConfig = JSON.parse(
-  readFileSync(`${__dirname}/.spec.swcrc`, 'utf-8')
-);
-
-// Disable .swcrc look-up by SWC core because we're passing in swcJestConfig ourselves
-swcJestConfig.swcrc = false;
+// SWC compilation config for the spec files
+const swcJestConfig = {
+  jsc: {
+    target: 'es2017',
+    parser: {
+      syntax: 'typescript',
+      decorators: true,
+      dynamicImport: true,
+    },
+    transform: {
+      decoratorMetadata: true,
+      legacyDecorator: true,
+    },
+    keepClassNames: true,
+    externalHelpers: true,
+    loose: true,
+  },
+  module: {
+    type: 'es6',
+  },
+  sourceMaps: true,
+  swcrc: false,
+};
 
 export default {
   displayName: '@tec-shop/auth-service-e2e',

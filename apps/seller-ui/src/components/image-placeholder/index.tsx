@@ -73,6 +73,8 @@ const ImagePlaceHolder = ({
         document.removeEventListener('keydown', handleEscKey);
       };
     }
+
+    return undefined;
   }, [showEnhancementModal, selectedEnhancement]);
 
   // Validate and process file
@@ -285,14 +287,13 @@ const ImagePlaceHolder = ({
                 width: '400',
                 height: '400',
                 crop: 'at_max',
-                quality: '85',
+                quality: 85,
                 focus: 'auto',
                 ...(selectedEnhancement && {
                   e: selectedEnhancement.replace('e-', '')
                 })
               }]}
               loading="eager"
-              lqip={{ active: true, quality: 20 }}
               className="absolute inset-0 w-full h-full object-cover"
             />
           )}
@@ -391,7 +392,7 @@ const ImagePlaceHolder = ({
                           width: '400',
                           height: '400',
                           crop: 'at_max',
-                          quality: '90',
+                          quality: 90,
                           focus: 'auto',
                           ...(tempEnhancement && {
                             e: tempEnhancement.replace('e-', '')
