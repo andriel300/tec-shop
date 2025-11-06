@@ -4,8 +4,8 @@ import {
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ImageKit } from '@imagekit/nodejs';
-import type { ConfigService } from '@nestjs/config';
 
 interface UploadResult {
   url: string;
