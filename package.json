@@ -60,7 +60,6 @@
     "framer-motion": "^12.23.12",
     "helmet": "^8.1.0",
     "http-proxy-middleware": "^3.0.5",
-    "jotai": "^2.15.0",
     "jwks-rsa": "^3.2.0",
     "lucide-react": "^0.542.0",
     "mongodb": "^6.19.0",
@@ -82,7 +81,8 @@
     "styled-components": "^6.1.19",
     "tailwind-merge": "^3.3.1",
     "uuid": "^11.1.0",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@eslint/compat": "^1.1.1",
