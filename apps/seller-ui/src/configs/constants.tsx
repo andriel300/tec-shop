@@ -1,3 +1,11 @@
-import { atom } from 'jotai';
+import { create } from 'zustand';
 
-export const activeSideBarItem = atom<string>('/dashboard');
+interface SidebarState {
+  activeSidebar: string;
+  setActiveSidebar: (path: string) => void;
+}
+
+export const useSidebarStore = create<SidebarState>((set) => ({
+  activeSidebar: '/dashboard',
+  setActiveSidebar: (path) => set({ activeSidebar: path }),
+}));

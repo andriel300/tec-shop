@@ -90,6 +90,7 @@ TecShop is a **multi-vendor e-commerce marketplace** built with a microservices 
 **Purpose:** Single entry point for all client requests, handles authentication, routing, and protocol translation.
 
 **Responsibilities:**
+
 - HTTP/REST endpoints with Swagger documentation (`/api-docs`)
 - Authentication & authorization enforcement
 - Request validation & transformation
@@ -99,6 +100,7 @@ TecShop is a **multi-vendor e-commerce marketplace** built with a microservices 
 - Security headers management
 
 **Key Technologies:**
+
 - NestJS with Express
 - Passport.js (JWT, Google OAuth)
 - Class-validator for DTOs
@@ -107,6 +109,7 @@ TecShop is a **multi-vendor e-commerce marketplace** built with a microservices 
 - FilesInterceptor for multipart/form-data
 
 **Endpoints:**
+
 - `/api/auth/*` - Authentication endpoints
 - `/api/users/*` - User management
 - `/api/seller/*` - Seller operations
@@ -122,6 +125,7 @@ TecShop is a **multi-vendor e-commerce marketplace** built with a microservices 
 **Purpose:** Centralized authentication and authorization service.
 
 **Responsibilities:**
+
 - User registration with email verification
 - Login with JWT token generation
 - Password hashing (bcrypt with salt rounds)
@@ -131,6 +135,7 @@ TecShop is a **multi-vendor e-commerce marketplace** built with a microservices 
 - Cross-service profile creation (User/Seller)
 
 **Database Models:**
+
 ```prisma
 model User {
   id            String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -161,10 +166,12 @@ model PasswordResetToken {
 ```
 
 **Inter-Service Communication:**
+
 - → User Service: Profile creation with HMAC signing
 - → Seller Service: Seller profile creation with HMAC signing
 
 **Message Patterns:**
+
 - `auth-register`
 - `auth-login`
 - `auth-verify-email`
@@ -179,6 +186,7 @@ model PasswordResetToken {
 **Purpose:** Manages customer profiles and user-specific data.
 
 **Responsibilities:**
+
 - Customer profile management
 - User preferences & settings
 - Address management
@@ -186,6 +194,7 @@ model PasswordResetToken {
 - Wishlist management (future)
 
 **Database Models:**
+
 ```prisma
 model UserProfile {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -201,6 +210,7 @@ model UserProfile {
 ```
 
 **Message Patterns:**
+
 - `user-create-profile`
 - `user-get-profile`
 - `user-update-profile`
@@ -213,6 +223,7 @@ model UserProfile {
 **Purpose:** Manages seller accounts, shops, and payment integrations.
 
 **Responsibilities:**
+
 - Seller profile management
 - Shop creation & management
 - Stripe account integration
@@ -221,6 +232,7 @@ model UserProfile {
 - Seller analytics (future)
 
 **Database Models:**
+
 ```prisma
 model Seller {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -254,9 +266,11 @@ model StripeAccount {
 ```
 
 **Inter-Service Communication:**
+
 - ← Product Service: Shop ownership verification via `seller-verify-shop` and `seller-verify-shop-ownership` message patterns
 
 **Message Patterns:**
+
 - `seller-create-profile`
 - `seller-create-shop`
 - `seller-get-shops`
@@ -271,6 +285,7 @@ model StripeAccount {
 **Purpose:** Manages product catalog, categories, brands, and inventory.
 
 **Responsibilities:**
+
 - Product CRUD operations (seller-owned)
 - Category hierarchy management (admin-only)
 - Brand management (admin-only)
@@ -281,6 +296,7 @@ model StripeAccount {
 - Product analytics (views, sales)
 
 **Database Models:**
+
 ```prisma
 model Product {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -352,9 +368,11 @@ model DiscountCode {
 ```
 
 **Inter-Service Communication:**
+
 - → Seller Service: Shop verification before product operations
 
 **Message Patterns:**
+
 - `product-create-product`
 - `product-get-products`
 - `product-get-product`
@@ -369,12 +387,14 @@ model DiscountCode {
 ### Database Strategy: Database per Service
 
 Each microservice maintains its **own MongoDB database**, ensuring:
+
 - **Service Autonomy**: Services can evolve independently
 - **Independent Scaling**: Scale databases based on service needs
 - **Schema Evolution**: No cross-service schema dependencies
 - **Fault Isolation**: Database failure affects only one service
 
 **Database Naming Convention:**
+
 ```
 auth_service_dev
 user_service_dev
@@ -397,6 +417,7 @@ Product Service (Product.shopId)
 ```
 
 **Validation Strategy:**
+
 - Cross-service validation via TCP message patterns
 - Example: Product Service calls Seller Service to verify shop ownership before product operations
 
@@ -421,6 +442,7 @@ libs/
 ```
 
 **Workflow:**
+
 ```bash
 # 1. Edit schema
 vim libs/prisma-schemas/product-schema/prisma/schema.prisma
@@ -444,10 +466,12 @@ npm run prisma:studio:product
 **Protocol:** HTTP/1.1 with JSON payloads
 
 **Authentication:**
+
 - JWT tokens stored in httpOnly cookies
 - Authorization header support for API clients
 
 **CORS Configuration:**
+
 ```typescript
 app.enableCors({
   origin: [
@@ -459,6 +483,7 @@ app.enableCors({
 ```
 
 **Rate Limiting:**
+
 - **Short**: 20 requests/minute (general operations)
 - **Medium**: 10 requests/15 minutes (auth operations)
 - **Long**: 100 requests/minute (high-frequency operations)
@@ -470,6 +495,7 @@ app.enableCors({
 **Protocol:** NestJS TCP Transport
 
 **Why TCP?**
+
 - Low latency communication
 - Built-in serialization/deserialization
 - Type-safe message contracts
@@ -477,6 +503,7 @@ app.enableCors({
 - Request/response and event patterns
 
 **Example Request/Response:**
+
 ```typescript
 // API Gateway
 return firstValueFrom(
@@ -499,6 +526,7 @@ async create(@Payload() payload: CreateProductPayload) {
 ```
 
 **Connection Configuration:**
+
 ```typescript
 ClientsModule.register([
   {
@@ -525,6 +553,7 @@ ClientsModule.register([
 For **sensitive cross-service operations** (e.g., profile creation), services use HMAC signatures:
 
 **Flow:**
+
 ```
 1. Auth Service creates User
 2. Auth Service signs request with HMAC using SERVICE_MASTER_SECRET
@@ -534,6 +563,7 @@ For **sensitive cross-service operations** (e.g., profile creation), services us
 ```
 
 **Security Benefits:**
+
 - Prevents unauthorized inter-service calls
 - Ensures request integrity (tamper-proof)
 - Shared secret (`SERVICE_MASTER_SECRET`) known only to services
@@ -547,11 +577,13 @@ For **sensitive cross-service operations** (e.g., profile creation), services us
 #### Layer 1: Network Security
 
 **mTLS (Mutual TLS):**
+
 - Certificate-based authentication between services
 - Encrypts TCP communication
 - Prevents man-in-the-middle attacks
 
 **Certificate Structure:**
+
 ```
 certs/
 ├── ca/
@@ -569,6 +601,7 @@ certs/
 ```
 
 **Certificate Generation:**
+
 ```bash
 ./generate-certs.sh --all              # Generate all certificates
 ./generate-certs.sh --service auth     # Generate for specific service
@@ -580,6 +613,7 @@ certs/
 #### Layer 2: Authentication
 
 **JWT Strategy:**
+
 - **Access Tokens**: Short-lived (15 minutes)
 - **Refresh Tokens**: Long-lived (7 days), stored in database
 - **httpOnly Cookies**: Prevents XSS attacks
@@ -587,11 +621,13 @@ certs/
 - **SameSite**: CSRF protection
 
 **Google OAuth Integration:**
+
 - Social authentication for faster onboarding
 - Reduces password management burden
 - Leverages Google's security infrastructure
 
 **Email Verification:**
+
 - OTP (One-Time Password) sent via email
 - 3-attempt limit per OTP
 - Redis-backed storage with expiration
@@ -618,27 +654,29 @@ async authenticatedEndpoint() { }
 ```
 
 **User Roles:**
+
 - **ADMIN**: Platform administration (categories, brands, user management)
 - **SELLER**: Shop and product management
 - **CUSTOMER**: Shopping, orders, reviews
 
 **Permission Matrix:**
 
-| Endpoint             | ADMIN | SELLER | CUSTOMER |
-|----------------------|-------|--------|----------|
-| Create Category      | ✅     | ❌      | ❌        |
-| Create Brand         | ✅     | ❌      | ❌        |
-| Create Product       | ❌     | ✅      | ❌        |
-| Create Shop          | ❌     | ✅      | ❌        |
-| View Products        | ✅     | ✅      | ✅        |
-| Update Own Product   | ❌     | ✅      | ❌        |
-| Delete Any Product   | ✅     | ❌      | ❌        |
+| Endpoint           | ADMIN | SELLER | CUSTOMER |
+| ------------------ | ----- | ------ | -------- |
+| Create Category    | ✅    | ❌     | ❌       |
+| Create Brand       | ✅    | ❌     | ❌       |
+| Create Product     | ❌    | ✅     | ❌       |
+| Create Shop        | ❌    | ✅     | ❌       |
+| View Products      | ✅    | ✅     | ✅       |
+| Update Own Product | ❌    | ✅     | ❌       |
+| Delete Any Product | ✅    | ❌     | ❌       |
 
 ---
 
 #### Layer 4: API Security
 
 **Helmet Security Headers:**
+
 ```typescript
 helmet({
   contentSecurityPolicy: {
@@ -658,10 +696,11 @@ helmet({
   },
   frameguard: { action: 'deny' },
   xssFilter: true,
-})
+});
 ```
 
 **Input Validation:**
+
 ```typescript
 // DTO with class-validator
 export class CreateProductDto {
@@ -683,12 +722,14 @@ export class CreateProductDto {
 ```
 
 **Password Security:**
+
 - Bcrypt hashing with salt rounds
 - Minimum password length enforced
 - No password storage in logs
 - Secure password reset flow
 
 **Token Blacklisting:**
+
 - Redis-backed logout
 - Invalidates JWT tokens
 - Prevents token reuse after logout
@@ -698,6 +739,7 @@ export class CreateProductDto {
 #### Layer 5: Application Security
 
 **Fail-Secure Design:**
+
 ```typescript
 // Services refuse to start without required configuration
 if (!config.JWT_SECRET || config.JWT_SECRET.length < 32) {
@@ -710,6 +752,7 @@ if (!config.SERVICE_MASTER_SECRET) {
 ```
 
 **Environment Validation:**
+
 ```typescript
 // ConfigService with strict validation
 @Module({
@@ -723,6 +766,7 @@ if (!config.SERVICE_MASTER_SECRET) {
 ```
 
 **No Default Secrets:**
+
 - All secrets must be explicitly configured
 - No fallback values that could compromise security
 - Application crashes if critical configuration is missing
@@ -736,11 +780,13 @@ if (!config.SERVICE_MASTER_SECRET) {
 Both `user-ui` and `seller-ui` use the same modern React stack:
 
 **Core:**
+
 - **Next.js 15**: React framework with server components
 - **React 19**: Latest React features
 - **TypeScript**: Type safety
 
 **Styling:**
+
 - **Tailwind CSS**: Utility-first CSS framework
 - **Tailwind Plugins**: Forms, Typography, Aspect Ratio
 - **Styled Components**: Component-scoped styles (where needed)
@@ -748,14 +794,17 @@ Both `user-ui` and `seller-ui` use the same modern React stack:
 - **clsx + tailwind-merge**: Conditional class merging
 
 **State Management:**
-- **Jotai**: Atomic state management
+
+- **Zustand**: Glboal state management
 - **TanStack Query (React Query)**: Server state & caching
 
 **Forms:**
+
 - **TanStack Form**: Type-safe forms with validation
 - **Zod**: Schema validation
 
 **UI Components:**
+
 - **Radix UI**: Accessible component primitives
   - Checkbox
   - Dialog
@@ -765,11 +814,13 @@ Both `user-ui` and `seller-ui` use the same modern React stack:
 - **Framer Motion**: Animations
 
 **Rich Text:**
+
 - **Tiptap**: Headless rich text editor
 - **Tiptap Starter Kit**: Common extensions
 - **Tiptap Placeholder Extension**: Input placeholder
 
 **HTTP Client:**
+
 - **Axios**: HTTP requests with interceptors
 
 ---
@@ -842,6 +893,7 @@ apps/seller-ui/src/
 #### Product Creation Form (seller-ui)
 
 **Multi-step form with:**
+
 - Product information (name, description, category, brand)
 - Pricing (regular price, sale price)
 - Inventory (stock quantity)
@@ -853,6 +905,7 @@ apps/seller-ui/src/
 - Status and visibility settings
 
 **Rich Text Editor (Tiptap):**
+
 ```typescript
 const editor = useEditor({
   extensions: [StarterKit, Placeholder],
@@ -864,6 +917,7 @@ const editor = useEditor({
 ```
 
 **Image Upload:**
+
 ```typescript
 const handleImageUpload = (files: FileList) => {
   const validImages = Array.from(files).filter((file) => {
@@ -883,6 +937,7 @@ const handleImageUpload = (files: FileList) => {
 ### API Integration
 
 **Axios Instance with Interceptors:**
+
 ```typescript
 // libs/seller-ui/src/lib/api/client.ts
 const apiClient = axios.create({
@@ -913,6 +968,7 @@ apiClient.interceptors.response.use(
 ```
 
 **TanStack Query Integration:**
+
 ```typescript
 // Product creation mutation
 const createProductMutation = useMutation({
@@ -935,6 +991,7 @@ const createProductMutation = useMutation({
 ### Monorepo Management (Nx)
 
 **Workspace Structure:**
+
 ```
 tec-shop/
 ├── apps/                    # Deployable applications
@@ -960,6 +1017,7 @@ tec-shop/
 ```
 
 **Nx Benefits:**
+
 - **Incremental Builds**: Only rebuild what changed
 - **Dependency Graph**: Visualize project dependencies (`nx graph`)
 - **Task Caching**: Cache build/test results for speed
@@ -1018,29 +1076,32 @@ LoggerModule.forRootAsync({
   useFactory: (config: ConfigService) => ({
     pinoHttp: {
       level: config.get('NODE_ENV') !== 'production' ? 'debug' : 'info',
-      transport: config.get('NODE_ENV') !== 'production'
-        ? {
-            target: 'pino-pretty',
-            options: {
-              colorize: true,
-              levelFirst: true,
-              translateTime: 'SYS:standard',
-              ignore: 'pid,hostname',
-            },
-          }
-        : undefined,
+      transport:
+        config.get('NODE_ENV') !== 'production'
+          ? {
+              target: 'pino-pretty',
+              options: {
+                colorize: true,
+                levelFirst: true,
+                translateTime: 'SYS:standard',
+                ignore: 'pid,hostname',
+              },
+            }
+          : undefined,
     },
   }),
 });
 ```
 
 **Log Levels:**
+
 - **DEBUG**: Development-only detailed logs
 - **INFO**: General application flow
 - **WARN**: Warning conditions
 - **ERROR**: Error conditions with stack traces
 
 **Example Logs:**
+
 ```json
 {
   "level": "info",
@@ -1057,11 +1118,13 @@ LoggerModule.forRootAsync({
 ### Build & Deployment
 
 **Docker Support:**
+
 - Nx provides Docker executors
 - Each service can be containerized independently
 - Multi-stage builds for optimized images
 
 **Environment Configuration:**
+
 ```bash
 # Development
 NODE_ENV=development
@@ -1071,6 +1134,7 @@ NODE_ENV=production
 ```
 
 **Deployment Strategies:**
+
 - **Containerized**: Each service as a Docker container
 - **Orchestration**: Kubernetes or Docker Compose
 - **CI/CD**: GitHub Actions, GitLab CI, or Jenkins
@@ -1083,6 +1147,7 @@ NODE_ENV=production
 ### ImageKit CDN Integration
 
 **Previous Architecture (Multer):**
+
 ```
 Frontend → API Gateway (saves to ./uploads/) → Product Service
                 ↓
@@ -1091,6 +1156,7 @@ Frontend → API Gateway (saves to ./uploads/) → Product Service
 ```
 
 **Current Architecture (ImageKit):**
+
 ```
 Frontend → API Gateway (uploads to ImageKit) → Product Service
                 ↓                                      ↓
@@ -1106,6 +1172,7 @@ Frontend → API Gateway (uploads to ImageKit) → Product Service
 **Step-by-Step Process:**
 
 1. **seller-ui uploads files**
+
    ```typescript
    const formData = new FormData();
    formData.append('name', 'Product Name');
@@ -1116,6 +1183,7 @@ Frontend → API Gateway (uploads to ImageKit) → Product Service
    ```
 
 2. **API Gateway ProductController receives request**
+
    ```typescript
    @Post()
    @UseInterceptors(FilesInterceptor('images', 4))
@@ -1147,6 +1215,7 @@ Frontend → API Gateway (uploads to ImageKit) → Product Service
    ```
 
 3. **ImageKit Service processes upload**
+
    ```typescript
    async uploadFile(file: Buffer, fileName: string) {
      const uniqueFileName = `${fileName}-${Date.now()}-${random()}.ext`;
@@ -1165,6 +1234,7 @@ Frontend → API Gateway (uploads to ImageKit) → Product Service
    ```
 
 4. **Product Service receives URLs**
+
    ```typescript
    @MessagePattern('product-create-product')
    async create(@Payload() payload) {
@@ -1190,12 +1260,14 @@ Frontend → API Gateway (uploads to ImageKit) → Product Service
 ### File Validation
 
 **API Gateway validates:**
+
 - **File Type**: Only `image/jpeg`, `image/jpg`, `image/png`, `image/gif`, `image/webp`
 - **File Size**: Maximum 5MB per image
 - **File Count**: Maximum 4 images per product
 - **Buffer Access**: Files buffered in memory (not saved to disk)
 
 **ImageKit Service validates:**
+
 - **Upload Limits**: Enforced by ImageKit
 - **Quota Management**: ImageKit plan limits
 - **Error Handling**: Graceful failures with logging
@@ -1205,12 +1277,14 @@ Frontend → API Gateway (uploads to ImageKit) → Product Service
 ### ImageKit Features
 
 **Automatic Optimizations:**
+
 - Image compression
 - Format conversion (WebP, AVIF)
 - Lazy loading support
 - Responsive images
 
 **URL Transformations:**
+
 ```
 # Original
 https://ik.imagekit.io/andrieltecshop/products/image.jpg
@@ -1226,6 +1300,7 @@ https://ik.imagekit.io/andrieltecshop/products/image.jpg?tr=w-400,h-300,q-80,f-w
 ```
 
 **Benefits:**
+
 - **No Local Storage**: No server disk space used
 - **Global CDN**: Fast delivery worldwide
 - **Scalability**: Handles unlimited uploads
@@ -1275,12 +1350,14 @@ https://ik.imagekit.io/andrieltecshop/products/image.jpg?tr=w-400,h-300,q-80,f-w
 ### Multi-Vendor Model
 
 **Admin-Controlled (Platform-Wide):**
+
 - Categories: Hierarchical taxonomy
 - Brands: Shared brand directory
 - User management
 - Platform policies
 
 **Seller-Controlled (Shop-Specific):**
+
 - Products: Full CRUD operations
 - Inventory: Stock management
 - Pricing: Regular price, sale price
@@ -1288,6 +1365,7 @@ https://ik.imagekit.io/andrieltecshop/products/image.jpg?tr=w-400,h-300,q-80,f-w
 - Shop settings: Name, description, logo
 
 **Customer Access (Read-Only):**
+
 - Browse products across all shops
 - Search and filter
 - View product details
@@ -1319,16 +1397,19 @@ https://ik.imagekit.io/andrieltecshop/products/image.jpg?tr=w-400,h-300,q-80,f-w
 ### Revenue Model (Future)
 
 **Commission-Based:**
+
 - Platform takes percentage of each sale
 - Seller receives payout after commission
 - Stripe Connect for payment splitting
 
 **Subscription-Based:**
+
 - Monthly/yearly fees for shop operation
 - Tiered plans (Basic, Pro, Enterprise)
 - Feature-based pricing
 
 **Hybrid:**
+
 - Lower commission + subscription fee
 - Free tier with higher commission
 - Premium tier with lower commission
@@ -1340,6 +1421,7 @@ https://ik.imagekit.io/andrieltecshop/products/image.jpg?tr=w-400,h-300,q-80,f-w
 ### Required Environment Variables
 
 **Authentication & Security:**
+
 ```bash
 # JWT Configuration (REQUIRED)
 JWT_SECRET=<min-32-characters>  # Enforced at startup
@@ -1352,6 +1434,7 @@ GOOGLE_CALLBACK_URL=http://localhost:8080/api/auth/google/callback
 ```
 
 **Database Connections:**
+
 ```bash
 # MongoDB Connections (one per service)
 AUTH_SERVICE_DB_URL=mongodb+srv://<user>:<password>@<host>/auth_service_dev
@@ -1361,11 +1444,13 @@ PRODUCT_SERVICE_DB_URL=mongodb+srv://<user>:<password>@<host>/product_service_de
 ```
 
 **Redis (Cache & Sessions):**
+
 ```bash
 REDIS_URL=rediss://<user>:<password>@<host>:6379
 ```
 
 **Email Service:**
+
 ```bash
 SMTP_HOST=mailslurp.mx
 SMTP_PORT=2465
@@ -1376,12 +1461,14 @@ SMTP_SECURE=true
 ```
 
 **Payment Gateway:**
+
 ```bash
 STRIPE_SECRET_KEY=sk_test_<key>
 STRIPE_WEBHOOK_SECRET=whsec_<secret>
 ```
 
 **ImageKit CDN:**
+
 ```bash
 IMAGEKIT_PRIVATE_KEY=private_<key>
 IMAGEKIT_PUBLIC_KEY=public_<key>
@@ -1389,6 +1476,7 @@ IMAGEKIT_URL_ENDPOINT=https://ik.imagekit.io/<your-id>
 ```
 
 **Microservice Hosts:**
+
 ```bash
 AUTH_SERVICE_HOST=localhost
 AUTH_SERVICE_PORT=6001
@@ -1404,6 +1492,7 @@ PRODUCT_SERVICE_PORT=6004
 ```
 
 **Frontend URLs:**
+
 ```bash
 FRONTEND_URL=http://localhost:3000        # user-ui
 SELLER_UI_URL=http://localhost:3001      # seller-ui
@@ -1412,6 +1501,7 @@ NEXT_PUBLIC_BACKEND_URL=http://localhost:8080  # For Next.js client-side
 ```
 
 **API Gateway:**
+
 ```bash
 API_GATEWAY_URL=http://localhost:8080
 PORT=8080
@@ -1426,19 +1516,12 @@ PORT=8080
 ```typescript
 // Example from Auth Service
 export function validateEnvironment() {
-  const required = [
-    'JWT_SECRET',
-    'SERVICE_MASTER_SECRET',
-    'AUTH_SERVICE_DB_URL',
-    'REDIS_URL',
-  ];
+  const required = ['JWT_SECRET', 'SERVICE_MASTER_SECRET', 'AUTH_SERVICE_DB_URL', 'REDIS_URL'];
 
   const missing = required.filter((key) => !process.env[key]);
 
   if (missing.length > 0) {
-    throw new Error(
-      `Missing required environment variables: ${missing.join(', ')}`
-    );
+    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
 
   if (process.env.JWT_SECRET.length < 32) {
@@ -1448,6 +1531,7 @@ export function validateEnvironment() {
 ```
 
 **Result:**
+
 - Services refuse to start if configuration is invalid
 - No silent failures or default secrets
 - Clear error messages for missing configuration
@@ -1540,29 +1624,29 @@ npm run prisma:format  # Format all schema files
 
 ### Technology Version Matrix
 
-| Technology       | Version | Purpose                  |
-| ---------------- | ------- | ------------------------ |
-| Node.js          | 20.x    | Runtime                  |
-| NestJS           | 11.x    | Backend framework        |
-| Next.js          | 15.x    | Frontend framework       |
-| React            | 19.0    | UI library               |
-| TypeScript       | 5.8     | Type safety              |
-| Prisma           | Latest  | ORM                      |
-| MongoDB          | 6.x     | Database                 |
-| Redis            | Latest  | Cache & sessions         |
-| Nx               | 21.x    | Monorepo tools           |
-| Tailwind CSS     | 3.4     | Styling                  |
-| ImageKit         | Latest  | CDN & image optimization |
-| Stripe           | Latest  | Payment processing       |
-| Passport.js      | Latest  | Authentication           |
-| Pino             | Latest  | Logging                  |
-| TanStack Query   | 5.x     | Data fetching            |
-| TanStack Form    | Latest  | Form management          |
-| Jotai            | Latest  | State management         |
-| Axios            | Latest  | HTTP client              |
-| Zod              | Latest  | Schema validation        |
-| Bcrypt           | Latest  | Password hashing         |
-| Helmet           | Latest  | Security headers         |
+| Technology     | Version | Purpose                  |
+| -------------- | ------- | ------------------------ |
+| Node.js        | 20.x    | Runtime                  |
+| NestJS         | 11.x    | Backend framework        |
+| Next.js        | 15.x    | Frontend framework       |
+| React          | 19.0    | UI library               |
+| TypeScript     | 5.8     | Type safety              |
+| Prisma         | Latest  | ORM                      |
+| MongoDB        | 6.x     | Database                 |
+| Redis          | Latest  | Cache & sessions         |
+| Nx             | 21.x    | Monorepo tools           |
+| Tailwind CSS   | 3.4     | Styling                  |
+| ImageKit       | Latest  | CDN & image optimization |
+| Stripe         | Latest  | Payment processing       |
+| Passport.js    | Latest  | Authentication           |
+| Pino           | Latest  | Logging                  |
+| TanStack Query | 5.x     | Data fetching            |
+| TanStack Form  | Latest  | Form management          |
+| Zustand        | Latest  | State management         |
+| Axios          | Latest  | HTTP client              |
+| Zod            | Latest  | Schema validation        |
+| Bcrypt         | Latest  | Password hashing         |
+| Helmet         | Latest  | Security headers         |
 
 ---
 
