@@ -1,7 +1,12 @@
 import React from 'react';
+import Hero from '../shared/modules/hero';
 
 const page = () => {
-  return <div className="">Page</div>;
+  return (
+    <div className="bg-[#f5f5f5]">
+      <Hero />
+    </div>
+  );
 };
 
 export default page;
