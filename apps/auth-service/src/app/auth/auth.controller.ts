@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 // Throttle decorators removed - rate limiting handled at API Gateway
-import { LoginDto, SignupDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto, ResetPasswordWithCodeDto, ValidateResetTokenDto, SellerSignupDto } from '@tec-shop/dto';
+import { LoginDto, SignupDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto, ResetPasswordWithCodeDto, ValidateResetTokenDto, SellerSignupDto, GoogleAuthDto } from '@tec-shop/dto';
 import { AuthService } from './auth.service';
 
 @Controller()
@@ -42,6 +42,12 @@ export class AuthController {
   // Throttle decorator removed - rate limiting handled at API Gateway
   async sellerLogin(@Payload() credential: LoginDto) {
     return this.authService.sellerLogin(credential);
+  }
+
+  @MessagePattern('auth-google-login')
+  // Throttle decorator removed - rate limiting handled at API Gateway
+  async googleLogin(@Payload() googleAuthDto: GoogleAuthDto) {
+    return this.authService.googleLogin(googleAuthDto);
   }
 
   @MessagePattern('validate-token')
