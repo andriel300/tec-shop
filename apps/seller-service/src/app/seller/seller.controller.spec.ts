@@ -326,18 +326,18 @@ describe('SellerController', () => {
       const profileData = TestDataFactory.createSellerProfileDto();
       const signedRequest = TestDataFactory.createSignedRequest(profileData);
 
+      const originalSecret = process.env.SERVICE_MASTER_SECRET;
       delete process.env.SERVICE_MASTER_SECRET;
-
-      (ServiceAuthUtil.deriveServiceSecret as jest.Mock).mockReturnValue('default-secret');
-      (ServiceAuthUtil.verifyRequest as jest.Mock).mockReturnValue({
-        valid: false,
-        reason: 'invalid_signature',
-      });
 
       // Act & Assert
       await expect(controller.createProfileSigned(signedRequest)).rejects.toThrow(
-        'Invalid service request: invalid_signature'
+        'SERVICE_MASTER_SECRET environment variable is not configured'
       );
+
+      // Restore
+      if (originalSecret) {
+        process.env.SERVICE_MASTER_SECRET = originalSecret;
+      }
     });
 
     it('should validate all signed request components', async () => {
@@ -350,6 +350,10 @@ describe('SellerController', () => {
         serviceId: '', // Empty service ID
       };
 
+      // Ensure SERVICE_MASTER_SECRET is set for this test
+      const originalSecret = process.env.SERVICE_MASTER_SECRET;
+      process.env.SERVICE_MASTER_SECRET = 'test-master-secret';
+
       (ServiceAuthUtil.deriveServiceSecret as jest.Mock).mockReturnValue('mock-secret');
       (ServiceAuthUtil.verifyRequest as jest.Mock).mockReturnValue({
         valid: false,
@@ -360,6 +364,13 @@ describe('SellerController', () => {
       await expect(controller.createProfileSigned(signedRequest)).rejects.toThrow(
         'Invalid service request: invalid_signature'
       );
+
+      // Restore
+      if (originalSecret) {
+        process.env.SERVICE_MASTER_SECRET = originalSecret;
+      } else {
+        delete process.env.SERVICE_MASTER_SECRET;
+      }
     });
   });
 });

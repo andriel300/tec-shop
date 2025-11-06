@@ -155,13 +155,23 @@ const Page = () => {
       form.setFieldValue('hasVariants', product.hasVariants);
       form.setFieldValue('variants', (product.variants as ProductVariant[]) || []);
       form.setFieldValue('attributes', product.attributes || {});
-      form.setFieldValue('shipping', product.shipping || {
+      form.setFieldValue('shipping', product.shipping ? product.shipping as {
+        weight: number;
+        dimensions: { length: number; width: number; height: number };
+        freeShipping: boolean;
+        shippingClass: 'standard' | 'express' | 'fragile' | 'heavy';
+      } : {
         weight: 0,
         dimensions: { length: 0, width: 0, height: 0 },
         freeShipping: false,
-        shippingClass: 'standard',
+        shippingClass: 'standard' as const,
       });
-      form.setFieldValue('seo', product.seo || {
+      form.setFieldValue('seo', product.seo ? product.seo as {
+        title: string;
+        description: string;
+        slug: string;
+        keywords: string[];
+      } : {
         title: '',
         description: '',
         slug: '',

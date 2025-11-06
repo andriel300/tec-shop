@@ -8,7 +8,6 @@ import {
   getDeletedProducts,
   restoreProduct,
   type ProductResponse,
-  type CreateProductData,
   type UpdateProductData,
 } from '../lib/api/products';
 

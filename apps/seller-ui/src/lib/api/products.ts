@@ -78,6 +78,7 @@ export interface ProductResponse {
   isFeatured: boolean;
   views: number;
   sales: number;
+  deletedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

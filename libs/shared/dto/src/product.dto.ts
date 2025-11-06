@@ -87,6 +87,9 @@ export interface ProductResponseDto {
   views: number;
   sales: number;
 
+  // Soft delete
+  deletedAt?: Date | null;
+
   // Timestamps
   createdAt: Date;
   updatedAt: Date;

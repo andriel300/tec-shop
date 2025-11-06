@@ -206,7 +206,7 @@ const ProductsPage = () => {
                                 width: '48',
                                 height: '48',
                                 crop: 'at_max',
-                                quality: '80',
+                                quality: 80,
                               },
                             ]}
                             loading="lazy"
@@ -338,7 +338,7 @@ const ProductsPage = () => {
                     width: '256',
                     height: '256',
                     crop: 'at_max',
-                    quality: '90',
+                    quality: 90,
                     focus: 'auto',
                   },
                 ]}
