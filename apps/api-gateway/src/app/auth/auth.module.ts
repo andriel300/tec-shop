@@ -3,6 +3,7 @@ import { AuthController } from './auth.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from '../../strategies/jwt.strategy';
+import { GoogleStrategy } from '../../strategies/google.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -41,7 +42,7 @@ import { join } from 'path';
     ]),
   ],
   controllers: [AuthController],
-  providers: [JwtStrategy],
-  exports: [ClientsModule, PassportModule, JwtStrategy],
+  providers: [JwtStrategy, GoogleStrategy],
+  exports: [ClientsModule, PassportModule, JwtStrategy, GoogleStrategy],
 })
 export class AuthModule {}

@@ -21,6 +21,7 @@ import {
   ResetPasswordWithCodeDto,
   ValidateResetTokenDto,
   SellerSignupDto,
+  GoogleAuthDto,
 } from '@tec-shop/dto';
 import { EmailService } from '../email/email.service';
 import { RedisService } from '../redis/redis.service';
@@ -265,6 +266,131 @@ export class AuthService implements OnModuleInit {
     } catch (error) {
       this.logger.error(
         `Seller login failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      throw error;
+    }
+  }
+
+  async googleLogin(googleAuthDto: GoogleAuthDto) {
+    try {
+      this.logger.log(`Google OAuth login attempt - email: ${googleAuthDto.email}`);
+      const { googleId, email, name, picture, userType = 'CUSTOMER' } = googleAuthDto;
+
+      // First, check if user exists with this googleId
+      let user = await this.prisma.user.findUnique({
+        where: { googleId },
+      });
+
+      if (user) {
+        this.logger.log(`Existing Google user found - userId: ${user.id}`);
+      } else {
+        // Check if user exists with this email (account linking scenario)
+        user = await this.prisma.user.findUnique({
+          where: { email },
+        });
+
+        if (user) {
+          // Account linking: Add googleId to existing local account
+          this.logger.log(`Linking existing local account with Google - userId: ${user.id}`);
+
+          if (user.provider === 'local' && !user.googleId) {
+            user = await this.prisma.user.update({
+              where: { id: user.id },
+              data: {
+                googleId,
+                provider: 'google',
+                isEmailVerified: true, // Google verifies emails
+              },
+            });
+            this.logger.log(`Account linked successfully - userId: ${user.id}`);
+          } else if (user.googleId && user.googleId !== googleId) {
+            // Email exists but with different googleId - security issue
+            this.logger.warn(`Email already linked to different Google account: ${email}`);
+            throw new ConflictException('Email already associated with another Google account');
+          }
+        } else {
+          // Create new user with Google OAuth
+          this.logger.log(`Creating new Google OAuth user - email: ${email}`);
+
+          user = await this.prisma.user.create({
+            data: {
+              email,
+              googleId,
+              password: null, // OAuth users don't have passwords
+              provider: 'google',
+              isEmailVerified: true, // Google verifies emails
+              userType: userType as 'CUSTOMER' | 'SELLER',
+            },
+          });
+
+          this.logger.log(`New Google user created - userId: ${user.id}, userType: ${userType}`);
+
+          // Create user profile in appropriate service
+          try {
+            if (userType === 'SELLER') {
+              // Create seller profile using signed request
+              const profileData = {
+                authId: user.id,
+                name,
+                email: user.email,
+                phoneNumber: '', // Will be filled in later by seller
+                country: '', // Will be filled in later by seller
+              };
+
+              if (!process.env.SERVICE_MASTER_SECRET) {
+                throw new Error(
+                  'SERVICE_MASTER_SECRET environment variable is not configured'
+                );
+              }
+
+              const serviceSecret = ServiceAuthUtil.deriveServiceSecret(
+                process.env.SERVICE_MASTER_SECRET,
+                'auth-service'
+              );
+
+              const signedRequest = ServiceAuthUtil.signRequest(
+                profileData,
+                'auth-service',
+                serviceSecret
+              );
+
+              await firstValueFrom(
+                this.sellerClient.send('create-seller-profile-signed', signedRequest)
+              );
+              this.logger.log(`Seller profile created via Google OAuth - userId: ${user.id}`);
+            } else {
+              // Create customer profile
+              await firstValueFrom(
+                this.userClient.send('create-user-profile', {
+                  userId: user.id,
+                  name,
+                  picture, // Google profile picture
+                })
+              );
+              this.logger.log(`Customer profile created via Google OAuth - userId: ${user.id}`);
+            }
+          } catch (error) {
+            this.logger.error(
+              `Failed to create ${userType.toLowerCase()} profile for Google user ${user.id}:`,
+              error
+            );
+            // Don't fail the login, profile can be created later
+          }
+        }
+      }
+
+      // Generate appropriate tokens based on userType
+      this.logger.log(`Generating tokens for Google user - userId: ${user.id}, userType: ${user.userType}`);
+
+      if (user.userType === 'SELLER') {
+        return this.generateSellerTokens(user.id, user.email, false);
+      } else {
+        return this.generateTokens(user.id, user.email, false);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Google OAuth login failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
         error instanceof Error ? error.stack : undefined
       );
       throw error;

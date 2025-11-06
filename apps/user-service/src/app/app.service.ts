@@ -7,9 +7,29 @@ export class AppService {
   constructor(private prisma: UserPrismaService) {}
 
   async getUserProfile(userId: string) {
-    return this.prisma.userProfile.findUnique({
+    const profile = await this.prisma.userProfile.findUnique({
       where: { userId: userId },
+      include: {
+        _count: {
+          select: {
+            followers: true,
+            following: true,
+          },
+        },
+      },
     });
+
+    if (!profile) {
+      return null;
+    }
+
+    // Transform to match frontend expectations
+    return {
+      ...profile,
+      followersCount: profile._count.followers,
+      followingCount: profile._count.following,
+      _count: undefined, // Remove internal Prisma field
+    };
   }
 
   async updateUserProfile(userId: string, data: UpdateUserDto) {
@@ -20,11 +40,12 @@ export class AppService {
   }
 
   async createUserProfile(data: CreateUserProfileDto) {
-    const { userId, name } = data;
+    const { userId, name, picture } = data;
     return this.prisma.userProfile.create({
       data: {
         userId,
         name,
+        ...(picture && { picture }),
       },
     });
   }

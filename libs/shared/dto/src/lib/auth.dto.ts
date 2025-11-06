@@ -233,3 +233,47 @@ export class ValidateResetTokenDto {
   @IsNotEmpty()
   token!: string;
 }
+
+export class GoogleAuthDto {
+  @ApiProperty({
+    example: '1234567890',
+    description: 'Google user ID (unique identifier from Google)'
+  })
+  @IsString()
+  @IsNotEmpty()
+  googleId!: string;
+
+  @ApiProperty({
+    example: 'user@gmail.com',
+    description: 'User email from Google account'
+  })
+  @IsEmail()
+  email!: string;
+
+  @ApiProperty({
+    example: 'John Doe',
+    description: 'User full name from Google profile'
+  })
+  @IsString()
+  @IsNotEmpty()
+  name!: string;
+
+  @ApiProperty({
+    example: 'https://lh3.googleusercontent.com/a/example',
+    description: 'User profile picture URL from Google',
+    required: false
+  })
+  @IsString()
+  @IsOptional()
+  picture?: string;
+
+  @ApiProperty({
+    example: 'CUSTOMER',
+    description: 'User type (CUSTOMER or SELLER)',
+    enum: ['CUSTOMER', 'SELLER'],
+    default: 'CUSTOMER'
+  })
+  @IsString()
+  @IsOptional()
+  userType?: 'CUSTOMER' | 'SELLER';
+}

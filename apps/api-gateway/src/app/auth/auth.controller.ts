@@ -3,6 +3,7 @@ import {
   Controller,
   Inject,
   Post,
+  Get,
   Res,
   Req,
   UseGuards,
@@ -17,11 +18,13 @@ import type {
   ResetPasswordDto,
   ValidateResetTokenDto,
   SellerSignupDto,
+  GoogleAuthDto,
 } from '@tec-shop/dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Response, Request, CookieOptions } from 'express';
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
+import { GoogleAuthGuard } from '../../guards/auth/google-auth.guard';
 
 type UserType = 'customer' | 'seller';
 type TokenType = 'access' | 'refresh';
@@ -451,5 +454,82 @@ export class AuthController {
       message: 'Seller login successful',
       userType: 'seller',
     };
+  }
+
+  @Get('google')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ summary: 'Initiate Google OAuth flow' })
+  @ApiResponse({
+    status: 302,
+    description: 'Redirect to Google OAuth consent screen',
+  })
+  async googleAuth() {
+    // Guard redirects to Google OAuth consent screen
+    // No implementation needed here
+  }
+
+  @Get('google/callback')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ summary: 'Google OAuth callback handler' })
+  @ApiResponse({
+    status: 302,
+    description: 'Redirect to frontend with authentication cookies set',
+  })
+  async googleAuthCallback(
+    @Req() request: Request & { user: Record<string, unknown> },
+    @Res({ passthrough: true }) response: Response
+  ) {
+    // Extract Google user data from request
+    const googleUser = request.user as {
+      googleId: string;
+      email: string;
+      name: string;
+      picture?: string;
+    };
+
+    // Prepare data for auth service
+    const googleAuthDto: GoogleAuthDto = {
+      googleId: googleUser.googleId,
+      email: googleUser.email,
+      name: googleUser.name,
+      picture: googleUser.picture,
+      userType: 'CUSTOMER', // Default to customer, can be changed later
+    };
+
+    // Send to auth-service to handle user creation/login
+    const result = await firstValueFrom(
+      this.authService.send('auth-google-login', googleAuthDto)
+    );
+
+    // Determine userType from result (defaults to customer)
+    const userType: UserType = 'customer';
+
+    // Get cookie configurations with proper isolation and security
+    const accessCookie = this.getCookieConfig(
+      userType,
+      'access',
+      false // Google OAuth doesn't use rememberMe
+    );
+    const refreshCookie = this.getCookieConfig(
+      userType,
+      'refresh',
+      false
+    );
+
+    // Set cookies with path isolation
+    response.cookie(
+      accessCookie.name,
+      result.access_token,
+      accessCookie.options
+    );
+    response.cookie(
+      refreshCookie.name,
+      result.refresh_token,
+      refreshCookie.options
+    );
+
+    // Redirect to frontend home page
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    response.redirect(frontendUrl);
   }
 }

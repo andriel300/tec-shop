@@ -8,6 +8,10 @@ export class CreateUserProfileDto {
   @IsString()
   @IsNotEmpty()
   name!: string;
+
+  @IsString()
+  @IsOptional()
+  picture?: string;
 }
 
 export class UpdateUserDto {
