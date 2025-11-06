@@ -36,8 +36,47 @@ export class BrandController {
    */
   @Get()
   @Throttle({ long: { limit: 100, ttl: 60000 } })
-  @ApiOperation({ summary: 'Get all brands' })
-  @ApiResponse({ status: 200, description: 'Brands retrieved successfully.' })
+  @ApiOperation({
+    summary: 'Get all brands',
+    description:
+      'Retrieves a paginated list of all product brands. Supports search, filtering by active status, and pagination. Public endpoint - no authentication required.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Brands retrieved successfully with pagination',
+    schema: {
+      type: 'object',
+      properties: {
+        brands: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', example: '507f1f77bcf86cd799439011' },
+              name: { type: 'string', example: 'Apple' },
+              slug: { type: 'string', example: 'apple' },
+              description: {
+                type: 'string',
+                example: 'Premium consumer electronics and software',
+              },
+              logo: {
+                type: 'string',
+                nullable: true,
+                example: 'https://example.com/logos/apple.png',
+              },
+              isActive: { type: 'boolean', example: true },
+              isPopular: { type: 'boolean', example: true },
+              createdAt: { type: 'string', format: 'date-time' },
+              updatedAt: { type: 'string', format: 'date-time' },
+            },
+          },
+        },
+        total: { type: 'number', example: 150 },
+        limit: { type: 'number', example: 20 },
+        offset: { type: 'number', example: 0 },
+      },
+    },
+  })
   async getAllBrands(
     @Query('onlyActive') onlyActive?: boolean,
     @Query('search') search?: string,
@@ -59,10 +98,41 @@ export class BrandController {
    */
   @Get('popular')
   @Throttle({ long: { limit: 100, ttl: 60000 } }) // 100 requests per minute for read operations
-  @ApiOperation({ summary: 'Get popular brands' })
+  @ApiOperation({
+    summary: 'Get popular brands',
+    description:
+      'Retrieves a list of popular brands marked by administrators. Useful for homepage features and marketing sections. Public endpoint - no authentication required.',
+  })
   @ApiResponse({
     status: 200,
-    description: 'Popular brands retrieved successfully.',
+    description: 'Popular brands retrieved successfully',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', example: '507f1f77bcf86cd799439011' },
+          name: { type: 'string', example: 'Apple' },
+          slug: { type: 'string', example: 'apple' },
+          description: {
+            type: 'string',
+            example: 'Premium consumer electronics and software',
+          },
+          logo: {
+            type: 'string',
+            nullable: true,
+            example: 'https://example.com/logos/apple.png',
+          },
+          isPopular: { type: 'boolean', example: true },
+          isActive: { type: 'boolean', example: true },
+          productCount: {
+            type: 'number',
+            example: 1250,
+            description: 'Number of products associated with this brand',
+          },
+        },
+      },
+    },
   })
   async getPopularBrands(@Query('limit') limit?: number) {
     return firstValueFrom(
