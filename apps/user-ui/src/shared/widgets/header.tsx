@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import React from 'react';
+import Image from 'next/image';
+import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { useAuth } from '../../hooks/use-auth';
 import ProfileIcon from '../../assets/svgs/profile-icon';
@@ -10,7 +11,32 @@ import CartIcon from '../../assets/svgs/cart-icon';
 import HeaderBottom from './header-bottom';
 
 const Header = () => {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, userProfile, logout } = useAuth();
+  const [mounted, setMounted] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  // Prevent hydration mismatch by only showing auth state after client mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Reset image error when userProfile changes
+  useEffect(() => {
+    setImageError(false);
+
+    // Pre-load image to catch errors early and cache it
+    if (userProfile?.picture) {
+      const img = new window.Image();
+      img.onload = () => {
+        // Image loaded successfully, cache will be used
+      };
+      img.onerror = () => {
+        // Image failed to load, set error state
+        setImageError(true);
+      };
+      img.src = userProfile.picture;
+    }
+  }, [userProfile?.picture]);
 
   const handleLogout = () => {
     logout();
@@ -47,21 +73,36 @@ const Header = () => {
           <div className="flex items-center gap-3 lg:gap-4">
             {/* Profile Icon */}
             <Link
-              href={isAuthenticated ? '/profile' : '/login'}
-              className="p-2 border-2 w-[45px] h-[45px] lg:w-[50px] lg:h-[50px] flex items-center justify-center rounded-full border-ui-divider hover:bg-ui-muted transition-colors"
+              href={mounted && isAuthenticated ? '/profile' : '/login'}
+              className="p-2 border-2 w-[45px] h-[45px] lg:w-[50px] lg:h-[50px] flex items-center justify-center rounded-full border-ui-divider hover:bg-ui-muted transition-colors overflow-hidden"
             >
-              <ProfileIcon className="w-5 h-5 lg:w-6 lg:h-6 text-text-primary" />
+              {mounted && isAuthenticated && userProfile?.picture && !imageError ? (
+                <Image
+                  src={userProfile.picture}
+                  alt={userProfile.name || 'Profile'}
+                  width={50}
+                  height={50}
+                  className="w-full h-full object-cover rounded-full"
+                  unoptimized
+                  onError={() => {
+                    console.warn('Failed to load profile image, falling back to icon');
+                    setImageError(true);
+                  }}
+                />
+              ) : (
+                <ProfileIcon className="w-5 h-5 lg:w-6 lg:h-6 text-text-primary" />
+              )}
             </Link>
 
             {/* User Info / Sign In */}
-            {isAuthenticated ? (
+            {mounted && isAuthenticated ? (
               <div className="hidden md:flex flex-col">
                 <span className="block font-medium text-sm">Hello,</span>
                 <button
                   onClick={handleLogout}
                   className="block font-semibold text-brand-primary text-sm hover:underline text-left"
                 >
-                  {user?.name?.split(' ')[0] || 'User'}
+                  {userProfile?.name?.split(' ')[0] || user?.name?.split(' ')[0] || 'User'}
                 </button>
               </div>
             ) : (

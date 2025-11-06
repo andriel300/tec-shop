@@ -39,10 +39,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     userProfile: null,
   });
 
-  // Initialize auth state from sessionStorage (cookies handle authentication)
+  // Initialize auth state from sessionStorage or check authentication via API
   useEffect(() => {
-    const initializeAuth = () => {
+    const initializeAuth = async () => {
       try {
+        // First, try to load from sessionStorage
         const userData = sessionStorage.getItem('user');
         const profileData = sessionStorage.getItem('userProfile');
 
@@ -56,7 +57,40 @@ export function AuthProvider({ children }: AuthProviderProps) {
             user,
             userProfile,
           });
-        } else {
+          return;
+        }
+
+        // If no sessionStorage data, check if user is authenticated via cookies
+        // by trying to fetch the user profile
+        try {
+          const { apiClient } = await import('../lib/api/client');
+          // Use skipAuthRefresh flag to prevent infinite retry loops
+          const response = await apiClient.get('/user', {
+            skipAuthRefresh: true
+          } as never);
+          const userProfile = response.data;
+
+          // If we got here, the user has valid auth cookies
+          // Create a minimal user object from the profile
+          const user: User = {
+            id: userProfile.userId,
+            email: '', // Will be populated from profile if available
+            isEmailVerified: true,
+            name: userProfile.name,
+          };
+
+          // Store in sessionStorage for future visits
+          sessionStorage.setItem('user', JSON.stringify(user));
+          sessionStorage.setItem('userProfile', JSON.stringify(userProfile));
+
+          setAuthState({
+            isAuthenticated: true,
+            isLoading: false,
+            user,
+            userProfile,
+          });
+        } catch (apiError) {
+          // No valid auth cookies or profile doesn't exist
           setAuthState((prev) => ({
             ...prev,
             isLoading: false,

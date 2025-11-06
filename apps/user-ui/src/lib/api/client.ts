@@ -37,6 +37,11 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Skip auto-refresh for initial auth check to avoid infinite loops
+    if (originalRequest.skipAuthRefresh) {
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
@@ -47,11 +52,19 @@ apiClient.interceptors.response.use(
 
         // Retry the original request (new access_token cookie will be used automatically)
         return apiClient(originalRequest);
-      } catch {
-        // Refresh failed, clear sessionStorage and redirect to login
+      } catch (refreshError) {
+        // Refresh failed, clear sessionStorage
         sessionStorage.removeItem('user');
         sessionStorage.removeItem('userProfile');
-        window.location.href = '/login';
+
+        // Only redirect if not already on login/signup pages to avoid infinite loops
+        if (typeof window !== 'undefined') {
+          const currentPath = window.location.pathname;
+          if (!currentPath.includes('/login') && !currentPath.includes('/signup')) {
+            window.location.href = '/login';
+          }
+        }
+
         return Promise.reject(
           new Error('Session expired. Please log in again.')
         );
