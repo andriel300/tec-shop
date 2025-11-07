@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import Hero from '../shared/modules/hero';
 import SectionTitle from '../components/section/section-title';
+import ProductCard from '../components/cards/product-card';
 import { useQuery } from '@tanstack/react-query';
 import { getPublicProducts } from '../lib/api/products';
 
@@ -51,38 +51,7 @@ const Page = () => {
           <div>
             <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 2xl:grid-cols-5 gap-5">
               {data.products.map((product) => (
-                <div
-                  key={product.id}
-                  className="bg-white rounded-xl p-4 shadow-sm"
-                >
-                  {/* Temporary product display - replace with ProductCard later */}
-                  <div className="relative h-[150px] bg-gray-200 rounded-lg mb-3 overflow-hidden">
-                    {product.images[0] ? (
-                      <Image
-                        src={product.images[0]}
-                        alt={product.name}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 33vw, 25vw"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400">
-                        No Image
-                      </div>
-                    )}
-                  </div>
-                  <h3 className="font-semibold text-sm mb-2 line-clamp-2">
-                    {product.name}
-                  </h3>
-                  <p className="text-brand-primary font-bold">
-                    ${product.salePrice || product.price}
-                  </p>
-                  {product.salePrice && (
-                    <p className="text-gray-400 text-sm line-through">
-                      ${product.price}
-                    </p>
-                  )}
-                </div>
+                <ProductCard key={product.id} product={product} />
               ))}
             </div>
             <div className="mt-6 text-center text-sm text-gray-600">
