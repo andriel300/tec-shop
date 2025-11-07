@@ -194,3 +194,80 @@ export const UpdateBrandSchema = CreateBrandSchema.partial();
 
 export type CreateBrandDto = z.infer<typeof CreateBrandSchema>;
 export type UpdateBrandDto = z.infer<typeof UpdateBrandSchema>;
+
+// ============================================
+// Public Products Query DTO
+// ============================================
+
+/**
+ * Query parameters for public product listing
+ * Used by frontend for marketplace browsing and filtering
+ */
+export const GetAllProductsQuerySchema = z.object({
+  // Taxonomy filters
+  categoryId: z.string().optional(),
+  brandId: z.string().optional(),
+  shopId: z.string().optional(),
+
+  // Search
+  search: z.string().max(200).optional(),
+
+  // Price range
+  minPrice: z.number().positive().optional(),
+  maxPrice: z.number().positive().optional(),
+
+  // Product type
+  productType: z
+    .enum(['simple', 'variable', 'digital'])
+    .optional()
+    .describe('Filter by product type'),
+
+  // Flags
+  isFeatured: z
+    .boolean()
+    .optional()
+    .describe('Filter for featured/highlighted products'),
+
+  // Tags
+  tags: z
+    .array(z.string())
+    .optional()
+    .describe('Filter by product tags (e.g., new, sale, trending)'),
+
+  // Sort options
+  sort: z
+    .enum(['newest', 'price-asc', 'price-desc', 'popular', 'top-sales'])
+    .default('newest')
+    .describe(
+      'Sort order: newest (createdAt desc), price-asc, price-desc, popular (views desc), top-sales (sales desc)'
+    ),
+
+  // Pagination
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .default(20)
+    .describe('Number of items per page'),
+  offset: z
+    .number()
+    .int()
+    .min(0)
+    .default(0)
+    .describe('Number of items to skip'),
+});
+
+export type GetAllProductsQueryDto = z.infer<typeof GetAllProductsQuerySchema>;
+
+/**
+ * Paginated products response
+ * Follows the pagination pattern used in brand/category endpoints
+ */
+export interface PaginatedProductsResponseDto {
+  products: ProductResponseDto[];
+  total: number;
+  limit: number;
+  offset: number;
+  sort: string;
+}

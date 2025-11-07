@@ -210,4 +210,48 @@ export class ProductController {
   async incrementViews(@Payload() payload: { id: string }) {
     return this.productService.incrementViews(payload.id);
   }
+
+  /**
+   * Get all public products for marketplace frontend
+   * Returns only published, public, active, non-deleted products
+   * Supports comprehensive filtering, sorting, and pagination
+   */
+  @MessagePattern('product-get-public-products')
+  async findPublicProducts(
+    @Payload()
+    payload: {
+      categoryId?: string;
+      brandId?: string;
+      shopId?: string;
+      search?: string;
+      minPrice?: number;
+      maxPrice?: number;
+      productType?: string;
+      isFeatured?: boolean;
+      tags?: string[];
+      sort?: string;
+      limit?: number;
+      offset?: number;
+    }
+  ) {
+    this.logger.log(
+      `Received product-get-public-products request with filters: ${JSON.stringify({
+        categoryId: payload.categoryId,
+        brandId: payload.brandId,
+        shopId: payload.shopId,
+        search: payload.search,
+        sort: payload.sort,
+        limit: payload.limit,
+        offset: payload.offset,
+      })}`
+    );
+
+    const result = await this.productService.findPublicProducts(payload);
+
+    this.logger.log(
+      `Returning ${result.products.length} products out of ${result.total} total (offset: ${result.offset}, limit: ${result.limit})`
+    );
+
+    return result;
+  }
 }

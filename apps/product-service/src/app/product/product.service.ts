@@ -579,6 +579,148 @@ export class ProductService {
     });
   }
 
+  /**
+   * Find public products for marketplace frontend
+   * Returns only published, public, active, non-deleted products
+   * Supports comprehensive filtering, sorting, and pagination
+   */
+  async findPublicProducts(filters: {
+    categoryId?: string;
+    brandId?: string;
+    shopId?: string;
+    search?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    productType?: string;
+    isFeatured?: boolean;
+    tags?: string[];
+    sort?: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    const {
+      categoryId,
+      brandId,
+      shopId,
+      search,
+      minPrice,
+      maxPrice,
+      productType,
+      isFeatured,
+      tags,
+      sort = 'newest',
+      limit = 20,
+      offset = 0,
+    } = filters;
+
+    this.logger.debug(
+      `findPublicProducts called with filters: ${JSON.stringify({
+        categoryId,
+        brandId,
+        shopId,
+        search,
+        minPrice,
+        maxPrice,
+        productType,
+        isFeatured,
+        tags,
+        sort,
+        limit,
+        offset,
+      })}`
+    );
+
+    // Build where clause with public visibility rules
+    const where = {
+      // Public visibility rules (only return products visible to public)
+      status: ProductStatus.PUBLISHED,
+      visibility: ProductVisibility.PUBLIC,
+      isActive: true,
+      deletedAt: null,
+
+      // Filters
+      ...(categoryId && { categoryId }),
+      ...(brandId && { brandId }),
+      ...(shopId && { shopId }),
+      ...(isFeatured !== undefined && { isFeatured }),
+      ...(productType && {
+        productType: this.mapProductType(
+          productType as 'simple' | 'variable' | 'digital'
+        ),
+      }),
+
+      // Price range
+      ...(minPrice !== undefined &&
+        maxPrice !== undefined && {
+          price: { gte: minPrice, lte: maxPrice },
+        }),
+      ...(minPrice !== undefined &&
+        maxPrice === undefined && {
+          price: { gte: minPrice },
+        }),
+      ...(minPrice === undefined &&
+        maxPrice !== undefined && {
+          price: { lte: maxPrice },
+        }),
+
+      // Tags filter (array contains any of the provided tags)
+      ...(tags && tags.length > 0 && { tags: { hasSome: tags } }),
+
+      // Search (case-insensitive search in name, description, and tags)
+      ...(search && {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+          { tags: { hasSome: [search] } },
+        ],
+      }),
+    };
+
+    // Sort mapping
+    const orderByMap: Record<string, Record<string, string>> = {
+      newest: { createdAt: 'desc' },
+      'price-asc': { price: 'asc' },
+      'price-desc': { price: 'desc' },
+      popular: { views: 'desc' },
+      'top-sales': { sales: 'desc' },
+    };
+
+    const orderBy = orderByMap[sort] || orderByMap.newest;
+
+    this.logger.debug(`Query where clause: ${JSON.stringify(where)}`);
+    this.logger.debug(`Query orderBy: ${JSON.stringify(orderBy)}`);
+
+    // Execute parallel queries for data and count
+    const [products, total] = await Promise.all([
+      this.prisma.product.findMany({
+        where,
+        include: {
+          category: true,
+          brand: true,
+          variants: {
+            where: { isActive: true }, // Only include active variants
+          },
+        },
+        orderBy,
+        take: limit,
+        skip: offset,
+      }),
+      this.prisma.product.count({ where }),
+    ]);
+
+    this.logger.log(
+      `findPublicProducts returning ${products.length} products out of ${total} total`
+    );
+
+    return {
+      products,
+      total,
+      limit,
+      offset,
+      sort,
+    };
+  }
+
   // ============================================
   // Helper Methods
   // ============================================
