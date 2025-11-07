@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Get,
-  Query,
-  Inject,
-  ParseIntPipe,
-  ParseFloatPipe,
-  ParseBoolPipe,
-  DefaultValuePipe,
-} from '@nestjs/common';
+import { Controller, Get, Query, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ApiOperation, ApiResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
@@ -272,25 +263,30 @@ Retrieves all publicly available products for the marketplace frontend.
     @Query('brandId') brandId?: string,
     @Query('shopId') shopId?: string,
     @Query('search') search?: string,
-    @Query('minPrice', new DefaultValuePipe(undefined), ParseFloatPipe)
-    minPrice?: number,
-    @Query('maxPrice', new DefaultValuePipe(undefined), ParseFloatPipe)
-    maxPrice?: number,
+    @Query('minPrice') minPriceStr?: string,
+    @Query('maxPrice') maxPriceStr?: string,
     @Query('productType') productType?: string,
-    @Query('isFeatured', new DefaultValuePipe(undefined), ParseBoolPipe)
-    isFeatured?: boolean,
+    @Query('isFeatured') isFeaturedStr?: string,
     @Query('tags') tags?: string,
-    @Query('sort', new DefaultValuePipe('newest')) sort?: string,
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit?: number,
-    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset?: number
+    @Query('sort') sort?: string,
+    @Query('limit') limitStr?: string,
+    @Query('offset') offsetStr?: string
   ) {
+    // Parse optional numeric and boolean values manually
+    const minPrice = minPriceStr ? parseFloat(minPriceStr) : undefined;
+    const maxPrice = maxPriceStr ? parseFloat(maxPriceStr) : undefined;
+    const isFeatured = isFeaturedStr
+      ? isFeaturedStr === 'true' || isFeaturedStr === '1'
+      : undefined;
+    const limit = limitStr ? parseInt(limitStr, 10) : 20;
+    const offset = offsetStr ? parseInt(offsetStr, 10) : 0;
     // Parse comma-separated tags
     const tagsArray = tags
       ? tags.split(',').map((tag) => tag.trim())
       : undefined;
 
     // Validate and cap limit
-    const validatedLimit = Math.min(Math.max(limit || 20, 1), 100);
+    const validatedLimit = Math.min(Math.max(limit, 1), 100);
 
     return firstValueFrom(
       this.productService.send('product-get-public-products', {
@@ -303,9 +299,9 @@ Retrieves all publicly available products for the marketplace frontend.
         productType,
         isFeatured,
         tags: tagsArray,
-        sort,
+        sort: sort || 'newest',
         limit: validatedLimit,
-        offset: offset || 0,
+        offset,
       })
     );
   }
