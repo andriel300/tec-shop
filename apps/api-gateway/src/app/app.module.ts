@@ -8,6 +8,7 @@ import { ProductModule } from './product/product.module';
 import { CategoryModule } from './category/category.module';
 import { DiscountModule } from './discount/discount.module';
 import { BrandModule } from './brand/brand.module';
+import { PublicModule } from './public/public.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -75,6 +76,7 @@ import { ImageKitModule } from '@tec-shop/shared/imagekit';
     CategoryModule,
     BrandModule,
     DiscountModule,
+    PublicModule,
   ],
   controllers: [AppController],
   providers: [
