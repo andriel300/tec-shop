@@ -51,6 +51,8 @@ export interface Product {
   isFeatured: boolean;
   views: number;
   sales: number;
+  averageRating: number;
+  ratingCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -141,4 +143,56 @@ export const searchProducts = async (
     search,
     ...params,
   });
+};
+
+// ============================================
+// Product Ratings
+// ============================================
+
+export interface Rating {
+  id: string;
+  productId: string;
+  userId: string;
+  rating: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateRatingDto {
+  rating: number;
+}
+
+export interface UpdateRatingDto {
+  rating: number;
+}
+
+export const createOrUpdateRating = async (
+  productId: string,
+  rating: number
+): Promise<Rating> => {
+  const response = await apiClient.post(`/products/${productId}/ratings`, {
+    rating,
+  });
+  return response.data;
+};
+
+export const updateRating = async (
+  ratingId: string,
+  rating: number
+): Promise<Rating> => {
+  const response = await apiClient.put(`/products/ratings/${ratingId}`, {
+    rating,
+  });
+  return response.data;
+};
+
+export const deleteRating = async (ratingId: string): Promise<void> => {
+  await apiClient.delete(`/products/ratings/${ratingId}`);
+};
+
+export const getUserRating = async (
+  productId: string
+): Promise<Rating | null> => {
+  const response = await apiClient.get(`/products/${productId}/ratings/me`);
+  return response.data;
 };
