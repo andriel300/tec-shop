@@ -139,6 +139,13 @@ model Product {
   views       Int      @default(0)
   sales       Int      @default(0)
 
+  // Rating aggregates (denormalized for performance)
+  averageRating Float @default(0)   // Calculated average (0-5)
+  ratingCount   Int   @default(0)   // Total number of ratings
+
+  // Relations
+  ratings     ProductRating[]
+
   // Soft delete (for 24-hour recovery window)
   deletedAt   DateTime?
 
@@ -152,6 +159,7 @@ model Product {
   @@index([status])
   @@index([productType])
   @@index([deletedAt])
+  @@index([averageRating])
 }
 
 // ============================================
@@ -185,6 +193,27 @@ model ProductVariant {
 
   @@index([productId])
   @@index([isActive])
+}
+
+// ============================================
+// Product Rating Model (Simple 1-5 star ratings)
+// ============================================
+
+model ProductRating {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  productId   String   @db.ObjectId
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId      String   @db.ObjectId  // References auth-service User.id
+
+  rating      Int      // 1-5 stars (validated in DTO)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([productId, userId])  // One rating per user per product
+  @@index([productId])
+  @@index([userId])
+  @@index([rating])
 }
 
 // ============================================

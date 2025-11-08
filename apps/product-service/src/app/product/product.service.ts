@@ -9,6 +9,8 @@ import type {
   CreateProductDto,
   UpdateProductDto,
   ProductVariantDto,
+  CreateRatingDto,
+  UpdateRatingDto,
 } from '@tec-shop/dto';
 import { ProductPrismaService } from '../../prisma/prisma.service';
 import {
@@ -719,6 +721,245 @@ export class ProductService {
       offset,
       sort,
     };
+  }
+
+  // ============================================
+  // Rating Methods
+  // ============================================
+
+  /**
+   * Create or update a product rating
+   * Users can only have one rating per product (enforced by unique constraint)
+   * Recalculates product averageRating and ratingCount in a transaction
+   */
+  async createRating(
+    productId: string,
+    userId: string,
+    createRatingDto: CreateRatingDto
+  ) {
+    this.logger.log(
+      `Creating rating for product ${productId} by user ${userId} with ${createRatingDto.rating} stars`
+    );
+
+    // Verify product exists and is published
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+    });
+
+    if (!product) {
+      this.logger.error(`Product not found: ${productId}`);
+      throw new NotFoundException('Product not found');
+    }
+
+    if (product.status !== ProductStatus.PUBLISHED) {
+      this.logger.error(`Cannot rate unpublished product: ${productId}`);
+      throw new BadRequestException('Cannot rate unpublished products');
+    }
+
+    // Use transaction to ensure consistency
+    try {
+      const result = await this.prisma.$transaction(async (tx) => {
+        // Try to create new rating, or update if exists (upsert)
+        const rating = await tx.productRating.upsert({
+          where: {
+            productId_userId: {
+              productId,
+              userId,
+            },
+          },
+          create: {
+            productId,
+            userId,
+            rating: createRatingDto.rating,
+          },
+          update: {
+            rating: createRatingDto.rating,
+          },
+        });
+
+        // Recalculate product rating aggregates
+        const aggregates = await tx.productRating.aggregate({
+          where: { productId },
+          _avg: { rating: true },
+          _count: { rating: true },
+        });
+
+        // Update product with new aggregates
+        await tx.product.update({
+          where: { id: productId },
+          data: {
+            averageRating: aggregates._avg.rating || 0,
+            ratingCount: aggregates._count.rating || 0,
+          },
+        });
+
+        return rating;
+      });
+
+      this.logger.log(
+        `Rating created/updated successfully - ratingId: ${result.id}`
+      );
+
+      return result;
+    } catch (error) {
+      this.logger.error(
+        `Failed to create rating: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing rating
+   * Users can only update their own ratings
+   */
+  async updateRating(
+    ratingId: string,
+    userId: string,
+    updateRatingDto: UpdateRatingDto
+  ) {
+    this.logger.log(`Updating rating ${ratingId} by user ${userId}`);
+
+    // Find existing rating
+    const existingRating = await this.prisma.productRating.findUnique({
+      where: { id: ratingId },
+    });
+
+    if (!existingRating) {
+      this.logger.error(`Rating not found: ${ratingId}`);
+      throw new NotFoundException('Rating not found');
+    }
+
+    // Verify ownership
+    if (existingRating.userId !== userId) {
+      this.logger.error(
+        `User ${userId} attempted to update rating ${ratingId} owned by ${existingRating.userId}`
+      );
+      throw new ForbiddenException('You can only update your own ratings');
+    }
+
+    // Use transaction to update rating and recalculate aggregates
+    try {
+      const result = await this.prisma.$transaction(async (tx) => {
+        // Update rating
+        const updatedRating = await tx.productRating.update({
+          where: { id: ratingId },
+          data: { rating: updateRatingDto.rating },
+        });
+
+        // Recalculate product rating aggregates
+        const aggregates = await tx.productRating.aggregate({
+          where: { productId: existingRating.productId },
+          _avg: { rating: true },
+          _count: { rating: true },
+        });
+
+        // Update product with new aggregates
+        await tx.product.update({
+          where: { id: existingRating.productId },
+          data: {
+            averageRating: aggregates._avg.rating || 0,
+            ratingCount: aggregates._count.rating || 0,
+          },
+        });
+
+        return updatedRating;
+      });
+
+      this.logger.log(`Rating updated successfully - ratingId: ${result.id}`);
+
+      return result;
+    } catch (error) {
+      this.logger.error(
+        `Failed to update rating: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a rating
+   * Users can only delete their own ratings
+   */
+  async deleteRating(ratingId: string, userId: string) {
+    this.logger.log(`Deleting rating ${ratingId} by user ${userId}`);
+
+    // Find existing rating
+    const existingRating = await this.prisma.productRating.findUnique({
+      where: { id: ratingId },
+    });
+
+    if (!existingRating) {
+      this.logger.error(`Rating not found: ${ratingId}`);
+      throw new NotFoundException('Rating not found');
+    }
+
+    // Verify ownership
+    if (existingRating.userId !== userId) {
+      this.logger.error(
+        `User ${userId} attempted to delete rating ${ratingId} owned by ${existingRating.userId}`
+      );
+      throw new ForbiddenException('You can only delete your own ratings');
+    }
+
+    // Use transaction to delete rating and recalculate aggregates
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        // Delete rating
+        await tx.productRating.delete({
+          where: { id: ratingId },
+        });
+
+        // Recalculate product rating aggregates
+        const aggregates = await tx.productRating.aggregate({
+          where: { productId: existingRating.productId },
+          _avg: { rating: true },
+          _count: { rating: true },
+        });
+
+        // Update product with new aggregates
+        await tx.product.update({
+          where: { id: existingRating.productId },
+          data: {
+            averageRating: aggregates._avg.rating || 0,
+            ratingCount: aggregates._count.rating || 0,
+          },
+        });
+      });
+
+      this.logger.log(`Rating deleted successfully - ratingId: ${ratingId}`);
+
+      return { message: 'Rating deleted successfully' };
+    } catch (error) {
+      this.logger.error(
+        `Failed to delete rating: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Get user's rating for a specific product
+   * Returns null if user hasn't rated the product
+   */
+  async getUserRating(productId: string, userId: string) {
+    this.logger.debug(
+      `Getting rating for product ${productId} by user ${userId}`
+    );
+
+    const rating = await this.prisma.productRating.findUnique({
+      where: {
+        productId_userId: {
+          productId,
+          userId,
+        },
+      },
+    });
+
+    return rating;
   }
 
   // ============================================

@@ -1,7 +1,12 @@
 import { Controller, BadRequestException, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ProductService } from './product.service';
-import type { CreateProductDto, UpdateProductDto } from '@tec-shop/dto';
+import type {
+  CreateProductDto,
+  UpdateProductDto,
+  CreateRatingDto,
+  UpdateRatingDto,
+} from '@tec-shop/dto';
 
 @Controller()
 export class ProductController {
@@ -250,6 +255,117 @@ export class ProductController {
 
     this.logger.log(
       `Returning ${result.products.length} products out of ${result.total} total (offset: ${result.offset}, limit: ${result.limit})`
+    );
+
+    return result;
+  }
+
+  /**
+   * Create or update a product rating
+   * Uses upsert pattern - creates new rating or updates existing one
+   */
+  @MessagePattern('product-create-rating')
+  async createRating(
+    @Payload()
+    payload: {
+      productId: string;
+      userId: string;
+      rating: CreateRatingDto;
+    }
+  ) {
+    this.logger.log(
+      `Received product-create-rating request - productId: ${payload.productId}, userId: ${payload.userId}, rating: ${payload.rating.rating}`
+    );
+
+    const result = await this.productService.createRating(
+      payload.productId,
+      payload.userId,
+      payload.rating
+    );
+
+    this.logger.log(
+      `Rating created/updated successfully - ratingId: ${result.id}, productId: ${payload.productId}`
+    );
+
+    return result;
+  }
+
+  /**
+   * Update an existing product rating
+   */
+  @MessagePattern('product-update-rating')
+  async updateRating(
+    @Payload()
+    payload: {
+      ratingId: string;
+      userId: string;
+      rating: UpdateRatingDto;
+    }
+  ) {
+    this.logger.log(
+      `Received product-update-rating request - ratingId: ${payload.ratingId}, userId: ${payload.userId}, rating: ${payload.rating.rating}`
+    );
+
+    const result = await this.productService.updateRating(
+      payload.ratingId,
+      payload.userId,
+      payload.rating
+    );
+
+    this.logger.log(`Rating updated successfully - ratingId: ${result.id}`);
+
+    return result;
+  }
+
+  /**
+   * Delete a product rating
+   */
+  @MessagePattern('product-delete-rating')
+  async deleteRating(
+    @Payload()
+    payload: {
+      ratingId: string;
+      userId: string;
+    }
+  ) {
+    this.logger.log(
+      `Received product-delete-rating request - ratingId: ${payload.ratingId}, userId: ${payload.userId}`
+    );
+
+    const result = await this.productService.deleteRating(
+      payload.ratingId,
+      payload.userId
+    );
+
+    this.logger.log(
+      `Rating deleted successfully - ratingId: ${payload.ratingId}`
+    );
+
+    return result;
+  }
+
+  /**
+   * Get a user's rating for a specific product
+   */
+  @MessagePattern('product-get-user-rating')
+  async getUserRating(
+    @Payload()
+    payload: {
+      productId: string;
+      userId: string;
+    }
+  ) {
+    this.logger.log(
+      `Received product-get-user-rating request - productId: ${payload.productId}, userId: ${payload.userId}`
+    );
+
+    const result = await this.productService.getUserRating(
+      payload.productId,
+      payload.userId
+    );
+
+    this.logger.log(
+      `Returning user rating - productId: ${payload.productId}, hasRating: ${!!result}`
     );
 
     return result;
