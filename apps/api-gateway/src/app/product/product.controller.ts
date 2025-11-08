@@ -14,6 +14,7 @@ import {
   Req,
   BadRequestException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ClientProxy } from '@nestjs/microservices';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { firstValueFrom } from 'rxjs';
@@ -283,6 +284,161 @@ export class ProductController {
       this.productService.send('product-delete-product', {
         id,
         sellerId: user.userId,
+      })
+    );
+  }
+
+  // ============================================
+  // Product Ratings Endpoints
+  // ============================================
+
+  @Post(':productId/ratings')
+  @ApiOperation({
+    summary: 'Create or update a rating for a product (authenticated users)',
+    description:
+      'Allows authenticated users to rate a product with 1-5 stars. Uses upsert pattern - creates new rating or updates existing one.',
+  })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ short: { limit: 20, ttl: 60000 } })
+  @ApiResponse({
+    status: 201,
+    description: 'Rating created or updated successfully.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid rating value (must be 1-5 stars).',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Product not found or not published.',
+  })
+  async createRating(
+    @Req() req: Record<string, unknown>,
+    @Param('productId') productId: string,
+    @Body() ratingDto: Dto.CreateRatingDto
+  ) {
+    const user = req.user as {
+      userId: string;
+      username: string;
+      role?: string;
+      userType?: 'CUSTOMER' | 'SELLER' | 'ADMIN';
+    };
+
+    return firstValueFrom(
+      this.productService.send('product-create-rating', {
+        productId,
+        userId: user.userId,
+        rating: ratingDto,
+      })
+    );
+  }
+
+  @Put('ratings/:ratingId')
+  @ApiOperation({
+    summary: 'Update an existing rating (authenticated users, owner only)',
+    description: 'Allows users to update their own rating. Only the rating owner can update it.',
+  })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ short: { limit: 20, ttl: 60000 } })
+  @ApiResponse({ status: 200, description: 'Rating updated successfully.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid rating value (must be 1-5 stars).',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Can only update your own rating.',
+  })
+  @ApiResponse({ status: 404, description: 'Rating not found.' })
+  async updateRating(
+    @Req() req: Record<string, unknown>,
+    @Param('ratingId') ratingId: string,
+    @Body() ratingDto: Dto.UpdateRatingDto
+  ) {
+    const user = req.user as {
+      userId: string;
+      username: string;
+      role?: string;
+      userType?: 'CUSTOMER' | 'SELLER' | 'ADMIN';
+    };
+
+    return firstValueFrom(
+      this.productService.send('product-update-rating', {
+        ratingId,
+        userId: user.userId,
+        rating: ratingDto,
+      })
+    );
+  }
+
+  @Delete('ratings/:ratingId')
+  @ApiOperation({
+    summary: 'Delete a rating (authenticated users, owner only)',
+    description: 'Allows users to delete their own rating. Only the rating owner can delete it.',
+  })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ short: { limit: 20, ttl: 60000 } })
+  @ApiResponse({ status: 200, description: 'Rating deleted successfully.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Can only delete your own rating.',
+  })
+  @ApiResponse({ status: 404, description: 'Rating not found.' })
+  async deleteRating(
+    @Req() req: Record<string, unknown>,
+    @Param('ratingId') ratingId: string
+  ) {
+    const user = req.user as {
+      userId: string;
+      username: string;
+      role?: string;
+      userType?: 'CUSTOMER' | 'SELLER' | 'ADMIN';
+    };
+
+    return firstValueFrom(
+      this.productService.send('product-delete-rating', {
+        ratingId,
+        userId: user.userId,
+      })
+    );
+  }
+
+  @Get(':productId/ratings/me')
+  @ApiOperation({
+    summary: 'Get current user rating for a product (authenticated users)',
+    description:
+      'Returns the current authenticated user rating for a specific product. Returns null if user has not rated the product yet.',
+  })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ long: { limit: 100, ttl: 60000 } })
+  @ApiResponse({
+    status: 200,
+    description: 'User rating retrieved successfully (or null if not rated).',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({ status: 404, description: 'Product not found.' })
+  async getUserRating(
+    @Req() req: Record<string, unknown>,
+    @Param('productId') productId: string
+  ) {
+    const user = req.user as {
+      userId: string;
+      username: string;
+      role?: string;
+      userType?: 'CUSTOMER' | 'SELLER' | 'ADMIN';
+    };
+
+    return firstValueFrom(
+      this.productService.send('product-get-user-rating', {
+        productId,
+        userId: user.userId,
       })
     );
   }

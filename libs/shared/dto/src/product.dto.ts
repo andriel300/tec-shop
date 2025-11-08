@@ -87,6 +87,10 @@ export interface ProductResponseDto {
   views: number;
   sales: number;
 
+  // Rating aggregates
+  averageRating: number;
+  ratingCount: number;
+
   // Soft delete
   deletedAt?: Date | null;
 
@@ -270,4 +274,54 @@ export interface PaginatedProductsResponseDto {
   limit: number;
   offset: number;
   sort: string;
+}
+
+// ============================================
+// Rating DTOs
+// ============================================
+
+/**
+ * Create Rating Schema
+ * Validates rating input (1-5 stars)
+ */
+export const CreateRatingSchema = z.object({
+  rating: z
+    .number()
+    .int('Rating must be an integer')
+    .min(1, 'Rating must be at least 1 star')
+    .max(5, 'Rating cannot exceed 5 stars')
+    .describe('Star rating from 1 to 5'),
+});
+
+export type CreateRatingDto = z.infer<typeof CreateRatingSchema>;
+
+/**
+ * Update Rating Schema
+ * Same validation as create
+ */
+export const UpdateRatingSchema = CreateRatingSchema;
+
+export type UpdateRatingDto = z.infer<typeof UpdateRatingSchema>;
+
+/**
+ * Rating Response DTO
+ * Matches Prisma ProductRating model structure
+ */
+export interface RatingResponseDto {
+  id: string;
+  productId: string;
+  userId: string;
+  rating: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Product With Ratings Response
+ * Extends ProductResponseDto with rating aggregates
+ */
+export interface ProductWithRatingsResponseDto extends ProductResponseDto {
+  averageRating: number;
+  ratingCount: number;
+  userRating?: RatingResponseDto | null; // Current user's rating (if authenticated)
 }
