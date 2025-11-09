@@ -1,14 +1,24 @@
 'use client';
 import { AlignLeft, ChevronDown, HeartIcon } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import React, { useEffect, useState } from 'react';
 import { navItems } from '../../configs/constants';
 import ProfileIcon from '../../assets/svgs/profile-icon';
 import CartIcon from '../../assets/svgs/cart-icon';
+import { useAuth } from '../../hooks/use-auth';
 
 const HeaderBottom = () => {
+  const { isAuthenticated, user, userProfile, logout } = useAuth();
   const [show, setShow] = React.useState(false);
   const [isSticky, setIsSticky] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Track scroll position
   useEffect(() => {
@@ -24,6 +34,15 @@ const HeaderBottom = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Reset image error when userProfile changes
+  useEffect(() => {
+    setImageError(false);
+  }, [userProfile?.picture]);
+
+  const handleLogout = () => {
+    logout();
+  };
 
   return (
     <div
@@ -81,22 +100,49 @@ const HeaderBottom = () => {
               <div className="flex items-center gap-3 lg:gap-4">
                 {/* Profile Icon */}
                 <Link
-                  href={'/login'}
-                  className="p-2 border-2 w-[45px] h-[45px] lg:w-[50px] lg:h-[50px] flex items-center justify-center rounded-full border-ui-divider hover:bg-ui-muted transition-colors"
+                  href={mounted && isAuthenticated ? '/profile' : '/login'}
+                  className="p-2 border-2 w-[45px] h-[45px] lg:w-[50px] lg:h-[50px] flex items-center justify-center rounded-full border-ui-divider hover:bg-ui-muted transition-colors overflow-hidden"
                   title="Account"
                 >
-                  <ProfileIcon className="w-5 h-5 lg:w-6 lg:h-6 text-text-primary" />
+                  {mounted && isAuthenticated && userProfile?.picture && !imageError ? (
+                    <Image
+                      src={userProfile.picture}
+                      alt={userProfile.name || 'Profile'}
+                      width={50}
+                      height={50}
+                      className="w-full h-full object-cover rounded-full"
+                      unoptimized
+                      onError={() => {
+                        console.warn('Failed to load profile image in sticky header, falling back to icon');
+                        setImageError(true);
+                      }}
+                    />
+                  ) : (
+                    <ProfileIcon className="w-5 h-5 lg:w-6 lg:h-6 text-text-primary" />
+                  )}
                 </Link>
 
-                {/* Sign In Text */}
-                <Link href={'/login'} className="hidden md:block">
-                  <div className="flex flex-col">
+                {/* User Info / Sign In */}
+                {mounted && isAuthenticated ? (
+                  <div className="hidden md:flex flex-col">
                     <span className="block font-medium text-sm">Hello,</span>
-                    <span className="block font-semibold text-brand-primary text-sm">
-                      Sign In
-                    </span>
+                    <button
+                      onClick={handleLogout}
+                      className="block font-semibold text-brand-primary text-sm hover:underline text-left"
+                    >
+                      {userProfile?.name?.split(' ')[0] || user?.name?.split(' ')[0] || 'User'}
+                    </button>
                   </div>
-                </Link>
+                ) : (
+                  <Link href={'/login'} className="hidden md:block">
+                    <div className="flex flex-col">
+                      <span className="block font-medium text-sm">Hello,</span>
+                      <span className="block font-semibold text-brand-primary text-sm">
+                        Sign In
+                      </span>
+                    </div>
+                  </Link>
+                )}
 
                 {/* Wishlist Icon */}
                 <Link

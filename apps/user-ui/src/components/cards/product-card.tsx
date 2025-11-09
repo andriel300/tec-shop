@@ -6,6 +6,7 @@ import Link from 'next/link';
 import type { Product } from '../../lib/api/products';
 import StarRating from '../ui/star-rating';
 import { Eye, Heart, ShoppingBag } from 'lucide-react';
+import ProductDetailsCard from './product-details.card';
 
 interface ProductCardProps {
   product: Product;
@@ -15,6 +16,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const [isFavorited, setIsFavorited] = useState(false);
   const displayPrice = product.salePrice || product.price;
   const hasDiscount = product.salePrice && product.salePrice < product.price;
+  const [open, setOpen] = useState(false);
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -28,7 +30,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const handleQuickView = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // TODO: Open quick view modal
+    setOpen(!open);
   };
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -39,16 +41,17 @@ const ProductCard = ({ product }: ProductCardProps) => {
   };
 
   return (
-    <Link href={`/products/${product.slug || product.id}`}>
-      <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden h-full flex flex-col">
-        <div className="relative w-full h-[200px] bg-gray-100">
+    <>
+      <Link href={`/products/${product.slug || product.id}`}>
+        <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden h-full flex flex-col">
+          <div className="relative w-full h-[200px] bg-gray-100">
           {/* Image */}
           {product.images && product.images.length > 0 ? (
             <Image
               src={product.images[0]}
               alt={product.name}
               fill
-              className="object-cover"
+              className="object-cover hover:scale-110 transition-transform duration-300"
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 33vw, 25vw"
             />
           ) : (
@@ -158,6 +161,10 @@ const ProductCard = ({ product }: ProductCardProps) => {
         </div>
       </div>
     </Link>
+
+    {/* QuickView Modal - Outside Link wrapper */}
+    {open && <ProductDetailsCard product={product} setOpen={setOpen} />}
+  </>
   );
 };
 
