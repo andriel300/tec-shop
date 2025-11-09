@@ -670,13 +670,23 @@ export class AuthService implements OnModuleInit {
   }
 
   async revokeRefreshToken(userId: string) {
-    // Clear the refresh token from database
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { refreshToken: null },
-    });
+    try {
+      // Clear the refresh token from database
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { refreshToken: null },
+      });
 
-    return { message: 'Refresh token revoked successfully' };
+      return { message: 'Refresh token revoked successfully' };
+    } catch (error) {
+      // User might not exist (deleted or invalid ID) - this is okay during logout
+      if ((error as { code?: string }).code === 'P2025') {
+        // Record not found - no action needed
+        this.logger.warn(`User ${userId} not found during refresh token revocation`);
+        return { message: 'Refresh token already revoked or user not found' };
+      }
+      throw error;
+    }
   }
 
   // Security Hardened: Token revocation with blacklisting
