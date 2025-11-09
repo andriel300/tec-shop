@@ -37,10 +37,11 @@
         "libs/prisma-schemas/auth-schema/*",
         "libs/prisma-schemas/user-schema/*",
         "libs/prisma-schemas/seller-schema/*",
+        "libs/prisma-schemas/product-schema/*",
         "libs/prisma-clients/auth-client/*",
         "libs/prisma-clients/user-client/*",
         "libs/prisma-clients/seller-client/*",
-        "libs/prisma-schemas/product-schema/*",
+        "libs/prisma-clients/product-client/*",
         "libs/shared/imagekit/*"
       ]
     },
@@ -92,10 +93,11 @@
         "libs/prisma-schemas/auth-schema/*",
         "libs/prisma-schemas/user-schema/*",
         "libs/prisma-schemas/seller-schema/*",
+        "libs/prisma-schemas/product-schema/*",
         "libs/prisma-clients/auth-client/*",
         "libs/prisma-clients/user-client/*",
         "libs/prisma-clients/seller-client/*",
-        "libs/prisma-schemas/product-schema/*",
+        "libs/prisma-clients/product-client/*",
         "libs/shared/imagekit/*"
       ],
       "options": {
@@ -132,7 +134,8 @@
       "outputs": [
         "{workspaceRoot}/node_modules/.prisma/auth-client",
         "{workspaceRoot}/node_modules/.prisma/user-client",
-        "{workspaceRoot}/node_modules/.prisma/seller-client"
+        "{workspaceRoot}/node_modules/.prisma/seller-client",
+        "{workspaceRoot}/node_modules/.prisma/product-client"
       ]
     },
     "migrate": {
@@ -151,6 +154,7 @@
       "api-gateway",
       "auth-service",
       "user-service",
+      "product-service",
       "@tec-shop/shared/dto"
     ],
     "changelog": {

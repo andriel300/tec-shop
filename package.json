@@ -16,7 +16,9 @@
     "prisma:format": "npx nx run-many --target=format --projects=@tec-shop/auth-schema,@tec-shop/user-schema,@tec-shop/seller-schema,@tec-shop/product-schema",
     "seed:brands": "npx tsx apps/product-service/src/scripts/seed-brands.ts",
     "seed:categories": "npx tsx apps/product-service/src/scripts/seed-categories.ts",
+    "seed:products": "npx tsx apps/product-service/src/scripts/seed-products.ts",
     "seed:all": "npm run seed:categories && npm run seed:brands",
+    "get-shop-id": "npx tsx apps/product-service/src/scripts/get-shop-id.ts",
     "test": "npx nx run-many --target=test --all",
     "lint": "npx nx run-many --target=lint --all",
     "typecheck": "npx nx run-many --target=typecheck --all"
