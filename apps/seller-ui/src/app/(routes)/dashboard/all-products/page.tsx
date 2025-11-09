@@ -305,11 +305,10 @@ const ProductsPage = () => {
       {/* Hover Image Preview */}
       {hoveredImage && (
         <div
-          className="fixed z-[9999] pointer-events-none"
+          className="fixed z-[9999] pointer-events-none animate-fade-in-zoom"
           style={{
             left: `${mousePosition.x - 276}px`,
             top: `${mousePosition.y - 128}px`,
-            animation: 'fadeInZoom 150ms ease-out',
           }}
         >
           <div className="relative">
@@ -358,20 +357,6 @@ const ProductsPage = () => {
         productName={deleteModal.productName}
         isDeleting={isDeleting}
       />
-
-      {/* CSS Animations */}
-      <style jsx>{`
-        @keyframes fadeInZoom {
-          from {
-            opacity: 0;
-            transform: scale(0.9);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-      `}</style>
     </div>
   );
 };

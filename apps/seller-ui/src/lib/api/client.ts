@@ -37,7 +37,17 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Skip auto-refresh for initial auth check to avoid infinite loops
+    if (originalRequest.skipAuthRefresh) {
+      return Promise.reject(error);
+    }
+
+    // Handle both 401 (Unauthorized) and 403 (Forbidden) for expired/invalid tokens
+    // 403 can occur when RolesGuard rejects an expired token
+    if (
+      (error.response?.status === 401 || error.response?.status === 403) &&
+      !originalRequest._retry
+    ) {
       originalRequest._retry = true;
 
       try {
@@ -47,11 +57,19 @@ apiClient.interceptors.response.use(
 
         // Retry the original request (new access_token cookie will be used automatically)
         return apiClient(originalRequest);
-      } catch {
-        // Refresh failed, clear sessionStorage and redirect to login
+      } catch (refreshError) {
+        // Refresh failed, clear sessionStorage
         sessionStorage.removeItem('user');
         sessionStorage.removeItem('userProfile');
-        window.location.href = '/login';
+
+        // Only redirect if not already on login/signup pages to avoid infinite loops
+        if (typeof window !== 'undefined') {
+          const currentPath = window.location.pathname;
+          if (!currentPath.includes('/login') && !currentPath.includes('/signup')) {
+            window.location.href = '/login';
+          }
+        }
+
         return Promise.reject(
           new Error('Session expired. Please log in again.')
         );

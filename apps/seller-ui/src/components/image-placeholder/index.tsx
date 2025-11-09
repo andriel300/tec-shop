@@ -33,6 +33,7 @@ const ImagePlaceHolder = ({
   const [showEnhancementModal, setShowEnhancementModal] = useState(false);
   const [selectedEnhancement, setSelectedEnhancement] = useState<string | null>(null);
   const [tempEnhancement, setTempEnhancement] = useState<string | null>(null);
+  const [isApplyingEnhancement, setIsApplyingEnhancement] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
   // Update preview when defaultImage changes
@@ -79,10 +80,12 @@ const ImagePlaceHolder = ({
 
   // Validate and process file
   const processFile = async (file: File) => {
-    // Validate file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
+    // Validate file size (3MB max for optimal ImageKit performance)
+    const maxSize = 3 * 1024 * 1024; // 3MB
+    if (file.size > maxSize) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
       toast.error('File too large', {
-        description: 'File size must be less than 5MB',
+        description: `File is ${sizeMB}MB. Please compress to under 3MB for best results.`,
       });
       return;
     }
@@ -105,8 +108,13 @@ const ImagePlaceHolder = ({
       // Notify parent of File selection (for form submission)
       onImageChange(file, index);
 
-      // Upload to ImageKit
+      // Upload to ImageKit with detailed error handling
       const uploadResult = await uploadImage(file, 'products');
+
+      // Validate upload result
+      if (!uploadResult || !uploadResult.url) {
+        throw new Error('Upload succeeded but no URL returned');
+      }
 
       // Cleanup blob URL and set ImageKit URL
       URL.revokeObjectURL(tempPreview);
@@ -117,12 +125,27 @@ const ImagePlaceHolder = ({
         onImageUploaded(uploadResult.url, index);
       }
 
-      toast.success('Image uploaded', {
+      toast.success('Image uploaded successfully', {
         description: `${file.name} (${(file.size / 1024).toFixed(1)}KB)`,
       });
     } catch (error) {
+      // Detailed error messages
+      let errorMessage = 'Failed to upload image. Please try again.';
+
+      if (error instanceof Error) {
+        if (error.message.includes('413') || error.message.includes('too large')) {
+          errorMessage = 'Image file is too large. Please compress it to under 3MB.';
+        } else if (error.message.includes('timeout')) {
+          errorMessage = 'Upload timed out. Please check your connection and try again.';
+        } else if (error.message.includes('network')) {
+          errorMessage = 'Network error. Please check your internet connection.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
       toast.error('Upload failed', {
-        description: error instanceof Error ? error.message : 'Failed to upload image. Please try again.',
+        description: errorMessage,
       });
       console.error('Error uploading image:', error);
 
@@ -208,17 +231,69 @@ const ImagePlaceHolder = ({
     setShowEnhancementModal(true);
   };
 
-  const handleApplyEnhancements = () => {
-    setSelectedEnhancement(tempEnhancement);
-    setShowEnhancementModal(false);
+  const handleApplyEnhancements = async () => {
+    setIsApplyingEnhancement(true);
 
-    if (tempEnhancement) {
-      const enhancementLabel = enhancements.find(e => e.effect === tempEnhancement)?.label || 'Enhancement';
-      toast.success('Enhancement applied', {
-        description: enhancementLabel,
+    try {
+      setSelectedEnhancement(tempEnhancement);
+
+      if (tempEnhancement && imagePreview && !imagePreview.startsWith('blob:')) {
+        // Build enhanced URL with ImageKit transformation
+        const imagePath = getImageKitPath(imagePreview.split('?')[0]); // Strip existing params
+        const enhancementParam = tempEnhancement.replace('e-', '');
+
+        // Ensure proper URL construction with exactly one slash between endpoint and path
+        const endpoint = imagekitConfig.urlEndpoint.replace(/\/$/, ''); // Remove trailing slash
+        const path = imagePath.startsWith('/') ? imagePath : `/${imagePath}`; // Ensure leading slash
+        const enhancedUrl = `${endpoint}${path}?tr=e-${enhancementParam}`;
+
+        // Preload the enhanced image to ensure it's ready before closing modal
+        await new Promise<void>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve();
+          img.onerror = () => reject(new Error('Failed to load enhanced image'));
+          img.src = enhancedUrl;
+        });
+
+        // Update the image preview with enhanced URL
+        setImagePreview(enhancedUrl);
+
+        // Notify parent component with enhanced URL
+        if (onImageUploaded) {
+          onImageUploaded(enhancedUrl, index);
+        }
+
+        const enhancementLabel = enhancements.find(e => e.effect === tempEnhancement)?.label || 'Enhancement';
+        toast.success('Enhancement applied', {
+          description: `${enhancementLabel} - Image updated`,
+        });
+      } else if (!tempEnhancement && imagePreview && !imagePreview.startsWith('blob:')) {
+        // Clear enhancement - use original URL without transformation params
+        const imagePath = getImageKitPath(imagePreview.split('?')[0]); // Strip params
+
+        // Ensure proper URL construction
+        const endpoint = imagekitConfig.urlEndpoint.replace(/\/$/, '');
+        const path = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+        const originalUrl = `${endpoint}${path}`;
+
+        setImagePreview(originalUrl);
+
+        if (onImageUploaded) {
+          onImageUploaded(originalUrl, index);
+        }
+
+        toast.info('Enhancement cleared - Original image restored');
+      }
+    } catch (error) {
+      console.error('Error applying enhancement:', error);
+      toast.error('Failed to apply enhancement', {
+        description: 'Please try again or choose a different enhancement',
       });
-    } else {
-      toast.info('Enhancement cleared');
+      // Revert to previous enhancement state on error
+      setTempEnhancement(selectedEnhancement);
+    } finally {
+      setIsApplyingEnhancement(false);
+      setShowEnhancementModal(false);
     }
   };
 
@@ -268,15 +343,15 @@ const ImagePlaceHolder = ({
 
       {imagePreview ? (
         <>
-          {/* Image Preview - Use regular img for blob URLs (local previews) */}
-          {imagePreview.startsWith('blob:') ? (
+          {/* Image Preview - Use regular img for blob URLs and enhanced URLs */}
+          {imagePreview.startsWith('blob:') || imagePreview.includes('?tr=') ? (
             <img
               src={imagePreview}
               alt={`Product ${index}`}
               className="absolute inset-0 w-full h-full object-cover"
             />
           ) : (
-            /* Use IKImage only for uploaded ImageKit URLs */
+            /* Use IKImage only for basic ImageKit URLs without transformations */
             <IKImage
               urlEndpoint={imagekitConfig.urlEndpoint}
               path={getImageKitPath(imagePreview)}
@@ -349,13 +424,11 @@ const ImagePlaceHolder = ({
           {/* AI Enhancement Modal */}
           {isImageUploaded && showEnhancementModal && (
             <div
-              className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-75"
-              style={{ animation: 'fadeIn 200ms ease-out' }}
+              className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-75 animate-fade-in"
             >
               <div
                 ref={modalRef}
-                className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-2xl mx-4"
-                style={{ animation: 'slideUp 200ms ease-out' }}
+                className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-2xl mx-4 animate-slide-up"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Modal Header */}
@@ -384,7 +457,7 @@ const ImagePlaceHolder = ({
                     <div className="relative w-full max-w-md h-64 bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-700">
                       <IKImage
                         urlEndpoint={imagekitConfig.urlEndpoint}
-                        path={getImageKitPath(imagePreview)}
+                        path={getImageKitPath(imagePreview.split('?')[0])}
                         alt="Preview"
                         width={400}
                         height={400}
@@ -449,16 +522,25 @@ const ImagePlaceHolder = ({
                   <button
                     type="button"
                     onClick={handleCancelEnhancements}
-                    className="px-4 py-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                    disabled={isApplyingEnhancement}
+                    className="px-4 py-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
                     onClick={handleApplyEnhancements}
-                    className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg"
+                    disabled={isApplyingEnhancement}
+                    className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
-                    Apply{tempEnhancement ? ' Enhancement' : ''}
+                    {isApplyingEnhancement ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        Applying...
+                      </>
+                    ) : (
+                      <>Apply{tempEnhancement ? ' Enhancement' : ''}</>
+                    )}
                   </button>
                 </div>
               </div>
@@ -493,7 +575,7 @@ const ImagePlaceHolder = ({
                 </span>
                 {!isDragging && (
                   <span className="text-xs text-gray-500 mt-2">
-                    PNG, JPG, WebP (max 5MB)
+                    PNG, JPG, WebP (max 3MB)
                   </span>
                 )}
               </>
@@ -501,29 +583,6 @@ const ImagePlaceHolder = ({
           </div>
         </>
       )}
-
-      {/* CSS Animations */}
-      <style jsx>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-
-        @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px) scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-      `}</style>
     </div>
   );
 };

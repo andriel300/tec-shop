@@ -195,9 +195,35 @@ const Page = () => {
   // Handle image uploads from ImagePlaceHolder
   const handleImageUploaded = (url: string, index: number) => {
     setUploadedImageUrls((prev) => {
+      // Maintain a fixed-length array of 4 slots to match UI indices
       const updated = [...prev];
+      // Ensure array has at least 4 slots
+      while (updated.length < 4) {
+        updated.push('');
+      }
       updated[index] = url;
-      return updated.filter(Boolean); // Remove empty slots
+      return updated;
+    });
+
+    // CRITICAL: Clear File state so getDefaultImage uses ImageKit URL instead of blob
+    // This ensures magic wand appears immediately after upload
+    setProductImages((prev) => {
+      const updated = [...prev];
+      updated[index] = null;
+      return updated;
+    });
+  };
+
+  // Handle image removal
+  const handleImageRemove = (index: number) => {
+    setUploadedImageUrls((prev) => {
+      const updated = [...prev];
+      // Ensure array has at least 4 slots
+      while (updated.length < 4) {
+        updated.push('');
+      }
+      updated[index] = ''; // Clear the URL at this index
+      return updated;
     });
   };
 
@@ -279,7 +305,8 @@ const Page = () => {
               images={productImages}
               onChange={setProductImages}
               onImageUploaded={handleImageUploaded}
-              initialUrls={product.images}
+              onImageRemoved={handleImageRemove}
+              initialUrls={uploadedImageUrls}
             />
 
             {/* Product Status */}
