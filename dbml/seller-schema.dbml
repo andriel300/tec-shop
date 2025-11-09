@@ -1,0 +1,83 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table Seller {
+  id String [pk]
+  authId String [unique, not null]
+  name String [not null]
+  email String [unique, not null]
+  phoneNumber String [not null]
+  country String [not null]
+  isVerified Boolean [not null, default: false]
+  stripeAccountId String [unique]
+  stripeOnboardingStatus StripeStatus [not null, default: 'NOT_STARTED']
+  stripeDetailsSubmitted Boolean [not null, default: false]
+  stripePayoutsEnabled Boolean [not null, default: false]
+  stripeChargesEnabled Boolean [not null, default: false]
+  stripeOnboardingUrl String
+  stripeRequirements Json
+  stripeLastUpdated DateTime
+  shop Shop
+  discountCodes DiscountCode [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+}
+
+Table Shop {
+  id String [pk]
+  sellerId String [unique, not null]
+  seller Seller [not null]
+  businessName String [not null]
+  bio String
+  description String
+  category String [not null]
+  address String [not null]
+  openingHours String [not null]
+  website String
+  socialLinks Json[] [not null]
+  rating Float [not null, default: 0]
+  totalOrders Int [not null, default: 0]
+  isActive Boolean [not null, default: true]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+}
+
+Table DiscountCode {
+  id String [pk]
+  sellerId String [not null]
+  seller Seller [not null]
+  publicName String [not null]
+  code String [unique, not null]
+  description String
+  discountType DiscountType [not null]
+  discountValue Float [not null]
+  usageLimit Int
+  usageCount Int [not null, default: 0]
+  maxUsesPerCustomer Int
+  startDate DateTime [default: `now()`, not null]
+  endDate DateTime
+  minimumPurchase Float
+  isActive Boolean [not null, default: true]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+}
+
+Enum StripeStatus {
+  NOT_STARTED
+  PENDING
+  INCOMPLETE
+  COMPLETE
+  RESTRICTED
+  REJECTED
+}
+
+Enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  FREE_SHIPPING
+}
+
+Ref: Shop.sellerId - Seller.id
+
+Ref: DiscountCode.sellerId > Seller.id [delete: Cascade]
