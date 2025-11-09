@@ -6,6 +6,7 @@ export interface ProductImageUploaderProps {
   onChange: (images: (File | null)[]) => void;
   className?: string;
   onImageUploaded?: (url: string, index: number) => void;
+  onImageRemoved?: (index: number) => void;
   initialUrls?: string[]; // ImageKit URLs from existing product
 }
 
@@ -22,6 +23,7 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
   onChange,
   className = '',
   onImageUploaded,
+  onImageRemoved,
   initialUrls = [],
 }) => {
   const [_openImageModal, setOpenImageModal] = useState(false);
@@ -36,6 +38,11 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
     const updated = [...images];
     updated[index] = null;
     onChange(updated);
+
+    // Notify parent component that image URL should be cleared
+    if (onImageRemoved) {
+      onImageRemoved(index);
+    }
   };
 
   // Get default image: prioritize File object, fallback to initialUrl
@@ -105,8 +112,8 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
         <ul className="text-xs text-gray-400 space-y-1">
           <li>• Use high-quality images (min 800x800px)</li>
           <li>• Supported formats: JPG, PNG, WebP</li>
-          <li>• Max file size: 5MB per image</li>
-          <li>• Use clear, well-lit photos</li>
+          <li>• Max file size: 3MB per image (compress large files)</li>
+          <li>• Use clear, well-lit photos with white/neutral background</li>
         </ul>
       </div>
     </div>

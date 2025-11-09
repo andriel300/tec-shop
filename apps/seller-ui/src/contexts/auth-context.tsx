@@ -39,10 +39,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     userProfile: null,
   });
 
-  // Initialize auth state from sessionStorage (cookies handle authentication)
+  // Initialize auth state and validate session
   useEffect(() => {
-    const initializeAuth = () => {
+    const initializeAuth = async () => {
       try {
+        // First, check sessionStorage for cached user data
         const userData = sessionStorage.getItem('user');
         const profileData = sessionStorage.getItem('userProfile');
 
@@ -56,7 +57,40 @@ export function AuthProvider({ children }: AuthProviderProps) {
             user,
             userProfile,
           });
-        } else {
+          return;
+        }
+
+        // If no sessionStorage data, try to validate/refresh the session from cookies
+        // This handles cases where the browser was closed but cookies are still valid
+        try {
+          const { apiClient } = await import('../lib/api/client');
+
+          // Try to refresh the token - this will validate the session
+          // If successful, new tokens will be set in cookies
+          const response = await apiClient.post('/auth/refresh');
+
+          if (response.data) {
+            // Session is valid, create a minimal user object
+            // User profile will be fetched later by the dashboard
+            const minimalUser: User = {
+              id: '',
+              email: '',
+              isEmailVerified: true,
+              name: '',
+            };
+
+            setAuthState({
+              isAuthenticated: true,
+              isLoading: false,
+              user: minimalUser,
+              userProfile: null,
+            });
+
+            // Store minimal user data so we don't have to refresh again
+            sessionStorage.setItem('user', JSON.stringify(minimalUser));
+          }
+        } catch {
+          // Refresh failed - user is not authenticated
           setAuthState((prev) => ({
             ...prev,
             isAuthenticated: false,

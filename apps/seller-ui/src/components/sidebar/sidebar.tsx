@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import useSidebar from '../../hooks/useSidebar';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import useSeller from '../../hooks/useSeller';
 import Box from '../box';
 import { Sidebar } from './sidebar.styles';
@@ -26,12 +26,16 @@ import {
 } from 'lucide-react';
 import { Payment } from '../../assets/svgs/icons/payment-icon';
 import { useDeletedProducts } from '../../hooks/useProducts';
+import { useAuth } from '../../contexts/auth-context';
+import { toast } from 'sonner';
 
 const SidebarBarWrapper = () => {
   const { activeSidebar, setActiveSidebar } = useSidebar();
   const pathName = usePathname();
+  const router = useRouter();
   const { seller, isLoading, isError } = useSeller();
   const { data: deletedProducts } = useDeletedProducts();
+  const { logout } = useAuth();
 
   useEffect(() => {
     setActiveSidebar(pathName);
@@ -46,6 +50,18 @@ const SidebarBarWrapper = () => {
 
   // Get count of deleted products for badge
   const deletedCount = deletedProducts?.length || 0;
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast.success('Logged out successfully');
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Failed to logout. Please try again.');
+    }
+  };
 
   return (
     <Box
@@ -223,10 +239,10 @@ const SidebarBarWrapper = () => {
                 }
               />
               <SidebarItems
-                isActive={activeSidebar === '/logout'}
+                isActive={false}
                 title="Logout"
-                href="/"
-                icon={<LogOut size={20} color={getIconColor('/logout')} />}
+                onClick={handleLogout}
+                icon={<LogOut size={20} color="#969696" />}
               />
             </SidebarMenu>
           </div>

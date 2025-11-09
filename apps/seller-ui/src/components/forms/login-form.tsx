@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { loginUser } from '../../lib/api/auth';
-import { getCurrentUser } from '../../lib/api/user';
+import { getSellerProfile } from '../../lib/api/seller';
 import { useAuth } from '../../hooks/use-auth';
 import { Button } from '../ui/core/Button';
 import { Input } from '../ui/core/Input';
@@ -26,26 +26,26 @@ export function LoginForm() {
         // Cookie-based auth: tokens are automatically set as httpOnly cookies by the server
         // No need to handle tokens in the frontend
 
-        // Fetch the user profile using the cookie (cookie sent automatically with withCredentials: true)
-        const userProfile = await getCurrentUser();
+        // Fetch the seller profile using the cookie (cookie sent automatically with withCredentials: true)
+        const sellerProfile = await getSellerProfile();
 
         // Set user data in auth context (stored in sessionStorage, not tokens)
         const user = {
-          id: userProfile.userId,
-          email: form.getFieldValue('email'),
-          isEmailVerified: true,
-          name: userProfile.name,
+          id: sellerProfile.id,
+          email: sellerProfile.email,
+          isEmailVerified: sellerProfile.isVerified,
+          name: sellerProfile.name,
         };
 
         login(user);
-        queryClient.invalidateQueries({ queryKey: ['user'] });
-        toast.success(`Welcome back, ${userProfile.name}!`);
-        router.push('/'); // Redirect to dashboard or home
+        queryClient.invalidateQueries({ queryKey: ['seller'] });
+        toast.success(`Welcome back, ${sellerProfile.name}!`);
+        router.push('/dashboard'); // Redirect to dashboard
       } catch (error) {
-        console.error('Failed to fetch user profile:', error);
+        console.error('Failed to fetch seller profile:', error);
         // Login was successful but profile fetch failed - still allow login
         toast.success('Login successful!');
-        router.push('/');
+        router.push('/dashboard');
       }
     },
     onError: (error: Error | { message: string } | string) => {

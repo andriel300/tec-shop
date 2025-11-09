@@ -106,9 +106,26 @@ export function useUpdateProduct(id: string) {
       return { previousProduct, previousProducts };
     },
     onSuccess: (updatedProduct) => {
-      // Invalidate queries to ensure fresh data
-      queryClient.invalidateQueries({ queryKey: productKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: productKeys.detail(id) });
+      // Invalidate queries to ensure fresh data (refetch: true forces immediate refetch)
+      queryClient.invalidateQueries({
+        queryKey: productKeys.lists(),
+        refetchType: 'active', // Refetch active queries immediately
+      });
+      queryClient.invalidateQueries({
+        queryKey: productKeys.detail(id),
+        refetchType: 'active',
+      });
+
+      // Also update the specific list item in cache if it exists
+      queryClient.setQueriesData(
+        { queryKey: productKeys.lists() },
+        (oldData: ProductResponse[] | undefined) => {
+          if (!oldData) return oldData;
+          return oldData.map(product =>
+            product.id === id ? { ...product, ...updatedProduct } : product
+          );
+        }
+      );
 
       toast.success('Product updated successfully!', {
         description: updatedProduct.name,
