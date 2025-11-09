@@ -1,0 +1,35 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table User {
+  id String [pk]
+  email String [unique, not null]
+  password String
+  isEmailVerified Boolean [not null, default: false]
+  userType UserType [not null, default: 'CUSTOMER']
+  googleId String [unique]
+  provider String [not null, default: 'local']
+  refreshToken String
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  passwordResetTokens PasswordResetToken [not null]
+}
+
+Table PasswordResetToken {
+  id String [pk]
+  token String [unique, not null]
+  userId String [not null]
+  user User [not null]
+  expiresAt DateTime [not null]
+  used Boolean [not null, default: false]
+  createdAt DateTime [default: `now()`, not null]
+}
+
+Enum UserType {
+  CUSTOMER
+  SELLER
+  ADMIN
+}
+
+Ref: PasswordResetToken.userId > User.id [delete: Cascade]

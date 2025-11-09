@@ -1,0 +1,51 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table Follow {
+  id String [pk]
+  followerId String [not null]
+  followingId String [not null]
+  follower UserProfile [not null]
+  following UserProfile [not null]
+  createdAt DateTime [default: `now()`, not null]
+
+  indexes {
+    (followerId, followingId) [unique]
+  }
+}
+
+Table Image {
+  id String [pk]
+  file_id String [not null]
+  url String [not null]
+  imageType ImageType [not null, default: 'AVATAR']
+  userProfile UserProfile [not null]
+  userProfileId String [not null]
+  createdAt DateTime [default: `now()`, not null]
+}
+
+Table UserProfile {
+  id String [pk]
+  userId String [unique, not null]
+  name String [not null]
+  bio String
+  picture String
+  images Image [not null]
+  followers Follow [not null]
+  following Follow [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+}
+
+Enum ImageType {
+  AVATAR
+  COVER
+  GALLERY
+}
+
+Ref: Follow.followerId > UserProfile.id
+
+Ref: Follow.followingId > UserProfile.id
+
+Ref: Image.userProfileId > UserProfile.id [delete: Cascade]
