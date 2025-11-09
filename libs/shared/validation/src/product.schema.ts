@@ -117,18 +117,12 @@ export const CreateProductSchema = z
 
     description: z
       .string()
-      .min(
-        50,
-        'Product description must be at least 50 words (approximately 250 characters)'
-      )
-      .max(
-        1000,
-        'Product description should not exceed 200 words (approximately 1000 characters)'
-      ),
+      .min(20, 'Product description must be at least 20 characters')
+      .max(10000, 'Product description should not exceed 10,000 characters'),
 
     // Category & Brand
     categoryId: z.string().min(1, 'Category is required'),
-    brandId: z.string().min(1, 'Brand is required').optional(),
+    brandId: z.string().optional().nullable().or(z.literal('')),
 
     // Pricing (simplified for products without variants)
     price: z.number().positive('Price must be greater than 0'),
@@ -232,13 +226,13 @@ export const UpdateProductSchema = z.object({
 
   description: z
     .string()
-    .min(50, 'Product description must be at least 50 words')
-    .max(1000, 'Product description should not exceed 200 words')
+    .min(20, 'Product description must be at least 20 characters')
+    .max(10000, 'Product description should not exceed 10,000 characters')
     .optional(),
 
   // Category & Brand
   categoryId: z.string().min(1, 'Category is required').optional(),
-  brandId: z.string().min(1, 'Brand is required').optional(),
+  brandId: z.string().optional().nullable().or(z.literal('')),
 
   // Pricing
   price: z.number().positive('Price must be greater than 0').optional(),
