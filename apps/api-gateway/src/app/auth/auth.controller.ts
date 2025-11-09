@@ -7,6 +7,7 @@ import {
   Res,
   Req,
   UseGuards,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -192,7 +193,7 @@ export class AuthController {
     const userType: UserType = customerRefreshToken ? 'customer' : 'seller';
 
     if (!refreshToken) {
-      throw new Error('Authentication failed');
+      throw new UnauthorizedException('No refresh token found. Please log in again.');
     }
 
     // Get current access token for validation
