@@ -23,19 +23,6 @@ const Header = () => {
   // Reset image error when userProfile changes
   useEffect(() => {
     setImageError(false);
-
-    // Pre-load image to catch errors early and cache it
-    if (userProfile?.picture) {
-      const img = new window.Image();
-      img.onload = () => {
-        // Image loaded successfully, cache will be used
-      };
-      img.onerror = () => {
-        // Image failed to load, set error state
-        setImageError(true);
-      };
-      img.src = userProfile.picture;
-    }
   }, [userProfile?.picture]);
 
   const handleLogout = () => {

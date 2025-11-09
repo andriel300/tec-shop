@@ -60,39 +60,64 @@ export function AuthProvider({ children }: AuthProviderProps) {
           return;
         }
 
-        // If no sessionStorage data, check if user is authenticated via cookies
-        // by trying to fetch the user profile
+        // If no sessionStorage data, try to validate/refresh the session from cookies
+        // This handles cases where the browser was closed but cookies are still valid
         try {
           const { apiClient } = await import('../lib/api/client');
-          // Use skipAuthRefresh flag to prevent infinite retry loops
-          const response = await apiClient.get('/user', {
-            skipAuthRefresh: true
-          } as never);
-          const userProfile = response.data;
+          const { getCurrentUser } = await import('../lib/api/user');
 
-          // If we got here, the user has valid auth cookies
-          // Create a minimal user object from the profile
-          const user: User = {
-            id: userProfile.userId,
-            email: '', // Will be populated from profile if available
-            isEmailVerified: true,
-            name: userProfile.name,
-          };
+          // Try to refresh the token - this will validate the session
+          // If successful, new tokens will be set in cookies
+          const response = await apiClient.post('/auth/refresh');
 
-          // Store in sessionStorage for future visits
-          sessionStorage.setItem('user', JSON.stringify(user));
-          sessionStorage.setItem('userProfile', JSON.stringify(userProfile));
+          if (response.data) {
+            // Session is valid, fetch the full user profile
+            try {
+              const userProfile = await getCurrentUser();
 
-          setAuthState({
-            isAuthenticated: true,
-            isLoading: false,
-            user,
-            userProfile,
-          });
-        } catch (apiError) {
-          // No valid auth cookies or profile doesn't exist
+              const user: User = {
+                id: userProfile.userId,
+                email: '', // Will be filled from user profile if needed
+                isEmailVerified: true,
+                name: userProfile.name,
+              };
+
+              setAuthState({
+                isAuthenticated: true,
+                isLoading: false,
+                user,
+                userProfile,
+              });
+
+              // Store user data in sessionStorage
+              sessionStorage.setItem('user', JSON.stringify(user));
+              sessionStorage.setItem('userProfile', JSON.stringify(userProfile));
+            } catch (profileError) {
+              console.error('Failed to fetch user profile after token refresh:', profileError);
+
+              // Fallback to minimal user if profile fetch fails
+              const minimalUser: User = {
+                id: '',
+                email: '',
+                isEmailVerified: true,
+                name: '',
+              };
+
+              setAuthState({
+                isAuthenticated: true,
+                isLoading: false,
+                user: minimalUser,
+                userProfile: null,
+              });
+
+              sessionStorage.setItem('user', JSON.stringify(minimalUser));
+            }
+          }
+        } catch {
+          // Refresh failed - user is not authenticated
           setAuthState((prev) => ({
             ...prev,
+            isAuthenticated: false,
             isLoading: false,
           }));
         }

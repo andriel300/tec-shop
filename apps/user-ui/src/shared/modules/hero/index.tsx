@@ -42,7 +42,7 @@ const Hero = () => {
                 width={450}
                 height={450}
                 alt="Smart Watch Collection 2025"
-                className="object-contain"
+                className="object-contain w-auto h-auto"
                 priority
               />
             </div>
