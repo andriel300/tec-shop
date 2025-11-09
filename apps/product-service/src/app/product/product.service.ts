@@ -181,6 +181,10 @@ export class ProductService {
       // Create product with variants in a transaction
       this.logger.log('Creating product in database transaction');
 
+      // Automatically set hasVariants based on variants array
+      const hasVariants =
+        sanitizedData.variants && sanitizedData.variants.length > 0;
+
       const product = await this.prisma.$transaction(async (tx) => {
         // Create the product
         this.logger.debug('Creating product record');
@@ -196,7 +200,7 @@ export class ProductService {
             salePrice: sanitizedData.salePrice,
             stock: sanitizedData.stock,
             images: imagePaths,
-            hasVariants: sanitizedData.hasVariants,
+            hasVariants,
             attributes: sanitizedData.attributes,
             shipping: sanitizedData.shipping,
             seo: sanitizedData.seo,
@@ -216,11 +220,7 @@ export class ProductService {
         this.logger.debug(`Product record created - ID: ${newProduct.id}`);
 
         // Create variants if it's a variable product
-        if (
-          sanitizedData.hasVariants &&
-          Array.isArray(sanitizedData.variants) &&
-          sanitizedData.variants.length > 0
-        ) {
+        if (hasVariants && Array.isArray(sanitizedData.variants)) {
           this.logger.debug(
             `Creating ${sanitizedData.variants.length} product variants`
           );
@@ -478,6 +478,9 @@ export class ProductService {
 
     // Handle variants update in transaction
     if (updateProductDto.variants !== undefined) {
+      // Automatically set hasVariants based on variants array
+      updateData.hasVariants = updateProductDto.variants.length > 0;
+
       return this.prisma.$transaction(async (tx) => {
         // Update product
         const updatedProduct = await tx.product.update({

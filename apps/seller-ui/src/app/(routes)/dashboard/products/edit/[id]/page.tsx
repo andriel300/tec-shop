@@ -664,7 +664,11 @@ const Page = () => {
                     {(field) => (
                       <VariantManager
                         variants={field.state.value}
-                        onChange={(variants) => field.handleChange(variants)}
+                        onChange={(variants) => {
+                          field.handleChange(variants);
+                          // Automatically set hasVariants based on variants array
+                          form.setFieldValue('hasVariants', variants.length > 0);
+                        }}
                         basePrice={form.getFieldValue('price') || 0}
                         productName={form.getFieldValue('name') || 'Product'}
                       />
