@@ -1,9 +1,9 @@
 'use client';
 
 import Image from 'next/image';
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import StarRating from '../ui/star-rating';
-import type { Product } from '../../lib/api/products';
+import type { Product, ProductVariant } from '../../lib/api/products';
 import {
   Minus,
   Plus,
@@ -12,6 +12,8 @@ import {
   MapPin,
   MessageCircle,
   Store,
+  Heart,
+  Truck,
 } from 'lucide-react';
 import { useShop } from '../../hooks/use-shops';
 
@@ -24,15 +26,105 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
   const [activeImage, setActiveImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [showFullDescription, setShowFullDescription] = useState(false);
-
-  const displayPrice = product.salePrice || product.price;
-  const hasDiscount = product.salePrice && product.salePrice < product.price;
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
 
   // Fetch shop details
   const { data: shop, isLoading: isShopLoading } = useShop(product.shopId);
 
+  // Extract unique attribute names and values from variants
+  const variantAttributes = useMemo(() => {
+    if (!product.hasVariants || !product.variants || product.variants.length === 0) {
+      return null;
+    }
+
+    const attributesMap = new Map<string, Set<string>>();
+
+    product.variants.forEach((variant) => {
+      if (variant.isActive) {
+        Object.entries(variant.attributes).forEach(([key, value]) => {
+          if (!attributesMap.has(key)) {
+            attributesMap.set(key, new Set());
+          }
+          attributesMap.get(key)?.add(value);
+        });
+      }
+    });
+
+    return Array.from(attributesMap.entries()).map(([name, values]) => ({
+      name,
+      values: Array.from(values),
+    }));
+  }, [product.hasVariants, product.variants]);
+
+  // Find matching variant based on selected attributes
+  useEffect(() => {
+    if (!product.hasVariants || !product.variants || !variantAttributes) {
+      setSelectedVariant(null);
+      return;
+    }
+
+    const attributeNames = variantAttributes.map((attr) => attr.name);
+    const allAttributesSelected = attributeNames.every(
+      (name) => selectedAttributes[name]
+    );
+
+    if (!allAttributesSelected) {
+      setSelectedVariant(null);
+      return;
+    }
+
+    const matchingVariant = product.variants.find((variant) => {
+      if (!variant.isActive) return false;
+      return attributeNames.every(
+        (name) => variant.attributes[name] === selectedAttributes[name]
+      );
+    });
+
+    setSelectedVariant(matchingVariant || null);
+
+    // Update active image if variant has a specific image
+    if (matchingVariant && matchingVariant.image && product.images) {
+      const variantImageIndex = product.images.indexOf(matchingVariant.image);
+      if (variantImageIndex !== -1) {
+        setActiveImage(variantImageIndex);
+      }
+    }
+  }, [selectedAttributes, product.hasVariants, product.variants, variantAttributes, product.images]);
+
+  // Calculate display price based on selected variant or product
+  const displayPrice = selectedVariant
+    ? selectedVariant.salePrice || selectedVariant.price
+    : product.salePrice || product.price;
+
+  const originalPrice = selectedVariant ? selectedVariant.price : product.price;
+  const hasDiscount = displayPrice < originalPrice;
+
+  // Calculate available stock
+  const availableStock = selectedVariant ? selectedVariant.stock : product.stock;
+
+  // Calculate estimated delivery (7-10 business days from now)
+  const estimatedDelivery = useMemo(() => {
+    const today = new Date();
+    const minDays = 7;
+    const maxDays = 10;
+
+    const minDate = new Date(today);
+    minDate.setDate(today.getDate() + minDays);
+
+    const maxDate = new Date(today);
+    maxDate.setDate(today.getDate() + maxDays);
+
+    const formatDate = (date: Date) => {
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    };
+
+    return `${formatDate(minDate)} - ${formatDate(maxDate)}`;
+  }, []);
+
   const handleQuantityChange = (type: 'increment' | 'decrement') => {
-    if (type === 'increment' && quantity < product.stock) {
+    if (type === 'increment' && quantity < availableStock) {
       setQuantity(quantity + 1);
     } else if (type === 'decrement' && quantity > 1) {
       setQuantity(quantity - 1);
@@ -41,7 +133,10 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
 
   const handleAddToCart = () => {
     // TODO: Implement add to cart functionality
-    console.log(`Adding ${quantity} of ${product.name} to cart`);
+    const variantInfo = selectedVariant
+      ? `(${Object.entries(selectedAttributes).map(([k, v]) => `${k}: ${v}`).join(', ')})`
+      : '';
+    console.log(`Adding ${quantity} of ${product.name} ${variantInfo} to cart`);
   };
 
   const handleChatWithSeller = () => {
@@ -50,6 +145,22 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
       console.log(`Opening chat with shop: ${shop.businessName}`);
       // router.push(`/inbox?shopId=${shop.id}`);
     }
+  };
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsFavorited(!isFavorited);
+    // TODO: Add API call to save favorite
+    // TODO: Show toast notification
+  };
+
+  const handleAttributeChange = (attributeName: string, value: string) => {
+    setSelectedAttributes((prev) => ({
+      ...prev,
+      [attributeName]: value,
+    }));
+    setQuantity(1); // Reset quantity when variant changes
   };
 
   return (
@@ -61,14 +172,28 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
         className="relative w-full max-w-4xl max-h-[85vh] overflow-y-auto bg-white shadow-xl rounded-md animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
-        <button
-          className="sticky left-full ml-auto bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition z-20 mb-2"
-          onClick={() => setOpen(false)}
-          aria-label="Close modal"
-        >
-          <X size={20} className="text-gray-700 hover:text-gray-900" />
-        </button>
+        {/* Close and Favorite Buttons */}
+        <div className="sticky top-0 left-0 right-0 flex justify-end gap-2 z-20 mb-2">
+          <button
+            className="bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition"
+            onClick={handleFavoriteClick}
+            aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            <Heart
+              size={20}
+              className={`${
+                isFavorited ? 'fill-red-500 text-red-500' : 'text-gray-700'
+              } hover:text-red-500 transition`}
+            />
+          </button>
+          <button
+            className="bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition"
+            onClick={() => setOpen(false)}
+            aria-label="Close modal"
+          >
+            <X size={20} className="text-gray-700 hover:text-gray-900" />
+          </button>
+        </div>
 
         <div className="flex flex-col md:flex-row px-4 md:px-6 pb-4 md:pb-6 gap-6">
           {/* Left Side - Images */}
@@ -166,15 +291,55 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
               </span>
               {hasDiscount && (
                 <span className="text-lg text-gray-400 line-through">
-                  ${product.price.toFixed(2)}
+                  ${originalPrice.toFixed(2)}
                 </span>
               )}
               {hasDiscount && (
                 <span className="bg-red-100 text-red-600 text-xs font-semibold px-2 py-0.5 rounded">
-                  Save ${(product.price - displayPrice).toFixed(2)}
+                  Save ${(originalPrice - displayPrice).toFixed(2)}
                 </span>
               )}
             </div>
+
+            {/* Variant Selector */}
+            {variantAttributes && variantAttributes.length > 0 && (
+              <div className="mb-3 space-y-2">
+                {variantAttributes.map((attribute) => (
+                  <div key={attribute.name}>
+                    <h3 className="text-sm font-semibold text-gray-800 mb-1.5 capitalize">
+                      {attribute.name}:
+                      {selectedAttributes[attribute.name] && (
+                        <span className="ml-1.5 text-brand-primary font-normal">
+                          {selectedAttributes[attribute.name]}
+                        </span>
+                      )}
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {attribute.values.map((value) => {
+                        const isSelected = selectedAttributes[attribute.name] === value;
+
+                        return (
+                          <button
+                            key={value}
+                            onClick={() => handleAttributeChange(attribute.name, value)}
+                            className={`px-3 py-1.5 text-sm font-medium rounded-lg border-2 transition ${
+                              isSelected
+                                ? 'border-brand-primary bg-brand-primary text-white'
+                                : 'border-gray-300 bg-white text-gray-700 hover:border-brand-primary hover:text-brand-primary'
+                            }`}
+                          >
+                            {value}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                {selectedVariant && selectedVariant.sku && (
+                  <p className="text-xs text-gray-500">SKU: {selectedVariant.sku}</p>
+                )}
+              </div>
+            )}
 
             {/* Description */}
             <div className="mb-3">
@@ -218,17 +383,30 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
 
             {/* Stock Status */}
             <div className="mb-2">
-              {product.stock > 0 ? (
+              {availableStock > 0 ? (
                 <p className="text-green-600 text-sm font-medium">
-                  In Stock ({product.stock} available)
+                  In Stock ({availableStock} available)
                 </p>
               ) : (
                 <p className="text-red-600 text-sm font-medium">Out of Stock</p>
               )}
             </div>
 
+            {/* Estimated Delivery */}
+            {availableStock > 0 && (
+              <div className="mb-3 flex items-start gap-2 p-2.5 bg-blue-50 rounded-lg border border-blue-100">
+                <Truck size={18} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">
+                    Estimated Delivery
+                  </p>
+                  <p className="text-sm text-gray-600">{estimatedDelivery}</p>
+                </div>
+              </div>
+            )}
+
             {/* Quantity Selector & Add to Cart */}
-            {product.stock > 0 && (
+            {availableStock > 0 && (
               <div className="flex flex-col sm:flex-row gap-3 mb-3">
                 {/* Quantity Selector */}
                 <div className="flex items-center border border-gray-300 rounded-lg">
@@ -245,7 +423,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                   </span>
                   <button
                     onClick={() => handleQuantityChange('increment')}
-                    disabled={quantity >= product.stock}
+                    disabled={quantity >= availableStock}
                     className="p-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
                     aria-label="Increase quantity"
                   >
@@ -256,10 +434,17 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                 {/* Add to Cart Button */}
                 <button
                   onClick={handleAddToCart}
-                  className="flex-1 flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-primary-dark text-white font-semibold px-4 py-2.5 rounded-lg transition text-sm"
+                  disabled={
+                    variantAttributes &&
+                    variantAttributes.length > 0 &&
+                    !selectedVariant
+                  }
+                  className="flex-1 flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-primary-dark text-white font-semibold px-4 py-2.5 rounded-lg transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <ShoppingCart size={18} />
-                  Add to Cart
+                  {variantAttributes && variantAttributes.length > 0 && !selectedVariant
+                    ? 'Select Options'
+                    : 'Add to Cart'}
                 </button>
               </div>
             )}

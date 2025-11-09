@@ -9,10 +9,10 @@ import { getPublicProducts } from '../lib/api/products';
 
 const Page = () => {
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['products', { limit: 15, sort: 'newest' }],
+    queryKey: ['products', { limit: 20, sort: 'newest' }],
     queryFn: () =>
       getPublicProducts({
-        limit: 15,
+        limit: 20,
         sort: 'newest',
       }),
   });
@@ -27,7 +27,7 @@ const Page = () => {
 
         {isLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 2xl:grid-cols-5 gap-5">
-            {Array.from({ length: 15 }).map((_, index) => (
+            {Array.from({ length: 20 }).map((_, index) => (
               <div
                 key={index}
                 className="h-[250px] bg-gray-300 animate-pulse rounded-xl"
