@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 type Product = {
+  image: string | StaticImport;
   id: string;
   title: string;
   price: number;
