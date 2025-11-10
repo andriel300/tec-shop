@@ -16,6 +16,10 @@ import {
   Truck,
 } from 'lucide-react';
 import { useShop } from '../../hooks/use-shops';
+import { useAuth } from '../../hooks/use-auth';
+import useLocationTracking from '../../hooks/use-location-tracking';
+import useDeviceTracking from '../../hooks/use-device-tracking';
+import useStore from '../../store';
 
 interface ProductDetailsCardProps {
   product: Product;
@@ -26,16 +30,38 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
   const [activeImage, setActiveImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [showFullDescription, setShowFullDescription] = useState(false);
-  const [isFavorited, setIsFavorited] = useState(false);
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
-  const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
+    null
+  );
+  const [selectedAttributes, setSelectedAttributes] = useState<
+    Record<string, string>
+  >({});
+
+  const { user } = useAuth();
+  const location = useLocationTracking();
+  const deviceInfo = useDeviceTracking();
+
+  // Zustand store hooks
+  const addToCart = useStore((state) => state.addToCart);
+  const removeFromCart = useStore((state) => state.removeFromCart);
+  const addToWishList = useStore((state) => state.addToWishList);
+  const removeFromWishList = useStore((state) => state.removeFromWishList);
+  const wishlist = useStore((state) => state.wishlist);
+  const cart = useStore((state) => state.cart);
+
+  const isWishListed = wishlist.some((item) => item.id === product.id);
+  const isInCart = cart.some((item) => item.id === product.id);
 
   // Fetch shop details
   const { data: shop, isLoading: isShopLoading } = useShop(product.shopId);
 
   // Extract unique attribute names and values from variants
   const variantAttributes = useMemo(() => {
-    if (!product.hasVariants || !product.variants || product.variants.length === 0) {
+    if (
+      !product.hasVariants ||
+      !product.variants ||
+      product.variants.length === 0
+    ) {
       return null;
     }
 
@@ -91,7 +117,13 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
         setActiveImage(variantImageIndex);
       }
     }
-  }, [selectedAttributes, product.hasVariants, product.variants, variantAttributes, product.images]);
+  }, [
+    selectedAttributes,
+    product.hasVariants,
+    product.variants,
+    variantAttributes,
+    product.images,
+  ]);
 
   // Calculate display price based on selected variant or product
   const displayPrice = selectedVariant
@@ -102,7 +134,9 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
   const hasDiscount = displayPrice < originalPrice;
 
   // Calculate available stock
-  const availableStock = selectedVariant ? selectedVariant.stock : product.stock;
+  const availableStock = selectedVariant
+    ? selectedVariant.stock
+    : product.stock;
 
   // Calculate estimated delivery (7-10 business days from now)
   const estimatedDelivery = useMemo(() => {
@@ -117,7 +151,10 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
     maxDate.setDate(today.getDate() + maxDays);
 
     const formatDate = (date: Date) => {
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      });
     };
 
     return `${formatDate(minDate)} - ${formatDate(maxDate)}`;
@@ -132,27 +169,49 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
   };
 
   const handleAddToCart = () => {
-    // TODO: Implement add to cart functionality
-    const variantInfo = selectedVariant
-      ? `(${Object.entries(selectedAttributes).map(([k, v]) => `${k}: ${v}`).join(', ')})`
-      : '';
-    console.log(`Adding ${quantity} of ${product.name} ${variantInfo} to cart`);
+    if (isInCart) {
+      removeFromCart(product.id, user, location, deviceInfo);
+    } else {
+      const productData = {
+        id: product.id,
+        title: product.name,
+        price: displayPrice,
+        image: selectedVariant?.image || product.images?.[0] || '',
+        quantity,
+        shopId: product.shopId,
+      };
+      addToCart(productData, user, location, deviceInfo);
+    }
   };
 
   const handleChatWithSeller = () => {
-    // TODO: Implement chat with seller functionality
     if (shop) {
       console.log(`Opening chat with shop: ${shop.businessName}`);
-      // router.push(`/inbox?shopId=${shop.id}`);
+      // TODO: router.push(`/inbox?shopId=${shop.id}`);
     }
   };
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsFavorited(!isFavorited);
-    // TODO: Add API call to save favorite
-    // TODO: Show toast notification
+
+    if (isWishListed) {
+      removeFromWishList(product.id, user, location, deviceInfo);
+    } else {
+      addToWishList(
+        {
+          id: product.id,
+          title: product.name,
+          price: displayPrice,
+          image: product.images?.[0] || '',
+          quantity: 1,
+          shopId: product.shopId,
+        },
+        user,
+        location,
+        deviceInfo
+      );
+    }
   };
 
   const handleAttributeChange = (attributeName: string, value: string) => {
@@ -177,12 +236,14 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
           <button
             className="bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition"
             onClick={handleFavoriteClick}
-            aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+            aria-label={
+              isWishListed ? 'Remove from favorites' : 'Add to favorites'
+            }
           >
             <Heart
               size={20}
               className={`${
-                isFavorited ? 'fill-red-500 text-red-500' : 'text-gray-700'
+                isWishListed ? 'fill-red-500 text-red-500' : 'text-gray-700'
               } hover:text-red-500 transition`}
             />
           </button>
@@ -316,12 +377,15 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       {attribute.values.map((value) => {
-                        const isSelected = selectedAttributes[attribute.name] === value;
+                        const isSelected =
+                          selectedAttributes[attribute.name] === value;
 
                         return (
                           <button
                             key={value}
-                            onClick={() => handleAttributeChange(attribute.name, value)}
+                            onClick={() =>
+                              handleAttributeChange(attribute.name, value)
+                            }
                             className={`px-3 py-1.5 text-sm font-medium rounded-lg border-2 transition ${
                               isSelected
                                 ? 'border-brand-primary bg-brand-primary text-white'
@@ -336,7 +400,9 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                   </div>
                 ))}
                 {selectedVariant && selectedVariant.sku && (
-                  <p className="text-xs text-gray-500">SKU: {selectedVariant.sku}</p>
+                  <p className="text-xs text-gray-500">
+                    SKU: {selectedVariant.sku}
+                  </p>
                 )}
               </div>
             )}
@@ -395,7 +461,10 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
             {/* Estimated Delivery */}
             {availableStock > 0 && (
               <div className="mb-3 flex items-start gap-2 p-2.5 bg-blue-50 rounded-lg border border-blue-100">
-                <Truck size={18} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                <Truck
+                  size={18}
+                  className="text-blue-600 mt-0.5 flex-shrink-0"
+                />
                 <div>
                   <p className="text-sm font-semibold text-gray-800">
                     Estimated Delivery
@@ -439,11 +508,19 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                     variantAttributes.length > 0 &&
                     !selectedVariant
                   }
-                  className="flex-1 flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-primary-dark text-white font-semibold px-4 py-2.5 rounded-lg transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`flex-1 flex items-center justify-center gap-2 font-semibold px-4 py-2.5 rounded-lg transition text-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                    isInCart
+                      ? 'bg-green-600 hover:bg-green-700 text-white'
+                      : 'bg-brand-primary hover:bg-brand-primary-dark text-white'
+                  }`}
                 >
                   <ShoppingCart size={18} />
-                  {variantAttributes && variantAttributes.length > 0 && !selectedVariant
+                  {variantAttributes &&
+                  variantAttributes.length > 0 &&
+                  !selectedVariant
                     ? 'Select Options'
+                    : isInCart
+                    ? 'Remove from Cart'
                     : 'Add to Cart'}
                 </button>
               </div>

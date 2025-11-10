@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { useAuth } from '../../hooks/use-auth';
@@ -9,11 +8,16 @@ import ProfileIcon from '../../assets/svgs/profile-icon';
 import HeartIcon from '../../assets/svgs/heart-icon';
 import CartIcon from '../../assets/svgs/cart-icon';
 import HeaderBottom from './header-bottom';
+import useStore from '../../store';
 
 const Header = () => {
   const { isAuthenticated, user, userProfile, logout } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [imageError, setImageError] = useState(false);
+
+  // zustand hooks
+  const wishlist = useStore((state) => state.wishlist);
+  const cart = useStore((state) => state.cart);
 
   // Prevent hydration mismatch by only showing auth state after client mount
   useEffect(() => {
@@ -63,16 +67,21 @@ const Header = () => {
               href={mounted && isAuthenticated ? '/profile' : '/login'}
               className="p-2 border-2 w-[45px] h-[45px] lg:w-[50px] lg:h-[50px] flex items-center justify-center rounded-full border-ui-divider hover:bg-ui-muted transition-colors overflow-hidden"
             >
-              {mounted && isAuthenticated && userProfile?.picture && !imageError ? (
-                <Image
+              {mounted &&
+              isAuthenticated &&
+              userProfile?.picture &&
+              !imageError ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
                   src={userProfile.picture}
                   alt={userProfile.name || 'Profile'}
-                  width={50}
-                  height={50}
                   className="w-full h-full object-cover rounded-full"
-                  unoptimized
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
                   onError={() => {
-                    console.warn('Failed to load profile image, falling back to icon');
+                    console.warn(
+                      'Failed to load profile image, falling back to icon'
+                    );
                     setImageError(true);
                   }}
                 />
@@ -89,7 +98,9 @@ const Header = () => {
                   onClick={handleLogout}
                   className="block font-semibold text-brand-primary text-sm hover:underline text-left"
                 >
-                  {userProfile?.name?.split(' ')[0] || user?.name?.split(' ')[0] || 'User'}
+                  {userProfile?.name?.split(' ')[0] ||
+                    user?.name?.split(' ')[0] ||
+                    'User'}
                 </button>
               </div>
             ) : (
@@ -110,7 +121,9 @@ const Header = () => {
             >
               <HeartIcon className="w-7 h-7 text-text-primary" />
               <div className="w-6 h-6 border-2 border-white bg-red-500 rounded-full flex item-center justify-center absolute top-[-5px] right-[-5px] text-text-primary">
-                <span className="text-white font-medium text-sm">0</span>
+                <span className="text-white font-medium text-sm">
+                  {wishlist.length}
+                </span>
               </div>
             </Link>
 
@@ -121,7 +134,9 @@ const Header = () => {
             >
               <CartIcon className="w-7 h-7 text-text-primary" />
               <div className="w-6 h-6 border-2 border-white bg-red-500 rounded-full flex item-center justify-center absolute top-[-5px] right-[-5px] text-text-primary">
-                <span className="text-white font-medium text-sm">0</span>
+                <span className="text-white font-medium text-sm">
+                  {cart.length}
+                </span>
               </div>
             </Link>
           </div>
