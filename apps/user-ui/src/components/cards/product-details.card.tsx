@@ -231,22 +231,8 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
         className="relative w-full max-w-4xl max-h-[85vh] overflow-y-auto bg-white shadow-xl rounded-md animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close and Favorite Buttons */}
+        {/* Close Button */}
         <div className="sticky top-0 left-0 right-0 flex justify-end gap-2 z-20 mb-2">
-          <button
-            className="bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition"
-            onClick={handleFavoriteClick}
-            aria-label={
-              isWishListed ? 'Remove from favorites' : 'Add to favorites'
-            }
-          >
-            <Heart
-              size={20}
-              className={`${
-                isWishListed ? 'fill-red-500 text-red-500' : 'text-gray-700'
-              } hover:text-red-500 transition`}
-            />
-          </button>
           <button
             className="bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition"
             onClick={() => setOpen(false)}
@@ -522,6 +508,22 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                     : isInCart
                     ? 'Remove from Cart'
                     : 'Add to Cart'}
+                </button>
+                <button
+                  className="bg-white rounded-lg p-2.5 shadow-lg hover:bg-gray-100 transition"
+                  onClick={handleFavoriteClick}
+                  aria-label={
+                    isWishListed ? 'Remove from favorites' : 'Add to favorites'
+                  }
+                >
+                  <Heart
+                    size={20}
+                    className={`${
+                      isWishListed
+                        ? 'fill-red-500 text-red-500'
+                        : 'text-gray-700'
+                    } hover:text-red-500 transition`}
+                  />
                 </button>
               </div>
             )}
