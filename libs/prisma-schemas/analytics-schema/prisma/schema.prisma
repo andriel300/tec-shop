@@ -1,0 +1,109 @@
+// Prisma schema for analytics tracking
+// This schema is used by kafka-service to store user and product analytics
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../../../node_modules/.prisma/analytics-client"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("ANALYTICS_SERVICE_DB_URL")
+}
+
+// User Analytics Model
+// Tracks user behavior and engagement metrics
+model UserAnalytics {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @unique @db.ObjectId
+
+  // Last activity timestamp
+  lastVisited DateTime @default(now())
+
+  // User actions history (stored as JSON array)
+  // Structure: [{ productId, shopId, action, timestamp, country, device }]
+  actions     Json     @default("[]")
+
+  // Aggregated metrics
+  totalViews      Int      @default(0)
+  totalCartAdds   Int      @default(0)
+  totalWishlist   Int      @default(0)
+  totalPurchases  Int      @default(0)
+
+  // User location data (from last known location)
+  country         String?
+  city            String?
+
+  // Device information (from last known device)
+  device          String?
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([lastVisited])
+}
+
+// Product Analytics Model
+// Tracks product performance and engagement
+model ProductAnalytics {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  productId   String   @unique @db.ObjectId
+  shopId      String?  @db.ObjectId
+
+  // Engagement metrics
+  views           Int      @default(0)
+  uniqueViews     Int      @default(0)
+  cartAdds        Int      @default(0)
+  wishlistAdds    Int      @default(0)
+  wishlistRemoves Int      @default(0)
+  purchases       Int      @default(0)
+
+  // Conversion metrics
+  viewToCartRate      Float    @default(0.0) // (cartAdds / views) * 100
+  viewToWishlistRate  Float    @default(0.0) // (wishlistAdds / views) * 100
+  cartToPurchaseRate  Float    @default(0.0) // (purchases / cartAdds) * 100
+
+  // Temporal data
+  lastViewAt      DateTime?
+  lastCartAddAt   DateTime?
+  lastPurchaseAt  DateTime?
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([shopId])
+  @@index([views(sort: Desc)])
+  @@index([lastViewAt])
+}
+
+// Shop Analytics Model (optional, for future use)
+// Tracks shop performance metrics
+model ShopAnalytics {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  shopId      String   @unique @db.ObjectId
+
+  // Visit metrics
+  visits          Int      @default(0)
+  uniqueVisitors  Int      @default(0)
+
+  // Engagement metrics
+  totalProductViews Int    @default(0)
+  totalCartAdds     Int    @default(0)
+  totalWishlistAdds Int    @default(0)
+  totalPurchases    Int    @default(0)
+
+  // Revenue metrics (can be populated from order data)
+  totalRevenue      Float  @default(0.0)
+  averageOrderValue Float  @default(0.0)
+
+  // Temporal data
+  lastVisitAt     DateTime?
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([visits(sort: Desc)])
+}

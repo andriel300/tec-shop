@@ -71,6 +71,18 @@
     },
     {
       "path": "./libs/shared/imagekit"
+    },
+    {
+      "path": "./apps/kafka-service-e2e"
+    },
+    {
+      "path": "./apps/kafka-service"
+    },
+    {
+      "path": "./libs/prisma-clients/analytics-client"
+    },
+    {
+      "path": "./libs/prisma-schemas/analytics-schema"
     }
   ]
 }
