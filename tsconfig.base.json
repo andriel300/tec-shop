@@ -19,8 +19,12 @@
     "target": "es2022",
     "customConditions": ["development"],
     "paths": {
+      "@prisma/analytics-client": ["node_modules/.prisma/analytics-client"],
       "@prisma/product-client": ["node_modules/.prisma/product-client"],
       "@prisma/seller-client": ["node_modules/.prisma/seller-client"],
+      "@tec-shop/analytics-client": [
+        "libs/prisma-clients/analytics-client/src/index.ts"
+      ],
       "@tec-shop/api-gateway/*": ["apps/api-gateway/src/*"],
       "@tec-shop/auth-client": ["libs/prisma-clients/auth-client/src/index.ts"],
       "@tec-shop/auth-prisma-client": ["node_modules/.prisma/auth-client"],

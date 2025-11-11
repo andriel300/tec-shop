@@ -1,0 +1,17 @@
+{
+  "name": "@tec-shop/analytics-client",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/prisma-clients/analytics-client/src",
+  "projectType": "library",
+  "tags": ["type:prisma-client", "scope:analytics"],
+  "targets": {
+    "generate-types": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma generate --schema=../../prisma-schemas/analytics-schema/prisma/schema.prisma",
+        "cwd": "libs/prisma-clients/analytics-client"
+      }
+    }
+  },
+  "implicitDependencies": ["@tec-shop/analytics-schema"]
+}

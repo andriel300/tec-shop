@@ -1,0 +1,26 @@
+{
+  "name": "@tec-shop/kafka-service-e2e",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "implicitDependencies": [
+      "@tec-shop/kafka-service"
+    ],
+    "targets": {
+      "e2e": {
+        "executor": "@nx/jest:jest",
+        "outputs": [
+          "{projectRoot}/test-output/jest/coverage"
+        ],
+        "options": {
+          "jestConfig": "apps/kafka-service-e2e/jest.config.ts",
+          "passWithNoTests": true
+        },
+        "dependsOn": [
+          "@tec-shop/kafka-service:build",
+          "@tec-shop/kafka-service:serve"
+        ]
+      }
+    }
+  }
+}
