@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import type { AnalyticsEvent, AnalyticsAction } from '../interfaces/analytics-event.interface';
+import type {
+  AnalyticsEvent,
+  AnalyticsAction,
+} from '../interfaces/analytics-event.interface';
 
 @Injectable()
 export class AnalyticsService {
@@ -28,6 +31,8 @@ export class AnalyticsService {
 
       await this.prisma.userAnalytics.upsert({
         where: { userId: event.userId },
+        select: { actions: true },
+
         create: {
           userId: event.userId,
           lastVisited: event.timestamp,
@@ -56,7 +61,9 @@ export class AnalyticsService {
         },
       });
 
-      this.logger.log(`Updated user analytics for user ${event.userId} - action: ${event.action}`);
+      this.logger.log(
+        `Updated user analytics for user ${event.userId} - action: ${event.action}`
+      );
     } catch (error) {
       this.logger.error(
         `Failed to update user analytics for user ${event.userId}`,
@@ -110,7 +117,9 @@ export class AnalyticsService {
       // Update conversion rates
       await this.updateConversionRates(event.productId);
 
-      this.logger.log(`Updated product analytics for product ${event.productId} - action: ${event.action}`);
+      this.logger.log(
+        `Updated product analytics for product ${event.productId} - action: ${event.action}`
+      );
     } catch (error) {
       this.logger.error(
         `Failed to update product analytics for product ${event.productId}`,
@@ -145,15 +154,25 @@ export class AnalyticsService {
         },
         update: {
           ...(event.action === 'shop_visit' && { visits: { increment: 1 } }),
-          ...(event.action === 'product_view' && { totalProductViews: { increment: 1 } }),
-          ...(event.action === 'add_to_cart' && { totalCartAdds: { increment: 1 } }),
-          ...(event.action === 'add_to_wishlist' && { totalWishlistAdds: { increment: 1 } }),
-          ...(event.action === 'purchase' && { totalPurchases: { increment: 1 } }),
+          ...(event.action === 'product_view' && {
+            totalProductViews: { increment: 1 },
+          }),
+          ...(event.action === 'add_to_cart' && {
+            totalCartAdds: { increment: 1 },
+          }),
+          ...(event.action === 'add_to_wishlist' && {
+            totalWishlistAdds: { increment: 1 },
+          }),
+          ...(event.action === 'purchase' && {
+            totalPurchases: { increment: 1 },
+          }),
           lastVisitAt: now,
         },
       });
 
-      this.logger.log(`Updated shop analytics for shop ${event.shopId} - action: ${event.action}`);
+      this.logger.log(
+        `Updated shop analytics for shop ${event.shopId} - action: ${event.action}`
+      );
     } catch (error) {
       this.logger.error(
         `Failed to update shop analytics for shop ${event.shopId}`,

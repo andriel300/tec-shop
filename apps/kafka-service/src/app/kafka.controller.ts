@@ -76,9 +76,9 @@ export class KafkaController {
   }
 
   /**
-   * Handle incoming Kafka messages from users-events topic
+   * Handle incoming Kafka messages from users-event topic
    */
-  @EventPattern('users-events')
+  @EventPattern('users-event')
   async handleUserEvent(@Payload() payload: KafkaEventPayload): Promise<void> {
     try {
       // Validate required fields
@@ -93,9 +93,7 @@ export class KafkaController {
         productId: payload.productId,
         shopId: payload.shopId,
         action: payload.action as AnalyticsEvent['action'],
-        timestamp: payload.timestamp
-          ? new Date(payload.timestamp)
-          : new Date(),
+        timestamp: payload.timestamp ? new Date(payload.timestamp) : new Date(),
         country: payload.country,
         city: payload.city,
         device: payload.device,
