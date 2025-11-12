@@ -6,28 +6,46 @@ const LOCATION_STORAGE_KEY = 'user_location';
 const LOCATION_EXPIRY_DAYS = 20;
 
 const getStoredLocation = () => {
+  // Check if we're on the client side
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
   const storedLocation = localStorage.getItem(LOCATION_STORAGE_KEY);
 
   if (!storedLocation) {
     return null;
   }
 
-  const parsedData = JSON.parse(storedLocation);
-  const expiryTime = LOCATION_EXPIRY_DAYS * 24 * 60 * 60 * 1000; // 20 days in milliseconds
-  const isExpired = Date.now() - parsedData.timestamp > expiryTime;
+  try {
+    const parsedData = JSON.parse(storedLocation);
+    const expiryTime = LOCATION_EXPIRY_DAYS * 24 * 60 * 60 * 1000; // 20 days in milliseconds
+    const isExpired = Date.now() - parsedData.timestamp > expiryTime;
 
-  return isExpired ? null : parsedData;
+    return isExpired ? null : parsedData;
+  } catch (error) {
+    console.error('Error parsing stored location:', error);
+    return null;
+  }
 };
 
 const useLocationTracking = () => {
   const [location, setLocation] = useState<{
     country: string;
     city: string;
-  } | null>(getStoredLocation());
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (location) return;
+    // Try to load from localStorage first
+    const stored = getStoredLocation();
+    if (stored) {
+      setLocation(stored);
+      setIsLoading(false);
+      return;
+    }
 
+    // If no stored location, fetch from API
     fetch('https://ipapi.co/json/')
       .then((res) => res.json())
       .then((data) => {
@@ -37,13 +55,17 @@ const useLocationTracking = () => {
           timestamp: Date.now(),
         };
 
-        localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(newLocation));
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(newLocation));
+        }
         setLocation(newLocation);
+        setIsLoading(false);
       })
       .catch((error) => {
         console.error('Error fetching location:', error);
+        setIsLoading(false);
       });
-  }, [location, setLocation]);
+  }, []);
 
   return location;
 };

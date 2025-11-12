@@ -58,6 +58,18 @@ type Store = {
   ) => void;
 };
 
+// Create SSR-safe storage
+const createSafeStorage = () => {
+  if (typeof window === 'undefined') {
+    return {
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {},
+    };
+  }
+  return localStorage;
+};
+
 const useStore = create<Store>()(
   persist(
     (set, get) => ({
@@ -79,7 +91,7 @@ const useStore = create<Store>()(
           });
         } else {
           set({
-            cart: [...state.cart, { ...product, quantity: 1 }],
+            cart: [...state.cart, { ...product, quantity: product.quantity }],
           });
         }
 
@@ -175,6 +187,21 @@ const useStore = create<Store>()(
     // persist config
     {
       name: 'store-data',
+      storage: {
+        getItem: (name: string) => {
+          const storage = createSafeStorage();
+          const value = storage.getItem(name);
+          return value ? JSON.parse(value) : null;
+        },
+        setItem: (name: string, value: unknown) => {
+          const storage = createSafeStorage();
+          storage.setItem(name, JSON.stringify(value));
+        },
+        removeItem: (name: string) => {
+          const storage = createSafeStorage();
+          storage.removeItem(name);
+        },
+      },
     }
   )
 );
