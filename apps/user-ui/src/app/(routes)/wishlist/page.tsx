@@ -83,7 +83,12 @@ const WishListPage = () => {
                         alt={item.title}
                         className="rounded"
                       />
-                      <span>{item.title}</span>
+                      <Link
+                        href={`/product/${item.slug || item.id}`}
+                        className="hover:text-brand-primary hover:underline transition-colors"
+                      >
+                        {item.title}
+                      </Link>
                     </td>
                     <td className="px-6 text-lg">
                       ${(item.price * item.quantity).toFixed(2)}

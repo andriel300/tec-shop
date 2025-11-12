@@ -4,12 +4,13 @@ import { sendKafkaEvent } from '../actions/track-user';
 import StaticImport from 'next/image';
 
 type Product = {
-  image: string | typeof StaticImport;
+  image?: string | typeof StaticImport;
   id: string;
+  slug?: string;
   title: string;
   price: number;
-  images: string;
-  salePrice: number;
+  images?: string | string[];
+  salePrice?: number;
   quantity: number;
   shopId: string;
 };
