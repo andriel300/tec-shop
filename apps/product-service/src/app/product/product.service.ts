@@ -5,6 +5,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import type {
   CreateProductDto,
   UpdateProductDto,
@@ -674,8 +675,8 @@ export class ProductService {
       // Search (case-insensitive search in name, description, and tags)
       ...(search && {
         OR: [
-          { name: { contains: search, mode: 'insensitive' } },
-          { description: { contains: search, mode: 'insensitive' } },
+          { name: { contains: search, mode: 'insensitive' as const } },
+          { description: { contains: search, mode: 'insensitive' as const } },
           { tags: { hasSome: [search] } },
         ],
       }),
@@ -724,6 +725,66 @@ export class ProductService {
       offset,
       sort,
     };
+  }
+
+  /**
+   * Find a single public product by slug
+   * Returns only published, public, active, non-deleted products
+   */
+  async findPublicProductBySlug(slug: string) {
+    this.logger.debug(`findPublicProductBySlug called with slug: ${slug}`);
+
+    const product = await this.prisma.product.findFirst({
+      where: {
+        slug,
+        // Public visibility rules (only return products visible to public)
+        status: ProductStatus.PUBLISHED,
+        visibility: ProductVisibility.PUBLIC,
+        isActive: true,
+        deletedAt: null,
+      },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        brand: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            logo: true,
+          },
+        },
+        variants: {
+          where: { isActive: true },
+          select: {
+            id: true,
+            sku: true,
+            attributes: true,
+            price: true,
+            salePrice: true,
+            stock: true,
+            image: true,
+          },
+        },
+      },
+    });
+
+    if (!product) {
+      this.logger.warn(`Product with slug ${slug} not found or not public`);
+      throw new RpcException({
+        statusCode: 404,
+        message: 'Product not found',
+      });
+    }
+
+    this.logger.log(`Returning product: ${product.id} (${product.name})`);
+
+    return product;
   }
 
   // ============================================

@@ -296,4 +296,105 @@ export class SellerService {
       return false;
     }
   }
+
+  /**
+   * Get filtered shops for public marketplace
+   * Supports search, category, country, and rating filters with pagination
+   */
+  async getFilteredShops(filters: {
+    search?: string;
+    category?: string;
+    country?: string;
+    minRating?: number;
+    limit?: number;
+    offset?: number;
+  }) {
+    try {
+      this.logger.debug(`Fetching filtered shops with filters: ${JSON.stringify(filters)}`);
+
+      // Build where clause for shop filtering
+      const where: Record<string, unknown> = {
+        isActive: true, // Only show active shops
+      };
+
+      // Search by business name
+      if (filters.search) {
+        where.businessName = {
+          contains: filters.search,
+          mode: 'insensitive',
+        };
+      }
+
+      // Filter by category
+      if (filters.category) {
+        where.category = {
+          contains: filters.category,
+          mode: 'insensitive',
+        };
+      }
+
+      // Filter by minimum rating
+      if (filters.minRating !== undefined) {
+        where.rating = {
+          gte: filters.minRating,
+        };
+      }
+
+      // Build where clause for seller (country filter)
+      const sellerWhere: Record<string, unknown> = {};
+      if (filters.country) {
+        sellerWhere.country = {
+          contains: filters.country,
+          mode: 'insensitive',
+        };
+      }
+
+      // Add seller filter to shop where clause if needed
+      if (Object.keys(sellerWhere).length > 0) {
+        where.seller = sellerWhere;
+      }
+
+      // Set pagination defaults
+      const limit = filters.limit && filters.limit > 0 ? filters.limit : 20;
+      const offset = filters.offset && filters.offset >= 0 ? filters.offset : 0;
+
+      // Execute query with pagination
+      const [shops, total] = await Promise.all([
+        this.prisma.shop.findMany({
+          where,
+          include: {
+            seller: {
+              select: {
+                id: true,
+                name: true,
+                country: true,
+                isVerified: true,
+              },
+            },
+          },
+          take: limit,
+          skip: offset,
+          orderBy: {
+            rating: 'desc', // Order by highest rating first
+          },
+        }),
+        this.prisma.shop.count({ where }),
+      ]);
+
+      this.logger.log(`Found ${shops.length} shops out of ${total} total matching filters`);
+
+      return {
+        shops,
+        total,
+        limit,
+        offset,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to fetch filtered shops: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      throw error;
+    }
+  }
 }

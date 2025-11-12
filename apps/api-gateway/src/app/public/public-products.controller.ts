@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Inject } from '@nestjs/common';
+import { Controller, Get, Query, Inject, Param } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ApiOperation, ApiResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
@@ -303,6 +303,78 @@ Retrieves all publicly available products for the marketplace frontend.
         limit: validatedLimit,
         offset,
       })
+    );
+  }
+
+  /**
+   * Get single product by slug for product detail page
+   * Public endpoint - no authentication required
+   */
+  @Get(':slug')
+  @Throttle({ long: { limit: 200, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Get product by slug (public)',
+    description: `
+Retrieves a single product by its slug for the product detail page.
+
+**Visibility Rules:**
+- Only returns products with status: PUBLISHED
+- Only returns products with visibility: PUBLIC
+- Only returns active products (isActive: true)
+- Excludes soft-deleted products
+
+**Returns:**
+- Full product details including variants, images, ratings, etc.
+- Category and brand information
+- Shop details
+    `,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Product retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        product: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: '507f1f77bcf86cd799439011' },
+            shopId: { type: 'string' },
+            name: { type: 'string', example: 'Apple MacBook Pro 16"' },
+            slug: { type: 'string', example: 'apple-macbook-pro-16-m3' },
+            description: { type: 'string' },
+            categoryId: { type: 'string' },
+            brandId: { type: 'string' },
+            productType: { type: 'string', enum: ['SIMPLE', 'VARIABLE', 'DIGITAL'] },
+            price: { type: 'number' },
+            salePrice: { type: 'number', nullable: true },
+            stock: { type: 'number' },
+            images: { type: 'array', items: { type: 'string' } },
+            hasVariants: { type: 'boolean' },
+            variants: { type: 'array' },
+            tags: { type: 'array', items: { type: 'string' } },
+            status: { type: 'string' },
+            visibility: { type: 'string' },
+            isActive: { type: 'boolean' },
+            isFeatured: { type: 'boolean' },
+            views: { type: 'number' },
+            sales: { type: 'number' },
+            averageRating: { type: 'number', nullable: true },
+            totalRatings: { type: 'number' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Product not found or not available',
+  })
+  async getProductBySlug(@Param('slug') slug: string) {
+    return firstValueFrom(
+      this.productService.send('product-get-by-slug', { slug })
     );
   }
 }

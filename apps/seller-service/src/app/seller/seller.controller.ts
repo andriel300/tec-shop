@@ -114,6 +114,25 @@ export class SellerController {
   }
 
   /**
+   * Get filtered shops for public marketplace
+   * Supports search, category, country, and rating filters
+   */
+  @MessagePattern('seller-get-filtered-shops')
+  async getFilteredShops(
+    @Payload()
+    payload: {
+      search?: string;
+      category?: string;
+      country?: string;
+      minRating?: number;
+      limit?: number;
+      offset?: number;
+    }
+  ) {
+    return this.sellerService.getFilteredShops(payload);
+  }
+
+  /**
    * Verify that a seller owns a specific shop
    * Used by product-service for authorization checks
    */

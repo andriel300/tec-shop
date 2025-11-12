@@ -30,7 +30,9 @@ export class ProductController {
   ) {
     try {
       this.logger.log(
-        `Received product creation request - sellerId: ${payload.sellerId}, shopId: ${payload.shopId}, images: ${payload.imageUrls?.length || 0}`
+        `Received product creation request - sellerId: ${
+          payload.sellerId
+        }, shopId: ${payload.shopId}, images: ${payload.imageUrls?.length || 0}`
       );
       this.logger.debug(
         `Product data: ${JSON.stringify({
@@ -74,7 +76,9 @@ export class ProductController {
       return result;
     } catch (error) {
       this.logger.error(
-        `Product creation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Product creation failed: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
         error instanceof Error ? error.stack : undefined
       );
       throw error;
@@ -98,12 +102,19 @@ export class ProductController {
     }
   ) {
     this.logger.log(
-      `Received product-get-products request - shopId: ${payload.shopId}, filters: ${JSON.stringify(payload.filters)}`
+      `Received product-get-products request - shopId: ${
+        payload.shopId
+      }, filters: ${JSON.stringify(payload.filters)}`
     );
 
-    const products = await this.productService.findAll(payload.shopId, payload.filters);
+    const products = await this.productService.findAll(
+      payload.shopId,
+      payload.filters
+    );
 
-    this.logger.log(`Returning ${products.length} products for shopId: ${payload.shopId}`);
+    this.logger.log(
+      `Returning ${products.length} products for shopId: ${payload.shopId}`
+    );
 
     return products;
   }
@@ -131,19 +142,28 @@ export class ProductController {
   ) {
     try {
       this.logger.log(
-        `Received product update request - productId: ${payload.id}, sellerId: ${payload.sellerId}, hasImages: ${!!payload.imageUrls}`
+        `Received product update request - productId: ${
+          payload.id
+        }, sellerId: ${payload.sellerId}, hasImages: ${!!payload.imageUrls}`
       );
 
       const { id, sellerId, productData, imageUrls } = payload;
 
-      const result = await this.productService.update(id, sellerId, productData, imageUrls);
+      const result = await this.productService.update(
+        id,
+        sellerId,
+        productData,
+        imageUrls
+      );
 
       this.logger.log(`Product updated successfully - productId: ${result.id}`);
 
       return result;
     } catch (error) {
       this.logger.error(
-        `Product update failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Product update failed: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
         error instanceof Error ? error.stack : undefined
       );
       throw error;
@@ -240,15 +260,17 @@ export class ProductController {
     }
   ) {
     this.logger.log(
-      `Received product-get-public-products request with filters: ${JSON.stringify({
-        categoryId: payload.categoryId,
-        brandId: payload.brandId,
-        shopId: payload.shopId,
-        search: payload.search,
-        sort: payload.sort,
-        limit: payload.limit,
-        offset: payload.offset,
-      })}`
+      `Received product-get-public-products request with filters: ${JSON.stringify(
+        {
+          categoryId: payload.categoryId,
+          brandId: payload.brandId,
+          shopId: payload.shopId,
+          search: payload.search,
+          sort: payload.sort,
+          limit: payload.limit,
+          offset: payload.offset,
+        }
+      )}`
     );
 
     const result = await this.productService.findPublicProducts(payload);
@@ -258,6 +280,25 @@ export class ProductController {
     );
 
     return result;
+  }
+
+  /**
+   * Get a single public product by slug
+   * Public endpoint - returns only published, active products
+   */
+  @MessagePattern('product-get-by-slug')
+  async findProductBySlug(@Payload() payload: { slug: string }) {
+    this.logger.log(
+      `Received product-get-by-slug request for slug: ${payload.slug}`
+    );
+
+    const product = await this.productService.findPublicProductBySlug(
+      payload.slug
+    );
+
+    this.logger.log(`Returning product: ${product?.id || 'not found'}`);
+
+    return { product };
   }
 
   /**
@@ -365,7 +406,9 @@ export class ProductController {
     );
 
     this.logger.log(
-      `Returning user rating - productId: ${payload.productId}, hasRating: ${!!result}`
+      `Returning user rating - productId: ${
+        payload.productId
+      }, hasRating: ${!!result}`
     );
 
     return result;
