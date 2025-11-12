@@ -43,7 +43,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        // First, try to load from sessionStorage
+        // First, try to load from sessionStorage (client-side only)
+        if (typeof window === 'undefined') {
+          setAuthState((prev) => ({ ...prev, isLoading: false }));
+          return;
+        }
+
         const userData = sessionStorage.getItem('user');
         const profileData = sessionStorage.getItem('userProfile');
 
@@ -90,8 +95,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
               });
 
               // Store user data in sessionStorage
-              sessionStorage.setItem('user', JSON.stringify(user));
-              sessionStorage.setItem('userProfile', JSON.stringify(userProfile));
+              if (typeof window !== 'undefined') {
+                sessionStorage.setItem('user', JSON.stringify(user));
+                sessionStorage.setItem('userProfile', JSON.stringify(userProfile));
+              }
             } catch (profileError) {
               console.error('Failed to fetch user profile after token refresh:', profileError);
 
@@ -110,7 +117,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 userProfile: null,
               });
 
-              sessionStorage.setItem('user', JSON.stringify(minimalUser));
+              if (typeof window !== 'undefined') {
+                sessionStorage.setItem('user', JSON.stringify(minimalUser));
+              }
             }
           }
         } catch {
@@ -124,8 +133,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } catch (error) {
         console.error('Error initializing auth state:', error);
         // Clear corrupted data
-        sessionStorage.removeItem('user');
-        sessionStorage.removeItem('userProfile');
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('user');
+          sessionStorage.removeItem('userProfile');
+        }
         setAuthState((prev) => ({
           ...prev,
           isLoading: false,
@@ -137,7 +148,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const login = (user: User) => {
-    sessionStorage.setItem('user', JSON.stringify(user));
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('user', JSON.stringify(user));
+    }
 
     setAuthState({
       isAuthenticated: true,
@@ -158,8 +171,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     // Clear sessionStorage
-    sessionStorage.removeItem('user');
-    sessionStorage.removeItem('userProfile');
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('user');
+      sessionStorage.removeItem('userProfile');
+    }
 
     setAuthState({
       isAuthenticated: false,
@@ -170,7 +185,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const setUserProfile = (profile: UserProfile) => {
-    sessionStorage.setItem('userProfile', JSON.stringify(profile));
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('userProfile', JSON.stringify(profile));
+    }
     setAuthState((prev) => ({
       ...prev,
       userProfile: profile,
