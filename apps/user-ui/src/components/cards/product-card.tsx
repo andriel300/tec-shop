@@ -46,9 +46,11 @@ const ProductCard = ({ product }: ProductCardProps) => {
       addToWishList(
         {
           id: product.id,
+          slug: product.slug,
           title: product.name,
           price: displayPrice,
           image: product.images?.[0] || '',
+          images: product.images || [],
           quantity: 1,
           shopId: product.shopId,
         },
@@ -75,9 +77,11 @@ const ProductCard = ({ product }: ProductCardProps) => {
       addToCart(
         {
           id: product.id,
+          slug: product.slug,
           title: product.name,
           price: displayPrice,
           image: product.images?.[0] || '',
+          images: product.images || [],
           quantity: 1,
           shopId: product.shopId,
         },
@@ -90,7 +94,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
   return (
     <>
-      <Link href={`/products/${product.slug || product.id}`}>
+      <Link href={`/product/${product.slug || product.id}`}>
         <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden h-full flex flex-col">
           <div className="relative w-full h-[200px] bg-gray-100">
             {/* Image */}

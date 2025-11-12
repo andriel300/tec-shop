@@ -54,7 +54,7 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${poppins.variable} ${roboto.variable} ${oregano.variable} ${jost.variable}`}
     >
-      <body>
+      <body suppressHydrationWarning>
         <Providers>
           <Header />
           {children}

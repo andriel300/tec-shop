@@ -85,15 +85,53 @@ const CartPage = () => {
                 {cart?.map((item) => (
                   <tr key={item.id} className="border-b border-b-[#0000000e]">
                     <td className="flex items-center gap-4 p-4">
-                      <Image
-                        src={item.image}
-                        width={100}
-                        height={100}
-                        alt={item.title}
-                        className="rounded"
-                      />
+                      {(() => {
+                        // Handle both string and array formats for images
+                        let imageUrl = '';
+                        if (typeof item.images === 'string' && item.images) {
+                          try {
+                            // Try parsing as JSON array first
+                            const parsed = JSON.parse(item.images);
+                            imageUrl = Array.isArray(parsed)
+                              ? parsed[0]
+                              : item.images;
+                          } catch {
+                            // If parsing fails, use as direct string
+                            imageUrl = item.images;
+                          }
+                        } else if (
+                          Array.isArray(item.images) &&
+                          item.images.length > 0
+                        ) {
+                          imageUrl = item.images[0];
+                        } else if (item.image) {
+                          // Fallback to single image field
+                          imageUrl =
+                            typeof item.image === 'string' ? item.image : '';
+                        }
+
+                        return imageUrl ? (
+                          <Image
+                            src={imageUrl}
+                            width={100}
+                            height={100}
+                            alt={item.title || 'Product image'}
+                            className="rounded object-cover"
+                            style={{ width: 'auto', height: '100px' }}
+                          />
+                        ) : (
+                          <div className="w-[100px] h-[100px] bg-gray-200 rounded flex items-center justify-center text-gray-500">
+                            No Image
+                          </div>
+                        );
+                      })()}
                       <div className="flex flex-col">
-                        <span className="font-medium">{item.title}</span>
+                        <Link
+                          href={`/product/${item.slug || item.id}`}
+                          className="font-medium hover:text-brand-primary hover:underline transition-colors"
+                        >
+                          {item.title}
+                        </Link>
                       </div>
                     </td>
                     <td className="px-6 text-lg text-center">
