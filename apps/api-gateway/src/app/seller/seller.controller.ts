@@ -25,6 +25,7 @@ import {
   ApiTags,
   ApiBearerAuth,
   ApiConsumes,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
 import { RolesGuard } from '../../guards/roles.guard';
@@ -523,6 +524,133 @@ export class SellerController {
         id,
         sellerId: user.userId,
       })
+    );
+  }
+}
+
+@ApiTags('Public Shops')
+@Controller('public/shops')
+export class PublicShopsController {
+  private readonly logger = new Logger(PublicShopsController.name);
+
+  constructor(
+    @Inject('SELLER_SERVICE') private readonly sellerService: ClientProxy
+  ) {}
+
+  @Get()
+  @ApiOperation({
+    summary: 'Get filtered shops (public)',
+    description: 'Retrieves shops with filtering by category, country, rating, etc.',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search query for shop name or description',
+    example: 'Tech Store',
+  })
+  @ApiQuery({
+    name: 'category',
+    required: false,
+    description: 'Filter by shop category',
+    example: 'Electronics',
+  })
+  @ApiQuery({
+    name: 'country',
+    required: false,
+    description: 'Filter by country',
+    example: 'USA',
+  })
+  @ApiQuery({
+    name: 'minRating',
+    required: false,
+    type: Number,
+    description: 'Minimum shop rating (0-5)',
+    example: 4,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page (default 12)',
+    example: 12,
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    type: Number,
+    description: 'Number of items to skip (default 0)',
+    example: 0,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Shops retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        shops: { type: 'array' },
+        total: { type: 'number' },
+        limit: { type: 'number' },
+        offset: { type: 'number' },
+      },
+    },
+  })
+  async getFilteredShops(
+    @Query('search') search?: string,
+    @Query('category') category?: string,
+    @Query('country') country?: string,
+    @Query('minRating') minRatingStr?: string,
+    @Query('limit') limitStr?: string,
+    @Query('offset') offsetStr?: string
+  ) {
+    this.logger.log('Fetching filtered shops');
+
+    const minRating = minRatingStr ? parseFloat(minRatingStr) : undefined;
+    const limit = limitStr ? parseInt(limitStr, 10) : 12;
+    const offset = offsetStr ? parseInt(offsetStr, 10) : 0;
+
+    return firstValueFrom(
+      this.sellerService.send('seller-get-filtered-shops', {
+        search,
+        category,
+        country,
+        minRating,
+        limit,
+        offset,
+      })
+    );
+  }
+
+  @Get(':shopId')
+  @ApiOperation({
+    summary: 'Get shop details by ID (public)',
+    description: 'Retrieves shop information for displaying on product pages and shop storefronts.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Shop details retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', example: '507f1f77bcf86cd799439011' },
+        businessName: { type: 'string', example: 'Tech Store' },
+        description: { type: 'string', example: 'Best electronics in town' },
+        logo: { type: 'string', nullable: true },
+        banner: { type: 'string', nullable: true },
+        contactEmail: { type: 'string', example: 'shop@example.com' },
+        contactPhone: { type: 'string', nullable: true },
+        address: { type: 'object', nullable: true },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Shop not found',
+  })
+  async getShopById(@Param('shopId') shopId: string) {
+    this.logger.log(`Fetching shop details for shopId: ${shopId}`);
+
+    return firstValueFrom(
+      this.sellerService.send('seller-get-shop-by-id', { shopId })
     );
   }
 }

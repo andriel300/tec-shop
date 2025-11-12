@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { SellerController } from './seller.controller';
+import { SellerController, PublicShopsController } from './seller.controller';
 import { StripeController } from '../stripe/stripe.controller';
 import { StripeWebhookController } from '../webhooks/stripe-webhook.controller';
 import { ImageKitModule } from '@tec-shop/shared/imagekit';
@@ -62,6 +62,6 @@ import { join } from 'path';
       },
     ]),
   ],
-  controllers: [SellerController, StripeController, StripeWebhookController],
+  controllers: [SellerController, PublicShopsController, StripeController, StripeWebhookController],
 })
 export class SellerModule {}
