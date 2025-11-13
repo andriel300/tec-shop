@@ -417,25 +417,63 @@ const Page = () => {
                       </form.Field>
 
                       <form.Field name="salePrice">
-                        {(field) => (
-                          <FormField field={field} label="Sale Price ($)">
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              value={field.state.value || ''}
-                              onChange={(e) =>
-                                field.handleChange(
-                                  e.target.value
-                                    ? parseFloat(e.target.value)
-                                    : undefined
-                                )
+                        {(field) => {
+                          const regularPrice = form.getFieldValue('price') || 0;
+                          const salePrice = field.state.value || 0;
+                          const discount =
+                            regularPrice > 0 && salePrice > 0 && salePrice < regularPrice
+                              ? Math.round(((regularPrice - salePrice) / regularPrice) * 100)
+                              : 0;
+
+                          return (
+                            <FormField
+                              field={field}
+                              label={
+                                <div className="flex items-center gap-2">
+                                  <span>Sale Price ($)</span>
+                                  <span className="text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded-full font-medium">
+                                    Special Offers
+                                  </span>
+                                </div>
                               }
-                              placeholder="Optional"
-                              variant="dark"
-                            />
-                          </FormField>
-                        )}
+                            >
+                              <div className="space-y-2">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={field.state.value || ''}
+                                  onChange={(e) =>
+                                    field.handleChange(
+                                      e.target.value
+                                        ? parseFloat(e.target.value)
+                                        : undefined
+                                    )
+                                  }
+                                  placeholder="Leave empty for regular price"
+                                  variant="dark"
+                                />
+                                {discount > 0 && (
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded font-medium">
+                                      {discount}% OFF
+                                    </span>
+                                    <span className="text-gray-500">
+                                      Save ${(regularPrice - salePrice).toFixed(2)}
+                                    </span>
+                                  </div>
+                                )}
+                                <p className="text-xs text-gray-500">
+                                  Products with a sale price will appear in the{' '}
+                                  <span className="font-medium text-red-600">
+                                    Special Offers
+                                  </span>{' '}
+                                  section on the customer store
+                                </p>
+                              </div>
+                            </FormField>
+                          );
+                        }}
                       </form.Field>
                     </div>
 
