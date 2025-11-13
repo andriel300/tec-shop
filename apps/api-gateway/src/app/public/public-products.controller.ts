@@ -101,6 +101,20 @@ Retrieves all publicly available products for the marketplace frontend.
     example: 'new,sale,trending',
   })
   @ApiQuery({
+    name: 'colors',
+    required: false,
+    description:
+      'Filter by variant colors (comma-separated). Products with variants matching ANY color will be returned.',
+    example: 'Red,Blue,Black',
+  })
+  @ApiQuery({
+    name: 'sizes',
+    required: false,
+    description:
+      'Filter by variant sizes (comma-separated). Products with variants matching ANY size will be returned.',
+    example: 'S,M,L,XL',
+  })
+  @ApiQuery({
     name: 'sort',
     required: false,
     enum: ['newest', 'price-asc', 'price-desc', 'popular', 'top-sales'],
@@ -268,6 +282,8 @@ Retrieves all publicly available products for the marketplace frontend.
     @Query('productType') productType?: string,
     @Query('isFeatured') isFeaturedStr?: string,
     @Query('tags') tags?: string,
+    @Query('colors') colors?: string,
+    @Query('sizes') sizes?: string,
     @Query('sort') sort?: string,
     @Query('limit') limitStr?: string,
     @Query('offset') offsetStr?: string
@@ -280,9 +296,16 @@ Retrieves all publicly available products for the marketplace frontend.
       : undefined;
     const limit = limitStr ? parseInt(limitStr, 10) : 20;
     const offset = offsetStr ? parseInt(offsetStr, 10) : 0;
-    // Parse comma-separated tags
+
+    // Parse comma-separated values
     const tagsArray = tags
       ? tags.split(',').map((tag) => tag.trim())
+      : undefined;
+    const colorsArray = colors
+      ? colors.split(',').map((color) => color.trim())
+      : undefined;
+    const sizesArray = sizes
+      ? sizes.split(',').map((size) => size.trim())
       : undefined;
 
     // Validate and cap limit
@@ -299,10 +322,69 @@ Retrieves all publicly available products for the marketplace frontend.
         productType,
         isFeatured,
         tags: tagsArray,
+        colors: colorsArray,
+        sizes: sizesArray,
         sort: sort || 'newest',
         limit: validatedLimit,
         offset,
       })
+    );
+  }
+
+  /**
+   * Get available filter options (colors, sizes) from active product variants
+   * Public endpoint - no authentication required
+   */
+  @Get('filters/options')
+  @Throttle({ long: { limit: 200, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Get available filter options (public)',
+    description: `
+Retrieves all available filter options (colors, sizes) dynamically extracted from active product variants.
+
+**Data Source:**
+- Extracted from variant attributes of all published, public, active products
+- Automatically updates as sellers add new product variants
+- Returns only unique values, sorted alphabetically
+
+**Use Cases:**
+- Populate color filter options in product listing pages
+- Populate size filter options in product listing pages
+- Dynamic filter generation without hardcoding values
+
+**Returns:**
+- Array of unique color values
+- Array of unique size values
+    `,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Filter options retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        colors: {
+          type: 'array',
+          items: { type: 'string' },
+          example: ['Black', 'Blue', 'Green', 'Red', 'White', 'Yellow'],
+          description: 'Sorted array of unique color values from product variants',
+        },
+        sizes: {
+          type: 'array',
+          items: { type: 'string' },
+          example: ['L', 'M', 'S', 'XL', 'XS', 'XXL'],
+          description: 'Sorted array of unique size values from product variants',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+  })
+  async getAvailableFilters() {
+    return firstValueFrom(
+      this.productService.send('product-get-available-filters', {})
     );
   }
 
