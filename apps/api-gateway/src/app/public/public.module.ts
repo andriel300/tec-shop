@@ -4,6 +4,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { PublicProductsController } from './public-products.controller';
 import { PublicShopsController } from './public-shops.controller';
+import { PublicCategoriesController } from './public-categories.controller';
 
 @Module({
   imports: [
@@ -46,6 +47,10 @@ import { PublicShopsController } from './public-shops.controller';
       },
     ]),
   ],
-  controllers: [PublicProductsController, PublicShopsController],
+  controllers: [
+    PublicProductsController,
+    PublicShopsController,
+    PublicCategoriesController,
+  ],
 })
 export class PublicModule {}

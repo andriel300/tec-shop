@@ -413,4 +413,21 @@ export class ProductController {
 
     return result;
   }
+
+  /**
+   * Get available filter options (colors, sizes) from active product variants
+   * Used for dynamically populating filter options in the frontend
+   */
+  @MessagePattern('product-get-available-filters')
+  async getAvailableFilters() {
+    this.logger.log('Received product-get-available-filters request');
+
+    const result = await this.productService.getAvailableFilters();
+
+    this.logger.log(
+      `Returning available filters - colors: ${result.colors.length}, sizes: ${result.sizes.length}`
+    );
+
+    return result;
+  }
 }

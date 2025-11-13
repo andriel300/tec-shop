@@ -600,6 +600,8 @@ export class ProductService {
     productType?: string;
     isFeatured?: boolean;
     tags?: string[];
+    colors?: string[];
+    sizes?: string[];
     sort?: string;
     limit?: number;
     offset?: number;
@@ -614,6 +616,8 @@ export class ProductService {
       productType,
       isFeatured,
       tags,
+      colors,
+      sizes,
       sort = 'newest',
       limit = 20,
       offset = 0,
@@ -630,6 +634,8 @@ export class ProductService {
         productType,
         isFeatured,
         tags,
+        colors,
+        sizes,
         sort,
         limit,
         offset,
@@ -637,7 +643,7 @@ export class ProductService {
     );
 
     // Build where clause with public visibility rules
-    const where = {
+    const where: Record<string, unknown> = {
       // Public visibility rules (only return products visible to public)
       status: ProductStatus.PUBLISHED,
       visibility: ProductVisibility.PUBLIC,
@@ -682,6 +688,14 @@ export class ProductService {
       }),
     };
 
+    // Variant filtering for colors and sizes
+    // Note: MongoDB has limited JSON query support in Prisma
+    // We'll filter products with variants and then filter results in memory
+    if ((colors && colors.length > 0) || (sizes && sizes.length > 0)) {
+      // Only get products that have variants
+      where.hasVariants = true;
+    }
+
     // Sort mapping
     const orderByMap: Record<string, Record<string, string>> = {
       newest: { createdAt: 'desc' },
@@ -696,23 +710,87 @@ export class ProductService {
     this.logger.debug(`Query where clause: ${JSON.stringify(where)}`);
     this.logger.debug(`Query orderBy: ${JSON.stringify(orderBy)}`);
 
-    // Execute parallel queries for data and count
-    const [products, total] = await Promise.all([
-      this.prisma.product.findMany({
+    const hasVariantFilters =
+      (colors && colors.length > 0) || (sizes && sizes.length > 0);
+
+    // If we have variant filters, we need to fetch all products and filter in-memory
+    // Otherwise, use normal pagination
+    let products;
+    let total: number;
+
+    if (hasVariantFilters) {
+      // Fetch ALL matching products (without pagination) for accurate filtering
+      const allProducts = await this.prisma.product.findMany({
         where,
         include: {
           category: true,
           brand: true,
           variants: {
-            where: { isActive: true }, // Only include active variants
+            where: { isActive: true },
           },
         },
         orderBy,
-        take: limit,
-        skip: offset,
-      }),
-      this.prisma.product.count({ where }),
-    ]);
+      });
+
+      // Filter by variant attributes in-memory
+      let filteredProducts = allProducts;
+
+      if (colors && colors.length > 0) {
+        filteredProducts = filteredProducts.filter((product) => {
+          return product.variants.some((variant) => {
+            const attrs = variant.attributes as Record<string, unknown>;
+            const colorValue =
+              attrs.Color || attrs.color || attrs.COLOR || attrs.colour;
+            if (typeof colorValue === 'string') {
+              return colors.some(
+                (c) => c.toLowerCase() === colorValue.toLowerCase()
+              );
+            }
+            return false;
+          });
+        });
+      }
+
+      if (sizes && sizes.length > 0) {
+        filteredProducts = filteredProducts.filter((product) => {
+          return product.variants.some((variant) => {
+            const attrs = variant.attributes as Record<string, unknown>;
+            const sizeValue = attrs.Size || attrs.size || attrs.SIZE;
+            if (typeof sizeValue === 'string') {
+              return sizes.some(
+                (s) => s.toLowerCase() === sizeValue.toLowerCase()
+              );
+            }
+            return false;
+          });
+        });
+      }
+
+      // Now paginate the filtered results
+      total = filteredProducts.length;
+      products = filteredProducts.slice(offset, offset + limit);
+    } else {
+      // No variant filters - use efficient database pagination
+      const [fetchedProducts, count] = await Promise.all([
+        this.prisma.product.findMany({
+          where,
+          include: {
+            category: true,
+            brand: true,
+            variants: {
+              where: { isActive: true },
+            },
+          },
+          orderBy,
+          take: limit,
+          skip: offset,
+        }),
+        this.prisma.product.count({ where }),
+      ]);
+
+      products = fetchedProducts;
+      total = count;
+    }
 
     this.logger.log(
       `findPublicProducts returning ${products.length} products out of ${total} total`
@@ -724,6 +802,62 @@ export class ProductService {
       limit,
       offset,
       sort,
+    };
+  }
+
+  /**
+   * Get available filter options from actual product variants
+   * Returns unique colors and sizes that exist in active product variants
+   */
+  async getAvailableFilters() {
+    this.logger.debug('Getting available filter options from product variants');
+
+    // Get all active variants from published, public, active products
+    const variants = await this.prisma.productVariant.findMany({
+      where: {
+        isActive: true,
+        product: {
+          status: ProductStatus.PUBLISHED,
+          visibility: ProductVisibility.PUBLIC,
+          isActive: true,
+          deletedAt: null,
+        },
+      },
+      select: {
+        attributes: true,
+      },
+    });
+
+    // Extract unique colors and sizes from variant attributes
+    const colorsSet = new Set<string>();
+    const sizesSet = new Set<string>();
+
+    variants.forEach((variant) => {
+      const attrs = variant.attributes as Record<string, unknown>;
+
+      // Check for Color attribute (case-insensitive)
+      Object.keys(attrs).forEach((key) => {
+        const lowerKey = key.toLowerCase();
+        const value = attrs[key];
+
+        if (lowerKey === 'color' && typeof value === 'string') {
+          colorsSet.add(value);
+        } else if (lowerKey === 'size' && typeof value === 'string') {
+          sizesSet.add(value);
+        }
+      });
+    });
+
+    const colors = Array.from(colorsSet).sort();
+    const sizes = Array.from(sizesSet).sort();
+
+    this.logger.log(
+      `Found ${colors.length} unique colors and ${sizes.length} unique sizes`
+    );
+
+    return {
+      colors,
+      sizes,
     };
   }
 
