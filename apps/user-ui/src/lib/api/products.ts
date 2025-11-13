@@ -66,6 +66,7 @@ export interface GetProductsParams {
   maxPrice?: number;
   productType?: 'simple' | 'variable' | 'digital';
   isFeatured?: boolean;
+  onSale?: boolean;
   tags?: string[];
   sort?: 'newest' | 'price-asc' | 'price-desc' | 'popular' | 'top-sales';
   limit?: number;
