@@ -599,6 +599,7 @@ export class ProductService {
     maxPrice?: number;
     productType?: string;
     isFeatured?: boolean;
+    onSale?: boolean;
     tags?: string[];
     colors?: string[];
     sizes?: string[];
@@ -615,6 +616,7 @@ export class ProductService {
       maxPrice,
       productType,
       isFeatured,
+      onSale,
       tags,
       colors,
       sizes,
@@ -633,6 +635,7 @@ export class ProductService {
         maxPrice,
         productType,
         isFeatured,
+        onSale,
         tags,
         colors,
         sizes,
@@ -687,6 +690,16 @@ export class ProductService {
         ],
       }),
     };
+
+    // Filter for products on sale (salePrice exists and is less than regular price)
+    if (onSale === true) {
+      where.AND = [
+        ...(Array.isArray(where.AND) ? where.AND : []),
+        {
+          salePrice: { not: null },
+        },
+      ];
+    }
 
     // Variant filtering for colors and sizes
     // Note: MongoDB has limited JSON query support in Prisma

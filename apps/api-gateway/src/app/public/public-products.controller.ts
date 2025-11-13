@@ -94,6 +94,13 @@ Retrieves all publicly available products for the marketplace frontend.
     example: true,
   })
   @ApiQuery({
+    name: 'onSale',
+    required: false,
+    type: Boolean,
+    description: 'Filter for products on sale (products with salePrice set)',
+    example: true,
+  })
+  @ApiQuery({
     name: 'tags',
     required: false,
     description:
@@ -281,6 +288,7 @@ Retrieves all publicly available products for the marketplace frontend.
     @Query('maxPrice') maxPriceStr?: string,
     @Query('productType') productType?: string,
     @Query('isFeatured') isFeaturedStr?: string,
+    @Query('onSale') onSaleStr?: string,
     @Query('tags') tags?: string,
     @Query('colors') colors?: string,
     @Query('sizes') sizes?: string,
@@ -293,6 +301,9 @@ Retrieves all publicly available products for the marketplace frontend.
     const maxPrice = maxPriceStr ? parseFloat(maxPriceStr) : undefined;
     const isFeatured = isFeaturedStr
       ? isFeaturedStr === 'true' || isFeaturedStr === '1'
+      : undefined;
+    const onSale = onSaleStr
+      ? onSaleStr === 'true' || onSaleStr === '1'
       : undefined;
     const limit = limitStr ? parseInt(limitStr, 10) : 20;
     const offset = offsetStr ? parseInt(offsetStr, 10) : 0;
@@ -321,6 +332,7 @@ Retrieves all publicly available products for the marketplace frontend.
         maxPrice,
         productType,
         isFeatured,
+        onSale,
         tags: tagsArray,
         colors: colorsArray,
         sizes: sizesArray,
