@@ -106,9 +106,9 @@ const Header = () => {
             ) : (
               <Link href={'/login'} className="hidden md:block">
                 <div className="flex flex-col">
-                  <span className="block font-medium text-sm">Hello,</span>
+                  <span className="block font-medium text-sm">Welcome</span>
                   <span className="block font-semibold text-brand-primary text-sm">
-                    Sign In
+                    Sign In / Register
                   </span>
                 </div>
               </Link>

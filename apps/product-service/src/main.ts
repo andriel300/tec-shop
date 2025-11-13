@@ -1,3 +1,7 @@
+// Initialize Sentry FIRST before any other imports
+import { initializeSentry } from './instrumentation';
+initializeSentry('product-service', 6004);
+
 import { NestFactory } from '@nestjs/core';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { AppModule } from './app/app.module';

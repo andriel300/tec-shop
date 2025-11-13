@@ -10,6 +10,7 @@ import { DiscountModule } from './discount/discount.module';
 import { BrandModule } from './brand/brand.module';
 import { PublicModule } from './public/public.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { SentryTestModule } from './sentry-test/sentry-test.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -79,6 +80,7 @@ import { ImageKitModule } from '@tec-shop/shared/imagekit';
     DiscountModule,
     PublicModule,
     AnalyticsModule,
+    SentryTestModule,
   ],
   controllers: [AppController],
   providers: [

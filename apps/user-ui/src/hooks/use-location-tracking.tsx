@@ -45,9 +45,27 @@ const useLocationTracking = () => {
       return;
     }
 
+    // Check if we previously failed to fetch location
+    const failedAttempt = localStorage.getItem('location_fetch_failed');
+    if (failedAttempt) {
+      const failedTimestamp = parseInt(failedAttempt, 10);
+      const oneHourInMs = 60 * 60 * 1000;
+
+      // Don't retry for 1 hour after a failed attempt
+      if (Date.now() - failedTimestamp < oneHourInMs) {
+        setIsLoading(false);
+        return;
+      }
+    }
+
     // If no stored location, fetch from API
     fetch('https://ipapi.co/json/')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
         const newLocation = {
           country: data?.country,
@@ -57,12 +75,17 @@ const useLocationTracking = () => {
 
         if (typeof window !== 'undefined') {
           localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(newLocation));
+          localStorage.removeItem('location_fetch_failed');
         }
         setLocation(newLocation);
         setIsLoading(false);
       })
-      .catch((error) => {
-        console.error('Error fetching location:', error);
+      .catch(() => {
+        // Silently handle location fetch errors
+        // Store failed attempt timestamp to prevent retry spam
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('location_fetch_failed', Date.now().toString());
+        }
         setIsLoading(false);
       });
   }, []);
