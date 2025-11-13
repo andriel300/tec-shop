@@ -3,6 +3,10 @@
  * This is only a minimal backend to get started.
  */
 
+// Initialize Sentry FIRST before any other imports
+import { initializeSentry } from './instrumentation';
+initializeSentry();
+
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';

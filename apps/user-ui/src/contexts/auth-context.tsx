@@ -42,9 +42,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Initialize auth state from sessionStorage or check authentication via API
   useEffect(() => {
     const initializeAuth = async () => {
+      console.log('[AuthContext] Starting initialization...');
       try {
         // First, try to load from sessionStorage (client-side only)
         if (typeof window === 'undefined') {
+          console.log('[AuthContext] Server-side, skipping initialization');
           setAuthState((prev) => ({ ...prev, isLoading: false }));
           return;
         }
@@ -52,9 +54,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const userData = sessionStorage.getItem('user');
         const profileData = sessionStorage.getItem('userProfile');
 
+        console.log('[AuthContext] SessionStorage check - user:', !!userData, 'profile:', !!profileData);
+
         if (userData) {
           const user = JSON.parse(userData);
           const userProfile = profileData ? JSON.parse(profileData) : null;
+
+          console.log('[AuthContext] Loading from sessionStorage:', {
+            userId: user.id,
+            userName: user.name,
+            hasProfile: !!userProfile
+          });
 
           setAuthState({
             isAuthenticated: true,
@@ -66,7 +76,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
 
         // If no sessionStorage data, try to validate/refresh the session from cookies
-        // This handles cases where the browser was closed but cookies are still valid
+        // This handles cases where:
+        // 1. Browser was closed but cookies are still valid
+        // 2. User just logged in via Google OAuth and was redirected here
+        // Note: We cannot check document.cookie for auth cookies because they're httpOnly
+        // and set with path=/api. The browser will automatically send them with API requests.
+        console.log('[AuthContext] No sessionStorage, attempting token refresh...');
         try {
           const { apiClient } = await import('../lib/api/client');
           const { getCurrentUser } = await import('../lib/api/user');
@@ -75,10 +90,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
           // If successful, new tokens will be set in cookies
           const response = await apiClient.post('/auth/refresh');
 
+          console.log('[AuthContext] Token refresh response:', !!response.data);
+
           if (response.data) {
             // Session is valid, fetch the full user profile
+            console.log('[AuthContext] Fetching user profile...');
             try {
               const userProfile = await getCurrentUser();
+              console.log('[AuthContext] User profile fetched:', {
+                userId: userProfile.userId,
+                name: userProfile.name
+              });
 
               const user: User = {
                 id: userProfile.userId,
@@ -87,6 +109,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 name: userProfile.name,
               };
 
+              console.log('[AuthContext] Setting authenticated state');
               setAuthState({
                 isAuthenticated: true,
                 isLoading: false,
@@ -98,9 +121,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
               if (typeof window !== 'undefined') {
                 sessionStorage.setItem('user', JSON.stringify(user));
                 sessionStorage.setItem('userProfile', JSON.stringify(userProfile));
+                console.log('[AuthContext] User data saved to sessionStorage');
               }
             } catch (profileError) {
-              console.error('Failed to fetch user profile after token refresh:', profileError);
+              console.error('[AuthContext] Failed to fetch user profile after token refresh:', profileError);
 
               // Fallback to minimal user if profile fetch fails
               const minimalUser: User = {
@@ -122,8 +146,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
               }
             }
           }
-        } catch {
+        } catch (refreshError) {
           // Refresh failed - user is not authenticated
+          console.log('[AuthContext] Token refresh failed:', refreshError instanceof Error ? refreshError.message : 'Unknown error');
           setAuthState((prev) => ({
             ...prev,
             isAuthenticated: false,
@@ -131,7 +156,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }));
         }
       } catch (error) {
-        console.error('Error initializing auth state:', error);
+        console.error('[AuthContext] Error initializing auth state:', error);
         // Clear corrupted data
         if (typeof window !== 'undefined') {
           sessionStorage.removeItem('user');
@@ -170,10 +195,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Continue with logout even if API call fails
     }
 
-    // Clear sessionStorage
+    // Clear only authentication-related storage
+    // Keep cart, wishlist, and location data for better UX
     if (typeof window !== 'undefined') {
+      // Clear sessionStorage (authentication state only)
       sessionStorage.removeItem('user');
       sessionStorage.removeItem('userProfile');
+
+      // Note: We intentionally keep localStorage data:
+      // - store-data (cart & wishlist) - users expect these to persist
+      // - user_location - no need to re-fetch location on next login
+      // - location_fetch_failed - retry tracker can stay
     }
 
     setAuthState({

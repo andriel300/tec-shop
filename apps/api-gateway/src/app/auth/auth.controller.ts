@@ -68,10 +68,11 @@ export class AuthController {
       ? `__Host-${userType}_${tokenType}_token`
       : `${userType}_${tokenType}_token`;
 
-    // Path must be /api to cover both auth endpoints (/api/auth/*) and resource endpoints (/api/customer/*, /api/seller/*)
-    // More restrictive paths would prevent cookies from being sent to auth endpoints
-    // Cookie names provide isolation instead (customer_access_token vs seller_access_token)
-    const cookiePath = '/api';
+    // Path must be / to allow cookies to be sent with:
+    // 1. API endpoints (/api/auth/*, /api/customer/*, /api/seller/*)
+    // 2. Page routes (/, /profile, etc.) - required for Next.js middleware
+    // Cookie names provide isolation (customer_access_token vs seller_access_token)
+    const cookiePath = '/';
 
     return {
       name: cookieName,
