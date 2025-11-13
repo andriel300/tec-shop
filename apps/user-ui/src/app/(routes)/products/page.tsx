@@ -1,7 +1,6 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Input } from 'apps/user-ui/src/components/ui/core/Input';
 import { apiClient } from 'apps/user-ui/src/lib/api/client';
 import Link from 'next/link';
 import React, { useEffect } from 'react';
@@ -136,7 +135,14 @@ const Page = () => {
   useEffect(() => {
     updateURL();
     fetchFilteredProducts();
-  }, [priceRange, selectedCategories, selectedColors, selectedSizes, page, sortBy]);
+  }, [
+    priceRange,
+    selectedCategories,
+    selectedColors,
+    selectedSizes,
+    page,
+    sortBy,
+  ]);
 
   const { data: categories, isLoading: isCategoriesLoading } = useQuery({
     queryKey: ['categories'],
