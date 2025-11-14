@@ -11,6 +11,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React from 'react';
 import { useShippingAddresses } from 'apps/user-ui/src/hooks/use-shipping-addresses';
+import { apiClient } from 'apps/user-ui/src/lib/api/client';
+import { toast } from 'sonner';
 
 const CartPage = () => {
   const router = useRouter();
@@ -21,14 +23,66 @@ const CartPage = () => {
   const removeFromCart = useStore((state) => state.removeFromCart);
 
   // Fetch shipping addresses
-  const { data: addresses = [], isLoading: addressesLoading } = useShippingAddresses();
+  const { data: addresses = [], isLoading: addressesLoading } =
+    useShippingAddresses();
 
   const [couponCode, setCouponCode] = React.useState('');
   const [loading, setLoading] = React.useState(false);
-  const [discountedProductId, setDiscountedProductId] = React.useState('');
-  const [discountAmount, setDiscountAmount] = React.useState(0);
-  const [discountPercentage, setDiscountPercentage] = React.useState(0);
+  // const [discountedProductId, setDiscountedProductId] = React.useState('');
+  // const [discountAmount, setDiscountAmount] = React.useState(0);
+  // const [discountPercentage, setDiscountPercentage] = React.useState(0);
   const [selectedAddressId, setSelectedAddressId] = React.useState('');
+
+  const createPaymentSession = async () => {
+    // Validate cart is not empty
+    if (cart.length === 0) {
+      toast.error('Your cart is empty');
+      return;
+    }
+
+    // Validate shipping address is selected
+    if (!selectedAddressId) {
+      toast.error('Please select a shipping address');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Map cart items to the format expected by the backend
+      const items = cart.map((item) => ({
+        productId: item.id,
+        sellerId: item.sellerId,
+        shopId: item.shopId,
+        productName: item.title,
+        productSlug: item.slug,
+        productImage: Array.isArray(item.images) ? item.images[0] : item.image,
+        variantId: item.variantId,
+        sku: item.sku,
+        unitPrice: Math.round(item.price * 100), // Convert dollars to cents
+        quantity: item.quantity,
+      }));
+
+      const res = await apiClient.post('/orders/checkout', {
+        items,
+        shippingAddressId: selectedAddressId,
+        couponCode: couponCode || undefined,
+        paymentMethod: 'card',
+      });
+
+      // Redirect to Stripe Checkout page
+      const { sessionUrl } = res.data;
+      if (sessionUrl) {
+        window.location.href = sessionUrl;
+      } else {
+        throw new Error('No checkout session URL returned');
+      }
+    } catch (error) {
+      toast.error('Something went wrong. Please try again.');
+      console.error('Error creating checkout session:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Set default address as selected when addresses load
   React.useEffect(() => {
@@ -42,26 +96,45 @@ const CartPage = () => {
     }
   }, [addresses, selectedAddressId]);
 
-  const decreaseQuantity = (id: string) => {
+  const decreaseQuantity = (id: string, variantId?: string) => {
     useStore.setState((state) => ({
-      cart: state.cart.map((item) =>
-        item.id === id && item.quantity > 1
+      cart: state.cart.map((item) => {
+        const isMatch =
+          variantId && item.variantId
+            ? item.id === id && item.variantId === variantId
+            : item.id === id && !item.variantId;
+
+        return isMatch && item.quantity > 1
           ? { ...item, quantity: item.quantity - 1 }
-          : item
-      ),
+          : item;
+      }),
     }));
   };
 
-  const increaseQuantity = (id: string) => {
+  const increaseQuantity = (id: string, variantId?: string) => {
     useStore.setState((state) => ({
-      cart: state.cart.map((item) =>
-        item.id === id ? { ...item, quantity: item.quantity + 1 } : item
-      ),
+      cart: state.cart.map((item) => {
+        const isMatch =
+          variantId && item.variantId
+            ? item.id === id && item.variantId === variantId
+            : item.id === id && !item.variantId;
+
+        return isMatch ? { ...item, quantity: item.quantity + 1 } : item;
+      }),
     }));
   };
 
-  const removeItem = (id: string) => {
-    removeFromCart(id, user, location, deviceInfo);
+  const removeItem = (id: string, variantId?: string) => {
+    useStore.setState((state) => ({
+      cart: state.cart.filter((item) => {
+        const isMatch =
+          variantId && item.variantId
+            ? item.id === id && item.variantId === variantId
+            : item.id === id && !item.variantId;
+
+        return !isMatch;
+      }),
+    }));
   };
 
   const subtotal = cart.reduce((total, item) => {
@@ -99,7 +172,12 @@ const CartPage = () => {
               </thead>
               <tbody>
                 {cart?.map((item) => (
-                  <tr key={item.id} className="border-b border-b-[#0000000e]">
+                  <tr
+                    key={
+                      item.variantId ? `${item.id}-${item.variantId}` : item.id
+                    }
+                    className="border-b border-b-[#0000000e]"
+                  >
                     <td className="flex items-center gap-4 p-4">
                       {(() => {
                         // Handle both string and array formats for images
@@ -148,6 +226,27 @@ const CartPage = () => {
                         >
                           {item.title}
                         </Link>
+                        {item.variantAttributes &&
+                          Object.keys(item.variantAttributes).length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {Object.entries(item.variantAttributes).map(
+                                ([key, value]) => (
+                                  <span
+                                    key={key}
+                                    className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-md capitalize"
+                                  >
+                                    {key}:{' '}
+                                    <span className="font-medium">{value}</span>
+                                  </span>
+                                )
+                              )}
+                            </div>
+                          )}
+                        {item.sku && (
+                          <span className="text-xs text-gray-500 mt-1">
+                            SKU: {item.sku}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 text-lg text-center">
@@ -157,7 +256,9 @@ const CartPage = () => {
                       <div className="flex justify-center items-center border border-gray-200 rounded-[20px] w-[90px] p-[2px] mx-auto">
                         <button
                           className="text-black cursor-pointer text-xl"
-                          onClick={() => decreaseQuantity(item.id)}
+                          onClick={() =>
+                            decreaseQuantity(item.id, item.variantId)
+                          }
                         >
                           -
                         </button>
@@ -166,7 +267,9 @@ const CartPage = () => {
                         </span>
                         <button
                           className="text-black cursor-pointer text-xl"
-                          onClick={() => increaseQuantity(item.id)}
+                          onClick={() =>
+                            increaseQuantity(item.id, item.variantId)
+                          }
                         >
                           +
                         </button>
@@ -175,7 +278,7 @@ const CartPage = () => {
                     <td className="text-center">
                       <button
                         className="text-[#818487] cursor-pointer hover:text-red-600 transition duration-200"
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => removeItem(item.id, item.variantId)}
                       >
                         X Remove
                       </button>
@@ -326,10 +429,13 @@ const CartPage = () => {
                   <span>${subtotal.toFixed(2)}</span>
                 </div>
               </div>
+
+              {/* Checkout */}
+
               <button
                 disabled={loading}
-                className="w-full bg-gray-900 hover:bg-brand-primary-500 text-white font-semibold py-3 rounded-lg transition mt-4"
-                onClick={() => router.push('/checkout')}
+                className="w-full bg-gray-900 hover:bg-brand-primary-500 text-white font-semibold py-3 rounded-lg transition mt-4 flex items-center justify-center gap-2"
+                onClick={createPaymentSession}
               >
                 {loading && <Loader2 className="w-5 h-5 animate-spin" />}
                 {loading ? 'Redirecting ...' : 'Proceed to Checkout'}

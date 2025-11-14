@@ -11,6 +11,7 @@ import { useAuth } from '../../hooks/use-auth';
 import useLocationTracking from '../../hooks/use-location-tracking';
 import useDeviceTracking from '../../hooks/use-device-tracking';
 import useStore from '../../store';
+import { useShop } from '../../hooks/use-shops';
 
 interface ProductCardProps {
   product: Product;
@@ -24,6 +25,9 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const { user } = useAuth();
   const location = useLocationTracking();
   const deviceInfo = useDeviceTracking();
+
+  // Fetch shop details to get sellerId
+  const { data: shop } = useShop(product.shopId);
 
   // Zustand store hooks
   const addToCart = useStore((state) => state.addToCart);
@@ -43,16 +47,25 @@ const ProductCard = ({ product }: ProductCardProps) => {
     if (isWishListed) {
       removeFromWishList(product.id, user, location, deviceInfo);
     } else {
+      // Get sellerId from shop data (required for order processing)
+      const sellerId = shop?.seller?.id || '';
+
+      if (!sellerId) {
+        console.error('Cannot add to wishlist: sellerId not available from shop data');
+        return;
+      }
+
       addToWishList(
         {
           id: product.id,
-          slug: product.slug,
+          slug: product.slug || product.id,
           title: product.name,
           price: displayPrice,
           image: product.images?.[0] || '',
           images: product.images || [],
           quantity: 1,
           shopId: product.shopId,
+          sellerId,
         },
         user,
         location,
@@ -74,16 +87,25 @@ const ProductCard = ({ product }: ProductCardProps) => {
     if (isInCart) {
       removeFromCart(product.id, user, location, deviceInfo);
     } else {
+      // Get sellerId from shop data (required for order processing)
+      const sellerId = shop?.seller?.id || '';
+
+      if (!sellerId) {
+        console.error('Cannot add to cart: sellerId not available from shop data');
+        return;
+      }
+
       addToCart(
         {
           id: product.id,
-          slug: product.slug,
+          slug: product.slug || product.id,
           title: product.name,
           price: displayPrice,
           image: product.images?.[0] || '',
           images: product.images || [],
           quantity: 1,
           shopId: product.shopId,
+          sellerId,
         },
         user,
         location,
