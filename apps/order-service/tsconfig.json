@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "files": [],
+  "include": [],
+  "references": [
+    {
+      "path": "../../libs/prisma-clients/order-client"
+    },
+    {
+      "path": "../../libs/shared/dto"
+    },
+    {
+      "path": "./tsconfig.app.json"
+    }
+  ]
+}
