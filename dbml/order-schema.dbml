@@ -1,0 +1,115 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table Order {
+  id String [pk]
+  orderNumber String [unique, not null]
+  userId String [not null]
+  shippingAddressId String [not null]
+  shippingAddress Json [not null]
+  stripeSessionId String [unique]
+  stripePaymentId String [unique]
+  paymentMethod String
+  subtotalAmount Int [not null]
+  discountAmount Int [not null, default: 0]
+  shippingCost Int [not null, default: 0]
+  platformFee Int [not null, default: 0]
+  finalAmount Int [not null]
+  couponCode String
+  status OrderStatus [not null, default: 'PENDING']
+  paymentStatus PaymentStatus [not null, default: 'PENDING']
+  items OrderItem [not null]
+  payouts SellerPayout [not null]
+  trackingNumber String
+  estimatedDelivery DateTime
+  deliveredAt DateTime
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+}
+
+Table OrderItem {
+  id String [pk]
+  order Order [not null]
+  orderId String [not null]
+  sellerId String [not null]
+  shopId String [not null]
+  shopName String [not null]
+  productId String [not null]
+  productName String [not null]
+  productSlug String [not null]
+  productImage String
+  variantId String
+  sku String
+  unitPrice Int [not null]
+  quantity Int [not null]
+  subtotal Int [not null]
+  sellerPayout Int [not null]
+  platformFee Int [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+}
+
+Table SellerPayout {
+  id String [pk]
+  order Order [not null]
+  orderId String [not null]
+  sellerId String [not null]
+  shopId String [not null]
+  stripeAccountId String [not null]
+  totalAmount Int [not null]
+  platformFee Int [not null]
+  payoutAmount Int [not null]
+  stripeTransferId String [unique]
+  status PayoutStatus [not null, default: 'PENDING']
+  errorMessage String
+  retryCount Int [not null, default: 0]
+  processedAt DateTime
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+}
+
+Table PaymentSession {
+  id String [pk]
+  sessionId String [unique, not null]
+  userId String [not null]
+  cartData Json [not null]
+  shippingAddressId String [not null]
+  shippingAddress Json [not null]
+  subtotalAmount Int [not null]
+  discountAmount Int [not null, default: 0]
+  shippingCost Int [not null, default: 0]
+  platformFee Int [not null, default: 0]
+  finalAmount Int [not null]
+  couponCode String
+  status PaymentStatus [not null, default: 'PENDING']
+  expiresAt DateTime [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+}
+
+Enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+Enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+Enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+Ref: OrderItem.orderId > Order.id [delete: Cascade]
+
+Ref: SellerPayout.orderId > Order.id [delete: Cascade]

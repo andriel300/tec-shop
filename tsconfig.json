@@ -83,6 +83,15 @@
     },
     {
       "path": "./libs/prisma-schemas/analytics-schema"
+    },
+    {
+      "path": "./apps/order-service"
+    },
+    {
+      "path": "./libs/prisma-schemas/order-schema"
+    },
+    {
+      "path": "./libs/prisma-clients/order-client"
     }
   ]
 }
