@@ -51,6 +51,49 @@ export function AuthProvider({ children }: AuthProviderProps) {
           return;
         }
 
+        // Check for Google OAuth redirect with user data in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const authSuccess = urlParams.get('auth');
+        const userDataParam = urlParams.get('user');
+
+        if (authSuccess === 'success' && userDataParam) {
+          console.log('[AuthContext] Google OAuth success detected');
+          try {
+            const userData = JSON.parse(decodeURIComponent(userDataParam));
+            const user: User = {
+              id: userData.id,
+              email: userData.email,
+              isEmailVerified: true,
+              name: userData.name,
+              createdAt: userData.createdAt,
+            };
+
+            // Fetch user profile
+            const { getCurrentUser } = await import('../lib/api/user');
+            const userProfile = await getCurrentUser();
+
+            // Update state
+            setAuthState({
+              isAuthenticated: true,
+              isLoading: false,
+              user,
+              userProfile,
+            });
+
+            // Save to sessionStorage
+            sessionStorage.setItem('user', JSON.stringify(user));
+            sessionStorage.setItem('userProfile', JSON.stringify(userProfile));
+
+            // Clean up URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+            console.log('[AuthContext] Google OAuth login completed');
+            return;
+          } catch (error) {
+            console.error('[AuthContext] Failed to process Google OAuth data:', error);
+            // Continue with normal flow
+          }
+        }
+
         const userData = sessionStorage.getItem('user');
         const profileData = sessionStorage.getItem('userProfile');
 
@@ -92,7 +135,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
           console.log('[AuthContext] Token refresh response:', !!response.data);
 
-          if (response.data) {
+          if (response.data?.user) {
             // Session is valid, fetch the full user profile
             console.log('[AuthContext] Fetching user profile...');
             try {
@@ -103,10 +146,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
               });
 
               const user: User = {
-                id: userProfile.userId,
-                email: '', // Will be filled from user profile if needed
+                id: response.data.user.id,
+                email: response.data.user.email,
                 isEmailVerified: true,
-                name: userProfile.name,
+                name: response.data.user.name || userProfile.name,
+                createdAt: response.data.user.createdAt,
               };
 
               console.log('[AuthContext] Setting authenticated state');
@@ -126,12 +170,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
             } catch (profileError) {
               console.error('[AuthContext] Failed to fetch user profile after token refresh:', profileError);
 
-              // Fallback to minimal user if profile fetch fails
+              // Fallback to minimal user from refresh response if profile fetch fails
               const minimalUser: User = {
-                id: '',
-                email: '',
+                id: response.data.user.id,
+                email: response.data.user.email,
                 isEmailVerified: true,
-                name: '',
+                name: response.data.user.name || '',
+                createdAt: response.data.user.createdAt,
               };
 
               setAuthState({
