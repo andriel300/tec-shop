@@ -11,7 +11,7 @@ import HeaderBottom from './header-bottom';
 import useStore from '../../store';
 
 const Header = () => {
-  const { isAuthenticated, user, userProfile, logout } = useAuth();
+  const { isAuthenticated, user, userProfile } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [imageError, setImageError] = useState(false);
 
@@ -28,10 +28,6 @@ const Header = () => {
   useEffect(() => {
     setImageError(false);
   }, [userProfile?.picture]);
-
-  const handleLogout = () => {
-    logout();
-  };
 
   return (
     <div className="w-full bg-ui-background border-b border-ui-divider">
@@ -94,14 +90,14 @@ const Header = () => {
             {mounted && isAuthenticated ? (
               <div className="hidden md:flex flex-col">
                 <span className="block font-medium text-sm">Hello,</span>
-                <button
-                  onClick={handleLogout}
+                <Link
+                  href={'/profile'}
                   className="block font-semibold text-brand-primary text-sm hover:underline text-left"
                 >
                   {userProfile?.name?.split(' ')[0] ||
                     user?.name?.split(' ')[0] ||
                     'User'}
-                </button>
+                </Link>
               </div>
             ) : (
               <Link href={'/login'} className="hidden md:block">
