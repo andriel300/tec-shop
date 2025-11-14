@@ -49,8 +49,19 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
   const wishlist = useStore((state) => state.wishlist);
   const cart = useStore((state) => state.cart);
 
-  const isWishListed = wishlist.some((item) => item.id === product.id);
-  const isInCart = cart.some((item) => item.id === product.id);
+  const isWishListed = wishlist.some((item) => {
+    if (selectedVariant && item.variantId) {
+      return item.id === product.id && item.variantId === selectedVariant.id;
+    }
+    return item.id === product.id && !item.variantId;
+  });
+
+  const isInCart = cart.some((item) => {
+    if (selectedVariant && item.variantId) {
+      return item.id === product.id && item.variantId === selectedVariant.id;
+    }
+    return item.id === product.id && !item.variantId;
+  });
 
   // Fetch shop details
   const { data: shop, isLoading: isShopLoading } = useShop(product.shopId);
@@ -170,15 +181,37 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
 
   const handleAddToCart = () => {
     if (isInCart) {
-      removeFromCart(product.id, user, location, deviceInfo);
+      // Remove the specific variant or simple product
+      useStore.setState((state) => ({
+        cart: state.cart.filter((item) => {
+          if (selectedVariant && item.variantId) {
+            return !(item.id === product.id && item.variantId === selectedVariant.id);
+          }
+          return !(item.id === product.id && !item.variantId);
+        }),
+      }));
     } else {
+      // Get sellerId from shop data (required for order processing)
+      const sellerId = shop?.seller?.id || '';
+
+      if (!sellerId) {
+        console.error('Cannot add to cart: sellerId not available from shop data');
+        return;
+      }
+
       const productData = {
         id: product.id,
+        slug: product.slug || product.id,
         title: product.name,
         price: displayPrice,
         image: selectedVariant?.image || product.images?.[0] || '',
+        images: product.images || [],
         quantity,
         shopId: product.shopId,
+        sellerId,
+        variantId: selectedVariant?.id,
+        sku: selectedVariant?.sku,
+        variantAttributes: selectedVariant?.attributes as Record<string, string> | undefined,
       };
       addToCart(productData, user, location, deviceInfo);
     }
@@ -196,16 +229,38 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
     e.stopPropagation();
 
     if (isWishListed) {
-      removeFromWishList(product.id, user, location, deviceInfo);
+      // Remove the specific variant or simple product
+      useStore.setState((state) => ({
+        wishlist: state.wishlist.filter((item) => {
+          if (selectedVariant && item.variantId) {
+            return !(item.id === product.id && item.variantId === selectedVariant.id);
+          }
+          return !(item.id === product.id && !item.variantId);
+        }),
+      }));
     } else {
+      // Get sellerId from shop data (required for order processing)
+      const sellerId = shop?.seller?.id || '';
+
+      if (!sellerId) {
+        console.error('Cannot add to wishlist: sellerId not available from shop data');
+        return;
+      }
+
       addToWishList(
         {
           id: product.id,
+          slug: product.slug || product.id,
           title: product.name,
           price: displayPrice,
-          image: product.images?.[0] || '',
+          image: selectedVariant?.image || product.images?.[0] || '',
+          images: product.images || [],
           quantity: 1,
           shopId: product.shopId,
+          sellerId,
+          variantId: selectedVariant?.id,
+          sku: selectedVariant?.sku,
+          variantAttributes: selectedVariant?.attributes as Record<string, string> | undefined,
         },
         user,
         location,

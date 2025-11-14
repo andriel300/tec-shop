@@ -5,7 +5,9 @@ import ProfileIcon from 'apps/user-ui/src/assets/svgs/profile-icon';
 import QuickActionCard from 'apps/user-ui/src/components/cards/quick-action.card';
 import StatCard from 'apps/user-ui/src/components/cards/stat.card';
 import ShippingAddressSection from 'apps/user-ui/src/components/shippingAddress';
+import OrdersSection from 'apps/user-ui/src/components/orders';
 import { useAuth } from 'apps/user-ui/src/hooks/use-auth';
+import { useOrders } from 'apps/user-ui/src/hooks/use-orders';
 import apiClient from 'apps/user-ui/src/lib/api/client';
 import {
   BadgeCheck,
@@ -37,7 +39,8 @@ const Page = () => {
   const queryClient = useQueryClient();
 
   const { userProfile, user, isLoading } = useAuth();
-  const queryTab = searchParams.get('active') || 'Profile';
+  const { data: orders = [] } = useOrders();
+  const queryTab = searchParams.get('active') || searchParams.get('tab') || 'Profile';
   const [activeTab, setActiveTab] = useState(queryTab);
 
   useEffect(() => {
@@ -77,9 +80,17 @@ const Page = () => {
 
         {/* Profile Overview Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          <StatCard title="Total Orders" count={10} Icon={Clock} />
-          <StatCard title="Processing Orders" count={4} Icon={Truck} />
-          <StatCard title="Completed Orders" count={5} Icon={CheckCircle} />
+          <StatCard title="Total Orders" count={orders.length} Icon={Clock} />
+          <StatCard
+            title="Processing Orders"
+            count={orders.filter((o) => o.status === 'PAID' || o.status === 'SHIPPED').length}
+            Icon={Truck}
+          />
+          <StatCard
+            title="Completed Orders"
+            count={orders.filter((o) => o.status === 'DELIVERED').length}
+            Icon={CheckCircle}
+          />
         </div>
 
         {/* sidebar and content layout */}
@@ -173,8 +184,10 @@ const Page = () => {
               </div>
             ) : activeTab === 'Shipping Address' ? (
               <ShippingAddressSection />
+            ) : activeTab === 'My Orders' ? (
+              <OrdersSection />
             ) : (
-              <></>
+              <p className="text-gray-500 text-sm">Content for {activeTab} coming soon...</p>
             )}
           </div>
 

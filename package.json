@@ -45,6 +45,8 @@
     "@sentry/nestjs": "^10.25.0",
     "@sentry/nextjs": "^10.25.0",
     "@sentry/profiling-node": "^10.25.0",
+    "@stripe/react-stripe-js": "^5.3.0",
+    "@stripe/stripe-js": "^8.4.0",
     "@tanstack/react-form": "^1.19.4",
     "@tanstack/react-query": "^5.87.1",
     "@tiptap/extension-placeholder": "^2.10.4",
@@ -55,6 +57,7 @@
     "@types/stripe": "^8.0.416",
     "axios": "^1.11.0",
     "bcrypt": "^6.0.0",
+    "canvas-confetti": "^1.9.4",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "class-variance-authority": "^0.7.1",
@@ -120,6 +123,7 @@
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/typography": "^0.5.19",
     "@types/bcrypt": "^6.0.0",
+    "@types/canvas-confetti": "^1.9.0",
     "@types/cookie-parser": "^1.4.9",
     "@types/http-proxy-middleware": "^0.19.3",
     "@types/jest": "^30.0.0",
@@ -173,7 +177,9 @@
     "libs/prisma-schemas/product-schema",
     "libs/prisma-clients/product-client",
     "libs/prisma-clients/analytics-client",
-    "libs/prisma-schemas/analytics-schema"
+    "libs/prisma-schemas/analytics-schema",
+    "libs/prisma-schemas/order-schema",
+    "libs/prisma-clients/order-client"
   ],
   "nx": {
     "includedScripts": [],

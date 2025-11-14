@@ -425,26 +425,38 @@ const ProductDetails = ({ product }: { product: any }) => {
                 fill={isWishListed ? 'red' : 'transparent'}
                 className="cursor-pointer"
                 color={isWishListed ? 'transparent' : '#777'}
-                onClick={() =>
-                  isWishListed
-                    ? removeFromWishList(product.id, user, location, deviceInfo)
-                    : addToWishList(
-                        {
-                          id: product.id,
-                          title: product.name,
-                          price: displayPrice,
-                          image:
-                            selectedVariant?.image || product.images?.[0] || '',
-                          images: product.images?.[0] || '',
-                          salePrice: displayPrice,
-                          quantity: 1,
-                          shopId: product.shopId,
-                        },
-                        user,
-                        location,
-                        deviceInfo
-                      )
-                }
+                onClick={() => {
+                  if (isWishListed) {
+                    removeFromWishList(product.id, user, location, deviceInfo);
+                  } else {
+                    // Get sellerId from shopInfo (required for order processing)
+                    const sellerId = shopInfo?.seller?.id || '';
+
+                    if (!sellerId) {
+                      console.error('Cannot add to wishlist: sellerId not available from shop data');
+                      return;
+                    }
+
+                    addToWishList(
+                      {
+                        id: product.id,
+                        slug: product.slug || product.id,
+                        title: product.name,
+                        price: displayPrice,
+                        image:
+                          selectedVariant?.image || product.images?.[0] || '',
+                        images: product.images || [],
+                        salePrice: displayPrice,
+                        quantity: 1,
+                        shopId: product.shopId,
+                        sellerId,
+                      },
+                      user,
+                      location,
+                      deviceInfo
+                    );
+                  }
+                }}
               />
             </div>
           </div>
@@ -649,11 +661,19 @@ const ProductDetails = ({ product }: { product: any }) => {
                     variantAttributes.length > 0 &&
                     !selectedVariant)
                 }
-                onClick={() =>
+                onClick={() => {
+                  // Get sellerId from shopInfo (required for order processing)
+                  const sellerId = shopInfo?.seller?.id || '';
+
+                  if (!sellerId) {
+                    console.error('Cannot add to cart: sellerId not available from shop data');
+                    return;
+                  }
+
                   addToCart(
                     {
                       id: product.id,
-                      slug: product.slug,
+                      slug: product.slug || product.id,
                       title: product.name,
                       price: displayPrice,
                       image:
@@ -662,12 +682,15 @@ const ProductDetails = ({ product }: { product: any }) => {
                       salePrice: displayPrice,
                       quantity,
                       shopId: product.shopId,
+                      sellerId,
+                      variantId: selectedVariant?.id,
+                      sku: selectedVariant?.sku,
                     },
                     user,
                     location,
                     deviceInfo
-                  )
-                }
+                  );
+                }}
               >
                 <CartIcon className="w-7 h-7" />
                 {variantAttributes &&
