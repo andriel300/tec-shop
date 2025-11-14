@@ -383,11 +383,17 @@ export class AuthService implements OnModuleInit {
       // Generate appropriate tokens based on userType
       this.logger.log(`Generating tokens for Google user - userId: ${user.id}, userType: ${user.userType}`);
 
-      if (user.userType === 'SELLER') {
-        return this.generateSellerTokens(user.id, user.email, false);
-      } else {
-        return this.generateTokens(user.id, user.email, false);
-      }
+      const tokens = user.userType === 'SELLER'
+        ? await this.generateSellerTokens(user.id, user.email, false)
+        : await this.generateTokens(user.id, user.email, false);
+
+      return {
+        ...tokens,
+        userId: user.id,
+        email: user.email,
+        name: name, // Name from Google profile
+        createdAt: user.createdAt.toISOString(),
+      };
     } catch (error) {
       this.logger.error(
         `Google OAuth login failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -666,7 +672,13 @@ export class AuthService implements OnModuleInit {
       wasRememberMe
     );
 
-    return tokens;
+    return {
+      ...tokens,
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      createdAt: user.createdAt.toISOString(),
+    };
   }
 
   async revokeRefreshToken(userId: string) {

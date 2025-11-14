@@ -236,6 +236,12 @@ export class AuthController {
     return {
       message: 'Token refreshed successfully',
       userType,
+      user: {
+        id: result.userId,
+        email: result.email,
+        name: result.name,
+        createdAt: result.createdAt,
+      },
     };
   }
 
@@ -530,8 +536,16 @@ export class AuthController {
       refreshCookie.options
     );
 
-    // Redirect to frontend home page
+    // Encode user data to pass to frontend via URL parameter
+    const userData = encodeURIComponent(JSON.stringify({
+      id: result.userId,
+      email: result.email,
+      name: result.name,
+      createdAt: result.createdAt,
+    }));
+
+    // Redirect to frontend home page with user data
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    response.redirect(frontendUrl);
+    response.redirect(`${frontendUrl}?auth=success&user=${userData}`);
   }
 }
