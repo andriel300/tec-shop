@@ -12,7 +12,8 @@ export class StripeWebhookController {
   private stripe: Stripe;
 
   constructor(
-    @Inject('SELLER_SERVICE') private readonly sellerService: ClientProxy
+    @Inject('SELLER_SERVICE') private readonly sellerService: ClientProxy,
+    @Inject('ORDER_SERVICE') private readonly orderService: ClientProxy
   ) {
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
     if (!stripeSecretKey) {
@@ -44,9 +45,17 @@ export class StripeWebhookController {
     let event: Stripe.Event;
 
     try {
+      // Get the raw body - NestJS with rawBody: true provides it in rawBody property
+      // If using express.raw() middleware, the body IS the raw buffer
+      const rawBody = request.rawBody || request.body;
+
+      if (!rawBody) {
+        throw new Error('No body provided');
+      }
+
       // Verify webhook signature
       event = this.stripe.webhooks.constructEvent(
-        request.rawBody || request.body,
+        rawBody,
         signature,
         endpointSecret
       );
@@ -56,12 +65,27 @@ export class StripeWebhookController {
     }
 
     try {
-      // Forward event to seller-service for processing
-      const result = await firstValueFrom(
-        this.sellerService.send('stripe-webhook', event)
-      );
+      // Route webhook events based on type
+      const orderEvents = [
+        'checkout.session.completed',
+        'checkout.session.expired',
+        'payment_intent.succeeded',
+        'payment_intent.payment_failed',
+      ];
 
-      return result;
+      if (orderEvents.includes(event.type)) {
+        // Forward to order-service with verified event
+        const result = await firstValueFrom(
+          this.orderService.send('handle-stripe-webhook', event)
+        );
+        return result;
+      } else {
+        // Forward to seller-service for Connect events
+        const result = await firstValueFrom(
+          this.sellerService.send('stripe-webhook', event)
+        );
+        return result;
+      }
     } catch (error) {
       console.error('Webhook processing failed:', error);
       throw new BadRequestException('Webhook processing failed');
