@@ -60,6 +60,30 @@ import { join } from 'path';
         },
         inject: [ConfigService],
       },
+      {
+        name: 'ORDER_SERVICE',
+        imports: [ConfigModule],
+        useFactory: (configService: ConfigService) => {
+          // Load mTLS certificates for client authentication
+          const certsPath = join(process.cwd(), 'certs');
+          const tlsOptions = {
+            key: readFileSync(join(certsPath, 'api-gateway/api-gateway-key.pem')),
+            cert: readFileSync(join(certsPath, 'api-gateway/api-gateway-cert.pem')),
+            ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
+            checkServerIdentity: () => undefined, // Allow self-signed certificates
+          };
+
+          return {
+            transport: Transport.TCP,
+            options: {
+              host: configService.get<string>('ORDER_SERVICE_HOST') || 'localhost',
+              port: configService.get<number>('ORDER_SERVICE_PORT') || 6005,
+              tlsOptions,
+            },
+          };
+        },
+        inject: [ConfigService],
+      },
     ]),
   ],
   controllers: [SellerController, PublicShopsController, StripeController, StripeWebhookController],

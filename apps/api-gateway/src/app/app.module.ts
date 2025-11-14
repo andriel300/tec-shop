@@ -8,6 +8,7 @@ import { ProductModule } from './product/product.module';
 import { CategoryModule } from './category/category.module';
 import { DiscountModule } from './discount/discount.module';
 import { BrandModule } from './brand/brand.module';
+import { OrderModule } from './order/order.module';
 import { PublicModule } from './public/public.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { SentryTestModule } from './sentry-test/sentry-test.module';
@@ -78,6 +79,7 @@ import { ImageKitModule } from '@tec-shop/shared/imagekit';
     CategoryModule,
     BrandModule,
     DiscountModule,
+    OrderModule,
     PublicModule,
     AnalyticsModule,
     SentryTestModule,

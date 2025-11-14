@@ -15,15 +15,21 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger as PinoLogger } from 'nestjs-pino';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import { raw } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
+    rawBody: true, // Enable raw body parsing globally
   });
   app.useLogger(app.get(PinoLogger));
 
   // Configure cookie parser for secure authentication
   app.use(cookieParser());
+
+  // Raw body parser for Stripe webhooks (MUST run before global JSON parser)
+  // Stripe signature verification requires the raw unparsed body
+  app.use('/api/webhooks/stripe', raw({ type: 'application/json' }));
 
   app.enableCors({
     origin: [
