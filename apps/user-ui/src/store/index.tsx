@@ -13,6 +13,10 @@ type Product = {
   salePrice?: number;
   quantity: number;
   shopId: string;
+  sellerId: string; // Required for order processing
+  variantId?: string; // Optional variant identifier
+  sku?: string; // Optional SKU
+  variantAttributes?: Record<string, string>; // e.g., { "size": "M", "color": "Red" }
 };
 
 type User = {
@@ -80,15 +84,26 @@ const useStore = create<Store>()(
       // Add To Cart
       addToCart: (product, user, location, deviceInfo) => {
         const state = get();
-        const existing = state.cart.find((item) => item.id === product.id);
+        // For products with variants, match by both productId and variantId
+        // For simple products, match only by productId
+        const existing = state.cart.find((item) => {
+          if (product.variantId && item.variantId) {
+            return item.id === product.id && item.variantId === product.variantId;
+          }
+          return item.id === product.id && !item.variantId;
+        });
 
         if (existing) {
           set({
-            cart: state.cart.map((item) =>
-              item.id === product.id
+            cart: state.cart.map((item) => {
+              const isMatch = product.variantId && item.variantId
+                ? item.id === product.id && item.variantId === product.variantId
+                : item.id === product.id && !item.variantId;
+
+              return isMatch
                 ? { ...item, quantity: (item.quantity ?? 1) + 1 }
-                : item
-            ),
+                : item;
+            }),
           });
         } else {
           set({

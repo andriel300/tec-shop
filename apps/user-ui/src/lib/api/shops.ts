@@ -3,9 +3,9 @@ import { apiClient } from './client';
 // Shop interfaces
 export interface Seller {
   id: string;
-  name: string;
-  country: string;
-  isVerified: boolean;
+  name?: string;
+  country?: string;
+  isVerified?: boolean;
 }
 
 export interface Shop {
@@ -20,8 +20,9 @@ export interface Shop {
   logo?: string;
   rating?: number;
   totalRatings?: number;
+  totalOrders?: number; // Added for shop rating display
   isActive?: boolean;
-  seller?: Seller;
+  seller?: Seller; // Seller information including id (required for orders)
 }
 
 export interface GetShopsParams {
