@@ -1,0 +1,203 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../../node_modules/.prisma/order-client"
+}
+
+generator dbml {
+  provider   = "prisma-dbml-generator"
+  output     = "../../../../dbml"
+  outputName = "order-schema.dbml"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("ORDER_SERVICE_DB_URL")
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Order {
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  orderNumber String      @unique // e.g., "ORD-20240101-ABC123"
+
+  // User information
+  userId      String      @db.ObjectId // References auth-service User.id
+
+  // Shipping information
+  shippingAddressId String  @db.ObjectId // References user-service ShippingAddress.id
+  shippingAddress   Json    // Snapshot of shipping address at time of order
+
+  // Payment information
+  stripeSessionId   String?  @unique
+  stripePaymentId   String?  @unique
+  paymentMethod     String?  // "card", "cash_on_delivery", etc.
+
+  // Amounts (stored in cents to avoid floating-point issues)
+  subtotalAmount  Int     // Sum of all items before discount
+  discountAmount  Int     @default(0) // Amount saved from coupon
+  shippingCost    Int     @default(0) // Shipping fee
+  platformFee     Int     @default(0) // Platform fee (10% of subtotal)
+  finalAmount     Int     // Total amount charged to customer
+
+  // Coupon information
+  couponCode      String?
+
+  // Order status
+  status          OrderStatus     @default(PENDING)
+  paymentStatus   PaymentStatus   @default(PENDING)
+
+  // Items in this order
+  items           OrderItem[]
+
+  // Seller payouts
+  payouts         SellerPayout[]
+
+  // Tracking
+  trackingNumber  String?
+  estimatedDelivery DateTime?
+  deliveredAt     DateTime?
+
+  // Timestamps
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Order reference
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String   @db.ObjectId
+
+  // Seller information
+  sellerId  String   @db.ObjectId // References seller-service Seller.id
+  shopId    String   @db.ObjectId // References seller-service Shop.id
+  shopName  String   // Snapshot for display
+
+  // Product information
+  productId String   @db.ObjectId // References product-service Product.id
+  productName String
+  productSlug String
+  productImage String?
+  variantId String?  @db.ObjectId // If applicable
+  sku       String?
+
+  // Pricing (in cents)
+  unitPrice Int      // Price per item at time of purchase
+  quantity  Int
+  subtotal  Int      // unitPrice * quantity
+
+  // Payout calculation
+  sellerPayout Int    // Amount seller receives (subtotal - platform fee)
+  platformFee  Int    // Platform fee (10% of subtotal)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([sellerId])
+  @@index([productId])
+}
+
+model SellerPayout {
+  id        String       @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Order reference
+  order     Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String       @db.ObjectId
+
+  // Seller information
+  sellerId  String       @db.ObjectId // References seller-service Seller.id
+  shopId    String       @db.ObjectId // References seller-service Shop.id
+  stripeAccountId String // Seller's Stripe Connect account
+
+  // Payout amounts (in cents)
+  totalAmount    Int      // Total amount for this seller's items
+  platformFee    Int      // Platform fee deducted
+  payoutAmount   Int      // Net amount transferred to seller
+
+  // Stripe transfer information
+  stripeTransferId String? @unique
+
+  // Status tracking
+  status        PayoutStatus @default(PENDING)
+
+  // Error tracking
+  errorMessage  String?
+  retryCount    Int          @default(0)
+
+  // Timestamps
+  processedAt   DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([orderId])
+  @@index([sellerId])
+  @@index([status])
+  @@index([stripeAccountId])
+}
+
+model PaymentSession {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Session identification
+  sessionId     String   @unique // Stripe checkout session ID
+
+  // User information
+  userId        String   @db.ObjectId // References auth-service User.id
+
+  // Cart snapshot
+  cartData      Json     // Snapshot of cart items at session creation
+
+  // Address snapshot
+  shippingAddressId String @db.ObjectId
+  shippingAddress   Json   // Snapshot of shipping address
+
+  // Amounts (in cents)
+  subtotalAmount Int
+  discountAmount Int      @default(0)
+  shippingCost   Int      @default(0)
+  platformFee    Int      @default(0)
+  finalAmount    Int
+
+  // Coupon information
+  couponCode     String?
+
+  // Session status
+  status         PaymentStatus @default(PENDING)
+
+  // Expiration
+  expiresAt      DateTime
+
+  // Timestamps
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([expiresAt]) // For cleanup queries
+}

@@ -44,7 +44,9 @@
         "libs/prisma-clients/product-client/*",
         "libs/shared/imagekit/*",
         "libs/prisma-clients/analytics-client/*",
-        "libs/prisma-schemas/analytics-schema/*"
+        "libs/prisma-schemas/analytics-schema/*",
+        "libs/prisma-schemas/order-schema/*",
+        "libs/prisma-clients/order-client/*"
       ]
     },
     {
@@ -103,7 +105,9 @@
         "libs/prisma-clients/product-client/*",
         "libs/shared/imagekit/*",
         "libs/prisma-clients/analytics-client/*",
-        "libs/prisma-schemas/analytics-schema/*"
+        "libs/prisma-schemas/analytics-schema/*",
+        "libs/prisma-schemas/order-schema/*",
+        "libs/prisma-clients/order-client/*"
       ],
       "options": {
         "typecheck": {
