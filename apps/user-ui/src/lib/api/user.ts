@@ -5,6 +5,7 @@ export interface User {
   email: string;
   isEmailVerified: boolean;
   name?: string; // Name from UserProfile
+  createdAt?: string; // ISO date string from auth service
 }
 
 export interface UserProfile {
