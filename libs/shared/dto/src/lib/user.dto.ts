@@ -57,3 +57,77 @@ export class FollowUserDto {
   @IsNotEmpty()
   followingId!: string;
 }
+
+export class CreateShippingAddressDto {
+  @IsString()
+  @IsNotEmpty()
+  label!: string; // Home, Work, Others
+
+  @IsString()
+  @IsNotEmpty()
+  name!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  street!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  city!: string;
+
+  @IsString()
+  @IsOptional()
+  state?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  zipCode!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  country!: string;
+
+  @IsString()
+  @IsOptional()
+  phoneNumber?: string;
+
+  @IsOptional()
+  isDefault?: boolean;
+}
+
+export class UpdateShippingAddressDto {
+  @IsString()
+  @IsOptional()
+  label?: string;
+
+  @IsString()
+  @IsOptional()
+  name?: string;
+
+  @IsString()
+  @IsOptional()
+  street?: string;
+
+  @IsString()
+  @IsOptional()
+  city?: string;
+
+  @IsString()
+  @IsOptional()
+  state?: string;
+
+  @IsString()
+  @IsOptional()
+  zipCode?: string;
+
+  @IsString()
+  @IsOptional()
+  country?: string;
+
+  @IsString()
+  @IsOptional()
+  phoneNumber?: string;
+
+  @IsOptional()
+  isDefault?: boolean;
+}
