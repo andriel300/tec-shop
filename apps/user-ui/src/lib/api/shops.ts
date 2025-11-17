@@ -3,6 +3,7 @@ import { apiClient } from './client';
 // Shop interfaces
 export interface Seller {
   id: string;
+  authId: string; // Auth service user ID (used for order sellerId)
   name?: string;
   country?: string;
   isVerified?: boolean;

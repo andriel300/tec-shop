@@ -9,8 +9,10 @@ import { SellerClientModule } from '../clients/seller.client';
 import { PaymentService } from '../services/payment.service';
 import { KafkaProducerService } from '../services/kafka-producer.service';
 import { WebhookService } from '../services/webhook.service';
+import { MockLogisticsService } from '../services/mock-logistics.service';
 import { LoggerModule } from 'nestjs-pino';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -20,6 +22,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     UserClientModule,
     SellerClientModule,
     ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -41,6 +44,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     PaymentService,
     KafkaProducerService,
     WebhookService,
+    MockLogisticsService,
   ],
 })
 export class AppModule {}
