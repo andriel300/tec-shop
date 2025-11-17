@@ -14,6 +14,7 @@ import { SellerServiceClient } from '../clients/seller.client';
 import {
   CartItemDto,
   CreateCheckoutSessionDto,
+  GetSellerOrdersDto,
   OrderStatus,
   PaymentStatus,
 } from '@tec-shop/dto';
@@ -76,7 +77,8 @@ export class OrderService {
     const shippingCost = 1000; // $10.00 in cents
 
     // Calculate platform fee (10% of subtotal)
-    const platformFee = this.paymentService.calculatePlatformFee(subtotalAmount);
+    const platformFee =
+      this.paymentService.calculatePlatformFee(subtotalAmount);
 
     // Calculate final amount
     const finalAmount = subtotalAmount - discountAmount + shippingCost;
@@ -110,7 +112,9 @@ export class OrderService {
       expiresAt: session.expiresAt,
     });
 
-    this.logger.log(`Checkout session created for user ${userId}: ${session.sessionId}`);
+    this.logger.log(
+      `Checkout session created for user ${userId}: ${session.sessionId}`
+    );
 
     return session;
   }
@@ -166,7 +170,9 @@ export class OrderService {
     return { isValid: false, discountAmount: 0 };
   }
 
-  async handleSuccessfulPayment(sessionId: string): Promise<Record<string, unknown>> {
+  async handleSuccessfulPayment(
+    sessionId: string
+  ): Promise<Record<string, unknown>> {
     this.logger.log(`Processing successful payment for session: ${sessionId}`);
 
     // Get payment session from Redis or DB
@@ -176,7 +182,9 @@ export class OrderService {
     }
 
     // Get Stripe session to verify payment
-    const stripeSession = await this.paymentService.getCheckoutSession(sessionId);
+    const stripeSession = await this.paymentService.getCheckoutSession(
+      sessionId
+    );
     if (stripeSession.payment_status !== 'paid') {
       throw new BadRequestException('Payment not completed');
     }
@@ -253,7 +261,11 @@ export class OrderService {
     await this.sendSellerNotifications(order.id);
 
     // Track purchase in analytics
-    await this.trackPurchaseEvent(order.id, sessionData.userId, sessionData.cartData);
+    await this.trackPurchaseEvent(
+      order.id,
+      sessionData.userId,
+      sessionData.cartData
+    );
 
     // Clean up session data
     await this.cleanupPaymentSession(sessionId);
@@ -263,7 +275,9 @@ export class OrderService {
     return order;
   }
 
-  private async getPaymentSession(sessionId: string): Promise<Record<string, unknown> | null> {
+  private async getPaymentSession(
+    sessionId: string
+  ): Promise<Record<string, unknown> | null> {
     // Try Redis first
     const redisKey = `payment-session:${sessionId}`;
     const redisData = await this.redis.get(redisKey);
@@ -328,7 +342,9 @@ export class OrderService {
       // Get seller's Stripe account
       const seller = await this.sellerClient.getSellerByAuthId(sellerId);
       if (!seller || !seller.stripeAccountId) {
-        this.logger.error(`Seller ${sellerId} has no Stripe account configured`);
+        this.logger.error(
+          `Seller ${sellerId} has no Stripe account configured`
+        );
         continue;
       }
 
@@ -376,22 +392,31 @@ export class OrderService {
               },
             });
 
-            this.logger.log(`Payout completed for seller ${payout.sellerId}: ${transferId}`);
+            this.logger.log(
+              `Payout completed for seller ${payout.sellerId}: ${transferId}`
+            );
           } catch (error) {
-            this.logger.error(`Failed to process payout for seller ${payout.sellerId}`, error);
+            this.logger.error(
+              `Failed to process payout for seller ${payout.sellerId}`,
+              error
+            );
 
             await this.prisma.sellerPayout.update({
               where: { id: payout.id },
               data: {
                 status: 'FAILED',
-                errorMessage: error instanceof Error ? error.message : 'Unknown error',
+                errorMessage:
+                  error instanceof Error ? error.message : 'Unknown error',
                 retryCount: { increment: 1 },
               },
             });
           }
         }
       } catch (error) {
-        this.logger.error(`Error processing payouts for order ${orderId}`, error);
+        this.logger.error(
+          `Error processing payouts for order ${orderId}`,
+          error
+        );
       }
     });
   }
@@ -443,9 +468,14 @@ export class OrderService {
         }
       );
 
-      this.logger.log(`Order confirmation email sent for order ${order.orderNumber}`);
+      this.logger.log(
+        `Order confirmation email sent for order ${order.orderNumber}`
+      );
     } catch (error) {
-      this.logger.error(`Failed to send order confirmation email for order ${orderId}`, error);
+      this.logger.error(
+        `Failed to send order confirmation email for order ${orderId}`,
+        error
+      );
     }
   }
 
@@ -518,9 +548,14 @@ export class OrderService {
         );
       }
 
-      this.logger.log(`Seller notifications sent for order ${order.orderNumber}`);
+      this.logger.log(
+        `Seller notifications sent for order ${order.orderNumber}`
+      );
     } catch (error) {
-      this.logger.error(`Failed to send seller notifications for order ${orderId}`, error);
+      this.logger.error(
+        `Failed to send seller notifications for order ${orderId}`,
+        error
+      );
     }
   }
 
@@ -567,6 +602,80 @@ export class OrderService {
     return orders;
   }
 
+  async getSellerOrders(query: GetSellerOrdersDto) {
+    const {
+      sellerId,
+      status,
+      paymentStatus,
+      shopId,
+      startDate,
+      endDate,
+      page = 1,
+      limit = 20,
+    } = query;
+
+    if (!sellerId) {
+      throw new BadRequestException('sellerId is required');
+    }
+
+    this.logger.log(`Fetching orders for sellerId: ${sellerId}`);
+
+    const where: any = {
+      items: {
+        some: {
+          sellerId,
+          ...(shopId ? { shopId } : {}),
+        },
+      },
+      ...(status ? { status } : {}),
+      ...(paymentStatus ? { paymentStatus } : {}),
+      ...(startDate || endDate
+        ? {
+            createdAt: {
+              ...(startDate ? { gte: new Date(startDate) } : {}),
+              ...(endDate ? { lte: new Date(endDate) } : {}),
+            },
+          }
+        : {}),
+    };
+
+    this.logger.debug(`Query filter: ${JSON.stringify(where)}`);
+
+    // Pagination values
+    const skip = (page - 1) * limit;
+
+    // Fetch orders
+    const [orders, total] = await this.prisma.$transaction([
+      this.prisma.order.findMany({
+        where,
+        include: {
+          items: {
+            where: { sellerId },
+          },
+          payouts: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+
+      this.prisma.order.count({ where }),
+    ]);
+
+    this.logger.log(`Found ${total} orders for seller ${sellerId}`);
+    this.logger.debug(`Orders: ${JSON.stringify(orders.map(o => ({ id: o.id, itemCount: o.items.length })))}`);
+
+    return {
+      data: orders,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   async getOrderById(
     userId: string,
     orderId: string
@@ -597,5 +706,72 @@ export class OrderService {
     }
 
     return order;
+  }
+
+  async getOrderDetailsForSeller(
+    sellerId: string,
+    orderId: string
+  ): Promise<Record<string, unknown>> {
+    const order = await this.prisma.order.findFirst({
+      where: {
+        id: orderId,
+        items: {
+          some: { sellerId },
+        },
+      },
+      include: {
+        items: {
+          where: { sellerId },
+        },
+        payouts: {
+          where: { sellerId },
+        },
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found or you do not have access to this order');
+    }
+
+    return order;
+  }
+
+  async updateDeliveryStatus(
+    sellerId: string,
+    orderId: string,
+    status: OrderStatus,
+    trackingNumber?: string
+  ): Promise<Record<string, unknown>> {
+    // Verify seller has access to this order
+    const order = await this.prisma.order.findFirst({
+      where: {
+        id: orderId,
+        items: {
+          some: { sellerId },
+        },
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Order not found or you do not have access to this order');
+    }
+
+    // Update order status
+    const updatedOrder = await this.prisma.order.update({
+      where: { id: orderId },
+      data: {
+        status,
+        ...(trackingNumber ? { trackingNumber } : {}),
+      },
+      include: {
+        items: {
+          where: { sellerId },
+        },
+      },
+    });
+
+    this.logger.log(`Order ${orderId} status updated to ${status} by seller ${sellerId}`);
+
+    return updatedOrder;
   }
 }
