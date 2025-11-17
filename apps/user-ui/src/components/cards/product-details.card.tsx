@@ -192,7 +192,8 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
       }));
     } else {
       // Get sellerId from shop data (required for order processing)
-      const sellerId = shop?.seller?.id || '';
+      // Use authId instead of MongoDB _id for cross-service consistency
+      const sellerId = shop?.seller?.authId || '';
 
       if (!sellerId) {
         console.error('Cannot add to cart: sellerId not available from shop data');
@@ -240,7 +241,8 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
       }));
     } else {
       // Get sellerId from shop data (required for order processing)
-      const sellerId = shop?.seller?.id || '';
+      // Use authId instead of MongoDB _id for cross-service consistency
+      const sellerId = shop?.seller?.authId || '';
 
       if (!sellerId) {
         console.error('Cannot add to wishlist: sellerId not available from shop data');
