@@ -157,3 +157,41 @@ export class CheckoutSessionResponseDto {
   sessionUrl!: string;
   expiresAt!: Date;
 }
+
+export class GetSellerOrdersDto {
+  @IsString()
+  @IsNotEmpty()
+  sellerId!: string;
+
+  @IsOptional()
+  @IsEnum(OrderStatus)
+  status?: OrderStatus;
+
+  @IsOptional()
+  @IsEnum(PaymentStatus)
+  paymentStatus?: PaymentStatus;
+
+  @IsOptional()
+  @IsString()
+  shopId?: string;
+
+  @IsOptional()
+  @Type(() => Date)
+  startDate?: Date;
+
+  @IsOptional()
+  @Type(() => Date)
+  endDate?: Date;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Min(1)
+  page?: number = 1;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Min(1)
+  limit?: number = 20;
+}

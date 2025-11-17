@@ -48,7 +48,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
       removeFromWishList(product.id, user, location, deviceInfo);
     } else {
       // Get sellerId from shop data (required for order processing)
-      const sellerId = shop?.seller?.id || '';
+      // Use authId instead of MongoDB _id for cross-service consistency
+      const sellerId = shop?.seller?.authId || '';
 
       if (!sellerId) {
         console.error('Cannot add to wishlist: sellerId not available from shop data');
@@ -88,7 +89,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
       removeFromCart(product.id, user, location, deviceInfo);
     } else {
       // Get sellerId from shop data (required for order processing)
-      const sellerId = shop?.seller?.id || '';
+      // Use authId instead of MongoDB _id for cross-service consistency
+      const sellerId = shop?.seller?.authId || '';
 
       if (!sellerId) {
         console.error('Cannot add to cart: sellerId not available from shop data');
