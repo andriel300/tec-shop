@@ -1,7 +1,18 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 // Throttle decorators removed - rate limiting handled at API Gateway
-import { LoginDto, SignupDto, VerifyEmailDto, ForgotPasswordDto, ResetPasswordDto, ResetPasswordWithCodeDto, ValidateResetTokenDto, SellerSignupDto, GoogleAuthDto } from '@tec-shop/dto';
+import {
+  LoginDto,
+  SignupDto,
+  VerifyEmailDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  ResetPasswordWithCodeDto,
+  ValidateResetTokenDto,
+  SellerSignupDto,
+  GoogleAuthDto,
+  ChangePasswordDto,
+} from '@tec-shop/dto';
 import { AuthService } from './auth.service';
 
 @Controller()
@@ -38,6 +49,12 @@ export class AuthController {
     return this.authService.login(credential);
   }
 
+  @MessagePattern('admin-auth-login')
+  // Throttle decorator removed - rate limiting handled at API Gateway
+  async adminLogin(@Payload() credential: LoginDto) {
+    return this.authService.login(credential);
+  }
+
   @MessagePattern('seller-auth-login')
   // Throttle decorator removed - rate limiting handled at API Gateway
   async sellerLogin(@Payload() credential: LoginDto) {
@@ -57,8 +74,13 @@ export class AuthController {
 
   @MessagePattern('auth-refresh-token')
   // Rate limiting handled at API Gateway level
-  async refreshToken(@Payload() payload: { refreshToken: string; currentAccessToken?: string }) {
-    return this.authService.refreshToken(payload.refreshToken, payload.currentAccessToken);
+  async refreshToken(
+    @Payload() payload: { refreshToken: string; currentAccessToken?: string }
+  ) {
+    return this.authService.refreshToken(
+      payload.refreshToken,
+      payload.currentAccessToken
+    );
   }
 
   @MessagePattern('auth-revoke-refresh-token')
@@ -73,7 +95,9 @@ export class AuthController {
   }
 
   @MessagePattern('auth-validate-reset-token')
-  async validateResetToken(@Payload() validateResetTokenDto: ValidateResetTokenDto) {
+  async validateResetToken(
+    @Payload() validateResetTokenDto: ValidateResetTokenDto
+  ) {
     return this.authService.validateResetToken(validateResetTokenDto);
   }
 
@@ -85,7 +109,9 @@ export class AuthController {
 
   @MessagePattern('auth-reset-password-with-code')
   // Legacy endpoint for backward compatibility
-  async resetPasswordWithCode(@Payload() resetPasswordDto: ResetPasswordWithCodeDto) {
+  async resetPasswordWithCode(
+    @Payload() resetPasswordDto: ResetPasswordWithCodeDto
+  ) {
     return this.authService.resetPasswordWithCode(resetPasswordDto);
   }
 
@@ -95,7 +121,19 @@ export class AuthController {
   }
 
   @MessagePattern('auth-revoke-all-user-tokens')
-  async revokeAllUserTokens(@Payload() payload: { userId: string; reason?: string }) {
+  async revokeAllUserTokens(
+    @Payload() payload: { userId: string; reason?: string }
+  ) {
     return this.authService.revokeAllUserTokens(payload.userId, payload.reason);
+  }
+
+  @MessagePattern('auth-change-password')
+  async changePassword(
+    @Payload() payload: { userId: string; changePasswordDto: ChangePasswordDto }
+  ) {
+    return this.authService.changePassword(
+      payload.userId,
+      payload.changePasswordDto
+    );
   }
 }
