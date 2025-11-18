@@ -28,10 +28,59 @@ const CartPage = () => {
 
   const [couponCode, setCouponCode] = React.useState('');
   const [loading, setLoading] = React.useState(false);
-  // const [discountedProductId, setDiscountedProductId] = React.useState('');
-  // const [discountAmount, setDiscountAmount] = React.useState(0);
-  // const [discountPercentage, setDiscountPercentage] = React.useState(0);
+  const [discountedProductId, setDiscountedProductId] = React.useState('');
+  const [discountAmount, setDiscountAmount] = React.useState(0);
+  const [discountPercentage, setDiscountPercentage] = React.useState(0);
   const [selectedAddressId, setSelectedAddressId] = React.useState('');
+  const [error, setError] = React.useState('');
+  const [storedCouponCode, setStoredCouponCode] = React.useState('');
+
+  const couponCodeChangeHandler = async () => {
+    setError('');
+
+    if (!couponCode.trim()) {
+      setError('Coupon code is required');
+      return;
+    }
+
+    try {
+      const res = await apiClient.put('/orders/verify-coupon-code', {
+        couponCode: couponCode.trim().toUpperCase(),
+        cart,
+      });
+
+      if (res.data.valid) {
+        setStoredCouponCode(couponCode.trim().toUpperCase());
+        // discountAmount comes in cents, convert to dollars
+        setDiscountAmount(res.data.discountAmount / 100);
+        setDiscountPercentage(
+          res.data.discountType === 'PERCENTAGE'
+            ? res.data.discountValue
+            : 0
+        );
+        setDiscountedProductId(
+          res.data.applicableProductIds?.[0] || ''
+        );
+        setCouponCode('');
+        toast.success(
+          res.data.message || 'Coupon applied successfully!'
+        );
+      } else {
+        setDiscountAmount(0);
+        setDiscountPercentage(0);
+        setDiscountedProductId('');
+        setError(res.data.message || 'Coupon not valid for any items in cart.');
+      }
+    } catch (error: unknown) {
+      setDiscountAmount(0);
+      setDiscountPercentage(0);
+      setDiscountedProductId('');
+      const err = error as { response?: { data?: { message?: string } } };
+      setError(
+        err?.response?.data?.message || 'Failed to verify coupon code'
+      );
+    }
+  };
 
   const createPaymentSession = async () => {
     // Validate cart is not empty
@@ -65,8 +114,9 @@ const CartPage = () => {
       const res = await apiClient.post('/orders/checkout', {
         items,
         shippingAddressId: selectedAddressId,
-        couponCode: couponCode || undefined,
         paymentMethod: 'card',
+        couponCode: storedCouponCode || undefined,
+        discountAmount: discountAmount ? Math.round(discountAmount * 100) : undefined, // Convert to cents
       });
 
       // Redirect to Stripe Checkout page
@@ -302,24 +352,46 @@ const CartPage = () => {
                   <Input
                     type="text"
                     value={couponCode}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setCouponCode(e.target.value)
-                    }
-                    placeholder="Enter Coupon Code"
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        couponCodeChangeHandler();
+                      }
+                    }}
+                    placeholder="Enter Coupon Code (e.g., SUMMER2025)"
                     className="flex-1 rounded-l-md"
                   />
                   <button
-                    className="bg-brand-primary top-0 right-0 text-white px-4 py-2 rounded-r-md hover:bg-brand-primary-900 transition"
-                    onClick={() => {
-                      console.log('Apply coupon:', couponCode);
-                    }}
+                    className="bg-brand-primary top-0 right-0 text-white px-4 py-2 rounded-r-md hover:bg-brand-primary-900 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={couponCodeChangeHandler}
+                    disabled={!couponCode.trim()}
                   >
                     Apply
                   </button>
-                  {/* {error && ( */}
-                  {/*   <p className="text-sm pt-2 text-red-500">{error}</p> */}
-                  {/* )} */}
                 </div>
+                {error && (
+                  <p className="text-sm pt-2 text-red-500">{error}</p>
+                )}
+                {storedCouponCode && discountAmount > 0 && (
+                  <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md text-sm text-green-800 flex items-center justify-between">
+                    <span>
+                      Coupon &quot;{storedCouponCode}&quot; applied! You save $
+                      {discountAmount.toFixed(2)} ({discountPercentage}% off)
+                    </span>
+                    <button
+                      onClick={() => {
+                        setStoredCouponCode('');
+                        setDiscountAmount(0);
+                        setDiscountPercentage(0);
+                        setDiscountedProductId('');
+                      }}
+                      className="text-red-600 hover:text-red-800 text-xs underline"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+              </div>
                 <hr className="my-4 text-slate-200" />
                 <div className="mb-4">
                   <div className="flex justify-between items-center mb-[7px]">
@@ -424,9 +496,20 @@ const CartPage = () => {
                   </select>
                 </div>
                 <hr className="my-4 text-slate-200" />
+
+                {/* Discount Display */}
+                {storedCouponCode && discountAmount > 0 && (
+                  <div className="flex justify-between items-center text-green-600 text-[16px] font-medium pb-3">
+                    <span>Discount ({storedCouponCode})</span>
+                    <span>-${discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between items-center text-[#010f1c] text-[20px] font-[550] pb-3">
                   <span className="font-Jost">Total</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>
+                    ${(subtotal - (discountAmount || 0)).toFixed(2)}
+                  </span>
                 </div>
               </div>
 
