@@ -62,27 +62,37 @@ export const loginUser = async (data: LoginData): Promise<AuthResponse> => {
   return response.data;
 };
 
-export const verifyEmail = async (data: VerifyEmailData): Promise<ApiResponse> => {
+export const verifyEmail = async (
+  data: VerifyEmailData
+): Promise<ApiResponse> => {
   const response = await apiClient.post('/auth/verify-email', data);
   return response.data;
 };
 
-export const requestPasswordReset = async (data: ForgotPasswordData): Promise<ApiResponse> => {
+export const requestPasswordReset = async (
+  data: ForgotPasswordData
+): Promise<ApiResponse> => {
   const response = await apiClient.post('/auth/forgot-password', data);
   return response.data;
 };
 
-export const validateResetToken = async (data: ValidateResetTokenData): Promise<ValidateResetTokenResponse> => {
+export const validateResetToken = async (
+  data: ValidateResetTokenData
+): Promise<ValidateResetTokenResponse> => {
   const response = await apiClient.post('/auth/validate-reset-token', data);
   return response.data;
 };
 
-export const resetPassword = async (data: ResetPasswordData): Promise<ApiResponse> => {
+export const resetPassword = async (
+  data: ResetPasswordData
+): Promise<ApiResponse> => {
   const response = await apiClient.post('/auth/reset-password', data);
   return response.data;
 };
 
-export const resetPasswordWithCode = async (data: ResetPasswordWithCodeData): Promise<ApiResponse> => {
+export const resetPasswordWithCode = async (
+  data: ResetPasswordWithCodeData
+): Promise<ApiResponse> => {
   const response = await apiClient.post('/auth/reset-password-with-code', data);
   return response.data;
 };
