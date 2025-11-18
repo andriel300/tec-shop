@@ -1,0 +1,567 @@
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+  Logger,
+} from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
+import {
+  AuthPrismaService,
+  UserPrismaService,
+  SellerPrismaService,
+  OrderPrismaService,
+} from '../../prisma/prisma.service';
+import type {
+  ListUsersDto,
+  BanUserDto,
+  UnbanUserDto,
+  CreateAdminDto,
+  DeleteAdminDto,
+  ListSellersDto,
+  UpdateSellerVerificationDto,
+  ListOrdersDto,
+} from '@tec-shop/dto';
+
+@Injectable()
+export class AdminService {
+  private readonly logger = new Logger(AdminService.name);
+
+  constructor(
+    private readonly authPrisma: AuthPrismaService,
+    private readonly userPrisma: UserPrismaService,
+    private readonly sellerPrisma: SellerPrismaService,
+    private readonly orderPrisma: OrderPrismaService
+  ) {}
+
+  // ============ User Management Methods ============
+
+  /**
+   * List all users with pagination and filters
+   */
+  async listUsers(dto: ListUsersDto) {
+    this.logger.log(`Listing users with filters: ${JSON.stringify(dto)}`);
+
+    const { page = 1, limit = 10, search, userType, status } = dto;
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where: Record<string, unknown> = {};
+
+    if (userType) {
+      where.userType = userType;
+    }
+
+    if (status) {
+      where.isBanned = status === 'BANNED';
+    }
+
+    if (search) {
+      where.OR = [
+        { email: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    // Execute queries
+    const [users, total] = await Promise.all([
+      this.authPrisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          userType: true,
+          isEmailVerified: true,
+          isBanned: true,
+          banReason: true,
+          bannedUntil: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.authPrisma.user.count({ where }),
+    ]);
+
+    return {
+      data: users,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Get detailed user information
+   */
+  async getUserDetails(userId: string) {
+    this.logger.log(`Fetching details for user: ${userId}`);
+
+    const user = await this.authPrisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        userType: true,
+        isEmailVerified: true,
+        isBanned: true,
+        banReason: true,
+        bannedUntil: true,
+        googleId: true,
+        picture: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // If user is a customer, get user profile
+    let userProfile = null;
+    if (user.userType === 'CUSTOMER') {
+      userProfile = await this.userPrisma.userProfile.findUnique({
+        where: { authId: userId },
+      });
+    }
+
+    // If user is a seller, get seller profile
+    let sellerProfile = null;
+    if (user.userType === 'SELLER') {
+      sellerProfile = await this.sellerPrisma.seller.findUnique({
+        where: { authId: userId },
+        include: { shop: true },
+      });
+    }
+
+    return {
+      ...user,
+      profile: userProfile || sellerProfile,
+    };
+  }
+
+  /**
+   * Ban a user
+   */
+  async banUser(userId: string, dto: BanUserDto) {
+    this.logger.log(`Banning user: ${userId}, reason: ${dto.reason}`);
+
+    const user = await this.authPrisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.userType === 'ADMIN') {
+      throw new BadRequestException('Cannot ban admin users');
+    }
+
+    if (user.isBanned) {
+      throw new BadRequestException('User is already banned');
+    }
+
+    // Calculate ban expiry if duration is provided
+    let bannedUntil = null;
+    if (dto.duration && dto.duration > 0) {
+      bannedUntil = new Date();
+      bannedUntil.setDate(bannedUntil.getDate() + dto.duration);
+    }
+
+    const updatedUser = await this.authPrisma.user.update({
+      where: { id: userId },
+      data: {
+        isBanned: true,
+        banReason: dto.reason,
+        bannedUntil,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        isBanned: true,
+        banReason: true,
+        bannedUntil: true,
+      },
+    });
+
+    this.logger.log(`User ${userId} banned successfully`);
+    return updatedUser;
+  }
+
+  /**
+   * Unban a user
+   */
+  async unbanUser(userId: string) {
+    this.logger.log(`Unbanning user: ${userId}`);
+
+    const user = await this.authPrisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!user.isBanned) {
+      throw new BadRequestException('User is not banned');
+    }
+
+    const updatedUser = await this.authPrisma.user.update({
+      where: { id: userId },
+      data: {
+        isBanned: false,
+        banReason: null,
+        bannedUntil: null,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        isBanned: true,
+      },
+    });
+
+    this.logger.log(`User ${userId} unbanned successfully`);
+    return updatedUser;
+  }
+
+  // ============ Admin Team Management Methods ============
+
+  /**
+   * List all admin users
+   */
+  async listAdmins() {
+    this.logger.log('Listing all admin users');
+
+    const admins = await this.authPrisma.user.findMany({
+      where: { userType: 'ADMIN' },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        isEmailVerified: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return admins;
+  }
+
+  /**
+   * Create a new admin user
+   */
+  async createAdmin(dto: CreateAdminDto) {
+    this.logger.log(`Creating new admin: ${dto.email}`);
+
+    // Check if user already exists
+    const existingUser = await this.authPrisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('User with this email already exists');
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    // Create admin user
+    const admin = await this.authPrisma.user.create({
+      data: {
+        email: dto.email,
+        name: dto.name,
+        password: hashedPassword,
+        userType: 'ADMIN',
+        isEmailVerified: true, // Admins are auto-verified
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        userType: true,
+        createdAt: true,
+      },
+    });
+
+    this.logger.log(`Admin created successfully: ${admin.id}`);
+    return admin;
+  }
+
+  /**
+   * Delete an admin user
+   */
+  async deleteAdmin(adminId: string) {
+    this.logger.log(`Deleting admin: ${adminId}`);
+
+    const admin = await this.authPrisma.user.findUnique({
+      where: { id: adminId },
+    });
+
+    if (!admin) {
+      throw new NotFoundException('Admin not found');
+    }
+
+    if (admin.userType !== 'ADMIN') {
+      throw new BadRequestException('User is not an admin');
+    }
+
+    // Check if this is the last admin
+    const adminCount = await this.authPrisma.user.count({
+      where: { userType: 'ADMIN' },
+    });
+
+    if (adminCount <= 1) {
+      throw new BadRequestException(
+        'Cannot delete the last admin user. At least one admin must exist.'
+      );
+    }
+
+    await this.authPrisma.user.delete({
+      where: { id: adminId },
+    });
+
+    this.logger.log(`Admin ${adminId} deleted successfully`);
+    return { message: 'Admin deleted successfully' };
+  }
+
+  // ============ Seller Management Methods ============
+
+  /**
+   * List all sellers with pagination and filters
+   */
+  async listSellers(dto: ListSellersDto) {
+    this.logger.log(`Listing sellers with filters: ${JSON.stringify(dto)}`);
+
+    const { page = 1, limit = 10, search, isVerified } = dto;
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where: Record<string, unknown> = {};
+
+    if (isVerified !== undefined) {
+      where.isVerified = isVerified;
+    }
+
+    if (search) {
+      where.OR = [
+        { email: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    // Execute queries
+    const [sellers, total] = await Promise.all([
+      this.sellerPrisma.seller.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          shop: {
+            select: {
+              id: true,
+              businessName: true,
+              category: true,
+              isActive: true,
+              rating: true,
+              totalOrders: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.sellerPrisma.seller.count({ where }),
+    ]);
+
+    // Enrich with auth data
+    const sellersWithAuth = await Promise.all(
+      sellers.map(async (seller) => {
+        const authUser = await this.authPrisma.user.findUnique({
+          where: { id: seller.authId },
+          select: {
+            email: true,
+            isEmailVerified: true,
+            createdAt: true,
+          },
+        });
+
+        return {
+          ...seller,
+          auth: authUser,
+        };
+      })
+    );
+
+    return {
+      data: sellersWithAuth,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Update seller verification status
+   */
+  async updateSellerVerification(
+    sellerId: string,
+    dto: UpdateSellerVerificationDto
+  ) {
+    this.logger.log(
+      `Updating seller ${sellerId} verification to: ${dto.isVerified}`
+    );
+
+    const seller = await this.sellerPrisma.seller.findUnique({
+      where: { id: sellerId },
+    });
+
+    if (!seller) {
+      throw new NotFoundException('Seller not found');
+    }
+
+    const updatedSeller = await this.sellerPrisma.seller.update({
+      where: { id: sellerId },
+      data: { isVerified: dto.isVerified },
+      include: { shop: true },
+    });
+
+    this.logger.log(`Seller ${sellerId} verification updated successfully`);
+    return updatedSeller;
+  }
+
+  // ============ Order Management Methods ============
+
+  /**
+   * List all orders with pagination and filters
+   */
+  async listAllOrders(dto: ListOrdersDto) {
+    this.logger.log(`Listing all orders with filters: ${JSON.stringify(dto)}`);
+
+    const { page = 1, limit = 10, status, paymentStatus, startDate, endDate } =
+      dto;
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where: Record<string, unknown> = {};
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (paymentStatus) {
+      where.paymentStatus = paymentStatus;
+    }
+
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.createdAt.lte = new Date(endDate);
+      }
+    }
+
+    // Execute queries
+    const [orders, total] = await Promise.all([
+      this.orderPrisma.order.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          items: true,
+          payouts: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.orderPrisma.order.count({ where }),
+    ]);
+
+    return {
+      data: orders,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Get platform-wide statistics for admin dashboard
+   */
+  async getStatistics() {
+    this.logger.log('Fetching platform statistics');
+
+    // User statistics
+    const [totalUsers, totalCustomers, totalSellers, totalAdmins] =
+      await Promise.all([
+        this.authPrisma.user.count(),
+        this.authPrisma.user.count({ where: { userType: 'CUSTOMER' } }),
+        this.authPrisma.user.count({ where: { userType: 'SELLER' } }),
+        this.authPrisma.user.count({ where: { userType: 'ADMIN' } }),
+      ]);
+
+    // Seller statistics
+    const [verifiedSellers, activeShops] = await Promise.all([
+      this.sellerPrisma.seller.count({ where: { isVerified: true } }),
+      this.sellerPrisma.shop.count({ where: { isActive: true } }),
+    ]);
+
+    // Order statistics
+    const [totalOrders, pendingOrders, completedOrders] = await Promise.all([
+      this.orderPrisma.order.count(),
+      this.orderPrisma.order.count({ where: { status: 'PENDING' } }),
+      this.orderPrisma.order.count({ where: { status: 'DELIVERED' } }),
+    ]);
+
+    // Revenue statistics
+    const revenueData = await this.orderPrisma.order.aggregate({
+      where: { paymentStatus: 'COMPLETED' },
+      _sum: {
+        finalAmount: true,
+        platformFee: true,
+      },
+    });
+
+    const totalRevenue = revenueData._sum.finalAmount || 0;
+    const totalPlatformFee = revenueData._sum.platformFee || 0;
+
+    return {
+      users: {
+        total: totalUsers,
+        customers: totalCustomers,
+        sellers: totalSellers,
+        admins: totalAdmins,
+      },
+      sellers: {
+        verified: verifiedSellers,
+        activeShops,
+      },
+      orders: {
+        total: totalOrders,
+        pending: pendingOrders,
+        completed: completedOrders,
+      },
+      revenue: {
+        total: totalRevenue,
+        platformFee: totalPlatformFee,
+      },
+    };
+  }
+}

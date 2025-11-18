@@ -92,6 +92,15 @@
     },
     {
       "path": "./libs/prisma-clients/order-client"
+    },
+    {
+      "path": "./apps/admin-service"
+    },
+    {
+      "path": "./apps/admin-ui"
+    },
+    {
+      "path": "./libs/shared/components/input"
     }
   ]
 }
