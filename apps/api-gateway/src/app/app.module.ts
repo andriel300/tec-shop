@@ -11,6 +11,7 @@ import { BrandModule } from './brand/brand.module';
 import { OrderModule } from './order/order.module';
 import { PublicModule } from './public/public.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { AdminModule } from './admin/admin.module';
 import { SentryTestModule } from './sentry-test/sentry-test.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
@@ -82,6 +83,7 @@ import { ImageKitModule } from '@tec-shop/shared/imagekit';
     OrderModule,
     PublicModule,
     AnalyticsModule,
+    AdminModule,
     SentryTestModule,
   ],
   controllers: [AppController],

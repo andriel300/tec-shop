@@ -20,6 +20,7 @@ import type {
   ValidateResetTokenDto,
   SellerSignupDto,
   GoogleAuthDto,
+  ChangePasswordDto,
 } from '@tec-shop/dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -27,7 +28,7 @@ import type { Response, Request, CookieOptions } from 'express';
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
 import { GoogleAuthGuard } from '../../guards/auth/google-auth.guard';
 
-type UserType = 'customer' | 'seller';
+type UserType = 'customer' | 'seller' | 'admin';
 type TokenType = 'access' | 'refresh';
 
 interface CookieConfig {
@@ -180,18 +181,24 @@ export class AuthController {
     const isProduction = process.env.NODE_ENV === 'production';
     const prefix = isProduction ? '__Host-' : '';
 
-    // Try to extract refresh token from customer or seller cookies
+    // Try to extract refresh token from customer, seller, or admin cookies
     const customerRefreshToken =
       request.cookies?.[`${prefix}customer_refresh_token`];
     const sellerRefreshToken =
       request.cookies?.[`${prefix}seller_refresh_token`];
+    const adminRefreshToken =
+      request.cookies?.[`${prefix}admin_refresh_token`];
 
     // Also try old cookie name for backward compatibility during migration
     const legacyRefreshToken = request.cookies?.refresh_token;
 
     const refreshToken =
-      customerRefreshToken || sellerRefreshToken || legacyRefreshToken;
-    const userType: UserType = customerRefreshToken ? 'customer' : 'seller';
+      customerRefreshToken || sellerRefreshToken || adminRefreshToken || legacyRefreshToken;
+    const userType: UserType = customerRefreshToken
+      ? 'customer'
+      : sellerRefreshToken
+      ? 'seller'
+      : 'admin';
 
     if (!refreshToken) {
       throw new UnauthorizedException('No refresh token found. Please log in again.');
@@ -337,6 +344,29 @@ export class AuthController {
     return { message: 'Logout successful' };
   }
 
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ medium: { limit: 5, ttl: 900000 } }) // 5 attempts per 15 minutes
+  @ApiOperation({ summary: 'Change user password' })
+  @ApiResponse({
+    status: 201,
+    description: 'Password changed successfully.',
+  })
+  @ApiResponse({ status: 400, description: 'Invalid input data.' })
+  @ApiResponse({ status: 401, description: 'Current password is incorrect or user not authenticated.' })
+  async changePassword(
+    @Req() request: Request & { user: { userId: string } },
+    @Body() changePasswordDto: ChangePasswordDto
+  ) {
+    const result = await firstValueFrom(
+      this.authService.send('auth-change-password', {
+        userId: request.user.userId,
+        changePasswordDto,
+      })
+    );
+    return result;
+  }
+
   @Post('forgot-password')
   @Throttle({ medium: { limit: 3, ttl: 900000 } }) // 3 reset requests per 15 minutes
   @ApiOperation({ summary: 'Request password reset' })
@@ -461,6 +491,54 @@ export class AuthController {
     return {
       message: 'Seller login successful',
       userType: 'seller',
+    };
+  }
+
+  @Post('admin/login')
+  @Throttle({ medium: { limit: 5, ttl: 900000 } }) // 5 login attempts per 15 minutes
+  @ApiOperation({ summary: 'Log in an admin user' })
+  @ApiResponse({
+    status: 201,
+    description:
+      'Admin successfully logged in. Tokens set as httpOnly cookies.',
+  })
+  @ApiResponse({ status: 401, description: 'Invalid credentials.' })
+  async adminLogin(
+    @Body() body: LoginDto,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const result = await firstValueFrom(
+      this.authService.send('admin-auth-login', body)
+    );
+
+    // Get cookie configurations with proper isolation and security
+    const accessCookie = this.getCookieConfig(
+      'admin',
+      'access',
+      result.rememberMe
+    );
+    const refreshCookie = this.getCookieConfig(
+      'admin',
+      'refresh',
+      result.rememberMe
+    );
+
+    // Set cookies for admin authentication
+    response.cookie(
+      accessCookie.name,
+      result.access_token,
+      accessCookie.options
+    );
+    response.cookie(
+      refreshCookie.name,
+      result.refresh_token,
+      refreshCookie.options
+    );
+
+    // Return success without exposing tokens in response body
+    return {
+      message: 'Admin login successful',
+      userType: 'admin',
     };
   }
 
