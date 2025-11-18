@@ -115,7 +115,7 @@ fi
 
 create_ca
 
-DEFAULT_SERVICES=("api-gateway" "auth-service" "user-service" "seller-service" "product-service" "order-service")
+DEFAULT_SERVICES=("api-gateway" "auth-service" "user-service" "seller-service" "product-service" "order-service" "admin-service")
 
 while [[ $# -gt 0 ]]; do
   case $1 in

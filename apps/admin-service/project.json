@@ -1,0 +1,15 @@
+{
+  "name": "@tec-shop/admin-service",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/admin-service/src",
+  "projectType": "application",
+  "tags": ["type:app", "scope:admin"],
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit"
+      }
+    }
+  }
+}

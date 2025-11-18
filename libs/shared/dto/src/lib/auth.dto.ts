@@ -277,3 +277,35 @@ export class GoogleAuthDto {
   @IsOptional()
   userType?: 'CUSTOMER' | 'SELLER';
 }
+
+export class ChangePasswordDto {
+  @ApiProperty({
+    example: 'OldPassword123!',
+    description: 'Current password for verification'
+  })
+  @IsString()
+  @IsNotEmpty()
+  currentPassword!: string;
+
+  @ApiProperty({
+    example: 'NewPassword123!',
+    description:
+      'New password (min 8 chars, must contain uppercase, lowercase, number and special character)',
+  })
+  @IsString()
+  @MinLength(8, { message: 'New password must be at least 8 characters long' })
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/, {
+    message:
+      'New password must contain at least one uppercase letter, one lowercase letter, one number and one special character (@$!%*?&)',
+  })
+  newPassword!: string;
+
+  @ApiProperty({
+    example: 'NewPassword123!',
+    description: 'Password confirmation (must match new password)',
+  })
+  @IsString()
+  @MinLength(8)
+  @IsPasswordMatch('newPassword')
+  confirmPassword!: string;
+}
