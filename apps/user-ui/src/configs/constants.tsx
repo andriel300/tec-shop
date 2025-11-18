@@ -6,6 +6,9 @@ export const navItems: NavItemsTypes[] = [
   { title: 'Products', href: '/products' },
   { title: 'Shops', href: '/shops' },
   { title: 'Offers', href: '/offers' },
-  { title: 'Become A Seller', href: '/become-a-seller' },
+  {
+    title: 'Become A Seller',
+    href: `${process.env.NEXT_PUBLIC_SELLER_SERVER_URI}/signup`,
+  },
   { title: 'Terms of Service', href: '/terms-of-service' },
 ];
