@@ -4,6 +4,12 @@
   "sourceRoot": "apps/admin-service/src",
   "projectType": "application",
   "tags": ["type:app", "scope:admin"],
+  "implicitDependencies": [
+    "@tec-shop/auth-client",
+    "@tec-shop/user-client",
+    "@tec-shop/seller-client",
+    "@tec-shop/order-client"
+  ],
   "targets": {
     "typecheck": {
       "executor": "nx:run-commands",

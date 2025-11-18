@@ -20,9 +20,10 @@ model User {
   password            String?
   isEmailVerified     Boolean              @default(false)
   userType            UserType             @default(CUSTOMER)
-  googleId            String?              @unique
+  googleId            String?
   provider            String               @default("local")
   refreshToken        String?
+  isBanned            Boolean              @default(false)
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   passwordResetTokens PasswordResetToken[]

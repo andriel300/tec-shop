@@ -8,9 +8,10 @@ Table User {
   password String
   isEmailVerified Boolean [not null, default: false]
   userType UserType [not null, default: 'CUSTOMER']
-  googleId String [unique]
+  googleId String
   provider String [not null, default: 'local']
   refreshToken String
+  isBanned Boolean [not null, default: false]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
   passwordResetTokens PasswordResetToken [not null]
