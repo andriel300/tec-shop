@@ -62,4 +62,12 @@ export class DiscountController {
   remove(@Payload() payload: { id: string; sellerId: string }) {
     return this.discountService.remove(payload.id, payload.sellerId);
   }
+
+  @MessagePattern('seller-verify-coupon-code')
+  async verifyCouponCode(
+    @Payload() payload: { code: string; cartItems: { productId: string; sellerId: string; subtotal: number }[] }
+  ) {
+    this.logger.log(`Verifying coupon code: ${payload.code}`);
+    return this.discountService.verifyCouponForCart(payload.code, payload.cartItems);
+  }
 }
