@@ -38,13 +38,13 @@ export class SellerServiceClient {
 
   async verifyCouponCode(
     couponCode: string,
-    sellerId: string
+    cartItems: { productId: string; sellerId: string; subtotal: number }[]
   ): Promise<Record<string, unknown> | null> {
     try {
       return await firstValueFrom(
-        this.client.send<Record<string, unknown>>('verify-coupon-code', {
-          couponCode,
-          sellerId,
+        this.client.send<Record<string, unknown>>('seller-verify-coupon-code', {
+          code: couponCode,
+          cartItems,
         })
       );
     } catch (error) {
