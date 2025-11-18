@@ -165,9 +165,42 @@ export class OrderService {
     couponCode: string,
     items: CartItemDto[]
   ): Promise<{ isValid: boolean; discountAmount: number }> {
-    // For now, return no discount
-    // In a full implementation, this would call seller-service to validate coupons
-    return { isValid: false, discountAmount: 0 };
+    try {
+      // Transform cart items to format expected by seller-service
+      const cartItems = items.map((item) => ({
+        productId: item.productId,
+        sellerId: item.sellerId,
+        subtotal: item.unitPrice * item.quantity,
+      }));
+
+      // Call seller-service to verify coupon
+      const result = (await this.sellerClient.verifyCouponCode(
+        couponCode,
+        cartItems
+      )) as {
+        valid: boolean;
+        discountAmount?: number;
+        message?: string;
+      };
+
+      if (result && result.valid) {
+        this.logger.log(
+          `Coupon ${couponCode} verified: Discount amount = ${result.discountAmount} cents`
+        );
+        return {
+          isValid: true,
+          discountAmount: result.discountAmount || 0, // Amount in cents
+        };
+      }
+
+      this.logger.warn(
+        `Coupon ${couponCode} verification failed: ${result?.message || 'Unknown error'}`
+      );
+      return { isValid: false, discountAmount: 0 };
+    } catch (error) {
+      this.logger.error(`Error verifying coupon ${couponCode}:`, error);
+      return { isValid: false, discountAmount: 0 };
+    }
   }
 
   async handleSuccessfulPayment(
