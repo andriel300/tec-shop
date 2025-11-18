@@ -269,4 +269,114 @@ export class DiscountService {
       },
     });
   }
+
+  /**
+   * Verify coupon code for cart items
+   * Returns discount details if valid, or error if invalid
+   */
+  async verifyCouponForCart(
+    code: string,
+    cartItems: { productId: string; sellerId: string; subtotal: number }[]
+  ) {
+    // Find discount code (case-insensitive)
+    const discount = await this.prisma.discountCode.findUnique({
+      where: { code: code.toUpperCase() },
+      include: {
+        seller: true,
+      },
+    });
+
+    if (!discount) {
+      return {
+        valid: false,
+        message: 'Invalid coupon code',
+      };
+    }
+
+    if (!discount.isActive) {
+      return {
+        valid: false,
+        message: 'This coupon code is no longer active',
+      };
+    }
+
+    // Check validity period
+    const now = new Date();
+    if (discount.startDate > now) {
+      return {
+        valid: false,
+        message: 'This coupon code is not yet valid',
+      };
+    }
+    if (discount.endDate && discount.endDate < now) {
+      return {
+        valid: false,
+        message: 'This coupon code has expired',
+      };
+    }
+
+    // Check usage limit
+    if (discount.usageLimit && discount.usageCount >= discount.usageLimit) {
+      return {
+        valid: false,
+        message: 'This coupon code has reached its usage limit',
+      };
+    }
+
+    // Find cart items from this seller (using seller.id which is MongoDB _id)
+    const sellerItems = cartItems.filter(
+      (item) => item.sellerId === discount.seller.authId
+    );
+
+    if (sellerItems.length === 0) {
+      return {
+        valid: false,
+        message: `This coupon code is only valid for products from ${discount.seller.name}`,
+      };
+    }
+
+    // Calculate total for seller's items
+    const sellerSubtotal = sellerItems.reduce(
+      (sum, item) => sum + item.subtotal,
+      0
+    );
+
+    // Check minimum purchase
+    if (
+      discount.minimumPurchase &&
+      sellerSubtotal < discount.minimumPurchase * 100
+    ) {
+      return {
+        valid: false,
+        message: `Minimum purchase of $${discount.minimumPurchase.toFixed(2)} required for this coupon`,
+      };
+    }
+
+    // Calculate discount amount
+    let discountAmount = 0;
+    if (discount.discountType === 'PERCENTAGE') {
+      discountAmount = Math.round(
+        (sellerSubtotal * discount.discountValue) / 100
+      );
+    } else if (discount.discountType === 'FIXED_AMOUNT') {
+      discountAmount = Math.round(discount.discountValue * 100); // Convert to cents
+    }
+
+    // Discount cannot exceed the subtotal
+    if (discountAmount > sellerSubtotal) {
+      discountAmount = sellerSubtotal;
+    }
+
+    return {
+      valid: true,
+      discountId: discount.id,
+      discountCode: discount.code,
+      discountType: discount.discountType,
+      discountValue: discount.discountValue,
+      discountAmount, // Amount in cents
+      applicableProductIds: sellerItems.map((item) => item.productId),
+      sellerName: discount.seller.name,
+      message: `${discount.publicName} applied: $${(discountAmount / 100).toFixed(2)} off`,
+    };
+  }
 }
