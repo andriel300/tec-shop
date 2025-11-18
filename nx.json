@@ -125,6 +125,17 @@
         "buildDepsTargetName": "build-deps",
         "watchDepsTargetName": "watch-deps"
       }
+    },
+    {
+      "plugin": "@nx/react/router-plugin",
+      "options": {
+        "buildTargetName": "build",
+        "devTargetName": "dev",
+        "startTargetName": "start",
+        "watchDepsTargetName": "watch-deps",
+        "buildDepsTargetName": "build-deps",
+        "typecheckTargetName": "typecheck"
+      }
     }
   ],
   "targetDefaults": {
@@ -145,7 +156,8 @@
         "{workspaceRoot}/node_modules/.prisma/user-client",
         "{workspaceRoot}/node_modules/.prisma/seller-client",
         "{workspaceRoot}/node_modules/.prisma/product-client",
-        "{workspaceRoot}/node_modules/.prisma/analytics-client"
+        "{workspaceRoot}/node_modules/.prisma/analytics-client",
+        "{workspaceRoot}/node_modules/.prisma/order-client"
       ]
     },
     "migrate": {
@@ -165,6 +177,10 @@
       "auth-service",
       "user-service",
       "product-service",
+      "seller-service",
+      "order-service",
+      "analytics-service",
+      "admin-service",
       "@tec-shop/shared/dto"
     ],
     "changelog": {
@@ -188,6 +204,11 @@
       "application": {
         "style": "tailwind",
         "linter": "eslint"
+      }
+    },
+    "@nx/react": {
+      "library": {
+        "unitTestRunner": "none"
       }
     }
   }
