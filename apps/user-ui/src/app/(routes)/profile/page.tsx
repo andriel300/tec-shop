@@ -6,6 +6,7 @@ import QuickActionCard from 'apps/user-ui/src/components/cards/quick-action.card
 import StatCard from 'apps/user-ui/src/components/cards/stat.card';
 import ShippingAddressSection from 'apps/user-ui/src/components/shippingAddress';
 import OrdersSection from 'apps/user-ui/src/components/orders';
+import ChangePassword from 'apps/user-ui/src/components/changePassword';
 import { useAuth } from 'apps/user-ui/src/hooks/use-auth';
 import { useOrders } from 'apps/user-ui/src/hooks/use-orders';
 import apiClient from 'apps/user-ui/src/lib/api/client';
@@ -40,7 +41,8 @@ const Page = () => {
 
   const { userProfile, user, isLoading } = useAuth();
   const { data: orders = [] } = useOrders();
-  const queryTab = searchParams.get('active') || searchParams.get('tab') || 'Profile';
+  const queryTab =
+    searchParams.get('active') || searchParams.get('tab') || 'Profile';
   const [activeTab, setActiveTab] = useState(queryTab);
 
   useEffect(() => {
@@ -83,7 +85,11 @@ const Page = () => {
           <StatCard title="Total Orders" count={orders.length} Icon={Clock} />
           <StatCard
             title="Processing Orders"
-            count={orders.filter((o) => o.status === 'PAID' || o.status === 'SHIPPED').length}
+            count={
+              orders.filter(
+                (o) => o.status === 'PAID' || o.status === 'SHIPPED'
+              ).length
+            }
             Icon={Truck}
           />
           <StatCard
@@ -171,23 +177,31 @@ const Page = () => {
                   </button>
                 </div>
                 <p>
-                  <span className="font-semibold">Name: </span> {user.name || 'Not set'}
+                  <span className="font-semibold">Name: </span>{' '}
+                  {user.name || 'Not set'}
                 </p>
                 <p>
-                  <span className="font-semibold">Email: </span> {user.email || 'Not set'}
+                  <span className="font-semibold">Email: </span>{' '}
+                  {user.email || 'Not set'}
                 </p>
 
                 <p>
                   <span className="font-semibold">Joined:</span>{' '}
-                  {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Not available'}
+                  {user.createdAt
+                    ? new Date(user.createdAt).toLocaleDateString()
+                    : 'Not available'}
                 </p>
               </div>
             ) : activeTab === 'Shipping Address' ? (
               <ShippingAddressSection />
             ) : activeTab === 'My Orders' ? (
               <OrdersSection />
+            ) : activeTab === 'Change Password' ? (
+              <ChangePassword />
             ) : (
-              <p className="text-gray-500 text-sm">Content for {activeTab} coming soon...</p>
+              <p className="text-gray-500 text-sm">
+                Content for {activeTab} coming soon...
+              </p>
             )}
           </div>
 
