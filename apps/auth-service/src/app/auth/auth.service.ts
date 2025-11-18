@@ -22,6 +22,7 @@ import {
   ValidateResetTokenDto,
   SellerSignupDto,
   GoogleAuthDto,
+  ChangePasswordDto,
 } from '@tec-shop/dto';
 import { EmailService } from '../email/email.service';
 import { RedisService } from '../redis/redis.service';
@@ -1019,6 +1020,66 @@ export class AuthService implements OnModuleInit {
       access_token,
       refresh_token,
       rememberMe, // Return the flag for cookie configuration
+    };
+  }
+
+  async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
+    this.logger.log(`Change password attempt for user: ${userId}`);
+    const { currentPassword, newPassword } = changePasswordDto;
+
+    // Find the user
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      this.logger.warn(`Change password failed - user not found: ${userId}`);
+      throw new UnauthorizedException('User not found');
+    }
+
+    // Users authenticated via Google don't have a password
+    if (!user.password) {
+      this.logger.warn(`Change password failed - user authenticated via Google: ${userId}`);
+      throw new UnauthorizedException(
+        'Cannot change password for accounts authenticated via Google. Please use Google to manage your account security.'
+      );
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isPasswordValid) {
+      this.logger.warn(`Change password failed - invalid current password for user: ${userId}`);
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    // Check if new password is same as current password
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    if (isSamePassword) {
+      this.logger.warn(`Change password failed - new password same as current for user: ${userId}`);
+      throw new UnauthorizedException(
+        'New password must be different from current password'
+      );
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update the password
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    // Invalidate all existing refresh tokens for security
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshToken: null },
+    });
+
+    this.logger.log(`Password changed successfully for user: ${userId}`);
+
+    return {
+      message: 'Password changed successfully. Please log in again with your new password.',
     };
   }
 }
