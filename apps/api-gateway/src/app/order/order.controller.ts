@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Body,
   Param,
   Inject,
@@ -28,8 +29,50 @@ import {
 @Controller('orders')
 export class OrderController {
   constructor(
-    @Inject('ORDER_SERVICE') private readonly orderClient: ClientProxy
+    @Inject('ORDER_SERVICE') private readonly orderClient: ClientProxy,
+    @Inject('SELLER_SERVICE') private readonly sellerClient: ClientProxy
   ) {}
+
+  @Put('verify-coupon-code')
+  @ApiOperation({ summary: 'Verify coupon/discount code for cart items' })
+  @ApiResponse({
+    status: 200,
+    description: 'Coupon code verified. Returns discount details if valid.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid or expired coupon code.',
+  })
+  async verifyCouponCode(
+    @Body()
+    body: {
+      couponCode: string;
+      cart: {
+        id: string;
+        sellerId: string;
+        price: number;
+        quantity: number;
+      }[];
+    }
+  ) {
+    // Transform cart items to the format expected by seller-service
+    const cartItems = body.cart.map((item) => ({
+      productId: item.id,
+      sellerId: item.sellerId,
+      subtotal: Math.round(item.price * item.quantity * 100), // Convert to cents
+    }));
+
+    const payload = {
+      code: body.couponCode,
+      cartItems,
+    };
+
+    const result$ = this.sellerClient.send(
+      'seller-verify-coupon-code',
+      payload
+    );
+    return firstValueFrom(result$);
+  }
 
   @UseGuards(JwtAuthGuard)
   @Post('checkout')
