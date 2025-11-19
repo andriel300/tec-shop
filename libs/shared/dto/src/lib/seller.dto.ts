@@ -10,6 +10,8 @@ import {
   IsDate,
   Min,
   Max,
+  IsEnum,
+  IsObject,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 
@@ -248,4 +250,159 @@ export interface SellerDashboardData {
     isActive: boolean;
     createdAt: Date;
   } | null;
+}
+
+// ============================================
+// Event DTOs
+// ============================================
+
+export type EventStatus = 'DRAFT' | 'SCHEDULED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+
+export class CreateEventDto {
+  @IsString()
+  @IsOptional()
+  shopId?: string; // Will be set from authenticated seller's shop
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(200)
+  title!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(2000)
+  description!: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(500)
+  bannerImage?: string;
+
+  @Type(() => Date)
+  @IsDate()
+  startDate!: Date;
+
+  @Type(() => Date)
+  @IsDate()
+  endDate!: Date;
+
+  @IsEnum(['DRAFT', 'SCHEDULED', 'ACTIVE', 'COMPLETED', 'CANCELLED'])
+  @IsOptional()
+  status?: EventStatus;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+
+  @IsObject()
+  @IsOptional()
+  metadata?: Record<string, unknown>;
+}
+
+export class UpdateEventDto extends PartialType(CreateEventDto) {
+  @IsString()
+  @IsOptional()
+  override shopId?: never; // Cannot update shopId
+}
+
+export interface EventResponse {
+  id: string;
+  shopId: string;
+  title: string;
+  description: string;
+  bannerImage?: string | null;
+  startDate: Date;
+  endDate: Date;
+  status: EventStatus;
+  isActive: boolean;
+  metadata?: Record<string, unknown> | null;
+  createdAt: Date;
+  updatedAt: Date;
+  shop?: {
+    id: string;
+    businessName: string;
+    category: string;
+  };
+}
+
+// ============================================
+// Notification DTOs
+// ============================================
+
+export type NotificationType = 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR' | 'ORDER' | 'PRODUCT' | 'SHOP' | 'SYSTEM';
+
+export class CreateNotificationDto {
+  @IsString()
+  @IsOptional()
+  sellerId?: string; // Will be set from authenticated seller
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(200)
+  title!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(1000)
+  message!: string;
+
+  @IsEnum(['INFO', 'SUCCESS', 'WARNING', 'ERROR', 'ORDER', 'PRODUCT', 'SHOP', 'SYSTEM'])
+  @IsOptional()
+  type?: NotificationType;
+
+  @IsBoolean()
+  @IsOptional()
+  isRead?: boolean;
+
+  @IsObject()
+  @IsOptional()
+  metadata?: Record<string, unknown>;
+}
+
+export class UpdateNotificationDto {
+  @IsBoolean()
+  @IsOptional()
+  isRead?: boolean;
+}
+
+export interface NotificationResponse {
+  id: string;
+  sellerId: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  isRead: boolean;
+  metadata?: Record<string, unknown> | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ============================================
+// Seller Statistics DTOs
+// ============================================
+
+export interface SellerStatisticsResponse {
+  revenue: {
+    total: number; // Total revenue in cents
+    thisMonth: number;
+    lastMonth: number;
+    growth: number; // Percentage growth
+  };
+  orders: {
+    total: number;
+    pending: number;
+    completed: number;
+    cancelled: number;
+    thisMonth: number;
+  };
+  products: {
+    total: number;
+    active: number;
+    outOfStock: number;
+  };
+  shop: {
+    rating: number;
+    totalOrders: number;
+    isActive: boolean;
+  };
 }

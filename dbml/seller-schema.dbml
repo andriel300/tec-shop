@@ -20,6 +20,7 @@ Table Seller {
   stripeLastUpdated DateTime
   shop Shop
   discountCodes DiscountCode [not null]
+  notifications Notification [not null]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
 }
@@ -39,6 +40,7 @@ Table Shop {
   rating Float [not null, default: 0]
   totalOrders Int [not null, default: 0]
   isActive Boolean [not null, default: true]
+  events Event [not null]
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
 }
@@ -63,6 +65,35 @@ Table DiscountCode {
   updatedAt DateTime [not null]
 }
 
+Table Notification {
+  id String [pk]
+  sellerId String [not null]
+  seller Seller [not null]
+  title String [not null]
+  message String [not null]
+  type NotificationType [not null, default: 'INFO']
+  isRead Boolean [not null, default: false]
+  metadata Json
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+}
+
+Table Event {
+  id String [pk]
+  shopId String [not null]
+  shop Shop [not null]
+  title String [not null]
+  description String [not null]
+  bannerImage String
+  startDate DateTime [not null]
+  endDate DateTime [not null]
+  status EventStatus [not null, default: 'DRAFT']
+  isActive Boolean [not null, default: true]
+  metadata Json
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+}
+
 Enum StripeStatus {
   NOT_STARTED
   PENDING
@@ -78,6 +109,29 @@ Enum DiscountType {
   FREE_SHIPPING
 }
 
+Enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  ORDER
+  PRODUCT
+  SHOP
+  SYSTEM
+}
+
+Enum EventStatus {
+  DRAFT
+  SCHEDULED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
 Ref: Shop.sellerId - Seller.id
 
 Ref: DiscountCode.sellerId > Seller.id [delete: Cascade]
+
+Ref: Notification.sellerId > Seller.id [delete: Cascade]
+
+Ref: Event.shopId > Shop.id [delete: Cascade]
