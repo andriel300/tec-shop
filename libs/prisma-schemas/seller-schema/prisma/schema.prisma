@@ -39,6 +39,9 @@ model Seller {
   // Discount codes
   discountCodes DiscountCode[]
 
+  // Notifications
+  notifications Notification[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -61,6 +64,9 @@ model Shop {
   rating      Float   @default(0)
   totalOrders Int     @default(0)
   isActive    Boolean @default(true)
+
+  // Events
+  events Event[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -119,4 +125,75 @@ model DiscountCode {
   @@index([isActive])
   @@index([startDate])
   @@index([endDate])
+}
+
+enum NotificationType {
+  INFO      // General information
+  SUCCESS   // Success message
+  WARNING   // Warning message
+  ERROR     // Error message
+  ORDER     // Order-related notification
+  PRODUCT   // Product-related notification
+  SHOP      // Shop-related notification
+  SYSTEM    // System notification
+}
+
+model Notification {
+  id       String           @id @default(auto()) @map("_id") @db.ObjectId
+  sellerId String           @db.ObjectId
+  seller   Seller           @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  title    String
+  message  String
+  type     NotificationType @default(INFO)
+  isRead   Boolean          @default(false)
+
+  // Optional metadata (e.g., orderId, productId for navigation)
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sellerId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+enum EventStatus {
+  DRAFT      // Event created but not published
+  SCHEDULED  // Event scheduled for future
+  ACTIVE     // Event currently running
+  COMPLETED  // Event has ended
+  CANCELLED  // Event cancelled
+}
+
+model Event {
+  id     String      @id @default(auto()) @map("_id") @db.ObjectId
+  shopId String      @db.ObjectId
+  shop   Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  // Event details
+  title        String
+  description  String
+  bannerImage  String?       // URL to event banner image
+
+  // Event timing
+  startDate    DateTime
+  endDate      DateTime
+
+  // Event status
+  status       EventStatus   @default(DRAFT)
+  isActive     Boolean       @default(true)
+
+  // Event metadata (e.g., associated products, discount codes)
+  metadata     Json?
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([shopId])
+  @@index([status])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([isActive])
 }
