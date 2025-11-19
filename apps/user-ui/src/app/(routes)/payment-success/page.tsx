@@ -4,9 +4,14 @@ import React, { useEffect, useState } from 'react';
 import { CheckCircle, Truck, Loader2, XCircle } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import useStore from 'apps/user-ui/src/store';
-import { apiClient } from 'apps/user-ui/src/lib/api/client';
+import useStore from '../../../store';
+import { apiClient } from '../../../lib/api/client';
 import confetti from 'canvas-confetti';
+
+type Order = {
+  orderNumber: string;
+  [key: string]: unknown;
+};
 
 const PaymentSuccessPage = () => {
   const searchParams = useSearchParams();
@@ -15,7 +20,7 @@ const PaymentSuccessPage = () => {
   const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(true);
-  const [order, setOrder] = useState<Record<string, unknown> | null>(null);
+  const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {

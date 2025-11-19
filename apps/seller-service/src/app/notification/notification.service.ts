@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaClient } from '@tec-shop/seller-client';
-import type { CreateNotificationDto, UpdateNotificationDto, NotificationResponse } from '@tec-shop/dto';
+import type { CreateNotificationDto, NotificationResponse } from '@tec-shop/dto';
 
 @Injectable()
 export class NotificationService {

@@ -153,9 +153,9 @@ export class ProductService {
         }
 
         // Validate unique SKUs
-        const skus = sanitizedData.variants.map((v) => v.sku);
+        const skus = sanitizedData.variants.map((v: { sku: string }) => v.sku);
         const duplicates = skus.filter(
-          (sku, index) => skus.indexOf(sku) !== index
+          (sku: string, index: number) => skus.indexOf(sku) !== index
         );
         if (duplicates.length > 0) {
           this.logger.error(`Duplicate SKUs found: ${duplicates.join(', ')}`);

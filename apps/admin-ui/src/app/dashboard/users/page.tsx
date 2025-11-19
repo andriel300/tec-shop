@@ -7,7 +7,11 @@ import {
   flexRender,
   type ColumnDef,
 } from '@tanstack/react-table';
-import { useUsers, useBanUser, useUnbanUser } from '../../../hooks/useAdminData';
+import {
+  useUsers,
+  useBanUser,
+  useUnbanUser,
+} from '../../../hooks/useAdminData';
 import type { UserResponse } from '../../../lib/api/admin';
 
 // Modal Component for Ban Confirmation
@@ -40,11 +44,15 @@ const BanModal = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full">
-        <h3 className="text-white text-xl font-semibold mb-4">Ban User: {userName}</h3>
+        <h3 className="text-white text-xl font-semibold mb-4">
+          Ban User: {userName}
+        </h3>
 
         <div className="space-y-4">
           <div>
-            <label className="text-slate-300 text-sm block mb-2">Reason *</label>
+            <label className="text-slate-300 text-sm block mb-2">
+              Reason *
+            </label>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
@@ -55,7 +63,9 @@ const BanModal = ({
           </div>
 
           <div>
-            <label className="text-slate-300 text-sm block mb-2">Duration (days)</label>
+            <label className="text-slate-300 text-sm block mb-2">
+              Duration (days)
+            </label>
             <input
               type="number"
               value={duration}
@@ -64,7 +74,9 @@ const BanModal = ({
               placeholder="0 = permanent ban"
               min="0"
             />
-            <p className="text-slate-400 text-xs mt-1">Leave as 0 for permanent ban</p>
+            <p className="text-slate-400 text-xs mt-1">
+              Leave as 0 for permanent ban
+            </p>
           </div>
         </div>
 
@@ -91,8 +103,12 @@ const UsersPage = () => {
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [search, setSearch] = useState('');
-  const [userTypeFilter, setUserTypeFilter] = useState<'CUSTOMER' | 'SELLER' | 'ADMIN' | ''>('');
-  const [statusFilter, setStatusFilter] = useState<'ACTIVE' | 'BANNED' | ''>('');
+  const [userTypeFilter, setUserTypeFilter] = useState<
+    'CUSTOMER' | 'SELLER' | 'ADMIN' | ''
+  >('');
+  const [statusFilter, setStatusFilter] = useState<'ACTIVE' | 'BANNED' | ''>(
+    ''
+  );
   const [banModalOpen, setBanModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
 
@@ -158,7 +174,11 @@ const UsersPage = () => {
           ADMIN: 'bg-orange-600',
         };
         return (
-          <span className={`${colors[value as keyof typeof colors]} text-white px-2 py-1 rounded text-xs font-medium`}>
+          <span
+            className={`${
+              colors[value as keyof typeof colors]
+            } text-white px-2 py-1 rounded text-xs font-medium`}
+          >
             {value}
           </span>
         );
@@ -171,7 +191,11 @@ const UsersPage = () => {
         const isBanned = row.original.isBanned;
         return (
           <div>
-            <span className={`${isBanned ? 'text-red-400' : 'text-green-400'} font-medium text-sm`}>
+            <span
+              className={`${
+                isBanned ? 'text-red-400' : 'text-green-400'
+              } font-medium text-sm`}
+            >
               {isBanned ? 'Banned' : 'Active'}
             </span>
             {isBanned && row.original.bannedUntil && (
@@ -195,7 +219,8 @@ const UsersPage = () => {
     {
       header: 'Joined',
       accessorKey: 'createdAt',
-      cell: ({ getValue }) => new Date(getValue() as string).toLocaleDateString(),
+      cell: ({ getValue }) =>
+        new Date(getValue() as string).toLocaleDateString(),
     },
     {
       header: 'Actions',
@@ -240,7 +265,9 @@ const UsersPage = () => {
     <div className="p-8">
       <div className="mb-6">
         <h1 className="text-white text-3xl font-semibold">User Management</h1>
-        <p className="text-slate-400 mt-1">Manage all users, customers, sellers, and admins</p>
+        <p className="text-slate-400 mt-1">
+          Manage all users, customers, sellers, and admins
+        </p>
       </div>
 
       {/* Filters */}
@@ -256,7 +283,9 @@ const UsersPage = () => {
 
           <select
             value={userTypeFilter}
-            onChange={(e) => setUserTypeFilter(e.target.value as typeof userTypeFilter)}
+            onChange={(e) =>
+              setUserTypeFilter(e.target.value as typeof userTypeFilter)
+            }
             className="bg-slate-700 text-white rounded p-3 border border-slate-600"
           >
             <option value="">All User Types</option>
@@ -267,7 +296,9 @@ const UsersPage = () => {
 
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+            onChange={(e) =>
+              setStatusFilter(e.target.value as typeof statusFilter)
+            }
             className="bg-slate-700 text-white rounded p-3 border border-slate-600"
           >
             <option value="">All Statuses</option>
@@ -292,7 +323,9 @@ const UsersPage = () => {
       {isLoading ? (
         <div className="text-white text-center py-8">Loading users...</div>
       ) : error ? (
-        <div className="text-red-400 text-center py-8">Error loading users: {error.message}</div>
+        <div className="text-red-400 text-center py-8">
+          Error loading users: {error.message}
+        </div>
       ) : (
         <>
           <div className="rounded-lg shadow-xl overflow-hidden border border-slate-700">
@@ -302,7 +335,10 @@ const UsersPage = () => {
                   <tr key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (
                       <th key={header.id} className="p-3 text-left">
-                        {flexRender(header.column.columnDef.header, header.getContext())}
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                       </th>
                     ))}
                   </tr>
@@ -316,7 +352,10 @@ const UsersPage = () => {
                   >
                     {row.getVisibleCells().map((cell) => (
                       <td key={cell.id} className="p-3">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
                       </td>
                     ))}
                   </tr>
@@ -343,7 +382,9 @@ const UsersPage = () => {
                   Page {page} of {data.pagination.totalPages}
                 </span>
                 <button
-                  onClick={() => setPage(Math.min(data.pagination.totalPages, page + 1))}
+                  onClick={() =>
+                    setPage(Math.min(data.pagination.totalPages, page + 1))
+                  }
                   disabled={page === data.pagination.totalPages}
                   className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded disabled:opacity-50"
                 >

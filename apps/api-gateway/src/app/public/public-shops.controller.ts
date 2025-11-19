@@ -193,7 +193,7 @@ Retrieves all active shops for the marketplace frontend.
         this.sellerService.send('seller-get-shop-by-id', { shopId })
       );
       return shop;
-    } catch (error) {
+    } catch (_error) {
       throw new NotFoundException('Shop not found');
     }
   }

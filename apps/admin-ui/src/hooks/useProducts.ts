@@ -18,8 +18,11 @@ import {
 export const productKeys = {
   all: ['products'] as const,
   lists: () => [...productKeys.all, 'list'] as const,
-  list: (filters?: { search?: string; category?: string; isActive?: boolean }) =>
-    [...productKeys.lists(), filters] as const,
+  list: (filters?: {
+    search?: string;
+    category?: string;
+    isActive?: boolean;
+  }) => [...productKeys.lists(), filters] as const,
   details: () => [...productKeys.all, 'detail'] as const,
   detail: (id: string) => [...productKeys.details(), id] as const,
   trash: () => [...productKeys.all, 'trash'] as const,
@@ -39,7 +42,11 @@ export const productKeys = {
  *
  * @param filters - Optional filters (search, category, isActive)
  */
-export function useProducts(filters?: { search?: string; category?: string; isActive?: boolean }) {
+export function useProducts(filters?: {
+  search?: string;
+  category?: string;
+  isActive?: boolean;
+}) {
   return useQuery({
     queryKey: productKeys.list(filters),
     queryFn: () => getProducts(filters),
@@ -84,15 +91,20 @@ export function useUpdateProduct(id: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (productData: UpdateProductData) => updateProduct(id, productData),
+    mutationFn: (productData: UpdateProductData) =>
+      updateProduct(id, productData),
     onMutate: async (productData) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: productKeys.detail(id) });
       await queryClient.cancelQueries({ queryKey: productKeys.lists() });
 
       // Snapshot previous values
-      const previousProduct = queryClient.getQueryData<ProductResponse>(productKeys.detail(id));
-      const previousProducts = queryClient.getQueryData<ProductResponse[]>(productKeys.lists());
+      const previousProduct = queryClient.getQueryData<ProductResponse>(
+        productKeys.detail(id)
+      );
+      const previousProducts = queryClient.getQueryData<ProductResponse[]>(
+        productKeys.lists()
+      );
 
       // Optimistically update detail cache
       if (previousProduct) {
@@ -121,7 +133,7 @@ export function useUpdateProduct(id: string) {
         { queryKey: productKeys.lists() },
         (oldData: ProductResponse[] | undefined) => {
           if (!oldData) return oldData;
-          return oldData.map(product =>
+          return oldData.map((product) =>
             product.id === id ? { ...product, ...updatedProduct } : product
           );
         }
@@ -134,7 +146,10 @@ export function useUpdateProduct(id: string) {
     onError: (error: Error, _productData, context) => {
       // Rollback on error
       if (context?.previousProduct) {
-        queryClient.setQueryData(productKeys.detail(id), context.previousProduct);
+        queryClient.setQueryData(
+          productKeys.detail(id),
+          context.previousProduct
+        );
       }
       if (context?.previousProducts) {
         queryClient.setQueryData(productKeys.lists(), context.previousProducts);
@@ -166,7 +181,9 @@ export function useDeleteProduct() {
       await queryClient.cancelQueries({ queryKey: productKeys.lists() });
 
       // Snapshot the previous value
-      const previousProducts = queryClient.getQueryData<ProductResponse[]>(productKeys.lists());
+      const previousProducts = queryClient.getQueryData<ProductResponse[]>(
+        productKeys.lists()
+      );
 
       // Optimistically remove from cache
       queryClient.setQueriesData<ProductResponse[]>(
@@ -183,7 +200,9 @@ export function useDeleteProduct() {
     onSuccess: (_data, productId: string) => {
       // Invalidate queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: productKeys.detail(productId) });
+      queryClient.invalidateQueries({
+        queryKey: productKeys.detail(productId),
+      });
       queryClient.invalidateQueries({ queryKey: productKeys.trash() });
 
       toast.success('Product deleted successfully!');
@@ -213,7 +232,10 @@ export function useDeleteProduct() {
  *
  * @param filters - Optional filters (search, category)
  */
-export function useDeletedProducts(filters?: { search?: string; category?: string }) {
+export function useDeletedProducts(filters?: {
+  search?: string;
+  category?: string;
+}) {
   return useQuery({
     queryKey: productKeys.deletedList(filters),
     queryFn: () => getDeletedProducts(filters),
@@ -242,7 +264,9 @@ export function useRestoreProduct() {
       await queryClient.cancelQueries({ queryKey: productKeys.lists() });
 
       // Snapshot previous values
-      const previousDeleted = queryClient.getQueryData<ProductResponse[]>(productKeys.trash());
+      const previousDeleted = queryClient.getQueryData<ProductResponse[]>(
+        productKeys.trash()
+      );
 
       // Optimistically remove from trash cache
       queryClient.setQueriesData<ProductResponse[]>(
@@ -260,7 +284,9 @@ export function useRestoreProduct() {
       // Invalidate all product queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: productKeys.trash() });
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: productKeys.detail(restoredProduct.id) });
+      queryClient.invalidateQueries({
+        queryKey: productKeys.detail(restoredProduct.id),
+      });
 
       toast.success('Product restored successfully!', {
         description: restoredProduct.name,

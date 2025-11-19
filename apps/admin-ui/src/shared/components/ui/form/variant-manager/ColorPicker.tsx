@@ -1,8 +1,9 @@
+/* eslint-disable @nx/enforce-module-boundaries */
 'use client';
 
 import React from 'react';
 import { Plus } from 'lucide-react';
-import { Input } from '../../core/Input';
+import { Input } from 'libs/shared/components/input/src/lib/input';
 import { COLOR_PALETTE } from './constants';
 
 export interface ColorPickerProps {

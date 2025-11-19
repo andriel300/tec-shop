@@ -1,15 +1,15 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import ProfileIcon from 'apps/user-ui/src/assets/svgs/profile-icon';
-import QuickActionCard from 'apps/user-ui/src/components/cards/quick-action.card';
-import StatCard from 'apps/user-ui/src/components/cards/stat.card';
-import ShippingAddressSection from 'apps/user-ui/src/components/shippingAddress';
-import OrdersSection from 'apps/user-ui/src/components/orders';
-import ChangePassword from 'apps/user-ui/src/components/changePassword';
-import { useAuth } from 'apps/user-ui/src/hooks/use-auth';
-import { useOrders } from 'apps/user-ui/src/hooks/use-orders';
-import apiClient from 'apps/user-ui/src/lib/api/client';
+import ProfileIcon from '../../../assets/svgs/profile-icon';
+import QuickActionCard from '../../../components/cards/quick-action.card';
+import StatCard from '../../../components/cards/stat.card';
+import ShippingAddressSection from '../../../components/shippingAddress';
+import OrdersSection from '../../../components/orders';
+import ChangePassword from '../../../components/changePassword';
+import { useAuth } from '../../../hooks/use-auth';
+import { useOrders } from '../../../hooks/use-orders';
+import apiClient from '../../../lib/api/client';
 import {
   BadgeCheck,
   Bell,

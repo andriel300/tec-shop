@@ -4,6 +4,7 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@tec-shop/order-client';
 import { OrderPrismaService } from '../prisma/prisma.service';
 import { RedisService } from './redis/redis.service';
 import { EmailService } from './email/email.service';
@@ -18,7 +19,6 @@ import {
   OrderStatus,
   PaymentStatus,
 } from '@tec-shop/dto';
-import Stripe from 'stripe';
 
 @Injectable()
 export class OrderService {
@@ -146,9 +146,9 @@ export class OrderService {
       data: {
         sessionId: data.sessionId,
         userId: data.userId,
-        cartData: data.cartData,
+        cartData: data.cartData as unknown as Prisma.InputJsonValue,
         shippingAddressId: data.shippingAddressId,
-        shippingAddress: data.shippingAddress,
+        shippingAddress: data.shippingAddress as unknown as Prisma.InputJsonValue,
         subtotalAmount: data.subtotalAmount,
         discountAmount: data.discountAmount,
         shippingCost: data.shippingCost,
@@ -236,25 +236,28 @@ export class OrderService {
     const orderNumber = await this.generateOrderNumber();
 
     // Create order with items
+    const cartData = sessionData.cartData as unknown as CartItemDto[];
+    const shippingAddress = sessionData.shippingAddress as unknown as Prisma.InputJsonValue;
+
     const order = await this.prisma.order.create({
       data: {
         orderNumber,
-        userId: sessionData.userId,
-        shippingAddressId: sessionData.shippingAddressId,
-        shippingAddress: sessionData.shippingAddress,
+        userId: sessionData.userId as string,
+        shippingAddressId: sessionData.shippingAddressId as string,
+        shippingAddress,
         stripeSessionId: sessionId,
         stripePaymentId: stripeSession.payment_intent as string,
         paymentMethod: 'card',
-        subtotalAmount: sessionData.subtotalAmount,
-        discountAmount: sessionData.discountAmount,
-        shippingCost: sessionData.shippingCost,
-        platformFee: sessionData.platformFee,
-        finalAmount: sessionData.finalAmount,
-        couponCode: sessionData.couponCode,
+        subtotalAmount: sessionData.subtotalAmount as number,
+        discountAmount: sessionData.discountAmount as number,
+        shippingCost: sessionData.shippingCost as number,
+        platformFee: sessionData.platformFee as number,
+        finalAmount: sessionData.finalAmount as number,
+        couponCode: sessionData.couponCode as string | undefined,
         status: OrderStatus.PAID,
         paymentStatus: PaymentStatus.COMPLETED,
         items: {
-          create: sessionData.cartData.map((item: CartItemDto) => {
+          create: cartData.map((item: CartItemDto) => {
             const { platformFee, sellerPayout } =
               this.paymentService.calculateSellerPayout(
                 item.unitPrice * item.quantity
@@ -285,7 +288,7 @@ export class OrderService {
     });
 
     // Process seller payouts
-    await this.processSellerPayouts(order.id, sessionData.cartData);
+    await this.processSellerPayouts(order.id, cartData);
 
     // Send order confirmation email
     await this.sendOrderConfirmationEmail(order.id);
@@ -296,8 +299,8 @@ export class OrderService {
     // Track purchase in analytics
     await this.trackPurchaseEvent(
       order.id,
-      sessionData.userId,
-      sessionData.cartData
+      sessionData.userId as string,
+      cartData
     );
 
     // Clean up session data

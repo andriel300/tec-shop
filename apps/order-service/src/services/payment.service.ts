@@ -56,6 +56,7 @@ export class PaymentService {
             currency: 'usd',
             product_data: {
               name: 'Shipping',
+              images: [],
             },
             unit_amount: data.shippingCost,
           },
@@ -63,9 +64,6 @@ export class PaymentService {
         });
       }
 
-      const apiGatewayUrl =
-        this.configService.get<string>('API_GATEWAY_URL') ||
-        'http://localhost:8080';
       const frontendUrl =
         this.configService.get<string>('FRONTEND_URL') ||
         'http://localhost:3000';

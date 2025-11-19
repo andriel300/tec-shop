@@ -1,35 +1,31 @@
-/* eslint-disable @nx/enforce-module-boundaries */
 'use client';
 
 import { useForm } from '@tanstack/react-form';
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Package, DollarSign, Tag, Boxes } from 'lucide-react';
-import {
-  useProduct,
-  useUpdateProduct,
-} from 'apps/admin-ui/src/hooks/useProducts';
-import { Alert } from 'apps/admin-ui/src/shared/components/ui/core/Alert';
-import { Breadcrumb } from 'apps/admin-ui/src/shared/components/navigation/Breadcrumb';
-import { ProductImageUploader } from 'apps/admin-ui/src/shared/components/ui/form/ProductImageUploader';
-import { FormField } from 'apps/admin-ui/src/shared/components/ui/form/FormField';
-import { Select } from 'apps/admin-ui/src/shared/components/ui/core/Select';
-import { Input } from 'libs/shared/components/input/src/lib/input';
-import { RichTextEditor } from 'apps/admin-ui/src/shared/components/ui/form/RichTextEditor';
+import { useProduct, useUpdateProduct } from '../../../../../hooks/useProducts';
+import { Alert } from '../../../../../shared/components/ui/core/Alert';
+import { Breadcrumb } from '../../../../../shared/components/navigation/Breadcrumb';
+import { ProductImageUploader } from '../../../../../shared/components/ui/form/ProductImageUploader';
+import { FormField } from '../../../../../shared/components/ui/form/FormField';
+import { Select } from '../../../../../shared/components/ui/core/Select';
+import { Input } from '@tec-shop/input';
+import { RichTextEditor } from '../../../../../shared/components/ui/form/RichTextEditor';
 import {
   CategorySelector,
   type Category,
-} from 'apps/admin-ui/src/shared/components/ui/form/CategorySelector';
+} from '../../../../../shared/components/ui/form/CategorySelector';
 import {
   BrandSelector,
   type Brand,
-} from 'apps/admin-ui/src/shared/components/ui/form/BrandSelector';
-import { DiscountSelector } from 'apps/admin-ui/src/shared/components/ui/form/DiscountSelector';
-import { TagInput } from 'apps/admin-ui/src/shared/components/ui/form/TagInput';
-import { VariantManager } from 'apps/admin-ui/src/shared/components/ui/form/VariantManager';
-import { DimensionsInput } from 'apps/admin-ui/src/shared/components/ui/form/DimensionsInput';
-import { SEOFields } from 'apps/admin-ui/src/shared/components/ui/form/SEOFields';
-import { ProductVariant } from 'apps/admin-ui/src/shared/components/ui/form/variant-manager/VariantTable';
+} from '../../../../../shared/components/ui/form/BrandSelector';
+import { DiscountSelector } from '../../../../../shared/components/ui/form/DiscountSelector';
+import { TagInput } from '../../../../../shared/components/ui/form/TagInput';
+import { VariantManager } from '../../../../../shared/components/ui/form/VariantManager';
+import { DimensionsInput } from '../../../../../shared/components/ui/form/DimensionsInput';
+import { SEOFields } from '../../../../../shared/components/ui/form/SEOFields';
+import { ProductVariant } from '../../../../../shared/components/ui/form/variant-manager/VariantTable';
 
 const PRODUCT_TYPES = [
   { value: 'simple', label: 'Simple Product' },
@@ -356,7 +352,7 @@ const Page = () => {
                         )
                       }
                       options={PRODUCT_STATUS}
-                      variant="dark"
+                      variant="default"
                     />
                   </FormField>
                 )}
@@ -435,7 +431,7 @@ const Page = () => {
                           onBlur={field.handleBlur}
                           onChange={(e) => field.handleChange(e.target.value)}
                           placeholder="e.g., Premium Cotton T-Shirt"
-                          variant="dark"
+                          variant="default"
                         />
                       </FormField>
                     )}
@@ -566,7 +562,7 @@ const Page = () => {
                                 )
                               }
                               placeholder="0.00"
-                              variant="dark"
+                              variant="default"
                             />
                           </FormField>
                         )}
@@ -612,7 +608,7 @@ const Page = () => {
                                     )
                                   }
                                   placeholder="Leave empty for regular price"
-                                  variant="dark"
+                                  variant="default"
                                 />
                                 {discount > 0 && (
                                   <div className="flex items-center gap-2 text-sm">
@@ -662,7 +658,7 @@ const Page = () => {
                               )
                             }
                             placeholder="0"
-                            variant="dark"
+                            variant="default"
                           />
                         </FormField>
                       )}
@@ -689,7 +685,7 @@ const Page = () => {
                           value={field.state.value}
                           onChange={(e) => field.handleChange(e.target.value)}
                           placeholder="e.g., 1 year manufacturer warranty"
-                          variant="dark"
+                          variant="default"
                         />
                       </FormField>
                     )}
@@ -725,7 +721,7 @@ const Page = () => {
                           value={field.state.value}
                           onChange={(e) => field.handleChange(e.target.value)}
                           placeholder="e.g., https://www.youtube.com/embed/xyz123"
-                          variant="dark"
+                          variant="default"
                         />
                       </FormField>
                     )}

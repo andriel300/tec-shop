@@ -94,7 +94,7 @@ const CheckoutForm = ({
               <>
                 <span>Discount</span>
                 <span className="text-green-600">
-                  ${(coupon?.discountAmount).toFixed(2)}
+                  ${(coupon?.discountAmount ?? 0).toFixed(2)}
                 </span>
               </>
             )}

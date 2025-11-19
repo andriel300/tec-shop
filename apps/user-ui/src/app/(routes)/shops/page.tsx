@@ -1,11 +1,11 @@
 'use client';
 
-import { apiClient } from 'apps/user-ui/src/lib/api/client';
+import { apiClient } from '../../../lib/api/client';
 import Link from 'next/link';
 import React, { useEffect } from 'react';
 import { ChevronDown, X, Store, Search, Star } from 'lucide-react';
-import ShopCard from 'apps/user-ui/src/components/cards/shop-card';
-import { countries } from 'apps/user-ui/src/lib/utils/countries';
+import ShopCard from '../../../components/cards/shop-card';
+import { countries } from '../../../lib/utils/countries';
 
 // Shop categories (different from product categories)
 const SHOP_CATEGORIES = [

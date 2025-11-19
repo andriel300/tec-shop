@@ -1,3 +1,4 @@
+/* eslint-disable @nx/enforce-module-boundaries */
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -106,11 +107,15 @@ function SignupPageContent() {
             <div
               className="absolute top-5 left-0 h-0.5 bg-brand-primary transition-all duration-500"
               style={{
-                width: activeStep === 1 ? '0%' : activeStep === 2 ? '50%' : '100%',
+                width:
+                  activeStep === 1 ? '0%' : activeStep === 2 ? '50%' : '100%',
               }}
             />
             {[1, 2, 3].map((step) => (
-              <div key={step} className="flex flex-col items-center flex-1 relative">
+              <div
+                key={step}
+                className="flex flex-col items-center flex-1 relative"
+              >
                 <div
                   className={`flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm transition-all duration-300 ${
                     step < activeStep

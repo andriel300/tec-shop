@@ -68,8 +68,8 @@ const createSafeStorage = () => {
   if (typeof window === 'undefined') {
     return {
       getItem: () => null,
-      setItem: () => {},
-      removeItem: () => {},
+      setItem: () => { /* SSR no-op */ },
+      removeItem: () => { /* SSR no-op */ },
     };
   }
   return localStorage;

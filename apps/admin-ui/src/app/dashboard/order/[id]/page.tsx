@@ -10,7 +10,6 @@ import {
   MapPin,
   User,
   Phone,
-  Mail,
   DollarSign,
   Calendar,
   Tag,
@@ -19,8 +18,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import apiClient from 'apps/admin-ui/src/lib/api/client';
-import { Breadcrumb } from 'apps/admin-ui/src/shared/components/navigation/Breadcrumb';
+import apiClient from '../../../../lib/api/client';
+import { Breadcrumb } from '../../../../shared/components/navigation/Breadcrumb';
 
 interface OrderItem {
   id: string;

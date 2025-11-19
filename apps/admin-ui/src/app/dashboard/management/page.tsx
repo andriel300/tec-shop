@@ -7,7 +7,11 @@ import {
   flexRender,
   type ColumnDef,
 } from '@tanstack/react-table';
-import { useAdmins, useCreateAdmin, useDeleteAdmin } from '../../../hooks/useAdminData';
+import {
+  useAdmins,
+  useCreateAdmin,
+  useDeleteAdmin,
+} from '../../../hooks/useAdminData';
 import type { AdminResponse } from '../../../lib/api/admin';
 
 // Modal Component for Adding New Admin
@@ -49,8 +53,11 @@ const AddAdminModal = ({
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 8) {
       newErrors.password = 'Password must be at least 8 characters';
-    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(formData.password)) {
-      newErrors.password = 'Password must contain uppercase, lowercase, number, and special character (@$!%*?&)';
+    } else if (
+      !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(formData.password)
+    ) {
+      newErrors.password =
+        'Password must contain uppercase, lowercase, number, and special character (@$!%*?&)';
     }
 
     if (formData.password !== formData.confirmPassword) {
@@ -91,47 +98,71 @@ const AddAdminModal = ({
             <input
               type="email"
               value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
               className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600"
               placeholder="admin@tec-shop.com"
             />
-            {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
+            {errors.email && (
+              <p className="text-red-400 text-xs mt-1">{errors.email}</p>
+            )}
           </div>
 
           <div>
-            <label className="text-slate-300 text-sm block mb-2">Full Name *</label>
+            <label className="text-slate-300 text-sm block mb-2">
+              Full Name *
+            </label>
             <input
               type="text"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600"
               placeholder="John Doe"
             />
-            {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
+            {errors.name && (
+              <p className="text-red-400 text-xs mt-1">{errors.name}</p>
+            )}
           </div>
 
           <div>
-            <label className="text-slate-300 text-sm block mb-2">Password *</label>
+            <label className="text-slate-300 text-sm block mb-2">
+              Password *
+            </label>
             <input
               type="password"
               value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
               className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600"
               placeholder="Min 8 chars, uppercase, lowercase, number, special char"
             />
-            {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password}</p>}
+            {errors.password && (
+              <p className="text-red-400 text-xs mt-1">{errors.password}</p>
+            )}
           </div>
 
           <div>
-            <label className="text-slate-300 text-sm block mb-2">Confirm Password *</label>
+            <label className="text-slate-300 text-sm block mb-2">
+              Confirm Password *
+            </label>
             <input
               type="password"
               value={formData.confirmPassword}
-              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, confirmPassword: e.target.value })
+              }
               className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600"
               placeholder="Re-enter password"
             />
-            {errors.confirmPassword && <p className="text-red-400 text-xs mt-1">{errors.confirmPassword}</p>}
+            {errors.confirmPassword && (
+              <p className="text-red-400 text-xs mt-1">
+                {errors.confirmPassword}
+              </p>
+            )}
           </div>
 
           <div className="flex gap-3 mt-6">
@@ -179,7 +210,11 @@ const TeamManagementPage = () => {
   const deleteAdminMutation = useDeleteAdmin();
 
   // Handle create admin
-  const handleCreateAdmin = (data: { email: string; name: string; password: string }) => {
+  const handleCreateAdmin = (data: {
+    email: string;
+    name: string;
+    password: string;
+  }) => {
     createAdminMutation.mutate(data, {
       onSuccess: () => {
         setAddModalOpen(false);
@@ -189,7 +224,11 @@ const TeamManagementPage = () => {
 
   // Handle delete admin
   const handleDeleteAdmin = (adminId: string, adminName: string) => {
-    if (confirm(`Are you sure you want to delete admin "${adminName}"? This action cannot be undone.`)) {
+    if (
+      confirm(
+        `Are you sure you want to delete admin "${adminName}"? This action cannot be undone.`
+      )
+    ) {
       deleteAdminMutation.mutate(adminId);
     }
   };
@@ -223,7 +262,9 @@ const TeamManagementPage = () => {
         return (
           <div>
             <div className="text-white">{date.toLocaleDateString()}</div>
-            <div className="text-slate-400 text-xs">{date.toLocaleTimeString()}</div>
+            <div className="text-slate-400 text-xs">
+              {date.toLocaleTimeString()}
+            </div>
           </div>
         );
       },
@@ -236,7 +277,9 @@ const TeamManagementPage = () => {
         return (
           <div>
             <div className="text-white">{date.toLocaleDateString()}</div>
-            <div className="text-slate-400 text-xs">{date.toLocaleTimeString()}</div>
+            <div className="text-slate-400 text-xs">
+              {date.toLocaleTimeString()}
+            </div>
           </div>
         );
       },
@@ -253,7 +296,9 @@ const TeamManagementPage = () => {
               onClick={() => handleDeleteAdmin(admin.id, admin.name)}
               disabled={deleteAdminMutation.isPending || isLastAdmin}
               className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              title={isLastAdmin ? 'Cannot delete the last admin' : 'Delete admin'}
+              title={
+                isLastAdmin ? 'Cannot delete the last admin' : 'Delete admin'
+              }
             >
               Delete
             </button>
@@ -274,7 +319,9 @@ const TeamManagementPage = () => {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-white text-3xl font-semibold">Team Management</h1>
-          <p className="text-slate-400 mt-1">Manage admin team members and access control</p>
+          <p className="text-slate-400 mt-1">
+            Manage admin team members and access control
+          </p>
         </div>
         <button
           onClick={() => setAddModalOpen(true)}
@@ -288,7 +335,9 @@ const TeamManagementPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="bg-slate-800 rounded-lg p-6">
           <div className="text-slate-400 text-sm mb-2">Total Admins</div>
-          <div className="text-white text-3xl font-semibold">{admins?.length || 0}</div>
+          <div className="text-white text-3xl font-semibold">
+            {admins?.length || 0}
+          </div>
         </div>
         <div className="bg-slate-800 rounded-lg p-6">
           <div className="text-slate-400 text-sm mb-2">Verified Admins</div>
@@ -298,7 +347,9 @@ const TeamManagementPage = () => {
         </div>
         <div className="bg-slate-800 rounded-lg p-6">
           <div className="text-slate-400 text-sm mb-2">Active Sessions</div>
-          <div className="text-white text-3xl font-semibold">{admins?.length || 0}</div>
+          <div className="text-white text-3xl font-semibold">
+            {admins?.length || 0}
+          </div>
         </div>
       </div>
 
@@ -306,10 +357,14 @@ const TeamManagementPage = () => {
       {isLoading ? (
         <div className="text-white text-center py-8">Loading admins...</div>
       ) : error ? (
-        <div className="text-red-400 text-center py-8">Error loading admins: {error.message}</div>
+        <div className="text-red-400 text-center py-8">
+          Error loading admins: {error.message}
+        </div>
       ) : (
         <div className="bg-slate-800 rounded-lg p-6">
-          <h2 className="text-white text-xl font-semibold mb-4">Admin Team Members</h2>
+          <h2 className="text-white text-xl font-semibold mb-4">
+            Admin Team Members
+          </h2>
 
           {admins && admins.length === 0 ? (
             <div className="text-slate-400 text-center py-8">
@@ -323,7 +378,10 @@ const TeamManagementPage = () => {
                     <tr key={headerGroup.id}>
                       {headerGroup.headers.map((header) => (
                         <th key={header.id} className="p-3 text-left">
-                          {flexRender(header.column.columnDef.header, header.getContext())}
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                         </th>
                       ))}
                     </tr>
@@ -337,7 +395,10 @@ const TeamManagementPage = () => {
                     >
                       {row.getVisibleCells().map((cell) => (
                         <td key={cell.id} className="p-3">
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
                         </td>
                       ))}
                     </tr>
@@ -351,7 +412,9 @@ const TeamManagementPage = () => {
           {admins && admins.length > 0 && (
             <div className="mt-4 p-4 bg-yellow-900/20 border border-yellow-700 rounded">
               <p className="text-yellow-400 text-sm">
-                <strong>Important:</strong> You cannot delete the last admin user. At least one admin must exist at all times for security reasons.
+                <strong>Important:</strong> You cannot delete the last admin
+                user. At least one admin must exist at all times for security
+                reasons.
               </p>
             </div>
           )}

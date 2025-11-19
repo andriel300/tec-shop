@@ -57,7 +57,7 @@ describe('StripeWebhookController', () => {
 
       // Act & Assert
       expect(() => {
-        new StripeWebhookController({} as ClientProxy);
+        new StripeWebhookController({} as ClientProxy, {} as ClientProxy);
       }).toThrow('STRIPE_SECRET_KEY is required for webhook verification');
 
       // Cleanup

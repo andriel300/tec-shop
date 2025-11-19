@@ -1,6 +1,6 @@
 import SidebarWrapper from '../../shared/components/sidebar';
 
-const Layout = ({ children }: { children: React.ReactNode }) => {
+export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-full bg-black min-h-screen">
       {/* sidebar */}
@@ -17,4 +17,4 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       </main>
     </div>
   );
-};
+}

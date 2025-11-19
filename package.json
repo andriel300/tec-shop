@@ -23,6 +23,7 @@
     "get-shop-id": "npx tsx apps/product-service/src/scripts/get-shop-id.ts",
     "test": "npx nx run-many --target=test --all",
     "lint": "npx nx run-many --target=lint --all",
+    "build": "npx nx run-many --target=build --all",
     "typecheck": "npx nx run-many --target=typecheck --all"
   },
   "private": true,

@@ -1,7 +1,8 @@
+/* eslint-disable @nx/enforce-module-boundaries */
 'use client';
 
 import React from 'react';
-import { Input } from '../core/Input';
+import { Input } from 'libs/shared/components/input/src/lib/input';
 import { Select } from '../core/Select';
 import { Package } from 'lucide-react';
 

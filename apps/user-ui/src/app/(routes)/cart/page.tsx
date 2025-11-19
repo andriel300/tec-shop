@@ -1,26 +1,23 @@
 'use client';
 
-import { Input } from 'apps/user-ui/src/components/ui/core/Input';
-import { useAuth } from 'apps/user-ui/src/hooks/use-auth';
-import useDeviceTracking from 'apps/user-ui/src/hooks/use-device-tracking';
-import useLocationTracking from 'apps/user-ui/src/hooks/use-location-tracking';
-import useStore from 'apps/user-ui/src/store';
+import { Input } from '../../../components/ui/core/Input';
+import { useAuth } from '../../../hooks/use-auth';
+import useDeviceTracking from '../../../hooks/use-device-tracking';
+import useLocationTracking from '../../../hooks/use-location-tracking';
+import useStore from '../../../store';
 import { Loader2, MapPin } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import React from 'react';
-import { useShippingAddresses } from 'apps/user-ui/src/hooks/use-shipping-addresses';
-import { apiClient } from 'apps/user-ui/src/lib/api/client';
+import { useShippingAddresses } from '../../../hooks/use-shipping-addresses';
+import { apiClient } from '../../../lib/api/client';
 import { toast } from 'sonner';
 
 const CartPage = () => {
-  const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
-  const location = useLocationTracking();
-  const deviceInfo = useDeviceTracking();
+  const { isAuthenticated } = useAuth();
+  useLocationTracking(); // Track for analytics
+  useDeviceTracking(); // Track for analytics
   const cart = useStore((state) => state.cart);
-  const removeFromCart = useStore((state) => state.removeFromCart);
 
   // Fetch shipping addresses
   const { data: addresses = [], isLoading: addressesLoading } =
@@ -28,7 +25,7 @@ const CartPage = () => {
 
   const [couponCode, setCouponCode] = React.useState('');
   const [loading, setLoading] = React.useState(false);
-  const [discountedProductId, setDiscountedProductId] = React.useState('');
+  const [, setDiscountedProductId] = React.useState('');
   const [discountAmount, setDiscountAmount] = React.useState(0);
   const [discountPercentage, setDiscountPercentage] = React.useState(0);
   const [selectedAddressId, setSelectedAddressId] = React.useState('');
@@ -54,17 +51,11 @@ const CartPage = () => {
         // discountAmount comes in cents, convert to dollars
         setDiscountAmount(res.data.discountAmount / 100);
         setDiscountPercentage(
-          res.data.discountType === 'PERCENTAGE'
-            ? res.data.discountValue
-            : 0
+          res.data.discountType === 'PERCENTAGE' ? res.data.discountValue : 0
         );
-        setDiscountedProductId(
-          res.data.applicableProductIds?.[0] || ''
-        );
+        setDiscountedProductId(res.data.applicableProductIds?.[0] || '');
         setCouponCode('');
-        toast.success(
-          res.data.message || 'Coupon applied successfully!'
-        );
+        toast.success(res.data.message || 'Coupon applied successfully!');
       } else {
         setDiscountAmount(0);
         setDiscountPercentage(0);
@@ -76,9 +67,7 @@ const CartPage = () => {
       setDiscountPercentage(0);
       setDiscountedProductId('');
       const err = error as { response?: { data?: { message?: string } } };
-      setError(
-        err?.response?.data?.message || 'Failed to verify coupon code'
-      );
+      setError(err?.response?.data?.message || 'Failed to verify coupon code');
     }
   };
 
@@ -116,7 +105,9 @@ const CartPage = () => {
         shippingAddressId: selectedAddressId,
         paymentMethod: 'card',
         couponCode: storedCouponCode || undefined,
-        discountAmount: discountAmount ? Math.round(discountAmount * 100) : undefined, // Convert to cents
+        discountAmount: discountAmount
+          ? Math.round(discountAmount * 100)
+          : undefined, // Convert to cents
       });
 
       // Redirect to Stripe Checkout page
@@ -369,9 +360,7 @@ const CartPage = () => {
                     Apply
                   </button>
                 </div>
-                {error && (
-                  <p className="text-sm pt-2 text-red-500">{error}</p>
-                )}
+                {error && <p className="text-sm pt-2 text-red-500">{error}</p>}
                 {storedCouponCode && discountAmount > 0 && (
                   <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md text-sm text-green-800 flex items-center justify-between">
                     <span>
@@ -392,138 +381,135 @@ const CartPage = () => {
                   </div>
                 )}
               </div>
-                <hr className="my-4 text-slate-200" />
-                <div className="mb-4">
-                  <div className="flex justify-between items-center mb-[7px]">
-                    <h4 className="font-medium text-[15px]">
-                      Select Shipping Address
-                    </h4>
-                    {isAuthenticated && (
-                      <Link
-                        href="/profile?tab=shipping-address"
-                        className="text-xs text-blue-600 hover:underline"
-                      >
-                        Manage
-                      </Link>
-                    )}
-                  </div>
-
-                  {!isAuthenticated ? (
-                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">
-                      Please{' '}
-                      <Link href="/login" className="font-medium underline">
-                        log in
-                      </Link>{' '}
-                      to select a shipping address
-                    </div>
-                  ) : addressesLoading ? (
-                    <div className="flex items-center justify-center p-3 border border-gray-200 rounded-md">
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      <span className="text-sm text-gray-600">
-                        Loading addresses...
-                      </span>
-                    </div>
-                  ) : addresses.length === 0 ? (
-                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-800">
-                      No shipping address found.{' '}
-                      <Link
-                        href="/profile?tab=shipping-address"
-                        className="font-medium underline"
-                      >
-                        Add one now
-                      </Link>
-                    </div>
-                  ) : (
-                    <select
-                      className="w-full p-2 border border-gray-200 rounded-md focus-outline-none focus:border-brand-primary-500"
-                      value={selectedAddressId}
-                      onChange={(e) => setSelectedAddressId(e.target.value)}
-                    >
-                      {addresses.map((address) => (
-                        <option key={address.id} value={address.id}>
-                          {address.label} - {address.city}
-                          {address.state && `, ${address.state}`} -{' '}
-                          {address.country}
-                          {address.isDefault ? ' (Default)' : ''}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-
-                  {/* Show selected address details */}
-                  {selectedAddressId && addresses.length > 0 && (
-                    <div className="mt-2 p-2 bg-gray-50 border border-gray-200 rounded-md text-xs text-gray-700">
-                      <div className="flex items-start gap-1">
-                        <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                        <div>
-                          {(() => {
-                            const selected = addresses.find(
-                              (a) => a.id === selectedAddressId
-                            );
-                            if (!selected) return null;
-                            return (
-                              <>
-                                <p className="font-medium">{selected.name}</p>
-                                <p>{selected.street}</p>
-                                <p>
-                                  {selected.city}
-                                  {selected.state && `, ${selected.state}`}{' '}
-                                  {selected.zipCode}
-                                </p>
-                                <p>{selected.country}</p>
-                                {selected.phoneNumber && (
-                                  <p className="mt-1">
-                                    Phone: {selected.phoneNumber}
-                                  </p>
-                                )}
-                              </>
-                            );
-                          })()}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <hr className="my-4 text-slate-200" />
-
-                <div className="mb-4">
-                  <h4 className="font-medium mb-[7px] text-[15px]">
-                    Select Payment Method
+              <hr className="my-4 text-slate-200" />
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-[7px]">
+                  <h4 className="font-medium text-[15px]">
+                    Select Shipping Address
                   </h4>
-                  <select className="w-full p-2 border border-gray-200 rounded-md focus-outline-none focus:border-brand-primary-500">
-                    <option value="credit_card">Online Payment</option>
-                    <option value="cash_on_delivery">Cash on Delivery</option>
-                  </select>
+                  {isAuthenticated && (
+                    <Link
+                      href="/profile?tab=shipping-address"
+                      className="text-xs text-blue-600 hover:underline"
+                    >
+                      Manage
+                    </Link>
+                  )}
                 </div>
-                <hr className="my-4 text-slate-200" />
 
-                {/* Discount Display */}
-                {storedCouponCode && discountAmount > 0 && (
-                  <div className="flex justify-between items-center text-green-600 text-[16px] font-medium pb-3">
-                    <span>Discount ({storedCouponCode})</span>
-                    <span>-${discountAmount.toFixed(2)}</span>
+                {!isAuthenticated ? (
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">
+                    Please{' '}
+                    <Link href="/login" className="font-medium underline">
+                      log in
+                    </Link>{' '}
+                    to select a shipping address
                   </div>
+                ) : addressesLoading ? (
+                  <div className="flex items-center justify-center p-3 border border-gray-200 rounded-md">
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    <span className="text-sm text-gray-600">
+                      Loading addresses...
+                    </span>
+                  </div>
+                ) : addresses.length === 0 ? (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-800">
+                    No shipping address found.{' '}
+                    <Link
+                      href="/profile?tab=shipping-address"
+                      className="font-medium underline"
+                    >
+                      Add one now
+                    </Link>
+                  </div>
+                ) : (
+                  <select
+                    className="w-full p-2 border border-gray-200 rounded-md focus-outline-none focus:border-brand-primary-500"
+                    value={selectedAddressId}
+                    onChange={(e) => setSelectedAddressId(e.target.value)}
+                  >
+                    {addresses.map((address) => (
+                      <option key={address.id} value={address.id}>
+                        {address.label} - {address.city}
+                        {address.state && `, ${address.state}`} -{' '}
+                        {address.country}
+                        {address.isDefault ? ' (Default)' : ''}
+                      </option>
+                    ))}
+                  </select>
                 )}
 
-                <div className="flex justify-between items-center text-[#010f1c] text-[20px] font-[550] pb-3">
-                  <span className="font-Jost">Total</span>
-                  <span>
-                    ${(subtotal - (discountAmount || 0)).toFixed(2)}
-                  </span>
-                </div>
+                {/* Show selected address details */}
+                {selectedAddressId && addresses.length > 0 && (
+                  <div className="mt-2 p-2 bg-gray-50 border border-gray-200 rounded-md text-xs text-gray-700">
+                    <div className="flex items-start gap-1">
+                      <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                      <div>
+                        {(() => {
+                          const selected = addresses.find(
+                            (a) => a.id === selectedAddressId
+                          );
+                          if (!selected) return null;
+                          return (
+                            <>
+                              <p className="font-medium">{selected.name}</p>
+                              <p>{selected.street}</p>
+                              <p>
+                                {selected.city}
+                                {selected.state && `, ${selected.state}`}{' '}
+                                {selected.zipCode}
+                              </p>
+                              <p>{selected.country}</p>
+                              {selected.phoneNumber && (
+                                <p className="mt-1">
+                                  Phone: {selected.phoneNumber}
+                                </p>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
+              <hr className="my-4 text-slate-200" />
 
-              {/* Checkout */}
+              <div className="mb-4">
+                <h4 className="font-medium mb-[7px] text-[15px]">
+                  Select Payment Method
+                </h4>
+                <select className="w-full p-2 border border-gray-200 rounded-md focus-outline-none focus:border-brand-primary-500">
+                  <option value="credit_card">Online Payment</option>
+                  <option value="cash_on_delivery">Cash on Delivery</option>
+                </select>
+              </div>
+              <hr className="my-4 text-slate-200" />
 
-              <button
-                disabled={loading}
-                className="w-full bg-gray-900 hover:bg-brand-primary-500 text-white font-semibold py-3 rounded-lg transition mt-4 flex items-center justify-center gap-2"
-                onClick={createPaymentSession}
-              >
-                {loading && <Loader2 className="w-5 h-5 animate-spin" />}
-                {loading ? 'Redirecting ...' : 'Proceed to Checkout'}
-              </button>
+              {/* Discount Display */}
+              {storedCouponCode && discountAmount > 0 && (
+                <div className="flex justify-between items-center text-green-600 text-[16px] font-medium pb-3">
+                  <span>Discount ({storedCouponCode})</span>
+                  <span>-${discountAmount.toFixed(2)}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center text-[#010f1c] text-[20px] font-[550] pb-3">
+                <span className="font-Jost">Total</span>
+                <span>${(subtotal - (discountAmount || 0)).toFixed(2)}</span>
+              </div>
             </div>
+
+            {/* Checkout */}
+
+            <button
+              disabled={loading}
+              className="w-full bg-gray-900 hover:bg-brand-primary-500 text-white font-semibold py-3 rounded-lg transition mt-4 flex items-center justify-center gap-2"
+              onClick={createPaymentSession}
+            >
+              {loading && <Loader2 className="w-5 h-5 animate-spin" />}
+              {loading ? 'Redirecting ...' : 'Proceed to Checkout'}
+            </button>
           </div>
         )}
       </div>

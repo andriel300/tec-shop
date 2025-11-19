@@ -1,7 +1,7 @@
 import React from 'react';
 import { Ticket, ExternalLink, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
-import { useDiscounts } from '../../../hooks/useDiscounts';
+import { useDiscounts } from '../../../../hooks/useDiscounts';
 import { Select } from '../core/Select';
 
 interface DiscountSelectorProps {
@@ -73,14 +73,17 @@ export function DiscountSelector({ value, onChange }: DiscountSelectorProps) {
         </div>
         <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-4">
           <div className="flex items-start gap-3">
-            <AlertCircle size={20} className="text-blue-400 flex-shrink-0 mt-0.5" />
+            <AlertCircle
+              size={20}
+              className="text-blue-400 flex-shrink-0 mt-0.5"
+            />
             <div>
               <p className="text-blue-300 text-sm font-medium mb-1">
                 No active discount codes available
               </p>
               <p className="text-gray-400 text-sm mb-3">
-                Create discount codes to offer special pricing, promotions, or seasonal
-                sales to your customers.
+                Create discount codes to offer special pricing, promotions, or
+                seasonal sales to your customers.
               </p>
               <Link
                 href="/dashboard/discount-codes"
@@ -143,15 +146,17 @@ export function DiscountSelector({ value, onChange }: DiscountSelectorProps) {
           variant="dark"
         />
         <p className="mt-2 text-sm text-gray-400">
-          Attach a discount code to this product. Customers can apply this code at
-          checkout to receive the discount.
+          Attach a discount code to this product. Customers can apply this code
+          at checkout to receive the discount.
         </p>
 
         {/* Show selected discount details */}
         {value && activeDiscounts.find((d) => d.id === value) && (
           <div className="mt-3 bg-purple-900/20 border border-purple-700 rounded-lg p-3">
             {(() => {
-              const selectedDiscount = activeDiscounts.find((d) => d.id === value);
+              const selectedDiscount = activeDiscounts.find(
+                (d) => d.id === value
+              );
               if (!selectedDiscount) return null;
 
               return (
@@ -182,7 +187,8 @@ export function DiscountSelector({ value, onChange }: DiscountSelectorProps) {
                     <div className="flex items-center justify-between">
                       <span className="text-gray-400">Usage:</span>
                       <span className="text-gray-300">
-                        {selectedDiscount.usageCount} / {selectedDiscount.usageLimit}
+                        {selectedDiscount.usageCount} /{' '}
+                        {selectedDiscount.usageLimit}
                       </span>
                     </div>
                   )}
@@ -194,8 +200,8 @@ export function DiscountSelector({ value, onChange }: DiscountSelectorProps) {
       </div>
 
       <div className="text-xs text-gray-500 border-t border-gray-700 pt-3">
-        <strong>Note:</strong> Only active discount codes are shown. Inactive or expired
-        codes will not appear in this list.
+        <strong>Note:</strong> Only active discount codes are shown. Inactive or
+        expired codes will not appear in this list.
       </div>
     </div>
   );
