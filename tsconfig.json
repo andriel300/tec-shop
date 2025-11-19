@@ -101,6 +101,15 @@
     },
     {
       "path": "./libs/shared/components/input"
+    },
+    {
+      "path": "./apps/chatting-service"
+    },
+    {
+      "path": "./apps/logger-service"
+    },
+    {
+      "path": "./apps/recommendation-service"
     }
   ]
 }
