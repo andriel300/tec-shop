@@ -33,7 +33,7 @@ const WishListPage = () => {
   };
 
   const removeItem = (id: string) => {
-    removeFromWishList(id, user, location, deviceInfo);
+    removeFromWishList(id, user ?? undefined, location ?? undefined, deviceInfo ?? undefined);
   };
   const addToCart = useStore((state) => state.addToCart);
   const removeFromWishList = useStore((state) => state.removeFromWishList);
@@ -77,7 +77,7 @@ const WishListPage = () => {
                   <tr key={item.id} className="border-b border-b-[#0000000e]">
                     <td className="flex items-center gap-3 p-4">
                       <Image
-                        src={item.image}
+                        src={(typeof item.image === 'string' ? item.image : '/placeholder.png')}
                         width={80}
                         height={80}
                         alt={item.title}
@@ -116,7 +116,7 @@ const WishListPage = () => {
                       <button
                         className="bg-brand-primary-500 text-white hover:bg-brand-primary-900 px-5 py-2 rounded-md transition-all"
                         onClick={() =>
-                          addToCart(item, user, location, deviceInfo)
+                          addToCart(item, user ?? undefined, location ?? undefined, deviceInfo ?? undefined)
                         }
                       >
                         Add to Cart

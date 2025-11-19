@@ -20,9 +20,9 @@ interface ShopCardProps {
     isActive?: boolean;
     seller?: {
       id: string;
-      name: string;
-      country: string;
-      isVerified: boolean;
+      name?: string;
+      country?: string;
+      isVerified?: boolean;
     };
   };
 }
@@ -74,9 +74,7 @@ const ShopCard: React.FC<ShopCardProps> = ({ shop }) => {
 
         {/* Bio */}
         {shop.bio && (
-          <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-            {shop.bio}
-          </p>
+          <p className="text-xs text-gray-600 mt-1 line-clamp-2">{shop.bio}</p>
         )}
 
         {/* Location & Rating */}

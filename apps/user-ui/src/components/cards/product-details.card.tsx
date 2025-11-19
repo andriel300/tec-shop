@@ -43,9 +43,9 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
 
   // Zustand store hooks
   const addToCart = useStore((state) => state.addToCart);
-  const removeFromCart = useStore((state) => state.removeFromCart);
+  // const removeFromCart = useStore((state) => state.removeFromCart);
   const addToWishList = useStore((state) => state.addToWishList);
-  const removeFromWishList = useStore((state) => state.removeFromWishList);
+  // const removeFromWishList = useStore((state) => state.removeFromWishList);
   const wishlist = useStore((state) => state.wishlist);
   const cart = useStore((state) => state.cart);
 
@@ -138,10 +138,10 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
 
   // Calculate display price based on selected variant or product
   const displayPrice = selectedVariant
-    ? selectedVariant.salePrice || selectedVariant.price
-    : product.salePrice || product.price;
+    ? selectedVariant.salePrice ?? selectedVariant.price
+    : product.salePrice ?? product.price;
 
-  const originalPrice = selectedVariant ? selectedVariant.price : product.price;
+  const originalPrice = selectedVariant?.price ?? product.price ?? 0;
   const hasDiscount = displayPrice < originalPrice;
 
   // Calculate available stock
@@ -185,7 +185,9 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
       useStore.setState((state) => ({
         cart: state.cart.filter((item) => {
           if (selectedVariant && item.variantId) {
-            return !(item.id === product.id && item.variantId === selectedVariant.id);
+            return !(
+              item.id === product.id && item.variantId === selectedVariant.id
+            );
           }
           return !(item.id === product.id && !item.variantId);
         }),
@@ -196,7 +198,9 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
       const sellerId = shop?.seller?.authId || '';
 
       if (!sellerId) {
-        console.error('Cannot add to cart: sellerId not available from shop data');
+        console.error(
+          'Cannot add to cart: sellerId not available from shop data'
+        );
         return;
       }
 
@@ -212,9 +216,16 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
         sellerId,
         variantId: selectedVariant?.id,
         sku: selectedVariant?.sku,
-        variantAttributes: selectedVariant?.attributes as Record<string, string> | undefined,
+        variantAttributes: selectedVariant?.attributes as
+          | Record<string, string>
+          | undefined,
       };
-      addToCart(productData, user, location, deviceInfo);
+      addToCart(
+        productData,
+        user ?? undefined,
+        location ?? undefined,
+        deviceInfo ?? undefined
+      );
     }
   };
 
@@ -234,7 +245,9 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
       useStore.setState((state) => ({
         wishlist: state.wishlist.filter((item) => {
           if (selectedVariant && item.variantId) {
-            return !(item.id === product.id && item.variantId === selectedVariant.id);
+            return !(
+              item.id === product.id && item.variantId === selectedVariant.id
+            );
           }
           return !(item.id === product.id && !item.variantId);
         }),
@@ -245,7 +258,9 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
       const sellerId = shop?.seller?.authId || '';
 
       if (!sellerId) {
-        console.error('Cannot add to wishlist: sellerId not available from shop data');
+        console.error(
+          'Cannot add to wishlist: sellerId not available from shop data'
+        );
         return;
       }
 
@@ -262,11 +277,13 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
           sellerId,
           variantId: selectedVariant?.id,
           sku: selectedVariant?.sku,
-          variantAttributes: selectedVariant?.attributes as Record<string, string> | undefined,
+          variantAttributes: selectedVariant?.attributes as
+            | Record<string, string>
+            | undefined,
         },
-        user,
-        location,
-        deviceInfo
+        user ?? undefined,
+        location ?? undefined,
+        deviceInfo ?? undefined
       );
     }
   };
@@ -546,11 +563,11 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                 {/* Add to Cart Button */}
                 <button
                   onClick={handleAddToCart}
-                  disabled={
+                  disabled={Boolean(
                     variantAttributes &&
-                    variantAttributes.length > 0 &&
-                    !selectedVariant
-                  }
+                      variantAttributes.length > 0 &&
+                      !selectedVariant
+                  )}
                   className={`flex-1 flex items-center justify-center gap-2 font-semibold px-4 py-2.5 rounded-lg transition text-sm disabled:opacity-50 disabled:cursor-not-allowed ${
                     isInCart
                       ? 'bg-green-600 hover:bg-green-700 text-white'
@@ -616,7 +633,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                   <div>
                     <p className="text-xs text-gray-500">Shop Rating</p>
                     <div className="flex items-center gap-1.5">
-                      <StarRating value={shop.rating} readonly size="sm" />
+                      <StarRating value={shop.rating ?? 0} readonly size="sm" />
                       <span className="text-xs text-gray-600">
                         ({shop.totalOrders} orders)
                       </span>

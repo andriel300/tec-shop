@@ -8,7 +8,7 @@ import CartIcon from '../../assets/svgs/cart-icon';
 import { useAuth } from '../../hooks/use-auth';
 import useStore from '../../store';
 import { useCategoryTree } from '../../hooks/use-categories';
-import type { Category } from '../../lib/api/categories';
+// import type { Category } from '../../lib/api/categories';
 
 const HeaderBottom = () => {
   const { isAuthenticated, user, userProfile, logout } = useAuth();
@@ -112,7 +112,10 @@ const HeaderBottom = () => {
                           {category.name}
                         </span>
                         {category.children && category.children.length > 0 && (
-                          <ChevronRight size={16} className="text-text-secondary" />
+                          <ChevronRight
+                            size={16}
+                            className="text-text-secondary"
+                          />
                         )}
                       </Link>
 

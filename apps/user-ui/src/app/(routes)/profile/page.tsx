@@ -32,7 +32,7 @@ import {
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 
 const Page = () => {
   const searchParams = useSearchParams();
@@ -238,7 +238,13 @@ const Page = () => {
     </div>
   );
 };
-export default Page;
+export default function ProfilePageWrapper() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <Page />
+    </Suspense>
+  );
+}
 
 const NavItem = ({ label, Icon, active, danger, onClick }: any) => (
   <button

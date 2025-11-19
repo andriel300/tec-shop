@@ -1,6 +1,12 @@
 'use client';
 
-import React, { useRef, useState, useCallback, useMemo, useEffect } from 'react';
+import React, {
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+} from 'react';
 
 interface SmallImageConfig {
   alt?: string;
@@ -41,7 +47,6 @@ export default function ProductMagnifier({
   className = '',
 }: ProductMagnifierProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const largeImageRef = useRef<HTMLImageElement | null>(null);
   const [isHovering, setIsHovering] = useState(false);
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
   const [containerReady, setContainerReady] = useState(false);
@@ -72,30 +77,41 @@ export default function ProductMagnifier({
   /**
    * Parse dimension value (handles both numbers and percentage strings)
    */
-  const parseDimension = useCallback((value: string | number, isWidth: boolean): number => {
-    if (typeof value === 'number') return value;
+  const parseDimension = useCallback(
+    (value: string | number, isWidth: boolean): number => {
+      if (typeof value === 'number') return value;
 
-    // Handle percentage strings by using the small image dimensions as reference
-    if (typeof value === 'string' && value.includes('%')) {
-      const percentage = parseInt(value) / 100;
-      const refSize = isWidth
-        ? (containerRef.current?.offsetWidth || 0)
-        : (containerRef.current?.offsetHeight || 0);
+      // Handle percentage strings by using the small image dimensions as reference
+      if (typeof value === 'string' && value.includes('%')) {
+        const percentage = parseInt(value) / 100;
+        const refSize = isWidth
+          ? containerRef.current?.offsetWidth || 0
+          : containerRef.current?.offsetHeight || 0;
 
-      if (refSize === 0) return 500; // Fallback if ref not ready
-      return refSize * percentage;
-    }
+        if (refSize === 0) return 500; // Fallback if ref not ready
+        return refSize * percentage;
+      }
 
-    return parseInt(String(value)) || 500;
-  }, []);
+      return parseInt(String(value)) || 500;
+    },
+    []
+  );
 
   /**
    * Get parsed container dimensions
    */
-  const containerDimensions = useMemo(() => ({
-    width: parseDimension(enlargedImageContainerDimensions.width, true),
-    height: parseDimension(enlargedImageContainerDimensions.height, false),
-  }), [enlargedImageContainerDimensions.width, enlargedImageContainerDimensions.height, parseDimension, containerReady]);
+  const containerDimensions = useMemo(
+    () => ({
+      width: parseDimension(enlargedImageContainerDimensions.width, true),
+      height: parseDimension(enlargedImageContainerDimensions.height, false),
+    }),
+    [
+      enlargedImageContainerDimensions.width,
+      enlargedImageContainerDimensions.height,
+      parseDimension,
+      containerReady,
+    ]
+  );
 
   /**
    * Handle mouse movement with bounds checking
@@ -116,12 +132,15 @@ export default function ProductMagnifier({
   /**
    * Calculate lens position (centered on cursor)
    */
-  const lensPosition = useMemo(() => ({
-    left: cursorPos.x - lensSize / 2,
-    top: cursorPos.y - lensSize / 2,
-    width: lensSize,
-    height: lensSize,
-  }), [cursorPos.x, cursorPos.y, lensSize]);
+  const lensPosition = useMemo(
+    () => ({
+      left: cursorPos.x - lensSize / 2,
+      top: cursorPos.y - lensSize / 2,
+      width: lensSize,
+      height: lensSize,
+    }),
+    [cursorPos.x, cursorPos.y, lensSize]
+  );
 
   /**
    * Calculate zoomed image styles with proper centering
@@ -220,24 +239,23 @@ export default function ProductMagnifier({
       default:
         return baseStyle;
     }
-  }, [
-    enlargedImageContainerDimensions,
-    enlargedImagePosition,
-    isHovering,
-  ]);
+  }, [enlargedImageContainerDimensions, enlargedImagePosition, isHovering]);
 
   /**
    * Lens overlay style
    */
-  const lensStyleMerged: React.CSSProperties = useMemo(() => ({
-    position: 'absolute',
-    borderRadius: '50%',
-    background: 'rgba(255, 255, 255, 0.3)',
-    border: '2px solid rgba(0, 0, 0, 0.2)',
-    pointerEvents: 'none',
-    ...lensPosition,
-    ...lensStyle,
-  }), [lensPosition, lensStyle]);
+  const lensStyleMerged: React.CSSProperties = useMemo(
+    () => ({
+      position: 'absolute',
+      borderRadius: '50%',
+      background: 'rgba(255, 255, 255, 0.3)',
+      border: '2px solid rgba(0, 0, 0, 0.2)',
+      pointerEvents: 'none',
+      ...lensPosition,
+      ...lensStyle,
+    }),
+    [lensPosition, lensStyle]
+  );
 
   return (
     <div
@@ -259,12 +277,7 @@ export default function ProductMagnifier({
       />
 
       {/* Lens Overlay */}
-      {isHovering && (
-        <div
-          style={lensStyleMerged}
-          aria-hidden="true"
-        />
-      )}
+      {isHovering && <div style={lensStyleMerged} aria-hidden="true" />}
 
       {/* Enlarged Image Container */}
       <div style={enlargedContainerStyle} aria-hidden="true">

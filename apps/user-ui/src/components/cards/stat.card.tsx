@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 
-const StatCard = ({ title, count, Icon }) => {
+const StatCard = ({ title, count, Icon }: any) => {
   return (
     <div className="bg-white p-5 rounded-md shadow-sm border border-gray-100 flex items-center justify-between">
       <div>
