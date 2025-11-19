@@ -15,6 +15,10 @@ describe('AppService', () => {
     picture: null,
     createdAt: new Date(),
     updatedAt: new Date(),
+    _count: {
+      followers: 0,
+      following: 0,
+    },
   };
 
   beforeEach(async () => {
@@ -48,8 +52,21 @@ describe('AppService', () => {
       const result = await service.getUserProfile('user1');
       expect(prisma.userProfile.findUnique).toHaveBeenCalledWith({
         where: { userId: 'user1' },
+        include: {
+          _count: {
+            select: {
+              followers: true,
+              following: true,
+            },
+          },
+        },
       });
-      expect(result).toEqual(mockUserProfile);
+      expect(result).toEqual({
+        ...mockUserProfile,
+        followersCount: 0,
+        followingCount: 0,
+        _count: undefined,
+      });
     });
   });
 
