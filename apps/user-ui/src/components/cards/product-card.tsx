@@ -45,14 +45,21 @@ const ProductCard = ({ product }: ProductCardProps) => {
     e.stopPropagation();
 
     if (isWishListed) {
-      removeFromWishList(product.id, user, location, deviceInfo);
+      removeFromWishList(
+        product.id,
+        user ?? undefined,
+        location ?? undefined,
+        deviceInfo
+      );
     } else {
       // Get sellerId from shop data (required for order processing)
       // Use authId instead of MongoDB _id for cross-service consistency
       const sellerId = shop?.seller?.authId || '';
 
       if (!sellerId) {
-        console.error('Cannot add to wishlist: sellerId not available from shop data');
+        console.error(
+          'Cannot add to wishlist: sellerId not available from shop data'
+        );
         return;
       }
 
@@ -68,8 +75,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
           shopId: product.shopId,
           sellerId,
         },
-        user,
-        location,
+        user ?? undefined,
+        location ?? undefined,
         deviceInfo
       );
     }
@@ -86,14 +93,21 @@ const ProductCard = ({ product }: ProductCardProps) => {
     e.stopPropagation();
 
     if (isInCart) {
-      removeFromCart(product.id, user, location, deviceInfo);
+      removeFromCart(
+        product.id,
+        user ?? undefined,
+        location ?? undefined,
+        deviceInfo
+      );
     } else {
       // Get sellerId from shop data (required for order processing)
       // Use authId instead of MongoDB _id for cross-service consistency
       const sellerId = shop?.seller?.authId || '';
 
       if (!sellerId) {
-        console.error('Cannot add to cart: sellerId not available from shop data');
+        console.error(
+          'Cannot add to cart: sellerId not available from shop data'
+        );
         return;
       }
 
@@ -109,8 +123,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
           shopId: product.shopId,
           sellerId,
         },
-        user,
-        location,
+        user ?? undefined,
+        location ?? undefined,
         deviceInfo
       );
     }

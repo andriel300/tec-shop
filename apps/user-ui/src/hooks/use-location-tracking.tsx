@@ -34,7 +34,7 @@ const useLocationTracking = () => {
     country: string;
     city: string;
   } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [_isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Try to load from localStorage first
@@ -74,7 +74,10 @@ const useLocationTracking = () => {
         };
 
         if (typeof window !== 'undefined') {
-          localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(newLocation));
+          localStorage.setItem(
+            LOCATION_STORAGE_KEY,
+            JSON.stringify(newLocation)
+          );
           localStorage.removeItem('location_fetch_failed');
         }
         setLocation(newLocation);

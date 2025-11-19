@@ -59,7 +59,10 @@ const Header = () => {
   // Close search results when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node)
+      ) {
         setShowResults(false);
       }
     };
@@ -80,8 +83,12 @@ const Header = () => {
       setIsSearching(true);
       try {
         const [productsRes, shopsRes] = await Promise.all([
-          apiClient.get(`/public/products?search=${encodeURIComponent(searchQuery)}&limit=5`),
-          apiClient.get(`/public/shops?search=${encodeURIComponent(searchQuery)}&limit=3`),
+          apiClient.get(
+            `/public/products?search=${encodeURIComponent(searchQuery)}&limit=5`
+          ),
+          apiClient.get(
+            `/public/shops?search=${encodeURIComponent(searchQuery)}&limit=3`
+          ),
         ]);
 
         setSearchResults({
@@ -262,7 +269,9 @@ const Header = () => {
                       searchResults.shops.length > 0) && (
                       <div className="border-t border-ui-divider p-3">
                         <Link
-                          href={`/products?search=${encodeURIComponent(searchQuery)}`}
+                          href={`/products?search=${encodeURIComponent(
+                            searchQuery
+                          )}`}
                           onClick={() => {
                             setShowResults(false);
                             setSearchQuery('');

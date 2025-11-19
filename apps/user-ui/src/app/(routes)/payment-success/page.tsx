@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { CheckCircle, Truck, Loader2, XCircle } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
@@ -129,4 +129,10 @@ const PaymentSuccessPage = () => {
   );
 };
 
-export default PaymentSuccessPage;
+export default function PaymentPageWrapper() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PaymentSuccessPage />
+    </Suspense>
+  );
+}

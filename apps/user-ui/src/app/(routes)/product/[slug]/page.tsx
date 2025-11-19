@@ -1,4 +1,5 @@
-import { apiClient } from 'apps/user-ui/src/lib/api/client';
+/* eslint-disable @nx/enforce-module-boundaries */
+import apiClient from 'apps/user-ui/src/lib/api/client';
 import ProductDetails from 'apps/user-ui/src/shared/modules/product/product-details';
 import { Metadata } from 'next';
 import React from 'react';

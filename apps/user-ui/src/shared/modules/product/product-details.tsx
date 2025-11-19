@@ -59,7 +59,7 @@ import React, { useEffect, useState, useMemo } from 'react';
  * 6. Add to Cart button enabled when all attributes selected
  */
 const ProductDetails = ({ product }: { product: any }) => {
-  const { user, isLoading } = useAuth();
+  const { user } = useAuth();
   const location = useLocationTracking();
   const deviceInfo = useDeviceTracking();
 
@@ -82,7 +82,7 @@ const ProductDetails = ({ product }: { product: any }) => {
   const [quantity, setQuantity] = useState(1);
 
   // ========== RECOMMENDATIONS STATE ==========
-  const [priceRange, setPriceRange] = useState([product.price, 1199]);
+  const [priceRange] = useState([product.price, 1199]);
   const [recommendedProducts, setRecommendedProducts] = useState([]);
 
   // ========== SHOP INFO STATE ==========
@@ -427,7 +427,12 @@ const ProductDetails = ({ product }: { product: any }) => {
                 color={isWishListed ? 'transparent' : '#777'}
                 onClick={() => {
                   if (isWishListed) {
-                    removeFromWishList(product.id, user, location, deviceInfo);
+                    removeFromWishList(
+                      product.id,
+                      user ?? undefined,
+                      location ?? undefined,
+                      deviceInfo
+                    );
                   } else {
                     // Get sellerId from shopInfo (required for order processing)
                     const sellerId = shopInfo?.seller?.id || '';
@@ -453,8 +458,8 @@ const ProductDetails = ({ product }: { product: any }) => {
                         shopId: product.shopId,
                         sellerId,
                       },
-                      user,
-                      location,
+                      user ?? undefined,
+                      location ?? undefined,
                       deviceInfo
                     );
                   }
@@ -659,7 +664,7 @@ const ProductDetails = ({ product }: { product: any }) => {
                 }`}
                 disabled={
                   availableStock === 0 ||
-                  (variantAttributes &&
+                  (!!variantAttributes &&
                     variantAttributes.length > 0 &&
                     !selectedVariant)
                 }
@@ -690,8 +695,8 @@ const ProductDetails = ({ product }: { product: any }) => {
                       variantId: selectedVariant?.id,
                       sku: selectedVariant?.sku,
                     },
-                    user,
-                    location,
+                    user ?? undefined,
+                    location ?? undefined,
                     deviceInfo
                   );
                 }}
