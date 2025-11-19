@@ -428,14 +428,7 @@ const Page = () => {
                           return (
                             <FormField
                               field={field}
-                              label={
-                                <div className="flex items-center gap-2">
-                                  <span>Sale Price ($)</span>
-                                  <span className="text-xs px-2 py-0.5 bg-red-100 text-red-700 rounded-full font-medium">
-                                    Special Offers
-                                  </span>
-                                </div>
-                              }
+                              label="Sale Price ($)"
                             >
                               <div className="space-y-2">
                                 <Input

@@ -1,8 +1,9 @@
+/* eslint-disable @nx/enforce-module-boundaries */
 'use client';
 
 import React, { useState } from 'react';
 import { Tag, X } from 'lucide-react';
-import { Input } from '../core/Input';
+import { Input } from 'libs/shared/components/input/src/lib/input';
 
 export interface TagInputProps {
   value: string[];
@@ -125,8 +126,9 @@ const TagInput: React.FC<TagInputProps> = ({
       )}
 
       <p className="mt-2 text-xs text-gray-400">
-        Tags help customers find your product (e.g., &quot;sale&quot;, &quot;trending&quot;, &quot;new-arrival&quot;).
-        Press Enter or click Add.
+        Tags help customers find your product (e.g., &quot;sale&quot;,
+        &quot;trending&quot;, &quot;new-arrival&quot;). Press Enter or click
+        Add.
       </p>
 
       {value.length >= maxTags && (

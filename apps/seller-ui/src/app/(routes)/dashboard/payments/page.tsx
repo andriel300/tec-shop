@@ -9,7 +9,6 @@ import {
   flexRender,
 } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
-import apiClient from 'apps/seller-ui/src/lib/api/client';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search,
@@ -24,6 +23,7 @@ import {
   Package,
   ArrowUpDown,
 } from 'lucide-react';
+import { apiClient } from 'apps/seller-ui/src/lib/api/client';
 import { Breadcrumb } from 'apps/seller-ui/src/components/navigation/Breadcrumb';
 
 interface OrderItem {
@@ -139,7 +139,11 @@ const PaymentsPage = () => {
     () => [
       {
         accessorKey: 'orderNumber',
-        header: ({ column }: { column: { toggleSorting: (desc?: boolean) => void } }) => (
+        header: ({
+          column,
+        }: {
+          column: { toggleSorting: (desc?: boolean) => void };
+        }) => (
           <button
             onClick={() => column.toggleSorting()}
             className="flex items-center gap-2 hover:text-white transition-colors"
@@ -148,7 +152,7 @@ const PaymentsPage = () => {
             <ArrowUpDown size={14} />
           </button>
         ),
-        cell: ({ row }: { row: { original: typeof payments[0] } }) => (
+        cell: ({ row }: { row: { original: (typeof payments)[0] } }) => (
           <span className="text-white font-mono text-sm">
             {row.original.orderNumber}
           </span>
@@ -156,7 +160,11 @@ const PaymentsPage = () => {
       },
       {
         accessorKey: 'orderDate',
-        header: ({ column }: { column: { toggleSorting: (desc?: boolean) => void } }) => (
+        header: ({
+          column,
+        }: {
+          column: { toggleSorting: (desc?: boolean) => void };
+        }) => (
           <button
             onClick={() => column.toggleSorting()}
             className="flex items-center gap-2 hover:text-white transition-colors"
@@ -165,7 +173,7 @@ const PaymentsPage = () => {
             <ArrowUpDown size={14} />
           </button>
         ),
-        cell: ({ row }: { row: { original: typeof payments[0] } }) => {
+        cell: ({ row }: { row: { original: (typeof payments)[0] } }) => {
           const date = new Date(row.original.orderDate).toLocaleDateString(
             'en-US',
             {
@@ -185,18 +193,23 @@ const PaymentsPage = () => {
       {
         accessorKey: 'itemCount',
         header: 'Items',
-        cell: ({ row }: { row: { original: typeof payments[0] } }) => (
+        cell: ({ row }: { row: { original: (typeof payments)[0] } }) => (
           <div className="flex items-center gap-2 text-gray-300">
             <Package size={16} className="text-gray-500" />
             <span className="text-sm">
-              {row.original.itemCount} item{row.original.itemCount !== 1 ? 's' : ''}
+              {row.original.itemCount} item
+              {row.original.itemCount !== 1 ? 's' : ''}
             </span>
           </div>
         ),
       },
       {
         accessorKey: 'totalSales',
-        header: ({ column }: { column: { toggleSorting: (desc?: boolean) => void } }) => (
+        header: ({
+          column,
+        }: {
+          column: { toggleSorting: (desc?: boolean) => void };
+        }) => (
           <button
             onClick={() => column.toggleSorting()}
             className="flex items-center gap-2 hover:text-white transition-colors"
@@ -205,7 +218,7 @@ const PaymentsPage = () => {
             <ArrowUpDown size={14} />
           </button>
         ),
-        cell: ({ row }: { row: { original: typeof payments[0] } }) => (
+        cell: ({ row }: { row: { original: (typeof payments)[0] } }) => (
           <span className="text-gray-300 font-medium">
             ${(row.original.totalSales / 100).toFixed(2)}
           </span>
@@ -214,7 +227,7 @@ const PaymentsPage = () => {
       {
         accessorKey: 'platformFees',
         header: 'Platform Fee',
-        cell: ({ row }: { row: { original: typeof payments[0] } }) => (
+        cell: ({ row }: { row: { original: (typeof payments)[0] } }) => (
           <span className="text-orange-400 text-sm">
             -${(row.original.platformFees / 100).toFixed(2)}
           </span>
@@ -222,7 +235,11 @@ const PaymentsPage = () => {
       },
       {
         accessorKey: 'earnings',
-        header: ({ column }: { column: { toggleSorting: (desc?: boolean) => void } }) => (
+        header: ({
+          column,
+        }: {
+          column: { toggleSorting: (desc?: boolean) => void };
+        }) => (
           <button
             onClick={() => column.toggleSorting()}
             className="flex items-center gap-2 hover:text-white transition-colors"
@@ -231,7 +248,7 @@ const PaymentsPage = () => {
             <ArrowUpDown size={14} />
           </button>
         ),
-        cell: ({ row }: { row: { original: typeof payments[0] } }) => (
+        cell: ({ row }: { row: { original: (typeof payments)[0] } }) => (
           <div className="flex items-center gap-2 text-green-400 font-semibold">
             <DollarSign size={16} />
             <span>${(row.original.earnings / 100).toFixed(2)}</span>
@@ -241,8 +258,11 @@ const PaymentsPage = () => {
       {
         accessorKey: 'payoutStatus',
         header: 'Payout Status',
-        cell: ({ row }: { row: { original: typeof payments[0] } }) => {
-          const statusConfig: Record<string, { icon: typeof CheckCircle; color: string; bg: string }> = {
+        cell: ({ row }: { row: { original: (typeof payments)[0] } }) => {
+          const statusConfig: Record<
+            string,
+            { icon: typeof CheckCircle; color: string; bg: string }
+          > = {
             PENDING: {
               icon: Clock,
               color: 'text-yellow-400',
@@ -265,7 +285,8 @@ const PaymentsPage = () => {
             },
           };
 
-          const config = statusConfig[row.original.payoutStatus] || statusConfig.PENDING;
+          const config =
+            statusConfig[row.original.payoutStatus] || statusConfig.PENDING;
           const Icon = config.icon;
 
           return (
@@ -278,12 +299,15 @@ const PaymentsPage = () => {
               </span>
               {row.original.processedAt && (
                 <span className="text-xs text-gray-500">
-                  {new Date(row.original.processedAt).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+                  {new Date(row.original.processedAt).toLocaleDateString(
+                    'en-US',
+                    {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    }
+                  )}
                 </span>
               )}
             </div>
@@ -293,7 +317,7 @@ const PaymentsPage = () => {
       {
         accessorKey: 'orderStatus',
         header: 'Order Status',
-        cell: ({ row }: { row: { original: typeof payments[0] } }) => {
+        cell: ({ row }: { row: { original: (typeof payments)[0] } }) => {
           const statusColors: Record<string, string> = {
             PAID: 'bg-green-500/20 text-green-400 border border-green-500/30',
             SHIPPED: 'bg-blue-500/20 text-blue-400 border border-blue-500/30',
@@ -469,7 +493,9 @@ const PaymentsPage = () => {
                       >
                         <div className="flex flex-col items-center justify-center text-gray-400">
                           <DollarSign size={48} className="mb-4 opacity-50" />
-                          <p className="text-lg font-medium">No payments found</p>
+                          <p className="text-lg font-medium">
+                            No payments found
+                          </p>
                           <p className="text-sm mt-1">
                             Your earnings from completed orders will appear here
                           </p>

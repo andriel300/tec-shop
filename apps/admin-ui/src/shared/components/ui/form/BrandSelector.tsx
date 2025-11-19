@@ -1,9 +1,14 @@
+/* eslint-disable @nx/enforce-module-boundaries */
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Loader2, Award, CheckCircle } from 'lucide-react';
-import { Input } from '../core/Input';
-import { useBrands, useCreateBrand, type Brand } from '../../../hooks/useBrands';
+import {
+  useBrands,
+  useCreateBrand,
+  type Brand,
+} from '../../../../hooks/useBrands';
+import { Input } from 'libs/shared/components/input/src/lib/input';
 
 export type { Brand };
 
@@ -42,7 +47,11 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
   const [showDropdown, setShowDropdown] = useState(false);
 
   // React Query hooks
-  const { data: brands = [] as Brand[], isLoading: loading, error: fetchError } = useBrands();
+  const {
+    data: brands = [] as Brand[],
+    isLoading: loading,
+    error: fetchError,
+  } = useBrands();
   const { mutate: createBrand, isPending: creating } = useCreateBrand();
 
   const error = fetchError ? 'Failed to load brands.' : null;
@@ -95,7 +104,8 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
 
   // Check if search term matches any existing brand exactly
   const exactMatch = brands.find(
-    (brand: Brand) => brand.name.toLowerCase() === searchTerm.toLowerCase().trim()
+    (brand: Brand) =>
+      brand.name.toLowerCase() === searchTerm.toLowerCase().trim()
   );
 
   // Show "Create" option if there's a search term and no exact match
@@ -233,7 +243,8 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
           <div className="flex items-center gap-2">
             <Award size={16} className="text-blue-400" />
             <span className="text-sm text-blue-300">
-              Selected: <span className="font-medium">{selectedBrand.name}</span>
+              Selected:{' '}
+              <span className="font-medium">{selectedBrand.name}</span>
             </span>
           </div>
           {!required && (

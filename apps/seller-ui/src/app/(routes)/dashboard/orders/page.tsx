@@ -9,7 +9,6 @@ import {
 } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import apiClient from 'apps/seller-ui/src/lib/api/client';
 import { useQuery } from '@tanstack/react-query';
 import {
   Eye,
@@ -19,6 +18,7 @@ import {
   Package,
   DollarSign,
 } from 'lucide-react';
+import { apiClient } from 'apps/seller-ui/src/lib/api/client';
 import { Breadcrumb } from 'apps/seller-ui/src/components/navigation/Breadcrumb';
 
 interface Order {

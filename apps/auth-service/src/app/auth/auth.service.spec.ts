@@ -27,6 +27,7 @@ describe('AuthService', () => {
     googleId: null,
     provider: 'local',
     refreshToken: null,
+    isBanned: false,
     createdAt: new Date(),
     updatedAt: new Date(),
   };

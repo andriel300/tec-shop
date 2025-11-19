@@ -1,15 +1,15 @@
 'use client';
 
-import CartIcon from 'apps/user-ui/src/assets/svgs/cart-icon';
-import ProductCard from 'apps/user-ui/src/components/cards/product-card';
-import ProductMagnifier from 'apps/user-ui/src/components/ui/ProductMagnifier';
-import StarRating from 'apps/user-ui/src/components/ui/star-rating';
-import { useAuth } from 'apps/user-ui/src/contexts/auth-context';
-import useDeviceTracking from 'apps/user-ui/src/hooks/use-device-tracking';
-import useLocationTracking from 'apps/user-ui/src/hooks/use-location-tracking';
-import apiClient from 'apps/user-ui/src/lib/api/client';
-import useStore from 'apps/user-ui/src/store';
-import type { ProductVariant } from 'apps/user-ui/src/lib/api/products';
+import CartIcon from '../../../assets/svgs/cart-icon';
+import ProductCard from '../../../components/cards/product-card';
+import ProductMagnifier from '../../../components/ui/ProductMagnifier';
+import StarRating from '../../../components/ui/star-rating';
+import { useAuth } from '../../../contexts/auth-context';
+import useDeviceTracking from '../../../hooks/use-device-tracking';
+import useLocationTracking from '../../../hooks/use-location-tracking';
+import apiClient from '../../../lib/api/client';
+import useStore from '../../../store';
+import type { ProductVariant } from '../../../lib/api/products';
 import {
   ChevronLeft,
   ChevronRight,
@@ -433,7 +433,9 @@ const ProductDetails = ({ product }: { product: any }) => {
                     const sellerId = shopInfo?.seller?.id || '';
 
                     if (!sellerId) {
-                      console.error('Cannot add to wishlist: sellerId not available from shop data');
+                      console.error(
+                        'Cannot add to wishlist: sellerId not available from shop data'
+                      );
                       return;
                     }
 
@@ -666,7 +668,9 @@ const ProductDetails = ({ product }: { product: any }) => {
                   const sellerId = shopInfo?.seller?.id || '';
 
                   if (!sellerId) {
-                    console.error('Cannot add to cart: sellerId not available from shop data');
+                    console.error(
+                      'Cannot add to cart: sellerId not available from shop data'
+                    );
                     return;
                   }
 

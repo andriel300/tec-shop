@@ -1,7 +1,8 @@
+/* eslint-disable @nx/enforce-module-boundaries */
 'use client';
 
 import React, { useEffect } from 'react';
-import { Input } from '../core/Input';
+import { Input } from 'libs/shared/components/input/src/lib/input';
 import { Textarea } from '../core/Textarea';
 import { Search, Tag } from 'lucide-react';
 

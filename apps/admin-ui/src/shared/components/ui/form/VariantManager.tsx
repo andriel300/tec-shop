@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Plus, X, Trash2, RefreshCw } from 'lucide-react';
-import { Input } from '../core/Input';
+import { Input } from '@tec-shop/input';
 import {
   ATTRIBUTE_SUGGESTIONS,
   SUGGESTION_CATEGORIES,

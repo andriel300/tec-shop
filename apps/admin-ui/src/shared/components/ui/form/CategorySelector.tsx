@@ -1,9 +1,10 @@
+/* eslint-disable @nx/enforce-module-boundaries */
 'use client';
 
 import React, { useState } from 'react';
 import { ChevronRight, Folder, Loader2 } from 'lucide-react';
-import { Input } from '../core/Input';
-import { useCategories, type Category } from '../../../hooks/useCategories';
+import { useCategories, type Category } from '../../../../hooks/useCategories';
+import { Input } from 'libs/shared/components/input/src/lib/input';
 
 export type { Category };
 
@@ -45,7 +46,11 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
   const [breadcrumb, setBreadcrumb] = useState<Category[]>([]);
 
   // React Query hook
-  const { data: categories = [], isLoading: loading, error: fetchError } = useCategories();
+  const {
+    data: categories = [],
+    isLoading: loading,
+    error: fetchError,
+  } = useCategories();
 
   const error = fetchError ? 'Failed to load categories.' : null;
 

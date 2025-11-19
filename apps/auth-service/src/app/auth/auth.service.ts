@@ -279,7 +279,7 @@ export class AuthService implements OnModuleInit {
       const { googleId, email, name, picture, userType = 'CUSTOMER' } = googleAuthDto;
 
       // First, check if user exists with this googleId
-      let user = await this.prisma.user.findUnique({
+      let user = await this.prisma.user.findFirst({
         where: { googleId },
       });
 
@@ -677,7 +677,6 @@ export class AuthService implements OnModuleInit {
       ...tokens,
       userId: user.id,
       email: user.email,
-      name: user.name,
       createdAt: user.createdAt.toISOString(),
     };
   }

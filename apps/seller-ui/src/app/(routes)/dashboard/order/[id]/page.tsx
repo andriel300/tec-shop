@@ -2,8 +2,6 @@
 
 import { use, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import apiClient from 'apps/seller-ui/src/lib/api/client';
-import { Breadcrumb } from 'apps/seller-ui/src/components/navigation/Breadcrumb';
 import {
   Package,
   Truck,
@@ -12,7 +10,6 @@ import {
   MapPin,
   User,
   Phone,
-  Mail,
   DollarSign,
   Calendar,
   Tag,
@@ -21,6 +18,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { apiClient } from 'apps/seller-ui/src/lib/api/client';
+import { Breadcrumb } from 'apps/seller-ui/src/components/navigation/Breadcrumb';
 
 interface OrderItem {
   id: string;

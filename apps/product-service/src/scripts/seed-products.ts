@@ -296,7 +296,7 @@ function generateSlug(name: string): string {
  */
 function generateRatingMetrics() {
   const ratingCount = faker.number.int({ min: 5, max: 100 }); // 5-100 ratings
-  const averageRating = faker.number.float({ min: 3.0, max: 5.0, precision: 0.1 }); // 3.0-5.0 rating
+  const averageRating = faker.number.float({ min: 3.0, max: 5.0, fractionDigits: 1 }); // 3.0-5.0 rating
   return {
     ratingCount,
     averageRating,
@@ -318,7 +318,7 @@ function generateMetrics() {
  */
 function calculatePrices(basePrice: number, salePercentage?: number) {
   // Add slight price variation (+/- 5%)
-  const priceVariation = faker.number.float({ min: -0.05, max: 0.05, precision: 0.01 });
+  const priceVariation = faker.number.float({ min: -0.05, max: 0.05, fractionDigits: 2 });
   const price = Number((basePrice * (1 + priceVariation)).toFixed(2));
 
   let salePrice: number | undefined;

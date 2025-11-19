@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PaymentService } from './payment.service';
 import { OrderService } from '../app/order.service';
 import Stripe from 'stripe';
 
@@ -8,7 +7,6 @@ export class WebhookService {
   private readonly logger = new Logger(WebhookService.name);
 
   constructor(
-    private readonly paymentService: PaymentService,
     private readonly orderService: OrderService
   ) {}
 

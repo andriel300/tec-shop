@@ -1,15 +1,15 @@
 /* eslint-disable @nx/enforce-module-boundaries */
 'use client';
-import useSidebar from 'apps/admin-ui/src/hooks/useSidebar';
+import useSidebar from '../../../hooks/useSidebar';
 import React, { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import useAdmin from 'apps/admin-ui/src/hooks/useAdmin';
+import useAdmin from '../../../hooks/useAdmin';
 import Box from '../box';
 import { Sidebar } from './sidebar.styles';
 import Link from 'next/link';
-import { Logo } from 'apps/admin-ui/src/assets/svgs/logo';
+import { Logo } from '../../../assets/svgs/logo';
 import SidebarItem from './sidebar.item';
-import Home from 'apps/admin-ui/src/assets/svgs/icons/home-icon';
+import Home from '../../../assets/svgs/icons/home-icon';
 import SidebarMenu from './sidebar.menu';
 import {
   BellPlus,
@@ -22,7 +22,7 @@ import {
   Settings,
   Store,
 } from 'lucide-react';
-import { Payment } from 'apps/admin-ui/src/assets/svgs/icons/payment-icon';
+import { Payment } from '../../../assets/svgs/icons/payment-icon';
 
 const SidebarWrapper = () => {
   const { activeSidebar, setActiveSidebar } = useSidebar();

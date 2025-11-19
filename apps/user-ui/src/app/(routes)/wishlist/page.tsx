@@ -1,9 +1,9 @@
 'use client';
 
-import { useAuth } from 'apps/user-ui/src/hooks/use-auth';
-import useDeviceTracking from 'apps/user-ui/src/hooks/use-device-tracking';
-import useLocationTracking from 'apps/user-ui/src/hooks/use-location-tracking';
-import useStore from 'apps/user-ui/src/store';
+import { useAuth } from '../../../hooks/use-auth';
+import useDeviceTracking from '../../../hooks/use-device-tracking';
+import useLocationTracking from '../../../hooks/use-location-tracking';
+import useStore from '../../../store';
 import Image from 'next/image';
 import Link from 'next/link';
 

@@ -1,7 +1,7 @@
 // Notifications
 // Will make it dynamic after some time
 
-import { Breadcrumb } from 'apps/admin-ui/src/shared/components/navigation/Breadcrumb';
+import { Breadcrumb } from '../../../shared/components/navigation/Breadcrumb';
 
 const Notifications = () => {
   return (
