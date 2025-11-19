@@ -15,7 +15,9 @@ async function bootstrap() {
   const certsPath = join(process.cwd(), 'certs');
   const tlsOptions = {
     key: readFileSync(join(certsPath, 'seller-service/seller-service-key.pem')),
-    cert: readFileSync(join(certsPath, 'seller-service/seller-service-cert.pem')),
+    cert: readFileSync(
+      join(certsPath, 'seller-service/seller-service-cert.pem')
+    ),
     ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
     requestCert: true,
     rejectUnauthorized: true,
@@ -26,23 +28,25 @@ async function bootstrap() {
     {
       transport: Transport.TCP,
       options: {
-        host: 'localhost',
-        port: 6003,
+        host: process.env.SELLER_SERVICE_HOST || 'localhost',
+        port: parseInt(process.env.SELLER_SERVICE_PORT || '6003', 10),
         tlsOptions,
       },
     }
   );
   app.useLogger(app.get(PinoLogger));
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,           // Strip non-whitelisted properties
-    forbidNonWhitelisted: true, // Throw error for non-whitelisted properties
-    transform: true,           // Transform payloads to DTO instances
-    disableErrorMessages: process.env.NODE_ENV === 'production', // Hide validation details in production
-    validationError: {
-      target: false,           // Don't expose target object
-      value: false,           // Don't expose submitted values
-    },
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // Strip non-whitelisted properties
+      forbidNonWhitelisted: true, // Throw error for non-whitelisted properties
+      transform: true, // Transform payloads to DTO instances
+      disableErrorMessages: process.env.NODE_ENV === 'production', // Hide validation details in production
+      validationError: {
+        target: false, // Don't expose target object
+        value: false, // Don't expose submitted values
+      },
+    })
+  );
   await app.listen();
   Logger.log('🚀 Seller-service is running on TCP port 6003 with mTLS');
 }

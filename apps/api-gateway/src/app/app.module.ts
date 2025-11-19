@@ -17,6 +17,9 @@ import { EventModule } from './event/event.module';
 import { NotificationModule } from './notification/notification.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
+import { LoggerGrafanaModule } from './logger/logger.module';
+import { RecommendationModule } from './recommendation/recommendation.module';
+import { ChattingModule } from './chat/chat.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { ImageKitModule } from '@tec-shop/shared/imagekit';
@@ -89,6 +92,9 @@ import { ImageKitModule } from '@tec-shop/shared/imagekit';
     SentryTestModule,
     EventModule,
     NotificationModule,
+    ChattingModule,
+    LoggerGrafanaModule,
+    RecommendationModule,
   ],
   controllers: [AppController],
   providers: [

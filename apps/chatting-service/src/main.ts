@@ -1,20 +1,57 @@
-/**
- * This is not a production server yet!
- * This is only a minimal backend to get started.
- */
-
-import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { AppModule } from './app/app.module';
+import { Logger, ValidationPipe } from '@nestjs/common';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import { Logger as PinoLogger } from 'nestjs-pino';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  const globalPrefix = 'api';
-  app.setGlobalPrefix(globalPrefix);
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
+  // Load mTLS certificates
+  const certsPath = join(process.cwd(), 'certs');
+  const tlsOptions = {
+    key: readFileSync(
+      join(certsPath, 'chatting-service/chatting-service-key.pem')
+    ),
+    cert: readFileSync(
+      join(certsPath, 'chatting-service/chatting-service-cert.pem')
+    ),
+    ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
+    requestCert: true,
+    rejectUnauthorized: true,
+  };
+
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
+    AppModule,
+    {
+      transport: Transport.TCP,
+      options: {
+        host: process.env.CHATTING_SERVICE_HOST || 'localhost',
+        port: parseInt(process.env.CHATTING_SERVICE_PORT || '6007', 10),
+        tlsOptions,
+      },
+    }
+  );
+
+  app.useLogger(app.get(PinoLogger));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      disableErrorMessages: process.env.NODE_ENV === 'production',
+      validationError: {
+        target: false,
+        value: false,
+      },
+    })
+  );
+
+  await app.listen();
   Logger.log(
-    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`
+    `🚀 Order Service is running on TCP port ${
+      process.env.CHATTING_SERVICE_PORT || 6007
+    } with mTLS`
   );
 }
 
