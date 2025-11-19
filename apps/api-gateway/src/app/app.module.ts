@@ -13,6 +13,8 @@ import { PublicModule } from './public/public.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AdminModule } from './admin/admin.module';
 import { SentryTestModule } from './sentry-test/sentry-test.module';
+import { EventModule } from './event/event.module';
+import { NotificationModule } from './notification/notification.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -85,6 +87,8 @@ import { ImageKitModule } from '@tec-shop/shared/imagekit';
     AnalyticsModule,
     AdminModule,
     SentryTestModule,
+    EventModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [

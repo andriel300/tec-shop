@@ -620,6 +620,74 @@ export class PublicShopsController {
     );
   }
 
+  @Get('statistics')
+  @UseGuards(RolesGuard)
+  @Roles('SELLER')
+  @ApiOperation({
+    summary: 'Get seller statistics for dashboard',
+    description: 'Retrieves comprehensive statistics for the authenticated seller including revenue, orders, products, and shop metrics.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Statistics retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        revenue: {
+          type: 'object',
+          properties: {
+            total: { type: 'number', example: 125000 },
+            thisMonth: { type: 'number', example: 15000 },
+            lastMonth: { type: 'number', example: 12000 },
+            growth: { type: 'number', example: 25 },
+          },
+        },
+        orders: {
+          type: 'object',
+          properties: {
+            total: { type: 'number', example: 150 },
+            pending: { type: 'number', example: 5 },
+            completed: { type: 'number', example: 140 },
+            cancelled: { type: 'number', example: 5 },
+            thisMonth: { type: 'number', example: 20 },
+          },
+        },
+        products: {
+          type: 'object',
+          properties: {
+            total: { type: 'number', example: 45 },
+            active: { type: 'number', example: 40 },
+            outOfStock: { type: 'number', example: 5 },
+          },
+        },
+        shop: {
+          type: 'object',
+          properties: {
+            rating: { type: 'number', example: 4.5 },
+            totalOrders: { type: 'number', example: 150 },
+            isActive: { type: 'boolean', example: true },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing authentication token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - User is not a seller',
+  })
+  async getStatistics(@Req() req: Record<string, unknown>) {
+    const user = req.user as { userId: string };
+    this.logger.log(`Fetching statistics for seller authId: ${user.userId}`);
+
+    return firstValueFrom(
+      this.sellerService.send('seller-get-statistics', user.userId)
+    );
+  }
+
   @Get(':shopId')
   @ApiOperation({
     summary: 'Get shop details by ID (public)',
