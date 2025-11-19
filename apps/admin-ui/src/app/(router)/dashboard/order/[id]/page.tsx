@@ -18,8 +18,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
-import apiClient from '../../../../lib/api/client';
-import { Breadcrumb } from '../../../../shared/components/navigation/Breadcrumb';
+import apiClient from '../../../../../lib/api/client';
+import { Breadcrumb } from '../../../../../shared/components/navigation/Breadcrumb';
 
 interface OrderItem {
   id: string;

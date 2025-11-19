@@ -23,8 +23,8 @@ import {
   Package,
   ArrowUpDown,
 } from 'lucide-react';
-import apiClient from '../../../lib/api/client';
-import { Breadcrumb } from '../../../shared/components/navigation/Breadcrumb';
+import apiClient from '../../../../lib/api/client';
+import { Breadcrumb } from '../../../../shared/components/navigation/Breadcrumb';
 
 interface OrderItem {
   id: string;

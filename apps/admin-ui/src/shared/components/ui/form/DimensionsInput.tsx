@@ -71,7 +71,7 @@ const DimensionsInput: React.FC<DimensionsInputProps> = ({
           Weight (kg) *
         </label>
         <Input
-          variant="dark"
+          variant="default"
           type="number"
           step="0.1"
           min="0"
@@ -94,7 +94,7 @@ const DimensionsInput: React.FC<DimensionsInputProps> = ({
         <div className="grid grid-cols-3 gap-3">
           <div>
             <Input
-              variant="dark"
+              variant="default"
               type="number"
               step="0.1"
               min="0"
@@ -108,7 +108,7 @@ const DimensionsInput: React.FC<DimensionsInputProps> = ({
           </div>
           <div>
             <Input
-              variant="dark"
+              variant="default"
               type="number"
               step="0.1"
               min="0"
@@ -122,7 +122,7 @@ const DimensionsInput: React.FC<DimensionsInputProps> = ({
           </div>
           <div>
             <Input
-              variant="dark"
+              variant="default"
               type="number"
               step="0.1"
               min="0"

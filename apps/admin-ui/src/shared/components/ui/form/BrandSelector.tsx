@@ -39,7 +39,6 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
   value,
   onChange,
   className = '',
-  variant = 'dark',
   required = false,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -139,7 +138,7 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
           size={18}
         />
         <Input
-          variant={variant}
+          variant="default"
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value);
