@@ -1,5 +1,5 @@
 'use client';
-import { AlignLeft, ChevronDown, HeartIcon } from 'lucide-react';
+import { AlignLeft, ChevronDown, ChevronRight, HeartIcon } from 'lucide-react';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { navItems } from '../../configs/constants';
@@ -7,6 +7,8 @@ import ProfileIcon from '../../assets/svgs/profile-icon';
 import CartIcon from '../../assets/svgs/cart-icon';
 import { useAuth } from '../../hooks/use-auth';
 import useStore from '../../store';
+import { useCategoryTree } from '../../hooks/use-categories';
+import type { Category } from '../../lib/api/categories';
 
 const HeaderBottom = () => {
   const { isAuthenticated, user, userProfile, logout } = useAuth();
@@ -14,10 +16,16 @@ const HeaderBottom = () => {
   const [isSticky, setIsSticky] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
 
   // zustand hooks
   const wishlist = useStore((state) => state.wishlist);
   const cart = useStore((state) => state.cart);
+
+  // Fetch categories
+  const { data: categories, isLoading: categoriesLoading } = useCategoryTree({
+    onlyActive: true,
+  });
 
   // Prevent hydration mismatch
   useEffect(() => {
@@ -80,8 +88,82 @@ const HeaderBottom = () => {
             <div
               className={`absolute left-0 ${
                 isSticky ? 'top-[70px]' : 'top-[50px]'
-              } w-[260px] h-[400px] bg-ui-surface shadow-elev-lg z-50`}
-            ></div>
+              } w-[260px] max-h-[500px] bg-ui-surface shadow-elev-lg z-50 overflow-y-auto border border-ui-divider`}
+            >
+              {categoriesLoading ? (
+                <div className="p-4 text-center text-text-secondary">
+                  Loading categories...
+                </div>
+              ) : categories && categories.length > 0 ? (
+                <div className="py-2">
+                  {categories.map((category) => (
+                    <div
+                      key={category.id}
+                      className="relative group"
+                      onMouseEnter={() => setHoveredCategory(category.id)}
+                      onMouseLeave={() => setHoveredCategory(null)}
+                    >
+                      <Link
+                        href={`/products?categoryId=${category.id}`}
+                        className="flex items-center justify-between px-4 py-3 hover:bg-ui-muted transition-colors"
+                        onClick={() => setShow(false)}
+                      >
+                        <span className="font-heading font-medium text-sm text-text-primary">
+                          {category.name}
+                        </span>
+                        {category.children && category.children.length > 0 && (
+                          <ChevronRight size={16} className="text-text-secondary" />
+                        )}
+                      </Link>
+
+                      {/* Subcategories Dropdown */}
+                      {category.children &&
+                        category.children.length > 0 &&
+                        hoveredCategory === category.id && (
+                          <div className="absolute left-full top-0 w-[260px] max-h-[500px] bg-ui-surface shadow-elev-lg border border-ui-divider overflow-y-auto ml-1">
+                            <div className="py-2">
+                              {category.children.map((subcategory) => (
+                                <Link
+                                  key={subcategory.id}
+                                  href={`/products?categoryId=${subcategory.id}`}
+                                  className="block px-4 py-3 hover:bg-ui-muted transition-colors"
+                                  onClick={() => setShow(false)}
+                                >
+                                  <span className="font-heading text-sm text-text-primary">
+                                    {subcategory.name}
+                                  </span>
+                                  {subcategory.description && (
+                                    <p className="text-xs text-text-secondary mt-1 line-clamp-1">
+                                      {subcategory.description}
+                                    </p>
+                                  )}
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 text-center text-text-secondary">
+                  No categories available
+                </div>
+              )}
+
+              {/* View All Categories Link */}
+              {categories && categories.length > 0 && (
+                <div className="border-t border-ui-divider p-3">
+                  <Link
+                    href="/categories"
+                    onClick={() => setShow(false)}
+                    className="block text-center text-brand-primary font-medium hover:underline text-sm"
+                  >
+                    View All Categories
+                  </Link>
+                </div>
+              )}
+            </div>
           )}
         </div>
         {/* Navigation Links */}
