@@ -58,6 +58,7 @@
     "@tiptap/starter-kit": "^2.10.4",
     "@types/passport-google-oauth20": "^2.0.16",
     "@types/stripe": "^8.0.416",
+    "apexcharts": "^5.3.6",
     "axios": "^1.11.0",
     "bcrypt": "^6.0.0",
     "canvas-confetti": "^1.9.4",

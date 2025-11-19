@@ -66,7 +66,7 @@ export const VariantTable: React.FC<VariantTableProps> = ({
               <tr key={index} className="hover:bg-gray-750">
                 <td className="px-4 py-3">
                   <Input
-                    variant="dark"
+                    variant="default"
                     value={variant.sku}
                     onChange={(e) =>
                       onUpdateVariant(index, 'sku', e.target.value)
@@ -103,7 +103,7 @@ export const VariantTable: React.FC<VariantTableProps> = ({
                 </td>
                 <td className="px-4 py-3">
                   <Input
-                    variant="dark"
+                    variant="default"
                     type="number"
                     step="0.01"
                     value={variant.price}
@@ -119,7 +119,7 @@ export const VariantTable: React.FC<VariantTableProps> = ({
                 </td>
                 <td className="px-4 py-3">
                   <Input
-                    variant="dark"
+                    variant="default"
                     type="number"
                     step="0.01"
                     value={variant.salePrice || ''}
@@ -136,7 +136,7 @@ export const VariantTable: React.FC<VariantTableProps> = ({
                 </td>
                 <td className="px-4 py-3">
                   <Input
-                    variant="dark"
+                    variant="default"
                     type="number"
                     value={variant.stock}
                     onChange={(e) =>

@@ -106,7 +106,7 @@ const TagInput: React.FC<TagInputProps> = ({
       {value.length < maxTags && (
         <div className="flex gap-2">
           <Input
-            variant="dark"
+            variant="default"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}

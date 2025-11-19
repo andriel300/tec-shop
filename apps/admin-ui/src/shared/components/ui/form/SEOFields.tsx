@@ -97,7 +97,7 @@ const SEOFields: React.FC<SEOFieldsProps> = ({
           </span>
         </div>
         <Input
-          variant="dark"
+          variant="default"
           value={value.title}
           onChange={(e) => updateField('title', e.target.value)}
           placeholder="Premium Cotton T-Shirt | Your Store"
@@ -143,7 +143,7 @@ const SEOFields: React.FC<SEOFieldsProps> = ({
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-400">yourstore.com/products/</span>
           <Input
-            variant="dark"
+            variant="default"
             value={value.slug}
             onChange={(e) => {
               const slug = e.target.value
@@ -193,7 +193,7 @@ const SEOFields: React.FC<SEOFieldsProps> = ({
         {value.keywords.length < 10 && (
           <div className="flex gap-2">
             <Input
-              variant="dark"
+              variant="default"
               value={keywordInput}
               onChange={(e) => setKeywordInput(e.target.value)}
               onKeyPress={(e) => {

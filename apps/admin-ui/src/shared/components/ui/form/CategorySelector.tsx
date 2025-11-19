@@ -33,11 +33,9 @@ export interface CategorySelectorProps {
  * />
  */
 const CategorySelector: React.FC<CategorySelectorProps> = ({
-  value,
   onChange,
   onAttributesChange,
   className = '',
-  variant = 'dark',
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
@@ -176,7 +174,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
 
       {/* Search Input */}
       <Input
-        variant={variant}
+        variant="default"
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         placeholder="Search categories..."

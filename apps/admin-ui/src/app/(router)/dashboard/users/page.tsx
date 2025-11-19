@@ -11,8 +11,8 @@ import {
   useUsers,
   useBanUser,
   useUnbanUser,
-} from '../../../hooks/useAdminData';
-import type { UserResponse } from '../../../lib/api/admin';
+} from '../../../../hooks/useAdminData';
+import type { UserResponse } from '../../../../lib/api/admin';
 
 // Modal Component for Ban Confirmation
 const BanModal = ({

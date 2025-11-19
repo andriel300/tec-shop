@@ -46,7 +46,7 @@ export const AttributeInput: React.FC<AttributeInputProps> = ({
   return (
     <div className="flex gap-2">
       <Input
-        variant="dark"
+        variant="default"
         placeholder={`Add ${attributeName.toLowerCase()} option (e.g., ${getAttributePlaceholder(
           attributeName
         )})`}

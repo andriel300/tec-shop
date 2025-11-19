@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import dynamic from 'next/dynamic';
 import {
   useReactTable,
   getCoreRowModel,
@@ -14,9 +15,21 @@ import {
   Tooltip,
   Legend,
 } from 'recharts';
-import SaleChart from '../../shared/components/charts/sale-chart';
-import GeographicalMap from '../../shared/components/charts/geographicalMap';
-import { usePlatformStatistics, useAllOrders } from '../../hooks/useAdminData';
+import {
+  usePlatformStatistics,
+  useAllOrders,
+} from '../../../hooks/useAdminData';
+
+// Dynamic imports for chart components to avoid SSR issues
+const SaleChart = dynamic(() => import('../../../shared/components/charts/sale-chart'), {
+  ssr: false,
+  loading: () => <div className="text-white text-center py-8">Loading chart...</div>,
+});
+
+const GeographicalMap = dynamic(() => import('../../../shared/components/charts/geographicalMap'), {
+  ssr: false,
+  loading: () => <div className="text-white text-center py-8">Loading map...</div>,
+});
 
 // Device data (placeholder - can be replaced with real analytics data later)
 const deviceData = [
@@ -152,7 +165,10 @@ const OrdersTable = () => {
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="p-3">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </td>
                   ))}
                 </tr>
@@ -173,12 +189,16 @@ const DashboardPage = () => {
     <div className="p-8">
       {/* Statistics Cards */}
       {statsLoading ? (
-        <div className="text-white text-center py-8 mb-6">Loading statistics...</div>
+        <div className="text-white text-center py-8 mb-6">
+          Loading statistics...
+        </div>
       ) : stats ? (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg p-6 shadow-xl">
             <div className="text-blue-100 text-sm mb-2">Total Users</div>
-            <div className="text-white text-3xl font-semibold mb-2">{stats.users.total.toLocaleString()}</div>
+            <div className="text-white text-3xl font-semibold mb-2">
+              {stats.users.total.toLocaleString()}
+            </div>
             <div className="text-blue-200 text-xs">
               {stats.users.customers} customers, {stats.users.sellers} sellers
             </div>
@@ -186,7 +206,9 @@ const DashboardPage = () => {
 
           <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-lg p-6 shadow-xl">
             <div className="text-purple-100 text-sm mb-2">Active Shops</div>
-            <div className="text-white text-3xl font-semibold mb-2">{stats.sellers.activeShops.toLocaleString()}</div>
+            <div className="text-white text-3xl font-semibold mb-2">
+              {stats.sellers.activeShops.toLocaleString()}
+            </div>
             <div className="text-purple-200 text-xs">
               {stats.sellers.verified} verified sellers
             </div>
@@ -194,7 +216,9 @@ const DashboardPage = () => {
 
           <div className="bg-gradient-to-br from-green-600 to-green-800 rounded-lg p-6 shadow-xl">
             <div className="text-green-100 text-sm mb-2">Total Orders</div>
-            <div className="text-white text-3xl font-semibold mb-2">{stats.orders.total.toLocaleString()}</div>
+            <div className="text-white text-3xl font-semibold mb-2">
+              {stats.orders.total.toLocaleString()}
+            </div>
             <div className="text-green-200 text-xs">
               {stats.orders.completed} completed, {stats.orders.pending} pending
             </div>
@@ -203,10 +227,19 @@ const DashboardPage = () => {
           <div className="bg-gradient-to-br from-orange-600 to-orange-800 rounded-lg p-6 shadow-xl">
             <div className="text-orange-100 text-sm mb-2">Platform Revenue</div>
             <div className="text-white text-3xl font-semibold mb-2">
-              ${(stats.revenue.total / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              $
+              {(stats.revenue.total / 100).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </div>
             <div className="text-orange-200 text-xs">
-              ${(stats.revenue.platformFee / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} in fees
+              $
+              {(stats.revenue.platformFee / 100).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}{' '}
+              in fees
             </div>
           </div>
         </div>

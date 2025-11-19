@@ -270,7 +270,7 @@ const VariantManager: React.FC<VariantManagerProps> = ({
           <div className="flex gap-2 relative">
             <div className="flex-1 relative">
               <Input
-                variant="dark"
+                variant="default"
                 placeholder="Add option (e.g., Color, Material)"
                 value={newAttributeName}
                 onChange={(e) => setNewAttributeName(e.target.value)}

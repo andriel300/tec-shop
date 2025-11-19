@@ -64,7 +64,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
         </summary>
         <div className="flex gap-2 mt-3 pl-3">
           <Input
-            variant="dark"
+            variant="default"
             placeholder="e.g., Midnight Blue, Sunset Orange"
             value={customColorValue}
             onChange={(e) => onCustomColorChange(e.target.value)}

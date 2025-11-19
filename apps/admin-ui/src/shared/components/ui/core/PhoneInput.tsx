@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Select } from './Select';
-import { Input } from './Input';
-import { getPhoneCodeOptions } from '../../../lib/data/countries';
+import { Input } from '@tec-shop/input';
+import { getPhoneCodeOptions } from '../../../../lib/data/countries';
 
 export interface PhoneInputProps {
   value?: string;
@@ -24,7 +24,10 @@ export interface PhoneValue {
 }
 
 // Phone number formatting patterns
-const formatPhoneNumber = (phoneNumber: string, countryCode: string): string => {
+const formatPhoneNumber = (
+  phoneNumber: string,
+  countryCode: string
+): string => {
   // Remove all non-digit characters
   const digits = phoneNumber.replace(/\D/g, '');
 
@@ -32,9 +35,14 @@ const formatPhoneNumber = (phoneNumber: string, countryCode: string): string => 
   switch (countryCode) {
     case '+1': // US/Canada format: (123) 456-7890
       if (digits.length >= 10) {
-        return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+        return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(
+          6,
+          10
+        )}`;
       } else if (digits.length >= 6) {
-        return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+        return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(
+          6
+        )}`;
       } else if (digits.length >= 3) {
         return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
       }
@@ -42,7 +50,10 @@ const formatPhoneNumber = (phoneNumber: string, countryCode: string): string => 
 
     case '+44': // UK format: 0123 456 7890
       if (digits.length >= 10) {
-        return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7, 11)}`;
+        return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(
+          7,
+          11
+        )}`;
       } else if (digits.length >= 7) {
         return `${digits.slice(0, 4)} ${digits.slice(4, 7)} ${digits.slice(7)}`;
       } else if (digits.length >= 4) {
@@ -53,9 +64,15 @@ const formatPhoneNumber = (phoneNumber: string, countryCode: string): string => 
     case '+33': // France format: 01 23 45 67 89
     case '+49': // Germany format: 030 12345678
       if (digits.length >= 8) {
-        return `${digits.slice(0, 2)} ${digits.slice(2, 4)} ${digits.slice(4, 6)} ${digits.slice(6, 8)} ${digits.slice(8)}`;
+        return `${digits.slice(0, 2)} ${digits.slice(2, 4)} ${digits.slice(
+          4,
+          6
+        )} ${digits.slice(6, 8)} ${digits.slice(8)}`;
       } else if (digits.length >= 6) {
-        return `${digits.slice(0, 2)} ${digits.slice(2, 4)} ${digits.slice(4, 6)} ${digits.slice(6)}`;
+        return `${digits.slice(0, 2)} ${digits.slice(2, 4)} ${digits.slice(
+          4,
+          6
+        )} ${digits.slice(6)}`;
       } else if (digits.length >= 4) {
         return `${digits.slice(0, 2)} ${digits.slice(2, 4)} ${digits.slice(4)}`;
       } else if (digits.length >= 2) {
@@ -65,9 +82,14 @@ const formatPhoneNumber = (phoneNumber: string, countryCode: string): string => 
 
     case '+55': // Brazil format: (11) 99999-9999
       if (digits.length >= 10) {
-        return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+        return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(
+          7,
+          11
+        )}`;
       } else if (digits.length >= 7) {
-        return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+        return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(
+          7
+        )}`;
       } else if (digits.length >= 2) {
         return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
       }
@@ -86,17 +108,20 @@ const formatPhoneNumber = (phoneNumber: string, countryCode: string): string => 
 };
 
 export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
-  ({
-    value = '',
-    onChange,
-    onBlur,
-    placeholder = 'Enter phone number',
-    disabled,
-    className = '',
-    id,
-    name,
-    defaultCountryCode = '+1'
-  }, ref) => {
+  (
+    {
+      value = '',
+      onChange,
+      onBlur,
+      placeholder = 'Enter phone number',
+      disabled,
+      className = '',
+      id,
+      name,
+      defaultCountryCode = '+1',
+    },
+    ref
+  ) => {
     const [countryCode, setCountryCode] = useState(defaultCountryCode);
     const [phoneNumber, setPhoneNumber] = useState('');
     const [isClient, setIsClient] = useState(false);
@@ -112,14 +137,17 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     useEffect(() => {
       if (value) {
         // Try to extract country code from full number
-        const matchedCountry = phoneCodeOptions.find(option =>
+        const matchedCountry = phoneCodeOptions.find((option) =>
           value.startsWith(option.value)
         );
 
         if (matchedCountry) {
           setCountryCode(matchedCountry.value);
           const localNumber = value.substring(matchedCountry.value.length);
-          const formattedNumber = formatPhoneNumber(localNumber, matchedCountry.value);
+          const formattedNumber = formatPhoneNumber(
+            localNumber,
+            matchedCountry.value
+          );
           setPhoneNumber(formattedNumber);
         } else {
           // If no country code match, format with current country code
@@ -143,7 +171,9 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
       onChange?.(fullNumber);
     };
 
-    const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handlePhoneNumberChange = (
+      e: React.ChangeEvent<HTMLInputElement>
+    ) => {
       // Get only the digits from the input
       const inputValue = e.target.value;
       const digitsOnly = inputValue.replace(/\D/g, '');
@@ -215,7 +245,9 @@ export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
 PhoneInput.displayName = 'PhoneInput';
 
 // Utility function to validate phone numbers
-export const validatePhoneNumber = (phoneNumber: string): string | undefined => {
+export const validatePhoneNumber = (
+  phoneNumber: string
+): string | undefined => {
   if (!phoneNumber) return 'Phone number is required';
 
   // Extract just the digits (excluding country code)
@@ -261,3 +293,4 @@ export const validatePhoneNumber = (phoneNumber: string): string | undefined => 
 
   return undefined;
 };
+
