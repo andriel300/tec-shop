@@ -133,14 +133,14 @@ describe('AuthController', () => {
         secure: false,
         sameSite: 'strict',
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        path: '/api',
+        path: '/',
       });
       expect(res.cookie).toHaveBeenCalledWith('customer_refresh_token', 'refresh-token-456', {
         httpOnly: true,
         secure: false,
         sameSite: 'strict',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        path: '/api',
+        path: '/',
       });
       expect(result).toEqual({ message: 'Login successful', userType: 'customer' });
 
@@ -208,6 +208,10 @@ describe('AuthController', () => {
         access_token: 'new-access-token',
         refresh_token: 'new-refresh-token',
         rememberMe: false,
+        userId: 'user-123',
+        email: 'test@example.com',
+        name: 'Test User',
+        createdAt: new Date('2024-01-01'),
       };
 
       jest.spyOn(authServiceClient, 'send').mockReturnValue(of(authResult));
@@ -223,7 +227,16 @@ describe('AuthController', () => {
       });
       expect(res.cookie).toHaveBeenCalledWith('customer_access_token', 'new-access-token', expect.any(Object));
       expect(res.cookie).toHaveBeenCalledWith('customer_refresh_token', 'new-refresh-token', expect.any(Object));
-      expect(result).toEqual({ message: 'Token refreshed successfully', userType: 'customer' });
+      expect(result).toEqual({
+        message: 'Token refreshed successfully',
+        userType: 'customer',
+        user: {
+          id: 'user-123',
+          email: 'test@example.com',
+          name: 'Test User',
+          createdAt: new Date('2024-01-01'),
+        },
+      });
     });
 
     it('should throw error when refresh token is missing', async () => {
@@ -232,7 +245,7 @@ describe('AuthController', () => {
       const res = mockResponse();
 
       // Act & Assert
-      await expect(controller.refreshToken(req, res)).rejects.toThrow('Authentication failed');
+      await expect(controller.refreshToken(req, res)).rejects.toThrow('No refresh token found. Please log in again.');
     });
   });
 

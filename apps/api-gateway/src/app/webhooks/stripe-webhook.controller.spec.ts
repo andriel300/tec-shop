@@ -38,6 +38,12 @@ describe('StripeWebhookController', () => {
             send: jest.fn(),
           },
         },
+        {
+          provide: 'ORDER_SERVICE',
+          useValue: {
+            send: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
