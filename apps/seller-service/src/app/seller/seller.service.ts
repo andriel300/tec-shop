@@ -397,4 +397,89 @@ export class SellerService {
       throw error;
     }
   }
+
+  /**
+   * Get seller statistics for dashboard
+   * NOTE: This is a simplified version that returns shop-level data.
+   * For full statistics, this should be integrated with order-service and product-service.
+   */
+  async getStatistics(authId: string) {
+    this.logger.log(`Getting statistics for seller authId: ${authId}`);
+
+    try {
+      // Get seller and shop
+      const seller = await this.prisma.seller.findUnique({
+        where: { authId },
+        include: { shop: true },
+      });
+
+      if (!seller) {
+        throw new NotFoundException('Seller profile not found');
+      }
+
+      if (!seller.shop) {
+        // Return empty statistics if no shop exists
+        return {
+          revenue: {
+            total: 0,
+            thisMonth: 0,
+            lastMonth: 0,
+            growth: 0,
+          },
+          orders: {
+            total: 0,
+            pending: 0,
+            completed: 0,
+            cancelled: 0,
+            thisMonth: 0,
+          },
+          products: {
+            total: 0,
+            active: 0,
+            outOfStock: 0,
+          },
+          shop: {
+            rating: 0,
+            totalOrders: 0,
+            isActive: false,
+          },
+        };
+      }
+
+      // For now, return shop-level statistics
+      // TODO: Integrate with order-service for real order and revenue data
+      // TODO: Integrate with product-service for real product data
+      return {
+        revenue: {
+          total: 0, // To be fetched from order-service
+          thisMonth: 0,
+          lastMonth: 0,
+          growth: 0,
+        },
+        orders: {
+          total: seller.shop.totalOrders,
+          pending: 0, // To be fetched from order-service
+          completed: 0,
+          cancelled: 0,
+          thisMonth: 0,
+        },
+        products: {
+          total: 0, // To be fetched from product-service
+          active: 0,
+          outOfStock: 0,
+        },
+        shop: {
+          rating: seller.shop.rating,
+          totalOrders: seller.shop.totalOrders,
+          isActive: seller.shop.isActive,
+        },
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to get seller statistics: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      throw error;
+    }
+  }
 }

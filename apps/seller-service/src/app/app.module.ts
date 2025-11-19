@@ -7,6 +7,8 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { SellerModule } from './seller/seller.module';
 import { StripeModule } from './stripe/stripe.module';
 import { DiscountModule } from './discount/discount.module';
+import { EventModule } from './event/event.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
@@ -41,6 +43,8 @@ import { DiscountModule } from './discount/discount.module';
     SellerModule,
     StripeModule,
     DiscountModule,
+    EventModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
