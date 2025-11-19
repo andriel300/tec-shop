@@ -148,3 +148,35 @@ export const getStripeAccountStatus = async (): Promise<StripeAccountStatus> => 
   const response = await apiClient.get('/seller/stripe/status');
   return response.data;
 };
+
+// Statistics API
+export interface SellerStatistics {
+  revenue: {
+    total: number;
+    thisMonth: number;
+    lastMonth: number;
+    growth: number;
+  };
+  orders: {
+    total: number;
+    pending: number;
+    completed: number;
+    cancelled: number;
+    thisMonth: number;
+  };
+  products: {
+    total: number;
+    active: number;
+    outOfStock: number;
+  };
+  shop: {
+    rating: number;
+    totalOrders: number;
+    isActive: boolean;
+  };
+}
+
+export const getSellerStatistics = async (): Promise<SellerStatistics> => {
+  const response = await apiClient.get('/seller/statistics');
+  return response.data;
+};
