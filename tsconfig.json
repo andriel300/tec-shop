@@ -110,6 +110,12 @@
     },
     {
       "path": "./apps/recommendation-service"
+    },
+    {
+      "path": "./libs/prisma-schemas/chatting-schema"
+    },
+    {
+      "path": "./libs/prisma-clients/chatting-client"
     }
   ]
 }

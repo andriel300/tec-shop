@@ -1,0 +1,17 @@
+{
+  "name": "@tec-shop/chatting-client",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/prisma-clients/chatting-client/src",
+  "projectType": "library",
+  "tags": ["type:prisma-client", "scope:order"],
+  "targets": {
+    "generate-types": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma generate --schema=../../prisma-schemas/chatting-schema/prisma/schema.prisma",
+        "cwd": "libs/prisma-clients/chatting-client"
+      }
+    }
+  },
+  "implicitDependencies": ["@tec-shop/chatting-schema"]
+}
