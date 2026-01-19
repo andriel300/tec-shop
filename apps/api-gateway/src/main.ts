@@ -35,6 +35,7 @@ async function bootstrap() {
     origin: [
       'http://localhost:3000', // user-ui
       'http://localhost:3001', // seller-ui
+      'http://localhost:3002', // admin-ui
     ],
     credentials: true, // Allow cookies to be sent with cross-origin requests
   });
@@ -170,7 +171,7 @@ For issues or questions, please contact our development team.
     )
     .setVersion('1.0.0')
     .setContact(
-      'TecShop Development Team',
+      'TecShop Development',
       'https://github.com/andriel300/tec-shop',
       'support@tecshop.com'
     )

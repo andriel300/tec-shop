@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
 import { LoggerModule } from 'nestjs-pino';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ChattingModule } from '../chatting/chatting.module';
 
 @Module({
   imports: [
+    ChattingModule,
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
     LoggerModule.forRootAsync({
@@ -23,7 +24,7 @@ import { ScheduleModule } from '@nestjs/schedule';
       }),
     }),
   ],
-  controllers: [AppController],
+  controllers: [],
   providers: [],
 })
 export class AppModule {}
