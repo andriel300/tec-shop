@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { LoggerModule } from 'nestjs-pino';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { LoggerService } from './logger.service';
 
 @Module({
   imports: [
@@ -24,6 +25,6 @@ import { ScheduleModule } from '@nestjs/schedule';
     }),
   ],
   controllers: [AppController],
-  providers: [],
+  providers: [LoggerService],
 })
 export class AppModule {}
