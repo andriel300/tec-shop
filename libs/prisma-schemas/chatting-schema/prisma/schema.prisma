@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../../node_modules/.prisma/chatting-client"
+}
+
+generator dbml {
+  provider   = "prisma-dbml-generator"
+  output     = "../../../../dbml"
+  outputName = "chatting-schema.dbml"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("CHATTING_SERVICE_DB_URL")
+}
+
+model ChatMessage {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  conversationId String @db.ObjectId
+  senderId      String   @db.ObjectId
+  senderType    String
+  content       String?
+  attachments   String[]
+  status        String   @default("sent")
+  metadata      Json?
+  createdAt     DateTime @default(now())
+
+  @@unique([conversationId, senderId, content, createdAt])
+}
+
+model ChatGroup {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  isGroup       Boolean  @default(false)
+  name          String?
+  creatorId     String
+  participantId String[] @db.ObjectId
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Participant {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  conversationId String  @db.ObjectId
+  userId        String?  @db.ObjectId
+  sellerId      String?  @db.ObjectId
+  lastSeenAt    DateTime?
+  isOnline      Boolean  @default(false)
+  unreadCount   Int      @default(0)
+  muted         Boolean  @default(false)
+  joinedAt      DateTime @default(now())
+}
