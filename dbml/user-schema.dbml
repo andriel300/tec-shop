@@ -15,6 +15,17 @@ Table Follow {
   }
 }
 
+Table ShopFollower {
+  id String [pk]
+  userId String [not null]
+  shopId String [not null]
+  createdAt DateTime [default: `now()`, not null]
+
+  indexes {
+    (userId, shopId) [unique]
+  }
+}
+
 Table Image {
   id String [pk]
   file_id String [not null]

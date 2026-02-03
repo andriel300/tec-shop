@@ -27,6 +27,18 @@ model Follow {
   @@index([followingId])
 }
 
+// Shop followers - users following shops (cross-service reference)
+model ShopFollower {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId // References auth-service User.id
+  shopId    String   @db.ObjectId // References seller-service Shop.id
+  createdAt DateTime @default(now())
+
+  @@unique([userId, shopId]) // One follow per user per shop
+  @@index([shopId]) // Fast lookup: get all followers of a shop
+  @@index([userId]) // Fast lookup: get all shops a user follows
+}
+
 enum ImageType {
   AVATAR
   COVER
