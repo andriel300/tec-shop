@@ -9,6 +9,9 @@ import useDeviceTracking from '../../../hooks/use-device-tracking';
 import useLocationTracking from '../../../hooks/use-location-tracking';
 import apiClient from '../../../lib/api/client';
 import useStore from '../../../store';
+import { useShop } from '../../../hooks/use-shops';
+import { useRouter } from 'next/navigation';
+import { useCreateConversation } from '../../../hooks/use-chat';
 import type { ProductVariant } from '../../../lib/api/products';
 import {
   ChevronLeft,
@@ -62,10 +65,15 @@ const ProductDetails = ({ product }: { product: any }) => {
   const { user } = useAuth();
   const location = useLocationTracking();
   const deviceInfo = useDeviceTracking();
+  const createConversation = useCreateConversation();
+  const router = useRouter();
 
   // ========== IMAGE GALLERY STATE ==========
   const [currentImage, setCurrentImage] = useState(product.images?.[0] || '');
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Fetch shop details
+  const { data: shop } = useShop(product.shopId);
 
   // ========== VARIANT SELECTION STATE ==========
   // selectedVariant: The fully matched variant object (e.g., XL + Blue variant)
@@ -324,6 +332,32 @@ const ProductDetails = ({ product }: { product: any }) => {
       setShopInfo(res.data);
     } catch (error) {
       console.error('Error fetching shop info:', error);
+    }
+  };
+
+  const handleChatWithSeller = async () => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    if (!shop?.seller?.authId) {
+      console.error('Cannot start chat: seller information not available');
+      return;
+    }
+
+    if (createConversation.isPending) {
+      return;
+    }
+
+    try {
+      const conversation = await createConversation.mutateAsync({
+        targetId: shop.seller.authId,
+        targetType: 'seller',
+      });
+      router.push(`/inbox?conversationId=${conversation.id}`);
+    } catch (error) {
+      console.error('Failed to create conversation:', error);
     }
   };
 
@@ -751,13 +785,19 @@ const ProductDetails = ({ product }: { product: any }) => {
                 {shopInfo?.businessName || 'Loading...'}
               </span>
             </div>
-            <Link
-              href={'#'}
-              className="text-blue-500 text-sm flex items-center gap-1 hover:underline"
+            {/* Chat Button */}
+            <button
+              onClick={handleChatWithSeller}
+              disabled={createConversation.isPending}
+              className="w-full flex items-start hover:underline uppercase gap-1.5 text-blue-500 font-medium px-3 py-2 rounded-lg transition mt-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <MessageSquareText size={16} />
-              Chat Now
-            </Link>
+              {createConversation.isPending ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+              ) : (
+                <MessageSquareText size={16} />
+              )}
+              {createConversation.isPending ? 'Opening chat...' : 'CHAT NOW'}
+            </button>
           </div>
 
           {/* Seller Performance Status */}
@@ -779,7 +819,7 @@ const ProductDetails = ({ product }: { product: any }) => {
           {/* Go to the Store */}
           <div className="text-center mt-3 pt-3 border-t border-t-gray-200">
             <Link
-              href={`/shop/${product.shopId}`}
+              href={`/shops/${product.shopId}`}
               className="text-blue-500 font-medium text-sm hover:underline uppercase"
             >
               GO TO STORE

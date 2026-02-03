@@ -20,6 +20,8 @@ import { useAuth } from '../../hooks/use-auth';
 import useLocationTracking from '../../hooks/use-location-tracking';
 import useDeviceTracking from '../../hooks/use-device-tracking';
 import useStore from '../../store';
+import { useRouter } from 'next/navigation';
+import { useCreateConversation } from '../../hooks/use-chat';
 
 interface ProductDetailsCardProps {
   product: Product;
@@ -38,8 +40,10 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
   >({});
 
   const { user } = useAuth();
+  const router = useRouter();
   const location = useLocationTracking();
   const deviceInfo = useDeviceTracking();
+  const createConversation = useCreateConversation();
 
   // Zustand store hooks
   const addToCart = useStore((state) => state.addToCart);
@@ -229,10 +233,29 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
     }
   };
 
-  const handleChatWithSeller = () => {
-    if (shop) {
-      console.log(`Opening chat with shop: ${shop.businessName}`);
-      // TODO: router.push(`/inbox?shopId=${shop.id}`);
+  const handleChatWithSeller = async () => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    if (!shop?.seller?.authId) {
+      console.error('Cannot start chat: seller information not available');
+      return;
+    }
+
+    if (createConversation.isPending) {
+      return;
+    }
+
+    try {
+      const conversation = await createConversation.mutateAsync({
+        targetId: shop.seller.authId,
+        targetType: 'seller',
+      });
+      router.push(`/inbox?conversationId=${conversation.id}`);
+    } catch (error) {
+      console.error('Failed to create conversation:', error);
     }
   };
 
@@ -665,10 +688,15 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                   {/* Chat Button */}
                   <button
                     onClick={handleChatWithSeller}
-                    className="w-full flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-700 text-white font-medium px-3 py-2 rounded-lg transition mt-2 text-sm"
+                    disabled={createConversation.isPending}
+                    className="w-full flex items-center justify-center gap-1.5 bg-green-600 hover:bg-green-700 text-white font-medium px-3 py-2 rounded-lg transition mt-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <MessageCircle size={16} />
-                    Chat with Seller
+                    {createConversation.isPending ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                    ) : (
+                      <MessageCircle size={16} />
+                    )}
+                    {createConversation.isPending ? 'Opening chat...' : 'Chat with Seller'}
                   </button>
                 </div>
               ) : (
