@@ -86,4 +86,30 @@ export class AppController {
   ) {
     return this.appService.copyShippingAddress(payload.userId, payload.addressId);
   }
+
+  // Shop Follow Message Patterns
+  @MessagePattern('user-follow-shop')
+  followShop(@Payload() payload: { userId: string; shopId: string }) {
+    return this.appService.followShop(payload.userId, payload.shopId);
+  }
+
+  @MessagePattern('user-unfollow-shop')
+  unfollowShop(@Payload() payload: { userId: string; shopId: string }) {
+    return this.appService.unfollowShop(payload.userId, payload.shopId);
+  }
+
+  @MessagePattern('user-get-shop-followers-count')
+  getShopFollowersCount(@Payload() shopId: string) {
+    return this.appService.getShopFollowersCount(shopId);
+  }
+
+  @MessagePattern('user-check-shop-follow')
+  checkUserFollowsShop(@Payload() payload: { userId: string; shopId: string }) {
+    return this.appService.checkUserFollowsShop(payload.userId, payload.shopId);
+  }
+
+  @MessagePattern('user-get-followed-shops')
+  getUserFollowedShops(@Payload() userId: string) {
+    return this.appService.getUserFollowedShops(userId);
+  }
 }

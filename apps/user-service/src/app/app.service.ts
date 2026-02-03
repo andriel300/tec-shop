@@ -96,6 +96,82 @@ export class AppService {
     });
   }
 
+  // Shop Follow functionality
+  async followShop(userId: string, shopId: string) {
+    // Check if already following
+    const existingFollow = await this.prisma.shopFollower.findUnique({
+      where: {
+        userId_shopId: {
+          userId,
+          shopId,
+        },
+      },
+    });
+
+    if (existingFollow) {
+      throw new BadRequestException('You are already following this shop');
+    }
+
+    return this.prisma.shopFollower.create({
+      data: {
+        userId,
+        shopId,
+      },
+    });
+  }
+
+  async unfollowShop(userId: string, shopId: string) {
+    const existingFollow = await this.prisma.shopFollower.findUnique({
+      where: {
+        userId_shopId: {
+          userId,
+          shopId,
+        },
+      },
+    });
+
+    if (!existingFollow) {
+      throw new NotFoundException('You are not following this shop');
+    }
+
+    return this.prisma.shopFollower.delete({
+      where: {
+        userId_shopId: {
+          userId,
+          shopId,
+        },
+      },
+    });
+  }
+
+  async getShopFollowersCount(shopId: string) {
+    const count = await this.prisma.shopFollower.count({
+      where: { shopId },
+    });
+
+    return { count };
+  }
+
+  async checkUserFollowsShop(userId: string, shopId: string) {
+    const follow = await this.prisma.shopFollower.findUnique({
+      where: {
+        userId_shopId: {
+          userId,
+          shopId,
+        },
+      },
+    });
+
+    return { isFollowing: !!follow };
+  }
+
+  async getUserFollowedShops(userId: string) {
+    return this.prisma.shopFollower.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   // Image functionality
   async createImage(data: CreateImageDto) {
     return this.prisma.image.create({
