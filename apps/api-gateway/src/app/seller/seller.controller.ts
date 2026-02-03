@@ -183,6 +183,33 @@ export class SellerController {
     );
   }
 
+  @Get('statistics')
+  @UseGuards(RolesGuard)
+  @Roles('SELLER')
+  @ApiOperation({
+    summary: 'Get seller statistics for dashboard',
+    description: 'Retrieves comprehensive statistics for the authenticated seller including revenue, orders, products, and shop metrics.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Statistics retrieved successfully',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing authentication token',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - User is not a seller',
+  })
+  async getStatistics(@Req() request: { user: { userId: string } }) {
+    this.logger.log(`Fetching statistics for seller authId: ${request.user.userId}`);
+
+    return firstValueFrom(
+      this.sellerService.send('seller-get-statistics', request.user.userId)
+    );
+  }
+
   // ============================================
   // IMAGE UPLOAD ENDPOINT
   // ============================================
@@ -534,7 +561,8 @@ export class PublicShopsController {
   private readonly logger = new Logger(PublicShopsController.name);
 
   constructor(
-    @Inject('SELLER_SERVICE') private readonly sellerService: ClientProxy
+    @Inject('SELLER_SERVICE') private readonly sellerService: ClientProxy,
+    @Inject('USER_SERVICE') private readonly userService: ClientProxy
   ) {}
 
   @Get()
@@ -620,74 +648,6 @@ export class PublicShopsController {
     );
   }
 
-  @Get('statistics')
-  @UseGuards(RolesGuard)
-  @Roles('SELLER')
-  @ApiOperation({
-    summary: 'Get seller statistics for dashboard',
-    description: 'Retrieves comprehensive statistics for the authenticated seller including revenue, orders, products, and shop metrics.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Statistics retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        revenue: {
-          type: 'object',
-          properties: {
-            total: { type: 'number', example: 125000 },
-            thisMonth: { type: 'number', example: 15000 },
-            lastMonth: { type: 'number', example: 12000 },
-            growth: { type: 'number', example: 25 },
-          },
-        },
-        orders: {
-          type: 'object',
-          properties: {
-            total: { type: 'number', example: 150 },
-            pending: { type: 'number', example: 5 },
-            completed: { type: 'number', example: 140 },
-            cancelled: { type: 'number', example: 5 },
-            thisMonth: { type: 'number', example: 20 },
-          },
-        },
-        products: {
-          type: 'object',
-          properties: {
-            total: { type: 'number', example: 45 },
-            active: { type: 'number', example: 40 },
-            outOfStock: { type: 'number', example: 5 },
-          },
-        },
-        shop: {
-          type: 'object',
-          properties: {
-            rating: { type: 'number', example: 4.5 },
-            totalOrders: { type: 'number', example: 150 },
-            isActive: { type: 'boolean', example: true },
-          },
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid or missing authentication token',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - User is not a seller',
-  })
-  async getStatistics(@Req() req: Record<string, unknown>) {
-    const user = req.user as { userId: string };
-    this.logger.log(`Fetching statistics for seller authId: ${user.userId}`);
-
-    return firstValueFrom(
-      this.sellerService.send('seller-get-statistics', user.userId)
-    );
-  }
-
   @Get(':shopId')
   @ApiOperation({
     summary: 'Get shop details by ID (public)',
@@ -719,6 +679,130 @@ export class PublicShopsController {
 
     return firstValueFrom(
       this.sellerService.send('seller-get-shop-by-id', { shopId })
+    );
+  }
+
+  // ============================================
+  // SHOP FOLLOW ENDPOINTS
+  // ============================================
+
+  @Post(':shopId/follow')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Follow a shop',
+    description: 'Allows authenticated users to follow a shop to receive updates.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Successfully followed the shop',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Already following this shop',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Login required',
+  })
+  async followShop(
+    @Param('shopId') shopId: string,
+    @Req() request: { user: { userId: string } }
+  ) {
+    this.logger.log(`User ${request.user.userId} following shop ${shopId}`);
+
+    return firstValueFrom(
+      this.userService.send('user-follow-shop', {
+        userId: request.user.userId,
+        shopId,
+      })
+    );
+  }
+
+  @Delete(':shopId/follow')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Unfollow a shop',
+    description: 'Allows authenticated users to unfollow a shop.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully unfollowed the shop',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Not following this shop',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Login required',
+  })
+  async unfollowShop(
+    @Param('shopId') shopId: string,
+    @Req() request: { user: { userId: string } }
+  ) {
+    this.logger.log(`User ${request.user.userId} unfollowing shop ${shopId}`);
+
+    return firstValueFrom(
+      this.userService.send('user-unfollow-shop', {
+        userId: request.user.userId,
+        shopId,
+      })
+    );
+  }
+
+  @Get(':shopId/followers/count')
+  @ApiOperation({
+    summary: 'Get shop followers count',
+    description: 'Returns the total number of followers for a shop.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Followers count retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        count: { type: 'number', example: 1234 },
+      },
+    },
+  })
+  async getShopFollowersCount(@Param('shopId') shopId: string) {
+    return firstValueFrom(
+      this.userService.send('user-get-shop-followers-count', shopId)
+    );
+  }
+
+  @Get(':shopId/followers/check')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Check if user follows a shop',
+    description: 'Returns whether the authenticated user follows this shop.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Follow status retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        isFollowing: { type: 'boolean', example: true },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Login required',
+  })
+  async checkUserFollowsShop(
+    @Param('shopId') shopId: string,
+    @Req() request: { user: { userId: string } }
+  ) {
+    return firstValueFrom(
+      this.userService.send('user-check-shop-follow', {
+        userId: request.user.userId,
+        shopId,
+      })
     );
   }
 }
