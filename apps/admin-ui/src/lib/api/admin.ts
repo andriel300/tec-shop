@@ -126,6 +126,12 @@ export interface OrderResponse {
   }>;
 }
 
+export interface GeographicDistributionItem {
+  country: string;
+  users: number;
+  sellers: number;
+}
+
 export interface PlatformStatistics {
   users: {
     total: number;
@@ -146,6 +152,7 @@ export interface PlatformStatistics {
     total: number;
     platformFee: number;
   };
+  geographicDistribution: GeographicDistributionItem[];
 }
 
 // ============ User Management API Functions ============
