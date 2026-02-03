@@ -540,6 +540,68 @@ export class AdminService {
     const totalRevenue = revenueData._sum.finalAmount || 0;
     const totalPlatformFee = revenueData._sum.platformFee || 0;
 
+    // Geographic distribution - Sellers by country
+    const sellersByCountry = await this.sellerPrisma.seller.groupBy({
+      by: ['country'],
+      _count: {
+        country: true,
+      },
+      orderBy: {
+        _count: {
+          country: 'desc',
+        },
+      },
+    });
+
+    // Geographic distribution - Users by country (from addresses)
+    const usersByCountry = await this.userPrisma.address.groupBy({
+      by: ['country'],
+      _count: {
+        country: true,
+      },
+      orderBy: {
+        _count: {
+          country: 'desc',
+        },
+      },
+    });
+
+    // Combine geographic data into a unified format
+    const countryMap = new Map<string, { users: number; sellers: number }>();
+
+    // Add seller counts
+    for (const item of sellersByCountry) {
+      const country = item.country;
+      if (!countryMap.has(country)) {
+        countryMap.set(country, { users: 0, sellers: 0 });
+      }
+      const data = countryMap.get(country);
+      if (data) {
+        data.sellers = item._count.country;
+      }
+    }
+
+    // Add user counts
+    for (const item of usersByCountry) {
+      const country = item.country;
+      if (!countryMap.has(country)) {
+        countryMap.set(country, { users: 0, sellers: 0 });
+      }
+      const data = countryMap.get(country);
+      if (data) {
+        data.users = item._count.country;
+      }
+    }
+
+    // Convert to array format
+    const geographicDistribution = Array.from(countryMap.entries()).map(
+      ([country, counts]) => ({
+        country,
+        users: counts.users,
+        sellers: counts.sellers,
+      })
+    );
+
     return {
       users: {
         total: totalUsers,
@@ -560,6 +622,7 @@ export class AdminService {
         total: totalRevenue,
         platformFee: totalPlatformFee,
       },
+      geographicDistribution,
     };
   }
 }
