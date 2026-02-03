@@ -1,20 +1,274 @@
-import { Controller, Get, Post, Body, Inject } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Query,
+  Body,
+  Inject,
+  UseGuards,
+  Req,
+  BadRequestException,
+  NotFoundException,
+  Logger,
+} from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { JwtService } from '@nestjs/jwt';
 import { firstValueFrom } from 'rxjs';
+import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
+import { RolesGuard } from '../../guards/roles.guard';
+import { Roles } from '../../decorators/roles.decorator';
+import type {
+  CreateConversationDto,
+  GetConversationsDto,
+  ParticipantType,
+} from '@tec-shop/dto';
 
-@Controller('chatting')
-export class ChattingController {
+interface AuthenticatedRequest {
+  user: {
+    userId: string;
+    username: string;
+    role?: string;
+    userType?: 'CUSTOMER' | 'SELLER' | 'ADMIN';
+  };
+}
+
+interface ConversationResult {
+  success: boolean;
+  conversation?: {
+    id: string;
+    otherParticipant: {
+      id: string;
+      type: ParticipantType;
+      name: string;
+      avatar?: string;
+    };
+    lastMessage?: {
+      id: string;
+      content: string;
+      senderId: string;
+      senderType: string;
+      createdAt: string;
+    };
+    unreadCount: number;
+    createdAt: string;
+    lastSeenAt?: string;
+  };
+  error?: string;
+}
+
+@Controller('chat')
+export class ChatController {
+  private readonly logger = new Logger(ChatController.name);
+
   constructor(
-    @Inject('CHATTING_SERVICE') private readonly chattingService: ClientProxy
+    @Inject('CHATTING_SERVICE') private readonly chattingService: ClientProxy,
+    private readonly jwtService: JwtService
   ) {}
 
-  @Get()
-  async getChats() {
-    return firstValueFrom(this.chattingService.send('chatting-get-all', {}));
+  /**
+   * Get a short-lived WebSocket token for real-time chat
+   * This is needed because the app uses httpOnly cookies for auth
+   */
+  @Get('ws-token')
+  @UseGuards(JwtAuthGuard)
+  getWebSocketToken(@Req() req: AuthenticatedRequest) {
+    const { userId, username, userType } = req.user;
+
+    // Create a short-lived token (5 minutes) for WebSocket authentication
+    const wsToken = this.jwtService.sign(
+      {
+        userId,
+        username,
+        userType: userType || 'CUSTOMER',
+        purpose: 'websocket',
+      },
+      { expiresIn: '5m' }
+    );
+
+    return { token: wsToken, expiresIn: 300 };
   }
 
-  @Post()
-  async sendMessage(@Body() data: { sender: string; message: string }) {
-    return firstValueFrom(this.chattingService.send('chatting-send', data));
+  /**
+   * Create a new conversation or return existing one
+   * Both CUSTOMER and SELLER can create conversations
+   */
+  @Post('conversations')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('CUSTOMER', 'SELLER')
+  async createConversation(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: CreateConversationDto
+  ) {
+    const { userId, userType } = req.user;
+
+    // Determine initiator type based on user role
+    const initiatorType: ParticipantType =
+      userType === 'SELLER' ? 'seller' : 'user';
+
+    // Validate: users can only target sellers, sellers can only target users
+    if (initiatorType === 'user' && dto.targetType !== 'seller') {
+      throw new BadRequestException(
+        'Users can only start conversations with sellers'
+      );
+    }
+    if (initiatorType === 'seller' && dto.targetType !== 'user') {
+      throw new BadRequestException(
+        'Sellers can only start conversations with users'
+      );
+    }
+
+    this.logger.log(
+      `Creating conversation: ${initiatorType}(${userId}) -> ${dto.targetType}(${dto.targetId})`
+    );
+
+    const result = await firstValueFrom(
+      this.chattingService.send<ConversationResult>(
+        'chatting.createConversation',
+        {
+          initiatorId: userId,
+          initiatorType,
+          targetId: dto.targetId,
+          targetType: dto.targetType,
+          initialMessage: dto.initialMessage,
+        }
+      )
+    );
+
+    if (!result.success) {
+      throw new BadRequestException(result.error || 'Failed to create conversation');
+    }
+
+    return result.conversation;
+  }
+
+  /**
+   * Get list of conversations for the authenticated user
+   */
+  @Get('conversations')
+  @UseGuards(JwtAuthGuard)
+  async getConversations(
+    @Req() req: AuthenticatedRequest,
+    @Query() query: GetConversationsDto
+  ) {
+    const { userId, userType } = req.user;
+    const participantType: ParticipantType =
+      userType === 'SELLER' ? 'seller' : 'user';
+
+    return firstValueFrom(
+      this.chattingService.send('chatting.getConversations', {
+        participantId: userId,
+        participantType,
+        page: query.page || 1,
+        limit: query.limit || 20,
+      })
+    );
+  }
+
+  /**
+   * Get a single conversation details
+   */
+  @Get('conversations/:id')
+  @UseGuards(JwtAuthGuard)
+  async getConversation(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') conversationId: string
+  ) {
+    const { userId, userType } = req.user;
+    const participantType: ParticipantType =
+      userType === 'SELLER' ? 'seller' : 'user';
+
+    const result = await firstValueFrom(
+      this.chattingService.send('chatting.getConversation', {
+        conversationId,
+        participantId: userId,
+        participantType,
+      })
+    );
+
+    if (!result) {
+      throw new NotFoundException('Conversation not found or access denied');
+    }
+
+    return result;
+  }
+
+  /**
+   * Get messages for a conversation with pagination
+   */
+  @Get('conversations/:id/messages')
+  @UseGuards(JwtAuthGuard)
+  async getMessages(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') conversationId: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string
+  ) {
+    const { userId, userType } = req.user;
+    const participantType: ParticipantType =
+      userType === 'SELLER' ? 'seller' : 'user';
+
+    const result = await firstValueFrom(
+      this.chattingService.send('chatting.getMessages', {
+        conversationId,
+        participantId: userId,
+        participantType,
+        page: page ? parseInt(page, 10) : 1,
+        limit: limit ? parseInt(limit, 10) : 20,
+      })
+    );
+
+    if (result.error) {
+      throw new NotFoundException(result.error);
+    }
+
+    return result;
+  }
+
+  /**
+   * Mark a conversation as seen/read
+   */
+  @Post('conversations/:id/seen')
+  @UseGuards(JwtAuthGuard)
+  async markAsSeen(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') conversationId: string
+  ) {
+    const { userId, userType } = req.user;
+    const participantType: ParticipantType =
+      userType === 'SELLER' ? 'seller' : 'user';
+
+    const result = await firstValueFrom(
+      this.chattingService.send('chatting.markAsSeen', {
+        conversationId,
+        participantId: userId,
+        participantType,
+      })
+    );
+
+    if (!result.success) {
+      throw new NotFoundException('Conversation not found or access denied');
+    }
+
+    return { status: 'seen' };
+  }
+
+  /**
+   * Check if a user is online
+   */
+  @Get('online/:userId')
+  @UseGuards(JwtAuthGuard)
+  async checkOnline(@Param('userId') userId: string) {
+    return firstValueFrom(
+      this.chattingService.send('chatting.checkOnline', { userId })
+    );
+  }
+
+  /**
+   * Health check / ping endpoint
+   */
+  @Get('ping')
+  async ping() {
+    return firstValueFrom(this.chattingService.send('chatting.ping', {}));
   }
 }
