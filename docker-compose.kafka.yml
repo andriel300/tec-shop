@@ -20,17 +20,19 @@ services:
       - zookeeper
     ports:
       - '9092:9092'
-      - '9093:9093'
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
       KAFKA_DELETE_TOPIC_ENABLE: 'true'
       KAFKA_LOG_RETENTION_HOURS: 168
@@ -55,8 +57,7 @@ services:
     image: provectuslabs/kafka-ui:latest
     container_name: tec-shop-kafka-ui
     depends_on:
-      kafka:
-        condition: service_healthy
+      - kafka
     ports:
       - '8090:8080'
     environment:
@@ -71,51 +72,31 @@ services:
     image: confluentinc/cp-kafka:7.5.0
     container_name: tec-shop-kafka-init
     depends_on:
-      kafka:
-        condition: service_healthy
+      - kafka
     networks:
       - tec-shop-network
     command: >
       bash -c "
-        echo 'Waiting for Kafka to be ready...'
-        sleep 5
+        echo 'Waiting for Kafka...'
+        until kafka-broker-api-versions --bootstrap-server kafka:29092; do
+          sleep 3
+        done
 
         echo 'Creating Kafka topics...'
 
-        # Create chat.new_message topic
-        kafka-topics --create --if-not-exists \
-          --bootstrap-server kafka:29092 \
-          --topic chat.new_message \
-          --partitions 3 \
-          --replication-factor 1 \
-          --config retention.ms=604800000 \
-          --config segment.ms=86400000 || true
-
-        # Create users-event topic for analytics
-        kafka-topics --create --if-not-exists \
-          --bootstrap-server kafka:29092 \
-          --topic users-event \
-          --partitions 3 \
-          --replication-factor 1 \
-          --config retention.ms=2592000000 \
-          --config segment.ms=86400000 || true
+        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic chat.new_message --partitions 3 --replication-factor 1 --config retention.ms=604800000 --config segment.ms=86400000
+        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic users-event --partitions 3 --replication-factor 1 --config retention.ms=2592000000 --config segment.ms=86400000
+        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic log-events --partitions 3 --replication-factor 1 --config retention.ms=604800000 --config segment.ms=86400000
 
         echo 'Topics created successfully!'
-
-        # List all topics
-        kafka-topics --list --bootstrap-server kafka:29092
-
-        echo 'Topic descriptions:'
-        kafka-topics --describe --bootstrap-server kafka:29092
+        kafka-topics --bootstrap-server kafka:29092 --list
       "
+    restart: 'no'
 
 volumes:
   zookeeper-data:
-    driver: local
   zookeeper-logs:
-    driver: local
   kafka-data:
-    driver: local
 
 networks:
   tec-shop-network:
