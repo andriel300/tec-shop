@@ -1,0 +1,17 @@
+{
+  "name": "@tec-shop/logger-client",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/prisma-clients/logger-client/src",
+  "projectType": "library",
+  "tags": ["type:prisma-client", "scope:logger"],
+  "targets": {
+    "generate-types": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma generate --schema=../../prisma-schemas/logger-schema/prisma/schema.prisma",
+        "cwd": "libs/prisma-clients/logger-client"
+      }
+    }
+  },
+  "implicitDependencies": ["@tec-shop/logger-schema"]
+}
