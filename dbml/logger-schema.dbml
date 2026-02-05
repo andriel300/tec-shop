@@ -1,0 +1,18 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table LogEntry {
+  id String [pk]
+  service String [not null]
+  level String [not null]
+  category String [not null]
+  message String [not null]
+  userId String
+  sellerId String
+  metadata Json
+  timestamp DateTime [default: `now()`, not null]
+  traceId String
+  ip String
+  userAgent String
+}

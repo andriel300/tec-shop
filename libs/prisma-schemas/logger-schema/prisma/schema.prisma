@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../../node_modules/.prisma/logger-client"
+}
+
+generator dbml {
+  provider   = "prisma-dbml-generator"
+  output     = "../../../../dbml"
+  outputName = "logger-schema.dbml"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("LOGGER_SERVICE_DB_URL")
+}
+
+model LogEntry {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  service   String
+  level     String
+  category  String
+  message   String
+  userId    String?
+  sellerId  String?
+  metadata  Json?
+  timestamp DateTime @default(now())
+  traceId   String?
+  ip        String?
+  userAgent String?
+
+  @@index([service, timestamp(sort: Desc)])
+  @@index([level])
+  @@index([category])
+  @@index([timestamp(sort: Desc)])
+}
