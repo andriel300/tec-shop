@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
 import { LoggerModule } from 'nestjs-pino';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
-import { LoggerService } from './logger.service';
+import { LoggerCoreModule } from '../logger/logger.module';
 
 @Module({
   imports: [
+    LoggerCoreModule,
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
     LoggerModule.forRootAsync({
@@ -24,7 +24,7 @@ import { LoggerService } from './logger.service';
       }),
     }),
   ],
-  controllers: [AppController],
-  providers: [LoggerService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}
