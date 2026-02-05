@@ -1,28 +1,57 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { readFileSync } from 'fs';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { LoggerController } from './logger.controller';
 
 @Module({
   imports: [
-    ClientsModule.register([
+    ClientsModule.registerAsync([
       {
         name: 'LOGGER_SERVICE',
-        transport: Transport.TCP,
-        options: {
-          host: process.env.LOGGER_SERVICE_HOST || 'localhost',
-          port: parseInt(process.env.LOGGER_SERVICE_PORT || '6008', 10),
-          tlsOptions: {
-            key: readFileSync(
-              join(process.cwd(), 'certs/api-gateway/api-gateway-key.pem')
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: (configService: ConfigService) => {
+          const certsPath = join(process.cwd(), 'certs');
+          const certPath = join(certsPath, 'api-gateway/api-gateway-cert.pem');
+          const keyPath = join(certsPath, 'api-gateway/api-gateway-key.pem');
+          const caPath = join(certsPath, 'ca/ca-cert.pem');
+
+          const useTls =
+            existsSync(certPath) && existsSync(keyPath) && existsSync(caPath);
+
+          const tcpOptions: {
+            host: string;
+            port: number;
+            tlsOptions?: {
+              key: Buffer;
+              cert: Buffer;
+              ca: Buffer;
+              rejectUnauthorized: boolean;
+            };
+          } = {
+            host:
+              configService.get<string>('LOGGER_SERVICE_HOST') || 'localhost',
+            port: parseInt(
+              configService.get<string>('LOGGER_SERVICE_TCP_PORT') || '6011',
+              10
             ),
-            cert: readFileSync(
-              join(process.cwd(), 'certs/api-gateway/api-gateway-cert.pem')
-            ),
-            ca: readFileSync(join(process.cwd(), 'certs/ca/ca-cert.pem')),
-            rejectUnauthorized: true,
-          },
+          };
+
+          if (useTls) {
+            tcpOptions.tlsOptions = {
+              key: readFileSync(keyPath),
+              cert: readFileSync(certPath),
+              ca: readFileSync(caPath),
+              rejectUnauthorized: true,
+            };
+          }
+
+          return {
+            transport: Transport.TCP,
+            options: tcpOptions,
+          };
         },
       },
     ]),
