@@ -40,7 +40,9 @@ export class AdminService {
   async listUsers(dto: ListUsersDto) {
     this.logger.log(`Listing users with filters: ${JSON.stringify(dto)}`);
 
-    const { page = 1, limit = 10, search, userType, status } = dto;
+    const { search, userType, status } = dto;
+    const page = Number(dto.page) || 1;
+    const limit = Number(dto.limit) || 10;
     const skip = (page - 1) * limit;
 
     // Build where clause
@@ -57,7 +59,6 @@ export class AdminService {
     if (search) {
       where.OR = [
         { email: { contains: search, mode: 'insensitive' } },
-        { name: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -70,12 +71,9 @@ export class AdminService {
         select: {
           id: true,
           email: true,
-          name: true,
           userType: true,
           isEmailVerified: true,
           isBanned: true,
-          banReason: true,
-          bannedUntil: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -106,14 +104,10 @@ export class AdminService {
       select: {
         id: true,
         email: true,
-        name: true,
         userType: true,
         isEmailVerified: true,
         isBanned: true,
-        banReason: true,
-        bannedUntil: true,
         googleId: true,
-        picture: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -127,7 +121,7 @@ export class AdminService {
     let userProfile = null;
     if (user.userType === 'CUSTOMER') {
       userProfile = await this.userPrisma.userProfile.findUnique({
-        where: { authId: userId },
+        where: { userId: userId },
       });
     }
 
@@ -168,27 +162,15 @@ export class AdminService {
       throw new BadRequestException('User is already banned');
     }
 
-    // Calculate ban expiry if duration is provided
-    let bannedUntil = null;
-    if (dto.duration && dto.duration > 0) {
-      bannedUntil = new Date();
-      bannedUntil.setDate(bannedUntil.getDate() + dto.duration);
-    }
-
     const updatedUser = await this.authPrisma.user.update({
       where: { id: userId },
       data: {
         isBanned: true,
-        banReason: dto.reason,
-        bannedUntil,
       },
       select: {
         id: true,
         email: true,
-        name: true,
         isBanned: true,
-        banReason: true,
-        bannedUntil: true,
       },
     });
 
@@ -218,13 +200,10 @@ export class AdminService {
       where: { id: userId },
       data: {
         isBanned: false,
-        banReason: null,
-        bannedUntil: null,
       },
       select: {
         id: true,
         email: true,
-        name: true,
         isBanned: true,
       },
     });
@@ -246,8 +225,8 @@ export class AdminService {
       select: {
         id: true,
         email: true,
-        name: true,
         isEmailVerified: true,
+        userType: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -279,7 +258,6 @@ export class AdminService {
     const admin = await this.authPrisma.user.create({
       data: {
         email: dto.email,
-        name: dto.name,
         password: hashedPassword,
         userType: 'ADMIN',
         isEmailVerified: true, // Admins are auto-verified
@@ -287,7 +265,6 @@ export class AdminService {
       select: {
         id: true,
         email: true,
-        name: true,
         userType: true,
         createdAt: true,
       },
@@ -342,7 +319,9 @@ export class AdminService {
   async listSellers(dto: ListSellersDto) {
     this.logger.log(`Listing sellers with filters: ${JSON.stringify(dto)}`);
 
-    const { page = 1, limit = 10, search, isVerified } = dto;
+    const { search, isVerified } = dto;
+    const page = Number(dto.page) || 1;
+    const limit = Number(dto.limit) || 10;
     const skip = (page - 1) * limit;
 
     // Build where clause
@@ -449,8 +428,9 @@ export class AdminService {
   async listAllOrders(dto: ListOrdersDto) {
     this.logger.log(`Listing all orders with filters: ${JSON.stringify(dto)}`);
 
-    const { page = 1, limit = 10, status, paymentStatus, startDate, endDate } =
-      dto;
+    const { status, paymentStatus, startDate, endDate } = dto;
+    const page = Number(dto.page) || 1;
+    const limit = Number(dto.limit) || 10;
     const skip = (page - 1) * limit;
 
     // Build where clause
@@ -553,8 +533,8 @@ export class AdminService {
       },
     });
 
-    // Geographic distribution - Users by country (from addresses)
-    const usersByCountry = await this.userPrisma.address.groupBy({
+    // Geographic distribution - Users by country (from shipping addresses)
+    const usersByCountry = await this.userPrisma.shippingAddress.groupBy({
       by: ['country'],
       _count: {
         country: true,

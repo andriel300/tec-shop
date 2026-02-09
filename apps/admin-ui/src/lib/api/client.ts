@@ -59,17 +59,13 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshError) {
         // Refresh failed, clear sessionStorage
-        sessionStorage.removeItem('user');
-        sessionStorage.removeItem('userProfile');
+        sessionStorage.removeItem('admin');
 
-        // Only redirect if not already on login/signup pages to avoid infinite loops
+        // Only redirect if not already on root (login page) to avoid infinite loops
         if (typeof window !== 'undefined') {
           const currentPath = window.location.pathname;
-          if (
-            !currentPath.includes('/login') &&
-            !currentPath.includes('/signup')
-          ) {
-            window.location.href = '/login';
+          if (currentPath !== '/') {
+            window.location.href = '/';
           }
         }
 
