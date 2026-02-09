@@ -116,6 +116,15 @@
     },
     {
       "path": "./libs/prisma-clients/chatting-client"
+    },
+    {
+      "path": "./libs/prisma-clients/logger-client"
+    },
+    {
+      "path": "./libs/prisma-schemas/logger-schema"
+    },
+    {
+      "path": "./libs/shared/logger-producer"
     }
   ]
 }

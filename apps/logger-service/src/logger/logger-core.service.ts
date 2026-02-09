@@ -104,8 +104,8 @@ export class LoggerCoreService {
   }
 
   async queryLogs(query: LogQueryDto): Promise<LogListResponseDto> {
-    const page = query.page ?? 1;
-    const limit = query.limit ?? 50;
+    const page = typeof query.page === 'string' ? parseInt(query.page, 10) : (query.page ?? 1);
+    const limit = typeof query.limit === 'string' ? parseInt(query.limit, 10) : (query.limit ?? 50);
     const skip = (page - 1) * limit;
 
     const where: Record<string, unknown> = {};
@@ -218,7 +218,7 @@ export class LoggerCoreService {
   }
 
   async downloadLogs(query: LogDownloadQueryDto): Promise<string> {
-    const limit = query.limit ?? 1000;
+    const limit = typeof query.limit === 'string' ? parseInt(query.limit, 10) : (query.limit ?? 1000);
 
     const where: Record<string, unknown> = {};
 
