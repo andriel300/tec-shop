@@ -7,8 +7,8 @@
     "user-ui": "PORT=3000 npx nx dev user-ui",
     "seller-ui": "PORT=3001 npx nx dev seller-ui",
     "admin-ui": "PORT=3002 npx nx dev admin-ui",
-    "prisma:generate": "npx nx run @tec-shop/auth-schema:generate-types && npx nx run @tec-shop/user-schema:generate-types && npx nx run @tec-shop/seller-schema:generate-types && npx nx run @tec-shop/product-schema:generate-types && npx nx run @tec-shop/analytics-schema:generate-types && npx nx run @tec-shop/order-schema:generate-types && npx nx run @tec-shop/chatting-schema:generate-types",
-    "prisma:db-push": "npx nx run-many --target=db-push --projects=@tec-shop/auth-schema,@tec-shop/user-schema,@tec-shop/seller-schema,@tec-shop/product-schema,@tec-shop/analytics-schema,@tec-shop/order-schema,@tec-shop/chatting-schema",
+    "prisma:generate": "npx nx run @tec-shop/auth-schema:generate-types && npx nx run @tec-shop/user-schema:generate-types && npx nx run @tec-shop/seller-schema:generate-types && npx nx run @tec-shop/product-schema:generate-types && npx nx run @tec-shop/analytics-schema:generate-types && npx nx run @tec-shop/order-schema:generate-types && npx nx run @tec-shop/chatting-schema:generate-types && npx nx run @tec-shop/logger-schema:generate-types",
+    "prisma:db-push": "npx nx run-many --target=db-push --projects=@tec-shop/auth-schema,@tec-shop/user-schema,@tec-shop/seller-schema,@tec-shop/product-schema,@tec-shop/analytics-schema,@tec-shop/order-schema,@tec-shop/chatting-schema,@tec-shop/logger-schema",
     "prisma:studio:auth": "npx nx run @tec-shop/auth-schema:studio",
     "prisma:studio:user": "npx nx run @tec-shop/user-schema:studio",
     "prisma:studio:seller": "npx nx run @tec-shop/seller-schema:studio",
@@ -202,7 +202,9 @@
     "libs/prisma-clients/order-client",
     "libs/shared/components/*",
     "libs/prisma-schemas/chatting-schema",
-    "libs/prisma-clients/chatting-client"
+    "libs/prisma-clients/chatting-client",
+    "libs/prisma-schemas/logger-schema",
+    "libs/prisma-clients/logger-client"
   ],
   "nx": {
     "includedScripts": [],

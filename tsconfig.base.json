@@ -29,7 +29,15 @@
       "@tec-shop/auth-client": ["libs/prisma-clients/auth-client/src/index.ts"],
       "@tec-shop/auth-prisma-client": ["node_modules/.prisma/auth-client"],
       "@tec-shop/auth-service/*": ["apps/auth-service/src/*"],
+      "@tec-shop/chatting-client": [
+        "libs/prisma-clients/chatting-client/src/index.ts"
+      ],
       "@tec-shop/dto": ["libs/shared/dto/src/*"],
+      "@tec-shop/logger-client": [
+        "libs/prisma-clients/logger-client/src/index.ts"
+      ],
+      "@tec-shop/logger-prisma-client": ["node_modules/.prisma/logger-client"],
+      "@tec-shop/logger-producer": ["libs/shared/logger-producer/src/index.ts"],
       "@tec-shop/product-client": [
         "libs/prisma-clients/product-client/src/index.ts"
       ],
@@ -46,17 +54,7 @@
       "@tec-shop/user-client": ["libs/prisma-clients/user-client/src/index.ts"],
       "@tec-shop/user-prisma-client": ["node_modules/.prisma/user-client"],
       "@tec-shop/user-service/*": ["apps/user-service/src/*"],
-      "@tec-shop/user-ui/*": ["apps/user-ui/src/*"],
-      "@tec-shop/logger-client": [
-        "libs/prisma-clients/logger-client/src/index.ts"
-      ],
-      "@tec-shop/logger-prisma-client": ["node_modules/.prisma/logger-client"],
-      "@tec-shop/logger-producer": [
-        "libs/shared/logger-producer/src/index.ts"
-      ],
-      "@tec-shop/chatting-client": [
-        "libs/prisma-clients/chatting-client/src/index.ts"
-      ]
+      "@tec-shop/user-ui/*": ["apps/user-ui/src/*"]
     }
   }
 }

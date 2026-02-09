@@ -48,7 +48,9 @@
         "libs/prisma-schemas/order-schema/*",
         "libs/prisma-clients/order-client/*",
         "libs/prisma-schemas/chatting-schema/*",
-        "libs/prisma-clients/chatting-client/*"
+        "libs/prisma-clients/chatting-client/*",
+        "libs/prisma-schemas/logger-schema/*",
+        "libs/prisma-clients/logger-client/*"
       ]
     },
     {
@@ -111,7 +113,9 @@
         "libs/prisma-schemas/order-schema/*",
         "libs/prisma-clients/order-client/*",
         "libs/prisma-schemas/chatting-schema/*",
-        "libs/prisma-clients/chatting-client/*"
+        "libs/prisma-clients/chatting-client/*",
+        "libs/prisma-schemas/logger-schema/*",
+        "libs/prisma-clients/logger-client/*"
       ],
       "options": {
         "typecheck": {

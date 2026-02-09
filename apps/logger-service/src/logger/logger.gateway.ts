@@ -15,7 +15,7 @@ import type { LogEntryResponseDto, LogLevel, LogCategory } from '@tec-shop/dto';
 import { LoggerCoreService } from './logger-core.service';
 
 interface JwtPayload {
-  userId: string;
+  sub: string;
   username: string;
   userType?: 'CUSTOMER' | 'SELLER' | 'ADMIN';
   role?: string;
@@ -46,6 +46,7 @@ const socketToAdmin = new Map<string, AdminSocketInfo>();
       const allowedOrigins = process.env['CORS_ORIGINS']?.split(',') || [
         'http://localhost:3000',
         'http://localhost:3001',
+        'http://localhost:3002',
         'http://localhost:4200',
       ];
 
@@ -70,11 +71,29 @@ export class LoggerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly loggerCore: LoggerCoreService
   ) {}
 
+  private extractTokenFromCookies(cookieHeader: string): string | null {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const prefix = isProduction ? '__Host-' : '';
+    const cookieName = `${prefix}admin_access_token`;
+
+    const cookies = cookieHeader.split(';');
+    for (const cookie of cookies) {
+      const [name, ...valueParts] = cookie.trim().split('=');
+      if (name === cookieName) {
+        return decodeURIComponent(valueParts.join('='));
+      }
+    }
+    return null;
+  }
+
   async handleConnection(client: Socket) {
     try {
       const token =
         client.handshake.auth?.token ||
-        client.handshake.headers?.authorization?.replace('Bearer ', '');
+        client.handshake.headers?.authorization?.replace('Bearer ', '') ||
+        (client.handshake.headers?.cookie
+          ? this.extractTokenFromCookies(client.handshake.headers.cookie)
+          : null);
 
       if (!token) {
         this.logger.warn(
@@ -103,14 +122,16 @@ export class LoggerGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       socketToAdmin.set(client.id, {
-        adminId: payload.userId,
+        adminId: payload.sub,
       });
 
-      this.logger.log(`Admin connected: ${payload.userId} - Socket: ${client.id}`);
+      this.logger.log(
+        `Admin connected: ${payload.sub} - Socket: ${client.id}`
+      );
 
       client.emit('connected', {
         message: 'WebSocket connected successfully',
-        adminId: payload.userId,
+        adminId: payload.sub,
       });
     } catch (error) {
       this.logger.error(`Connection error: ${error}`);
@@ -175,7 +196,9 @@ export class LoggerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     socketToAdmin.set(client.id, adminInfo);
 
     this.logger.log(
-      `Admin ${adminInfo.adminId} subscribed with filters: ${JSON.stringify(data.filters)}`
+      `Admin ${adminInfo.adminId} subscribed with filters: ${JSON.stringify(
+        data.filters
+      )}`
     );
 
     const recentLogs = await this.loggerCore.getRecentLogs(50);
@@ -225,7 +248,9 @@ export class LoggerGateway implements OnGatewayConnection, OnGatewayDisconnect {
     socketToAdmin.set(client.id, adminInfo);
 
     this.logger.log(
-      `Admin ${adminInfo.adminId} updated filters: ${JSON.stringify(data.filters)}`
+      `Admin ${adminInfo.adminId} updated filters: ${JSON.stringify(
+        data.filters
+      )}`
     );
 
     client.emit('filters_updated', {
