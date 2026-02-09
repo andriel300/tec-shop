@@ -5,7 +5,8 @@ import { useForm } from '@tanstack/react-form';
 import { useMutation } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { Input } from '@tec-shop/input';
-import axios, { AxiosError } from 'axios';
+import type { AxiosError } from 'axios';
+import apiClient from '../lib/api/client';
 
 type FormData = {
   email: string;
@@ -19,16 +20,19 @@ const Page = () => {
   // Mutation
   const loginMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login-admin`,
-        data,
-        { withCredentials: true }
-      );
+      // Login sets the cookies
+      await apiClient.post('/auth/admin/login', data);
 
-      return response.data;
+      // Fetch admin data using refresh endpoint
+      const refreshResponse = await apiClient.post('/auth/refresh');
+      return refreshResponse.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       setServerError(null);
+      // Store admin data in sessionStorage
+      if (data?.user) {
+        sessionStorage.setItem('admin', JSON.stringify(data.user));
+      }
       router.push('/dashboard');
     },
     onError: (error: AxiosError) => {
