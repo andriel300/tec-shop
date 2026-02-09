@@ -43,7 +43,7 @@ interface OrderItem {
 }
 
 const fetchOrders = async () => {
-  const res = await apiClient.get('/orders/get-admin-orders');
+  const res = await apiClient.get('/admin/orders');
   return res.data;
 };
 
@@ -102,10 +102,12 @@ const OrdersTable = () => {
         ),
       },
       {
-        accessorKey: 'total',
+        accessorKey: 'finalAmount',
         header: 'Total',
-        cell: ({ row }: any) => (
-          <span className="text-white">${row.original.total.toFixed(2)}</span>
+        cell: ({ row }: { row: { original: Order } }) => (
+          <span className="text-white">
+            ${((row.original.finalAmount || 0) / 100).toFixed(2)}
+          </span>
         ),
       },
       {
