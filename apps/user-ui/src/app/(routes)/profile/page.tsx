@@ -9,7 +9,6 @@ import OrdersSection from '../../../components/orders';
 import ChangePassword from '../../../components/changePassword';
 import { useAuth } from '../../../hooks/use-auth';
 import { useOrders } from '../../../hooks/use-orders';
-import apiClient from '../../../lib/api/client';
 import {
   BadgeCheck,
   Bell,
@@ -39,7 +38,7 @@ const Page = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const { userProfile, user, isLoading } = useAuth();
+  const { userProfile, user, isLoading, logout } = useAuth();
   const { data: orders = [] } = useOrders();
   const queryTab =
     searchParams.get('active') || searchParams.get('tab') || 'Profile';
@@ -54,11 +53,9 @@ const Page = () => {
   }, [activeTab]);
 
   const logOutHandler = async () => {
-    await apiClient.post('auth/logout').then(() => {
-      queryClient.invalidateQueries({ queryKey: ['user'] });
-
-      router.push('/login');
-    });
+    await logout();
+    queryClient.clear();
+    router.push('/login');
   };
 
   return (

@@ -23,11 +23,13 @@ import { ChatModule } from './chat/chat.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { ImageKitModule } from '@tec-shop/shared/imagekit';
+import { LogProducerModule } from '@tec-shop/logger-producer';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ImageKitModule.forRoot(),
+    LogProducerModule.forRoot({ clientId: 'api-gateway' }),
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

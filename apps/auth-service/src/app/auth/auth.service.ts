@@ -27,6 +27,7 @@ import {
 import { EmailService } from '../email/email.service';
 import { RedisService } from '../redis/redis.service';
 import { ServiceAuthUtil } from './service-auth.util';
+import { LogProducerService } from '@tec-shop/logger-producer';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -37,6 +38,7 @@ export class AuthService implements OnModuleInit {
     private prisma: AuthPrismaService,
     private redisService: RedisService,
     private emailService: EmailService,
+    private readonly logProducer: LogProducerService,
     @Inject('USER_SERVICE') private readonly userClient: ClientProxy,
     @Inject('SELLER_SERVICE') private readonly sellerClient: ClientProxy
   ) {}
@@ -73,6 +75,9 @@ export class AuthService implements OnModuleInit {
 
       if (existingUser) {
         this.logger.warn(`Signup failed - email already exists: ${email}`);
+        this.logProducer.warn('auth-service', 'auth', 'Customer signup failed - duplicate email', {
+          metadata: { action: 'signup', reason: 'duplicate_email' },
+        });
         throw new ConflictException('User with this email already exists');
       }
 
@@ -105,6 +110,10 @@ export class AuthService implements OnModuleInit {
       await this.emailService.sendOtp(user.email, otp);
 
       this.logger.log(`Customer signup successful - userId: ${user.id}, email: ${email}`);
+      this.logProducer.info('auth-service', 'auth', 'Customer signup successful', {
+        userId: user.id,
+        metadata: { action: 'signup', userType: 'CUSTOMER' },
+      });
 
       // We will not emit an event or return a token until the user is verified.
       return {
@@ -132,6 +141,9 @@ export class AuthService implements OnModuleInit {
 
       if (existingUser) {
         this.logger.warn(`Seller signup failed - email already exists: ${email}`);
+        this.logProducer.warn('auth-service', 'auth', 'Seller signup failed - duplicate email', {
+          metadata: { action: 'signup', reason: 'duplicate_email', userType: 'SELLER' },
+        });
         throw new ConflictException('User with this email already exists');
       }
 
@@ -171,6 +183,10 @@ export class AuthService implements OnModuleInit {
       await this.emailService.sendOtp(user.email, otp);
 
       this.logger.log(`Seller signup successful - userId: ${user.id}, email: ${email}`);
+      this.logProducer.info('auth-service', 'auth', 'Seller signup successful', {
+        userId: user.id,
+        metadata: { action: 'signup', userType: 'SELLER' },
+      });
 
       return {
         message:
@@ -198,6 +214,9 @@ export class AuthService implements OnModuleInit {
 
       if (!user || !user.password || !user.isEmailVerified) {
         this.logger.warn(`Customer login failed - invalid credentials or unverified email: ${credential.email}`);
+        this.logProducer.warn('auth-service', 'security', 'Customer login failed - invalid credentials', {
+          metadata: { action: 'login', reason: !user ? 'user_not_found' : !user.isEmailVerified ? 'unverified_email' : 'no_password', userType: 'CUSTOMER' },
+        });
         throw new UnauthorizedException(genericError);
       }
 
@@ -209,10 +228,18 @@ export class AuthService implements OnModuleInit {
 
       if (!isPasswordMatching) {
         this.logger.warn(`Customer login failed - password mismatch: ${credential.email}`);
+        this.logProducer.warn('auth-service', 'security', 'Customer login failed - wrong password', {
+          userId: user.id,
+          metadata: { action: 'login', reason: 'wrong_password', userType: 'CUSTOMER' },
+        });
         throw new UnauthorizedException(genericError);
       }
 
       this.logger.log(`Customer login successful - userId: ${user.id}, email: ${credential.email}`);
+      this.logProducer.info('auth-service', 'auth', 'Customer login successful', {
+        userId: user.id,
+        metadata: { action: 'login', userType: 'CUSTOMER' },
+      });
 
       // Pass rememberMe flag to token generation for extended session
       return this.generateTokens(user.id, user.email, credential.rememberMe);
@@ -242,6 +269,9 @@ export class AuthService implements OnModuleInit {
 
       if (!user || !user.password || !user.isEmailVerified) {
         this.logger.warn(`Seller login failed - invalid credentials or unverified email: ${credential.email}`);
+        this.logProducer.warn('auth-service', 'security', 'Seller login failed - invalid credentials', {
+          metadata: { action: 'login', reason: !user ? 'user_not_found' : !user.isEmailVerified ? 'unverified_email' : 'no_password', userType: 'SELLER' },
+        });
         throw new UnauthorizedException(genericError);
       }
 
@@ -253,10 +283,18 @@ export class AuthService implements OnModuleInit {
 
       if (!isPasswordMatching) {
         this.logger.warn(`Seller login failed - password mismatch: ${credential.email}`);
+        this.logProducer.warn('auth-service', 'security', 'Seller login failed - wrong password', {
+          userId: user.id,
+          metadata: { action: 'login', reason: 'wrong_password', userType: 'SELLER' },
+        });
         throw new UnauthorizedException(genericError);
       }
 
       this.logger.log(`Seller login successful - userId: ${user.id}, email: ${credential.email}`);
+      this.logProducer.info('auth-service', 'auth', 'Seller login successful', {
+        userId: user.id,
+        metadata: { action: 'login', userType: 'SELLER' },
+      });
 
       // Generate tokens for seller with proper role and userType
       return this.generateSellerTokens(
@@ -267,6 +305,65 @@ export class AuthService implements OnModuleInit {
     } catch (error) {
       this.logger.error(
         `Seller login failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
+      );
+      throw error;
+    }
+  }
+
+  async adminLogin(credential: LoginDto) {
+    try {
+      this.logger.log(`Admin login attempt - email: ${credential.email}`);
+
+      // Find user by email with admin userType
+      const user = await this.prisma.user.findUnique({
+        where: {
+          email: credential.email,
+          userType: 'ADMIN',
+        },
+      });
+
+      // Generic error message to prevent email enumeration
+      const genericError = 'Invalid credentials';
+
+      if (!user || !user.password || !user.isEmailVerified) {
+        this.logger.warn(`Admin login failed - invalid credentials or unverified email: ${credential.email}`);
+        this.logProducer.warn('auth-service', 'security', 'Admin login failed - invalid credentials', {
+          metadata: { action: 'login', reason: !user ? 'user_not_found' : !user.isEmailVerified ? 'unverified_email' : 'no_password', userType: 'ADMIN' },
+        });
+        throw new UnauthorizedException(genericError);
+      }
+
+      this.logger.debug(`Verifying password for admin: ${user.id}`);
+      const isPasswordMatching = await bcrypt.compare(
+        credential.password,
+        user.password
+      );
+
+      if (!isPasswordMatching) {
+        this.logger.warn(`Admin login failed - password mismatch: ${credential.email}`);
+        this.logProducer.warn('auth-service', 'security', 'Admin login failed - wrong password', {
+          userId: user.id,
+          metadata: { action: 'login', reason: 'wrong_password', userType: 'ADMIN' },
+        });
+        throw new UnauthorizedException(genericError);
+      }
+
+      this.logger.log(`Admin login successful - userId: ${user.id}, email: ${credential.email}`);
+      this.logProducer.info('auth-service', 'auth', 'Admin login successful', {
+        userId: user.id,
+        metadata: { action: 'login', userType: 'ADMIN' },
+      });
+
+      // Generate tokens for admin with proper role and userType
+      return this.generateAdminTokens(
+        user.id,
+        user.email,
+        credential.rememberMe
+      );
+    } catch (error) {
+      this.logger.error(
+        `Admin login failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
         error instanceof Error ? error.stack : undefined
       );
       throw error;
@@ -388,6 +485,11 @@ export class AuthService implements OnModuleInit {
         ? await this.generateSellerTokens(user.id, user.email, false)
         : await this.generateTokens(user.id, user.email, false);
 
+      this.logProducer.info('auth-service', 'auth', 'Google OAuth login successful', {
+        userId: user.id,
+        metadata: { action: 'google_login', userType: user.userType },
+      });
+
       return {
         ...tokens,
         userId: user.id,
@@ -452,6 +554,11 @@ export class AuthService implements OnModuleInit {
     await this.redisService.del(`verification-otp:${user.id}`);
     await this.redisService.del(`otp-attempts:${user.id}`);
 
+    this.logProducer.info('auth-service', 'auth', 'Email verified successfully', {
+      userId: user.id,
+      metadata: { action: 'verify_email', userType: 'CUSTOMER' },
+    });
+
     // Create the user profile in the user-service now that email is verified
     try {
       await firstValueFrom(
@@ -460,11 +567,13 @@ export class AuthService implements OnModuleInit {
           name,
         })
       );
-      console.log(`User profile created successfully for user ${user.id}`);
+      this.logger.log(`User profile created successfully for user ${user.id}`);
     } catch (error) {
-      console.error('Failed to create user profile in user-service:', error);
-      // Log the error but don't fail the email verification process
-      // The user profile can be created later if needed
+      this.logger.error('Failed to create user profile in user-service:', error);
+      this.logProducer.error('auth-service', 'system', 'Failed to create user profile in user-service', {
+        userId: user.id,
+        metadata: { action: 'create_profile', targetService: 'user-service' },
+      });
     }
 
     return { message: 'Email verified successfully.' };
@@ -557,14 +666,22 @@ export class AuthService implements OnModuleInit {
       await firstValueFrom(
         this.sellerClient.send('create-seller-profile-signed', signedRequest)
       );
-      console.log(`Seller profile created successfully for user ${user.id}`);
+      this.logger.log(`Seller profile created successfully for user ${user.id}`);
     } catch (error) {
-      console.error(
+      this.logger.error(
         'Failed to create seller profile in seller-service:',
         error
       );
-      // Log the error but don't fail the email verification process
+      this.logProducer.error('auth-service', 'system', 'Failed to create seller profile in seller-service', {
+        userId: user.id,
+        metadata: { action: 'create_profile', targetService: 'seller-service' },
+      });
     }
+
+    this.logProducer.info('auth-service', 'auth', 'Seller email verified successfully', {
+      userId: user.id,
+      metadata: { action: 'verify_email', userType: 'SELLER' },
+    });
 
     return { message: 'Seller email verified successfully.' };
   }
@@ -667,11 +784,20 @@ export class AuthService implements OnModuleInit {
     }
 
     // Generate new token pair maintaining the remember me preference
-    const tokens = await this.generateTokens(
-      user.id,
-      user.email,
-      wasRememberMe
-    );
+    // Use the appropriate token generator based on userType
+    let tokens;
+    if (user.userType === 'ADMIN') {
+      tokens = await this.generateAdminTokens(user.id, user.email, wasRememberMe);
+    } else if (user.userType === 'SELLER') {
+      tokens = await this.generateSellerTokens(user.id, user.email, wasRememberMe);
+    } else {
+      tokens = await this.generateTokens(user.id, user.email, wasRememberMe);
+    }
+
+    this.logProducer.info('auth-service', 'auth', 'Token refreshed', {
+      userId: user.id,
+      metadata: { action: 'token_refresh', userType: user.userType },
+    });
 
     return {
       ...tokens,
@@ -879,6 +1005,11 @@ export class AuthService implements OnModuleInit {
       resetToken.user.email
     );
 
+    this.logProducer.info('auth-service', 'security', 'Password reset successful', {
+      userId: resetToken.userId,
+      metadata: { action: 'password_reset' },
+    });
+
     return { message: 'Password has been reset successfully.' };
   }
 
@@ -1022,6 +1153,46 @@ export class AuthService implements OnModuleInit {
     };
   }
 
+  private async generateAdminTokens(
+    userId: string,
+    email: string,
+    rememberMe = false
+  ) {
+    const payload = {
+      sub: userId,
+      username: email,
+      role: 'ADMIN',
+      userType: 'ADMIN' as const,
+    };
+
+    // Set token expiration based on rememberMe preference
+    const accessTokenExpiry = rememberMe ? '7d' : '1d'; // Extended: 7 days, Normal: 1 day
+
+    // Generate access token with appropriate expiration
+    const access_token = this.jwtService.sign(payload, {
+      expiresIn: accessTokenExpiry,
+    });
+
+    // Generate refresh token (cryptographically secure)
+    const refresh_token = randomBytes(32).toString('hex');
+
+    // Store refresh token in database (hashed for security)
+    const hashedRefreshToken = createHash('sha256')
+      .update(refresh_token)
+      .digest('hex');
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshToken: hashedRefreshToken },
+    });
+
+    return {
+      access_token,
+      refresh_token,
+      rememberMe, // Return the flag for cookie configuration
+    };
+  }
+
   async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
     this.logger.log(`Change password attempt for user: ${userId}`);
     const { currentPassword, newPassword } = changePasswordDto;
@@ -1076,6 +1247,10 @@ export class AuthService implements OnModuleInit {
     });
 
     this.logger.log(`Password changed successfully for user: ${userId}`);
+    this.logProducer.info('auth-service', 'security', 'Password changed successfully', {
+      userId,
+      metadata: { action: 'change_password' },
+    });
 
     return {
       message: 'Password changed successfully. Please log in again with your new password.',

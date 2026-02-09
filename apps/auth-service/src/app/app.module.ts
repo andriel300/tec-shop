@@ -8,6 +8,7 @@ import { APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
 import { ErrorInterceptor } from './interceptors/error.interceptor';
 import { AllExceptionsFilter } from './filters/rpc-exception.filter';
+import { LogProducerModule } from '@tec-shop/logger-producer';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { AllExceptionsFilter } from './filters/rpc-exception.filter';
       }),
     }),
     AuthModule,
+    LogProducerModule.forRoot({ clientId: 'auth-service' }),
   ],
   controllers: [AppController],
   providers: [

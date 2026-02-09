@@ -4,6 +4,9 @@
   "include": [],
   "references": [
     {
+      "path": "../../libs/shared/logger-producer"
+    },
+    {
       "path": "../../libs/shared/imagekit"
     },
     {

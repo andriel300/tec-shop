@@ -2,16 +2,19 @@
 import { AlignLeft, ChevronDown, ChevronRight, HeartIcon } from 'lucide-react';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { navItems } from '../../configs/constants';
 import ProfileIcon from '../../assets/svgs/profile-icon';
 import CartIcon from '../../assets/svgs/cart-icon';
 import { useAuth } from '../../hooks/use-auth';
 import useStore from '../../store';
 import { useCategoryTree } from '../../hooks/use-categories';
-// import type { Category } from '../../lib/api/categories';
 
 const HeaderBottom = () => {
   const { isAuthenticated, user, userProfile, logout } = useAuth();
+  const queryClient = useQueryClient();
+  const router = useRouter();
   const [show, setShow] = React.useState(false);
   const [isSticky, setIsSticky] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -52,8 +55,10 @@ const HeaderBottom = () => {
     setImageError(false);
   }, [userProfile?.picture]);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
+    queryClient.clear();
+    router.push('/login');
   };
 
   return (
