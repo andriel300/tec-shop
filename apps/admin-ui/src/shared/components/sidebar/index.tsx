@@ -88,10 +88,10 @@ const SidebarWrapper = () => {
                 />
 
                 <SidebarItem
-                  isActive={activeSidebar === '/dashboard/payments'}
+                  isActive={activeSidebar === '/dashboard/payment'}
                   title="Payments"
-                  href="/dashboard/payments"
-                  icon={<Payment fill={getIconColor('/dashboard/payments')} />}
+                  href="/dashboard/payment"
+                  icon={<Payment fill={getIconColor('/dashboard/payment')} />}
                 />
 
                 <SidebarItem

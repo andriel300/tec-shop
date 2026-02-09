@@ -20,40 +20,42 @@ const SidebarItems = ({
   onClick,
   children,
 }: Props) => {
-  const content = (
-    <>
-      <div
-        className={`flex gap-2 w-full min-h-12 h-full items-center px-[13px] rounded-lg cursor-pointer transition hover:bg-[#2b2f31] ${
-          isActive &&
-          'scale-[.98] bg-[#0f3158] fill-blue-200 hover:bg-[#0f3158d6]'
-        }`}
-      >
-        {icon}
-        <h5 className="text-slate-200 text-lg flex-1">{title}</h5>
+  const itemContent = (
+    <div
+      className={`flex gap-2 w-full min-h-12 h-full items-center px-[13px] rounded-lg cursor-pointer transition hover:bg-[#2b2f31] ${
+        isActive &&
+        'scale-[.98] bg-[#0f3158] fill-blue-200 hover:bg-[#0f3158d6]'
+      }`}
+    >
+      {icon}
+      <h5 className="text-slate-200 text-lg flex-1">{title}</h5>
 
-        {badge !== undefined && badge > 0 && (
-          <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-semibold rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
-            {badge}
-          </span>
-        )}
-      </div>
-
-      {children}
-    </>
+      {badge !== undefined && badge > 0 && (
+        <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-semibold rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
+          {badge}
+        </span>
+      )}
+    </div>
   );
 
   if (onClick) {
     return (
-      <button onClick={onClick} className="my-2 block w-full text-left">
-        {content}
-      </button>
+      <div className="my-2">
+        <button onClick={onClick} className="block w-full text-left">
+          {itemContent}
+        </button>
+        {children && <div className="mt-2 ml-4">{children}</div>}
+      </div>
     );
   }
 
   return (
-    <Link href={href || '#'} className="my-2 block">
-      {content}
-    </Link>
+    <div className="my-2">
+      <Link href={href || '#'} className="block">
+        {itemContent}
+      </Link>
+      {children && <div className="mt-2 ml-4">{children}</div>}
+    </div>
   );
 };
 
