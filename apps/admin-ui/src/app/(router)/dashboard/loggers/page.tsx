@@ -26,6 +26,8 @@ import {
   Bug,
   XCircle,
   Trash2,
+  Filter,
+  X,
 } from 'lucide-react';
 import { useLoggerSocket } from '../../../../hooks/useLoggerSocket';
 import { useLogs, useLogStats, useLogServices } from '../../../../hooks/useLogs';
@@ -85,6 +87,9 @@ const LoggersPage = () => {
     limit: 50,
   });
   const [globalFilter, setGlobalFilter] = useState('');
+  const [excludePatterns, setExcludePatterns] = useState<string[]>([]);
+  const [excludeInput, setExcludeInput] = useState('');
+  const [showExcludePanel, setShowExcludePanel] = useState(false);
 
   const {
     isConnected,
@@ -107,7 +112,14 @@ const LoggersPage = () => {
   const { data: statsData } = useLogStats();
   const { data: servicesData } = useLogServices();
 
-  const logs = mode === 'realtime' ? realtimeLogs : (historicalData?.logs || []);
+  const rawLogs = mode === 'realtime' ? realtimeLogs : (historicalData?.logs || []);
+  const logs = excludePatterns.length > 0
+    ? rawLogs.filter((log) =>
+        !excludePatterns.some((pattern) =>
+          log.message.toLowerCase().includes(pattern.toLowerCase())
+        )
+      )
+    : rawLogs;
 
   const handleFilterChange = useCallback(
     (key: keyof LogQueryParams, value: string | undefined) => {
@@ -123,6 +135,35 @@ const LoggersPage = () => {
       }
     },
     [filters, mode, updateSocketFilters]
+  );
+
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setGlobalFilter(value);
+      if (mode === 'historical') {
+        setFilters((prev) => ({ ...prev, search: value || undefined, page: 1 }));
+      }
+    },
+    [mode]
+  );
+
+  const addExcludePattern = useCallback(() => {
+    const trimmed = excludeInput.trim();
+    if (trimmed && !excludePatterns.includes(trimmed)) {
+      setExcludePatterns((prev) => [...prev, trimmed]);
+    }
+    setExcludeInput('');
+  }, [excludeInput, excludePatterns]);
+
+  const removeExcludePattern = useCallback((pattern: string) => {
+    setExcludePatterns((prev) => prev.filter((p) => p !== pattern));
+  }, []);
+
+  const handleHistoricalPageChange = useCallback(
+    (newPage: number) => {
+      setFilters((prev) => ({ ...prev, page: newPage }));
+    },
+    []
   );
 
   const handleDownload = useCallback(async () => {
@@ -355,8 +396,16 @@ const LoggersPage = () => {
             placeholder="Search logs..."
             className="w-full bg-transparent text-white outline-none placeholder-gray-500"
             value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
           />
+          {globalFilter && (
+            <button
+              onClick={() => handleSearchChange('')}
+              className="text-gray-400 hover:text-white ml-2"
+            >
+              <X size={16} />
+            </button>
+          )}
         </div>
 
         <select
@@ -403,6 +452,17 @@ const LoggersPage = () => {
         </select>
 
         <div className="flex gap-2">
+          <button
+            onClick={() => setShowExcludePanel(!showExcludePanel)}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+              excludePatterns.length > 0
+                ? 'bg-orange-600 hover:bg-orange-500 text-white'
+                : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+            }`}
+          >
+            <Filter size={16} />
+            Exclude{excludePatterns.length > 0 ? ` (${excludePatterns.length})` : ''}
+          </button>
           {mode === 'realtime' && (
             <>
               <button
@@ -443,6 +503,60 @@ const LoggersPage = () => {
           </button>
         </div>
       </div>
+
+      {showExcludePanel && (
+        <div className="mb-4 bg-gray-900 rounded-lg border border-gray-700 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Filter size={16} className="text-orange-400" />
+            <span className="text-white font-medium text-sm">Exclude logs containing:</span>
+          </div>
+          <div className="flex gap-2 mb-3">
+            <input
+              type="text"
+              placeholder="e.g. unfollow, follow_shop..."
+              className="flex-1 bg-gray-800 text-white p-2 rounded-lg border border-gray-600 outline-none placeholder-gray-500 text-sm"
+              value={excludeInput}
+              onChange={(e) => setExcludeInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') addExcludePattern();
+              }}
+            />
+            <button
+              onClick={addExcludePattern}
+              disabled={!excludeInput.trim()}
+              className="px-4 py-2 bg-orange-600 hover:bg-orange-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg transition-colors text-sm font-medium"
+            >
+              Add
+            </button>
+          </div>
+          {excludePatterns.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {excludePatterns.map((pattern) => (
+                <span
+                  key={pattern}
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-orange-500/20 text-orange-300 border border-orange-500/30 rounded-full text-sm"
+                >
+                  {pattern}
+                  <button
+                    onClick={() => removeExcludePattern(pattern)}
+                    className="hover:text-white transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
+                </span>
+              ))}
+              <button
+                onClick={() => setExcludePatterns([])}
+                className="text-gray-400 hover:text-white text-sm underline"
+              >
+                Clear all
+              </button>
+            </div>
+          ) : (
+            <p className="text-gray-500 text-sm">No exclude patterns. Add patterns to hide matching logs.</p>
+          )}
+        </div>
+      )}
 
       <div className="bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
         {isLoadingHistorical && mode === 'historical' ? (
@@ -516,29 +630,39 @@ const LoggersPage = () => {
             {table.getRowModel().rows.length > 0 && (
               <div className="bg-gray-800 px-6 py-4 flex items-center justify-between border-t border-gray-700">
                 <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <span>
-                    Showing{' '}
-                    <span className="font-medium text-white">
-                      {table.getState().pagination.pageIndex *
-                        table.getState().pagination.pageSize +
-                        1}
-                    </span>{' '}
-                    to{' '}
-                    <span className="font-medium text-white">
-                      {Math.min(
-                        (table.getState().pagination.pageIndex + 1) *
-                          table.getState().pagination.pageSize,
-                        table.getFilteredRowModel().rows.length
-                      )}
-                    </span>{' '}
-                    of{' '}
-                    <span className="font-medium text-white">
-                      {mode === 'historical' && historicalData
-                        ? historicalData.total
-                        : table.getFilteredRowModel().rows.length}
-                    </span>{' '}
-                    logs
-                  </span>
+                  {mode === 'historical' && historicalData ? (
+                    <span>
+                      Page{' '}
+                      <span className="font-medium text-white">{filters.page || 1}</span>
+                      {' '}of{' '}
+                      <span className="font-medium text-white">
+                        {Math.ceil(historicalData.total / (filters.limit || 50))}
+                      </span>
+                      {' '}({historicalData.total.toLocaleString()} total logs)
+                    </span>
+                  ) : (
+                    <span>
+                      Showing{' '}
+                      <span className="font-medium text-white">
+                        {table.getState().pagination.pageIndex *
+                          table.getState().pagination.pageSize +
+                          1}
+                      </span>{' '}
+                      to{' '}
+                      <span className="font-medium text-white">
+                        {Math.min(
+                          (table.getState().pagination.pageIndex + 1) *
+                            table.getState().pagination.pageSize,
+                          table.getFilteredRowModel().rows.length
+                        )}
+                      </span>{' '}
+                      of{' '}
+                      <span className="font-medium text-white">
+                        {table.getFilteredRowModel().rows.length}
+                      </span>{' '}
+                      logs
+                    </span>
+                  )}
                   {mode === 'realtime' && (
                     <span className="ml-4 flex items-center gap-2">
                       <span
@@ -550,42 +674,94 @@ const LoggersPage = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => table.previousPage()}
-                    disabled={!table.getCanPreviousPage()}
-                    className="px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-1"
-                  >
-                    <ChevronLeft size={16} />
-                    Previous
-                  </button>
-
-                  <div className="flex items-center gap-1">
-                    {Array.from(
-                      { length: Math.min(table.getPageCount(), 5) },
-                      (_, i) => i
-                    ).map((pageIndex) => (
+                  {mode === 'historical' && historicalData ? (
+                    <>
                       <button
-                        key={pageIndex}
-                        onClick={() => table.setPageIndex(pageIndex)}
-                        className={`px-3 py-2 rounded-lg transition-colors ${
-                          table.getState().pagination.pageIndex === pageIndex
-                            ? 'bg-brand-primary text-white'
-                            : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-                        }`}
+                        onClick={() => handleHistoricalPageChange((filters.page || 1) - 1)}
+                        disabled={(filters.page || 1) <= 1}
+                        className="px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-1"
                       >
-                        {pageIndex + 1}
+                        <ChevronLeft size={16} />
+                        Previous
                       </button>
-                    ))}
-                  </div>
 
-                  <button
-                    onClick={() => table.nextPage()}
-                    disabled={!table.getCanNextPage()}
-                    className="px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-1"
-                  >
-                    Next
-                    <ChevronRight size={16} />
-                  </button>
+                      <div className="flex items-center gap-1">
+                        {(() => {
+                          const currentPage = filters.page || 1;
+                          const totalPages = Math.ceil(historicalData.total / (filters.limit || 50));
+                          const maxButtons = 5;
+                          let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+                          const endPage = Math.min(totalPages, startPage + maxButtons - 1);
+                          startPage = Math.max(1, endPage - maxButtons + 1);
+
+                          return Array.from(
+                            { length: endPage - startPage + 1 },
+                            (_, i) => startPage + i
+                          ).map((pageNum) => (
+                            <button
+                              key={pageNum}
+                              onClick={() => handleHistoricalPageChange(pageNum)}
+                              className={`px-3 py-2 rounded-lg transition-colors ${
+                                currentPage === pageNum
+                                  ? 'bg-brand-primary text-white'
+                                  : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          ));
+                        })()}
+                      </div>
+
+                      <button
+                        onClick={() => handleHistoricalPageChange((filters.page || 1) + 1)}
+                        disabled={(filters.page || 1) >= Math.ceil(historicalData.total / (filters.limit || 50))}
+                        className="px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-1"
+                      >
+                        Next
+                        <ChevronRight size={16} />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => table.previousPage()}
+                        disabled={!table.getCanPreviousPage()}
+                        className="px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-1"
+                      >
+                        <ChevronLeft size={16} />
+                        Previous
+                      </button>
+
+                      <div className="flex items-center gap-1">
+                        {Array.from(
+                          { length: Math.min(table.getPageCount(), 5) },
+                          (_, i) => i
+                        ).map((pageIndex) => (
+                          <button
+                            key={pageIndex}
+                            onClick={() => table.setPageIndex(pageIndex)}
+                            className={`px-3 py-2 rounded-lg transition-colors ${
+                              table.getState().pagination.pageIndex === pageIndex
+                                ? 'bg-brand-primary text-white'
+                                : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                            }`}
+                          >
+                            {pageIndex + 1}
+                          </button>
+                        ))}
+                      </div>
+
+                      <button
+                        onClick={() => table.nextPage()}
+                        disabled={!table.getCanNextPage()}
+                        className="px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-1"
+                      >
+                        Next
+                        <ChevronRight size={16} />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             )}
