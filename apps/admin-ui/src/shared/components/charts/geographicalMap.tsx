@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { WorldMap } from 'react-svg-worldmap';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Users, Store, Globe } from 'lucide-react';
 
 interface CountryInfo {
   country: string;
@@ -75,7 +76,7 @@ const countryNameToCode: Record<string, string> = {
   turkey: 'tr',
   russia: 'ru',
   ukraine: 'ua',
-  czech republic: 'cz',
+  'czech republic': 'cz',
   czechia: 'cz',
   hungary: 'hu',
   romania: 'ro',
@@ -201,89 +202,160 @@ const GeographicalMap: React.FC<GeographicalMapProps> = ({ data, isLoading }) =>
     setHovered(match);
   };
 
+  // Calculate totals for summary
+  const totals = useMemo(() => {
+    return countryData.reduce(
+      (acc, c) => ({
+        users: acc.users + c.users,
+        sellers: acc.sellers + c.sellers,
+        countries: acc.countries + (c.users > 0 || c.sellers > 0 ? 1 : 0),
+      }),
+      { users: 0, sellers: 0, countries: 0 }
+    );
+  }, [countryData]);
+
   if (isLoading) {
     return (
-      <div className="relative w-full px-0 py-5 flex items-center justify-center h-[300px]">
-        <div className="text-slate-400 text-sm">Loading map data...</div>
+      <div className="relative w-full rounded-xl bg-gray-900/50 border border-gray-800 p-6">
+        <div className="flex items-center justify-center h-[350px]">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+            <span className="text-slate-400 text-sm">Loading map data...</span>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div
-      className="relative w-full px-0 py-5 overflow-visible"
-      onMouseMove={handleMouseMove}
-      onMouseLeave={() => setHovered(null)}
-    >
-      <WorldMap
-        color="#1e293b"
-        valueSuffix=" activity"
-        size="responsive"
-        data={mapData}
-        styleFunction={(countryProps) => {
-          const match = countryData.find(
-            (c) => c.country === countryProps.countryCode.toLowerCase()
-          );
-
-          if (match && (match.users > 0 || match.sellers > 0)) {
-            const totalActivity = match.users + match.sellers;
-            const intensity = Math.min(totalActivity / maxValue, 0.9);
-            return {
-              fill: `rgba(34, 197, 94, ${Math.max(intensity, 0.2)})`,
-              stroke: '#334155',
-              strokeWidth: 1,
-            };
-          }
-
-          return {
-            fill: '#1e293b',
-            stroke: '#334155',
-            strokeWidth: 1,
-          };
-        }}
-      />
-
-      {/* Tooltip */}
-      <AnimatePresence>
-        {hovered && (hovered.users > 0 || hovered.sellers > 0) && (
-          <motion.div
-            key={hovered.name}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className="fixed bg-gray-800 text-white text-xs p-2 rounded shadow-lg pointer-events-none z-50"
-            style={{
-              top: tooltipPos.y + 10,
-              left: tooltipPos.x + 10,
-            }}
-          >
-            <strong>{hovered.name}</strong>
-            <br />
-            Users: <span className="text-green-400">{hovered.users}</span>
-            <br />
-            Sellers: <span className="text-yellow-400">{hovered.sellers}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Legend */}
-      {countryData.length > 0 && countryData[0].users + countryData[0].sellers > 0 && (
-        <div className="flex items-center gap-4 mt-4 text-xs text-slate-400">
-          <div className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded bg-green-500/20 border border-green-500/50" />
-            <span>Low activity</span>
+    <div className="relative w-full rounded-xl bg-gray-900/50 border border-gray-800 overflow-hidden">
+      {/* Summary Stats Bar */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 bg-gray-900/80">
+        <h3 className="text-white font-semibold flex items-center gap-2">
+          <Globe size={18} className="text-emerald-500" />
+          Geographic Distribution
+        </h3>
+        <div className="flex items-center gap-6 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-emerald-500/10">
+              <Users size={14} className="text-emerald-400" />
+            </div>
+            <span className="text-slate-400">Users:</span>
+            <span className="text-white font-medium">{totals.users.toLocaleString()}</span>
           </div>
-          <div className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded bg-green-500/60 border border-green-500/70" />
-            <span>Medium activity</span>
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-amber-500/10">
+              <Store size={14} className="text-amber-400" />
+            </div>
+            <span className="text-slate-400">Sellers:</span>
+            <span className="text-white font-medium">{totals.sellers.toLocaleString()}</span>
           </div>
-          <div className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded bg-green-500/90 border border-green-500" />
-            <span>High activity</span>
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-blue-500/10">
+              <Globe size={14} className="text-blue-400" />
+            </div>
+            <span className="text-slate-400">Countries:</span>
+            <span className="text-white font-medium">{totals.countries}</span>
           </div>
         </div>
-      )}
+      </div>
+
+      {/* Map Container with Dark Background */}
+      <div
+        className="relative px-6 py-8 bg-[#0a0a0f]"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setHovered(null)}
+        style={{ minHeight: '350px' }}
+      >
+        <WorldMap
+          backgroundColor="#0a0a0f"
+          color="#1a1a2e"
+          valueSuffix=" activity"
+          size="responsive"
+          data={mapData}
+          styleFunction={(countryProps) => {
+            const match = countryData.find(
+              (c) => c.country === countryProps.countryCode.toLowerCase()
+            );
+
+            if (match && (match.users > 0 || match.sellers > 0)) {
+              const totalActivity = match.users + match.sellers;
+              const intensity = Math.min(totalActivity / maxValue, 1);
+              // Gradient from dark cyan to bright emerald based on activity
+              const baseColor = intensity > 0.5 ? '16, 185, 129' : '6, 182, 212';
+              return {
+                fill: `rgba(${baseColor}, ${Math.max(intensity * 0.85, 0.25)})`,
+                stroke: '#1e293b',
+                strokeWidth: 0.5,
+                cursor: 'pointer',
+              };
+            }
+
+            return {
+              fill: '#1a1a2e',
+              stroke: '#1e293b',
+              strokeWidth: 0.5,
+            };
+          }}
+        />
+
+        {/* Tooltip */}
+        <AnimatePresence>
+          {hovered && (hovered.users > 0 || hovered.sellers > 0) && (
+            <motion.div
+              key={hovered.name}
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 5 }}
+              transition={{ duration: 0.15 }}
+              className="fixed z-50 pointer-events-none"
+              style={{
+                top: tooltipPos.y + 12,
+                left: tooltipPos.x + 12,
+              }}
+            >
+              <div className="bg-gray-900/95 backdrop-blur-sm border border-gray-700 rounded-lg shadow-xl p-3 min-w-[160px]">
+                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-700">
+                  <Globe size={14} className="text-emerald-400" />
+                  <span className="text-white font-semibold text-sm">{hovered.name}</span>
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1.5 text-slate-400">
+                      <Users size={12} className="text-emerald-400" />
+                      Users
+                    </span>
+                    <span className="text-emerald-400 font-medium">{hovered.users.toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1.5 text-slate-400">
+                      <Store size={12} className="text-amber-400" />
+                      Sellers
+                    </span>
+                    <span className="text-amber-400 font-medium">{hovered.sellers.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center justify-center gap-6 px-6 py-3 border-t border-gray-800 bg-gray-900/60">
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          <span className="w-3 h-3 rounded-sm bg-cyan-500/25 border border-cyan-500/40" />
+          <span>Low activity</span>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          <span className="w-3 h-3 rounded-sm bg-emerald-500/50 border border-emerald-500/60" />
+          <span>Medium activity</span>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-slate-400">
+          <span className="w-3 h-3 rounded-sm bg-emerald-500/85 border border-emerald-500" />
+          <span>High activity</span>
+        </div>
+      </div>
     </div>
   );
 };
