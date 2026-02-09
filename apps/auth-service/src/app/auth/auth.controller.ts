@@ -52,7 +52,7 @@ export class AuthController {
   @MessagePattern('admin-auth-login')
   // Throttle decorator removed - rate limiting handled at API Gateway
   async adminLogin(@Payload() credential: LoginDto) {
-    return this.authService.login(credential);
+    return this.authService.adminLogin(credential);
   }
 
   @MessagePattern('seller-auth-login')

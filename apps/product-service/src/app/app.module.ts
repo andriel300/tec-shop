@@ -9,6 +9,7 @@ import { ProductModule } from './product/product.module';
 import { CategoryModule } from './category/category.module';
 import { BrandModule } from './brand/brand.module';
 import { SellerClientModule } from '../clients/seller.client';
+import { LogProducerModule } from '@tec-shop/logger-producer';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { SellerClientModule } from '../clients/seller.client';
       }),
     }),
     PrismaModule,
+    LogProducerModule.forRoot({ clientId: 'product-service' }),
     SellerClientModule,
     ProductModule,
     CategoryModule,

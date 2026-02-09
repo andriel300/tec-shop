@@ -34,6 +34,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             request?.cookies?.[`${prefix}seller_access_token`];
           if (sellerToken) return sellerToken;
 
+          // Try admin cookies
+          const adminToken =
+            request?.cookies?.[`${prefix}admin_access_token`];
+          if (adminToken) return adminToken;
+
           // Fallback to legacy cookie name for backward compatibility during migration
           const legacyToken = request?.cookies?.access_token;
           if (legacyToken) return legacyToken;

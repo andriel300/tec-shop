@@ -10,12 +10,16 @@ import {
   CreateShopDto,
   UpdateShopDto,
 } from '@tec-shop/dto';
+import { LogProducerService } from '@tec-shop/logger-producer';
 
 @Injectable()
 export class SellerService {
   private readonly logger = new Logger(SellerService.name);
 
-  constructor(private prisma: SellerPrismaService) {}
+  constructor(
+    private prisma: SellerPrismaService,
+    private readonly logProducer: LogProducerService,
+  ) {}
 
   async createProfile(createProfileDto: CreateSellerProfileDto) {
     try {
@@ -50,6 +54,11 @@ export class SellerService {
       });
 
       this.logger.log(`Seller profile created successfully - sellerId: ${seller.id}, email: ${email}`);
+      this.logProducer.info('seller-service', 'seller', 'Seller profile created', {
+        userId: authId,
+        sellerId: seller.id,
+        metadata: { action: 'create_profile' },
+      });
 
       return seller;
     } catch (error) {
@@ -127,6 +136,12 @@ export class SellerService {
       },
     });
 
+    this.logProducer.info('seller-service', 'seller', 'Shop created', {
+      userId: authId,
+      sellerId: seller.id,
+      metadata: { action: 'create_shop', shopId: newShop.id, businessName: shopData.businessName },
+    });
+
     return newShop;
   }
 
@@ -153,6 +168,11 @@ export class SellerService {
           website: shopData.website,
         },
       });
+      this.logProducer.info('seller-service', 'seller', 'Shop updated', {
+        userId: authId,
+        sellerId: seller.id,
+        metadata: { action: 'update_shop', shopId: updatedShop.id },
+      });
       return updatedShop;
     } else {
       // Create new shop if required fields are provided
@@ -173,6 +193,11 @@ export class SellerService {
           sellerId: seller.id,
           socialLinks: [],
         },
+      });
+      this.logProducer.info('seller-service', 'seller', 'Shop created', {
+        userId: authId,
+        sellerId: seller.id,
+        metadata: { action: 'create_shop', shopId: newShop.id, businessName: shopData.businessName },
       });
       return newShop;
     }
@@ -281,11 +306,22 @@ export class SellerService {
 
       if (!shop) {
         this.logger.debug(`Shop not found: ${shopId}`);
+        this.logProducer.warn('seller-service', 'seller', 'Shop not found during ownership verification', {
+          userId: authId,
+          metadata: { action: 'verify_ownership', shopId },
+        });
         return false;
       }
 
       const owns = shop.seller.authId === authId;
       this.logger.debug(`Ownership verification result - authId: ${authId}, shop.seller.authId: ${shop.seller.authId}, owns: ${owns}`);
+
+      if (!owns) {
+        this.logProducer.warn('seller-service', 'seller', 'Shop ownership verification failed', {
+          userId: authId,
+          metadata: { action: 'verify_ownership', shopId, actualOwner: shop.seller.authId },
+        });
+      }
 
       return owns;
     } catch (error) {

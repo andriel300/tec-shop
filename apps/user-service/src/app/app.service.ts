@@ -8,10 +8,14 @@ import type {
   CreateShippingAddressDto,
   UpdateShippingAddressDto,
 } from '@tec-shop/dto';
+import { LogProducerService } from '@tec-shop/logger-producer';
 
 @Injectable()
 export class AppService {
-  constructor(private prisma: UserPrismaService) {}
+  constructor(
+    private prisma: UserPrismaService,
+    private readonly logProducer: LogProducerService,
+  ) {}
 
   async getUserProfile(userId: string) {
     const profile = await this.prisma.userProfile.findUnique({
@@ -27,6 +31,10 @@ export class AppService {
     });
 
     if (!profile) {
+      this.logProducer.warn('user-service', 'user', 'User profile not found', {
+        userId,
+        metadata: { action: 'get_profile' },
+      });
       return null;
     }
 
@@ -40,35 +48,50 @@ export class AppService {
   }
 
   async updateUserProfile(userId: string, data: UpdateUserDto) {
-    return this.prisma.userProfile.update({
+    const result = await this.prisma.userProfile.update({
       where: { userId: userId },
       data,
     });
+    this.logProducer.info('user-service', 'user', 'User profile updated', {
+      userId,
+      metadata: { action: 'update_profile' },
+    });
+    return result;
   }
 
   async createUserProfile(data: CreateUserProfileDto) {
     const { userId, name, picture } = data;
-    return this.prisma.userProfile.create({
+    const result = await this.prisma.userProfile.create({
       data: {
         userId,
         name,
         ...(picture && { picture }),
       },
     });
+    this.logProducer.info('user-service', 'user', 'User profile created', {
+      userId,
+      metadata: { action: 'create_profile' },
+    });
+    return result;
   }
 
   // Follow functionality
   async followUser(followerId: string, followingId: string) {
-    return this.prisma.follow.create({
+    const result = await this.prisma.follow.create({
       data: {
         followerId,
         followingId,
       },
     });
+    this.logProducer.info('user-service', 'user', 'User followed another user', {
+      userId: followerId,
+      metadata: { action: 'follow_user', followingId },
+    });
+    return result;
   }
 
   async unfollowUser(followerId: string, followingId: string) {
-    return this.prisma.follow.delete({
+    const result = await this.prisma.follow.delete({
       where: {
         followerId_followingId: {
           followerId,
@@ -76,6 +99,11 @@ export class AppService {
         },
       },
     });
+    this.logProducer.info('user-service', 'user', 'User unfollowed another user', {
+      userId: followerId,
+      metadata: { action: 'unfollow_user', followingId },
+    });
+    return result;
   }
 
   async getFollowers(userId: string) {
@@ -112,12 +140,17 @@ export class AppService {
       throw new BadRequestException('You are already following this shop');
     }
 
-    return this.prisma.shopFollower.create({
+    const result = await this.prisma.shopFollower.create({
       data: {
         userId,
         shopId,
       },
     });
+    this.logProducer.info('user-service', 'user', 'User followed a shop', {
+      userId,
+      metadata: { action: 'follow_shop', shopId },
+    });
+    return result;
   }
 
   async unfollowShop(userId: string, shopId: string) {
@@ -134,7 +167,7 @@ export class AppService {
       throw new NotFoundException('You are not following this shop');
     }
 
-    return this.prisma.shopFollower.delete({
+    const result = await this.prisma.shopFollower.delete({
       where: {
         userId_shopId: {
           userId,
@@ -142,6 +175,11 @@ export class AppService {
         },
       },
     });
+    this.logProducer.info('user-service', 'user', 'User unfollowed a shop', {
+      userId,
+      metadata: { action: 'unfollow_shop', shopId },
+    });
+    return result;
   }
 
   async getShopFollowersCount(shopId: string) {

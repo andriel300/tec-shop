@@ -73,14 +73,14 @@ export const useChatSocket = ({
     onErrorRef.current = onError;
   }, [onError]);
 
-  // Get WebSocket URL
+  // Get WebSocket URL - Socket.IO uses http:// for initial handshake, then upgrades to WebSocket
   const getWsUrl = useCallback(() => {
     if (typeof window === 'undefined') return '';
-    const wsHost =
-      process.env.NODE_ENV === 'production'
-        ? window.location.host
-        : process.env.NEXT_PUBLIC_WS_URL || 'localhost:6007';
-    return `ws://${wsHost}`;
+    if (process.env.NODE_ENV === 'production') {
+      const wsProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+      return `${wsProtocol}//${window.location.host}`;
+    }
+    return process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:6007';
   }, []);
 
   // Fetch WebSocket token

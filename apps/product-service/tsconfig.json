@@ -13,6 +13,9 @@
       "path": "../../libs/shared/dto"
     },
     {
+      "path": "../../libs/shared/logger-producer"
+    },
+    {
       "path": "./tsconfig.app.json"
     },
     {

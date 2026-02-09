@@ -7,6 +7,9 @@
       "path": "../../libs/prisma-clients/user-client"
     },
     {
+      "path": "../../libs/shared/logger-producer"
+    },
+    {
       "path": "../../libs/shared/dto"
     },
     {

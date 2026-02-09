@@ -20,6 +20,7 @@ import {
   ProductVisibility,
 } from '@tec-shop/product-client';
 import { SellerServiceClient } from '../../clients/seller.client';
+import { LogProducerService } from '@tec-shop/logger-producer';
 
 @Injectable()
 export class ProductService {
@@ -27,7 +28,8 @@ export class ProductService {
 
   constructor(
     private readonly prisma: ProductPrismaService,
-    private readonly sellerClient: SellerServiceClient
+    private readonly sellerClient: SellerServiceClient,
+    private readonly logProducer: LogProducerService,
   ) {}
 
   async create(
@@ -60,6 +62,10 @@ export class ProductService {
 
       if (!shopExists) {
         this.logger.error(`Shop not found: ${shopId}`);
+        this.logProducer.warn('product-service', 'product', 'Product creation failed - shop not found', {
+          sellerId,
+          metadata: { action: 'create_product', shopId },
+        });
         throw new NotFoundException('Shop not found');
       }
 
@@ -67,6 +73,10 @@ export class ProductService {
         this.logger.error(
           `Seller ${sellerId} does not own shop ${shopId}`
         );
+        this.logProducer.warn('product-service', 'product', 'Product creation failed - shop ownership verification failed', {
+          sellerId,
+          metadata: { action: 'create_product', shopId },
+        });
         throw new ForbiddenException('You do not have access to this shop');
       }
 
@@ -244,6 +254,10 @@ export class ProductService {
       });
 
       this.logger.log(`Product created successfully - ID: ${product.id}`);
+      this.logProducer.info('product-service', 'product', 'Product created', {
+        sellerId,
+        metadata: { action: 'create_product', productId: product.id, shopId },
+      });
 
       // Fetch the complete product with variants
       this.logger.debug('Fetching complete product with relations');
@@ -512,14 +526,26 @@ export class ProductService {
           });
         }
 
+        this.logProducer.info('product-service', 'product', 'Product updated with variants', {
+          sellerId,
+          metadata: { action: 'update_product', productId: id },
+        });
+
         return updatedProduct;
       });
     }
 
-    return this.prisma.product.update({
+    const updated = await this.prisma.product.update({
       where: { id },
       data: updateData,
     });
+
+    this.logProducer.info('product-service', 'product', 'Product updated', {
+      sellerId,
+      metadata: { action: 'update_product', productId: id },
+    });
+
+    return updated;
   }
 
   async remove(id: string, sellerId: string) {
@@ -528,10 +554,17 @@ export class ProductService {
 
     // Soft delete product (set deletedAt timestamp)
     // Product will be permanently deleted after 24 hours by scheduled task
-    return this.prisma.product.update({
+    const result = await this.prisma.product.update({
       where: { id },
       data: { deletedAt: new Date() },
     });
+
+    this.logProducer.info('product-service', 'product', 'Product soft-deleted', {
+      sellerId,
+      metadata: { action: 'delete_product', productId: id },
+    });
+
+    return result;
   }
 
   async restore(id: string, sellerId: string) {
@@ -560,7 +593,7 @@ export class ProductService {
 
     // Restore product by setting deletedAt to null
     this.logger.log(`Restoring product ${id} for seller ${sellerId}`);
-    return this.prisma.product.update({
+    const restored = await this.prisma.product.update({
       where: { id },
       data: { deletedAt: null },
       include: {
@@ -569,6 +602,13 @@ export class ProductService {
         variants: true,
       },
     });
+
+    this.logProducer.info('product-service', 'product', 'Product restored', {
+      sellerId,
+      metadata: { action: 'restore_product', productId: id },
+    });
+
+    return restored;
   }
 
   async incrementViews(id: string) {
@@ -1010,6 +1050,10 @@ export class ProductService {
       this.logger.log(
         `Rating created/updated successfully - ratingId: ${result.id}`
       );
+      this.logProducer.info('product-service', 'product', 'Product rating created', {
+        userId,
+        metadata: { action: 'create_rating', productId, rating: createRatingDto.rating },
+      });
 
       return result;
     } catch (error) {
@@ -1079,6 +1123,10 @@ export class ProductService {
       });
 
       this.logger.log(`Rating updated successfully - ratingId: ${result.id}`);
+      this.logProducer.info('product-service', 'product', 'Product rating updated', {
+        userId,
+        metadata: { action: 'update_rating', ratingId, productId: existingRating.productId, rating: updateRatingDto.rating },
+      });
 
       return result;
     } catch (error) {
@@ -1141,6 +1189,10 @@ export class ProductService {
       });
 
       this.logger.log(`Rating deleted successfully - ratingId: ${ratingId}`);
+      this.logProducer.info('product-service', 'product', 'Product rating deleted', {
+        userId,
+        metadata: { action: 'delete_rating', ratingId, productId: existingRating.productId },
+      });
 
       return { message: 'Rating deleted successfully' };
     } catch (error) {

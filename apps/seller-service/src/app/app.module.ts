@@ -7,6 +7,7 @@ import { StripeModule } from './stripe/stripe.module';
 import { DiscountModule } from './discount/discount.module';
 import { EventModule } from './event/event.module';
 import { NotificationModule } from './notification/notification.module';
+import { LogProducerModule } from '@tec-shop/logger-producer';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { NotificationModule } from './notification/notification.module';
       }),
     }),
     PrismaModule,
+    LogProducerModule.forRoot({ clientId: 'seller-service' }),
     SellerModule,
     StripeModule,
     DiscountModule,
