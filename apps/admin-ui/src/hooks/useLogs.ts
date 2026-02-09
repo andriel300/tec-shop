@@ -15,6 +15,7 @@ export function useLogs(params?: logsApi.LogQueryParams) {
   return useQuery({
     queryKey: logKeys.list(params),
     queryFn: () => logsApi.queryLogs(params),
+    enabled: params !== undefined,
     staleTime: 30 * 1000,
     gcTime: 5 * 60 * 1000,
   });

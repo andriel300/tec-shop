@@ -52,31 +52,19 @@ export function useLoggerSocket(
   const socketRef = useRef<Socket | null>(null);
   const isPausedRef = useRef(isPaused);
 
+  // Store callbacks in refs to avoid reconnection on callback identity changes
+  const onConnectRef = useRef(onConnect);
+  const onDisconnectRef = useRef(onDisconnect);
+  const onErrorRef = useRef(onError);
+  const onLogRef = useRef(onLog);
+  const filtersRef = useRef(initialFilters);
+
   isPausedRef.current = isPaused;
-
-  const getAuthToken = useCallback((): string | null => {
-    if (typeof document === 'undefined') return null;
-
-    const cookies = document.cookie.split(';');
-    for (const cookie of cookies) {
-      const [name, value] = cookie.trim().split('=');
-      if (name === 'admin_access_token' || name === 'access_token') {
-        return decodeURIComponent(value);
-      }
-    }
-
-    const sessionUser = sessionStorage.getItem('user');
-    if (sessionUser) {
-      try {
-        const user = JSON.parse(sessionUser);
-        return user.token || null;
-      } catch {
-        return null;
-      }
-    }
-
-    return null;
-  }, []);
+  onConnectRef.current = onConnect;
+  onDisconnectRef.current = onDisconnect;
+  onErrorRef.current = onError;
+  onLogRef.current = onLog;
+  filtersRef.current = initialFilters;
 
   const clearLogs = useCallback(() => {
     setLogs([]);
@@ -104,14 +92,14 @@ export function useLoggerSocket(
     setIsPaused((prev) => !prev);
   }, []);
 
+  // Socket connection effect - only depends on `enabled` to prevent reconnection loops
+  // Callbacks are accessed via refs so they always use the latest version
   useEffect(() => {
     if (!enabled) return;
 
-    const token = getAuthToken();
-
     const socket = io(LOGGER_WS_URL, {
       transports: ['websocket', 'polling'],
-      auth: token ? { token } : undefined,
+      withCredentials: true,
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
@@ -122,18 +110,17 @@ export function useLoggerSocket(
 
     socket.on('connect', () => {
       setIsConnected(true);
-      onConnect?.();
-
-      socket.emit('subscribe', { filters: initialFilters });
+      onConnectRef.current?.();
+      socket.emit('subscribe', { filters: filtersRef.current });
     });
 
     socket.on('disconnect', () => {
       setIsConnected(false);
-      onDisconnect?.();
+      onDisconnectRef.current?.();
     });
 
     socket.on('error', (data: { message: string }) => {
-      onError?.(data.message);
+      onErrorRef.current?.(data.message);
     });
 
     socket.on('connected', (data: { adminId: string }) => {
@@ -153,27 +140,19 @@ export function useLoggerSocket(
         const newLogs = [log, ...prev];
         return newLogs.slice(0, MAX_LOGS);
       });
-      onLog?.(log);
+      onLogRef.current?.(log);
     });
 
     socket.on('connect_error', (error) => {
       console.error('Logger socket connection error:', error.message);
-      onError?.(error.message);
+      onErrorRef.current?.(error.message);
     });
 
     return () => {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [
-    enabled,
-    getAuthToken,
-    onConnect,
-    onDisconnect,
-    onError,
-    onLog,
-    initialFilters,
-  ]);
+  }, [enabled]);
 
   return {
     isConnected,

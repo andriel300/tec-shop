@@ -3,10 +3,33 @@ import apiClient from '../lib/api/client';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-// fecth admin data from API
-const fetchAdmin = async () => {
-  const response = await apiClient.get('/auth/login-admin');
-  return response.data.user;
+interface AdminUser {
+  id: string;
+  email: string;
+  name?: string;
+  createdAt?: string;
+}
+
+// Validate admin session using refresh endpoint
+const fetchAdmin = async (): Promise<AdminUser | null> => {
+  // First check sessionStorage for cached admin data
+  const cachedAdmin = sessionStorage.getItem('admin');
+  if (cachedAdmin) {
+    return JSON.parse(cachedAdmin);
+  }
+
+  // Try to refresh the session - this validates if admin is logged in
+  try {
+    const response = await apiClient.post('/auth/refresh');
+    if (response.data?.userType === 'admin' && response.data?.user) {
+      const admin = response.data.user;
+      sessionStorage.setItem('admin', JSON.stringify(admin));
+      return admin;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 };
 
 const useAdmin = () => {
@@ -19,16 +42,17 @@ const useAdmin = () => {
     queryKey: ['admin'],
     queryFn: fetchAdmin,
     staleTime: 1000 * 60 * 5,
-    retry: 1,
+    retry: false,
   });
 
-  const history = useRouter();
+  const router = useRouter();
 
   useEffect(() => {
     if (!isLoading && !admin) {
-      history.push('/');
+      sessionStorage.removeItem('admin');
+      router.push('/');
     }
-  }, [admin, history, isLoading]);
+  }, [admin, router, isLoading]);
 
   return { admin, isLoading, isError, refetch };
 };
