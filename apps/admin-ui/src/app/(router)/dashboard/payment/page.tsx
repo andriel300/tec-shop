@@ -62,7 +62,7 @@ interface Order {
 
 const fetchPaidOrders = async () => {
   // Fetch only PAID, SHIPPED, or DELIVERED orders (paymentStatus = COMPLETED)
-  const res = await apiClient.get('/orders/get-admin-orders', {
+  const res = await apiClient.get('/admin/orders', {
     params: {
       paymentStatus: 'COMPLETED',
     },
