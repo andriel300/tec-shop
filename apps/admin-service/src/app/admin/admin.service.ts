@@ -20,6 +20,7 @@ import type {
   UpdateSellerVerificationDto,
   ListOrdersDto,
 } from '@tec-shop/dto';
+import { NotificationProducerService } from '@tec-shop/notification-producer';
 
 @Injectable()
 export class AdminService {
@@ -29,7 +30,8 @@ export class AdminService {
     private readonly authPrisma: AuthPrismaService,
     private readonly userPrisma: UserPrismaService,
     private readonly sellerPrisma: SellerPrismaService,
-    private readonly orderPrisma: OrderPrismaService
+    private readonly orderPrisma: OrderPrismaService,
+    private readonly notificationProducer: NotificationProducerService
   ) {}
 
   // ============ User Management Methods ============
@@ -175,6 +177,14 @@ export class AdminService {
     });
 
     this.logger.log(`User ${userId} banned successfully`);
+
+    // Notify the banned user
+    if (user.userType === 'CUSTOMER') {
+      this.notificationProducer.notifyCustomer(userId, 'system.account_banned', {});
+    } else if (user.userType === 'SELLER') {
+      this.notificationProducer.notifySeller(userId, 'system.account_banned', {});
+    }
+
     return updatedUser;
   }
 
@@ -209,6 +219,14 @@ export class AdminService {
     });
 
     this.logger.log(`User ${userId} unbanned successfully`);
+
+    // Notify the unbanned user
+    if (user.userType === 'CUSTOMER') {
+      this.notificationProducer.notifyCustomer(userId, 'system.account_unbanned', {});
+    } else if (user.userType === 'SELLER') {
+      this.notificationProducer.notifySeller(userId, 'system.account_unbanned', {});
+    }
+
     return updatedUser;
   }
 
@@ -417,6 +435,14 @@ export class AdminService {
     });
 
     this.logger.log(`Seller ${sellerId} verification updated successfully`);
+
+    // Notify the seller about verification status change
+    this.notificationProducer.notifySeller(
+      seller.authId,
+      'seller.verification_update',
+      { status: dto.isVerified ? 'verified' : 'unverified' }
+    );
+
     return updatedSeller;
   }
 

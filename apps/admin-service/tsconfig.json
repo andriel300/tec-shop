@@ -16,6 +16,9 @@
       "path": "../../libs/prisma-clients/auth-client"
     },
     {
+      "path": "../../libs/shared/notification-producer"
+    },
+    {
       "path": "../../libs/shared/dto"
     },
     {
