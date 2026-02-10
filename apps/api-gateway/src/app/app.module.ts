@@ -24,6 +24,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { ImageKitModule } from '@tec-shop/shared/imagekit';
 import { LogProducerModule } from '@tec-shop/logger-producer';
+import { UserNotificationModule } from './user-notification/user-notification.module';
 
 @Module({
   imports: [
@@ -97,6 +98,7 @@ import { LogProducerModule } from '@tec-shop/logger-producer';
     ChatModule,
     LoggerGrafanaModule,
     RecommendationModule,
+    UserNotificationModule,
   ],
   controllers: [AppController],
   providers: [
