@@ -8,6 +8,7 @@ import { useAuth } from '../../hooks/use-auth';
 import ProfileIcon from '../../assets/svgs/profile-icon';
 import HeartIcon from '../../assets/svgs/heart-icon';
 import CartIcon from '../../assets/svgs/cart-icon';
+import { NotificationBell } from '../components/notification-bell';
 import HeaderBottom from './header-bottom';
 import useStore from '../../store';
 import { apiClient } from '../../lib/api/client';
@@ -343,6 +344,9 @@ const Header = () => {
                 </div>
               </Link>
             )}
+
+            {/* Notification Bell */}
+            {mounted && isAuthenticated && <NotificationBell />}
 
             {/* Wishlist Icon */}
             <Link
