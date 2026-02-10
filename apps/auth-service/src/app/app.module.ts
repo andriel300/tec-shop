@@ -9,6 +9,7 @@ import { LoggingInterceptor } from './interceptors/logging.interceptor';
 import { ErrorInterceptor } from './interceptors/error.interceptor';
 import { AllExceptionsFilter } from './filters/rpc-exception.filter';
 import { LogProducerModule } from '@tec-shop/logger-producer';
+import { NotificationProducerModule } from '@tec-shop/notification-producer';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { LogProducerModule } from '@tec-shop/logger-producer';
     }),
     AuthModule,
     LogProducerModule.forRoot({ clientId: 'auth-service' }),
+    NotificationProducerModule.forRoot({ clientId: 'auth-service-notifications' }),
   ],
   controllers: [AppController],
   providers: [
