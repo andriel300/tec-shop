@@ -1,0 +1,37 @@
+{
+  "order.placed": {
+    "title": "New Order Received",
+    "message": "Order {{orderNumber}} has been placed by {{customerName}} for {{totalAmount}}.",
+    "type": "ORDER"
+  },
+  "order.placed_admin": {
+    "title": "New Order Placed",
+    "message": "Order {{orderNumber}} placed by {{customerName}} for {{totalAmount}}.",
+    "type": "ORDER"
+  },
+  "order.paid": {
+    "title": "Payment Confirmed",
+    "message": "Payment for order {{orderNumber}} has been confirmed.",
+    "type": "ORDER"
+  },
+  "order.shipped": {
+    "title": "Order Shipped",
+    "message": "Your order {{orderNumber}} has been shipped. Tracking code: {{trackingNumber}}.",
+    "type": "DELIVERY"
+  },
+  "order.delivered": {
+    "title": "Order Delivered",
+    "message": "Your order {{orderNumber}} has been delivered.",
+    "type": "DELIVERY"
+  },
+  "order.cancelled": {
+    "title": "Order Cancelled",
+    "message": "Your order {{orderNumber}} has been cancelled.",
+    "type": "ORDER"
+  },
+  "order.cancelled_seller": {
+    "title": "Order Cancelled",
+    "message": "Order {{orderNumber}} has been cancelled by the customer.",
+    "type": "ORDER"
+  }
+}

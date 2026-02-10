@@ -1,0 +1,7 @@
+{
+  "name": "@tec-shop/notification-producer",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/notification-producer/src",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:lib"]
+}

@@ -125,6 +125,9 @@
     },
     {
       "path": "./libs/shared/logger-producer"
+    },
+    {
+      "path": "./libs/shared/notification-producer"
     }
   ]
 }
