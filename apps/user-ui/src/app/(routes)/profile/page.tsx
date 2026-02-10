@@ -125,7 +125,8 @@ const Page = () => {
                 label="Notifications"
                 Icon={Bell}
                 active={activeTab === 'Notifications'}
-                onClick={() => setActiveTab('Notifications')}
+                // onClick={() => setActiveTab('Notifications')}
+                onClick={() => router.push('/notifications')}
               />
               <NavItem
                 label="Shipping Address"
