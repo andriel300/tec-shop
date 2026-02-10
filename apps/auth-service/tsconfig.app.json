@@ -28,6 +28,9 @@
       "path": "../../libs/shared/dto/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/shared/notification-producer/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/shared/logger-producer/tsconfig.lib.json"
     }
   ]

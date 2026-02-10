@@ -28,6 +28,7 @@ import { EmailService } from '../email/email.service';
 import { RedisService } from '../redis/redis.service';
 import { ServiceAuthUtil } from './service-auth.util';
 import { LogProducerService } from '@tec-shop/logger-producer';
+import { NotificationProducerService } from '@tec-shop/notification-producer';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -39,6 +40,7 @@ export class AuthService implements OnModuleInit {
     private redisService: RedisService,
     private emailService: EmailService,
     private readonly logProducer: LogProducerService,
+    private readonly notificationProducer: NotificationProducerService,
     @Inject('USER_SERVICE') private readonly userClient: ClientProxy,
     @Inject('SELLER_SERVICE') private readonly sellerClient: ClientProxy
   ) {}
@@ -576,6 +578,15 @@ export class AuthService implements OnModuleInit {
       });
     }
 
+    // Send welcome notification to customer
+    this.notificationProducer.notifyCustomer(user.id, 'auth.welcome', { name });
+
+    // Notify admins about new user registration
+    this.notificationProducer.notifyAdmin('system.new_user_registered', {
+      name,
+      email: user.email,
+    });
+
     return { message: 'Email verified successfully.' };
   }
 
@@ -681,6 +692,15 @@ export class AuthService implements OnModuleInit {
     this.logProducer.info('auth-service', 'auth', 'Seller email verified successfully', {
       userId: user.id,
       metadata: { action: 'verify_email', userType: 'SELLER' },
+    });
+
+    // Send welcome notification to seller
+    this.notificationProducer.notifySeller(user.id, 'auth.welcome_seller', { name });
+
+    // Notify admins about new seller registration
+    this.notificationProducer.notifyAdmin('system.new_seller_registered', {
+      name,
+      email: user.email,
     });
 
     return { message: 'Seller email verified successfully.' };
