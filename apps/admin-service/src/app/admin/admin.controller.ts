@@ -8,6 +8,7 @@ import type {
   ListSellersDto,
   UpdateSellerVerificationDto,
   ListOrdersDto,
+  UpdateLayoutDto,
 } from '@tec-shop/dto';
 
 @Controller()
@@ -82,5 +83,17 @@ export class AdminController {
   @MessagePattern('admin.getStatistics')
   getStatistics() {
     return this.adminService.getStatistics();
+  }
+
+  // ============ Site Layout Message Patterns ============
+
+  @MessagePattern('admin.getLayout')
+  getLayout() {
+    return this.adminService.getLayout();
+  }
+
+  @MessagePattern('admin.updateLayout')
+  updateLayout(@Payload() dto: UpdateLayoutDto) {
+    return this.adminService.updateLayout(dto);
   }
 }

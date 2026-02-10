@@ -19,6 +19,7 @@ import type {
   ListSellersDto,
   UpdateSellerVerificationDto,
   ListOrdersDto,
+  UpdateLayoutDto,
 } from '@tec-shop/dto';
 import { NotificationProducerService } from '@tec-shop/notification-producer';
 
@@ -630,5 +631,50 @@ export class AdminService {
       },
       geographicDistribution,
     };
+  }
+
+  // ============ Site Layout Methods ============
+
+  async getLayout() {
+    this.logger.log('Fetching site layout');
+
+    // Return the first (and only) SiteLayout record, or create a default one
+    let layout = await this.userPrisma.siteLayout.findFirst();
+
+    if (!layout) {
+      layout = await this.userPrisma.siteLayout.create({
+        data: {},
+      });
+      this.logger.log('Created default site layout');
+    }
+
+    return { layout };
+  }
+
+  async updateLayout(dto: UpdateLayoutDto) {
+    this.logger.log(`Updating site layout: ${JSON.stringify(dto)}`);
+
+    // Get or create the layout record
+    let layout = await this.userPrisma.siteLayout.findFirst();
+
+    if (!layout) {
+      layout = await this.userPrisma.siteLayout.create({
+        data: {
+          logo: dto.logo,
+          banner: dto.banner,
+        },
+      });
+    } else {
+      layout = await this.userPrisma.siteLayout.update({
+        where: { id: layout.id },
+        data: {
+          logo: dto.logo,
+          banner: dto.banner,
+        },
+      });
+    }
+
+    this.logger.log('Site layout updated successfully');
+    return { layout };
   }
 }

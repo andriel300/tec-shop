@@ -5,6 +5,7 @@ import { join } from 'path';
 import { PublicProductsController } from './public-products.controller';
 import { PublicShopsController } from './public-shops.controller';
 import { PublicCategoriesController } from './public-categories.controller';
+import { PublicLayoutController } from './public-layout.controller';
 
 @Module({
   imports: [
@@ -45,12 +46,31 @@ import { PublicCategoriesController } from './public-categories.controller';
           },
         },
       },
+      {
+        name: 'ADMIN_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: process.env.ADMIN_SERVICE_HOST || 'localhost',
+          port: parseInt(process.env.ADMIN_SERVICE_PORT || '6006', 10),
+          tlsOptions: {
+            key: readFileSync(
+              join(process.cwd(), 'certs/api-gateway/api-gateway-key.pem')
+            ),
+            cert: readFileSync(
+              join(process.cwd(), 'certs/api-gateway/api-gateway-cert.pem')
+            ),
+            ca: readFileSync(join(process.cwd(), 'certs/ca/ca-cert.pem')),
+            rejectUnauthorized: true,
+          },
+        },
+      },
     ]),
   ],
   controllers: [
     PublicProductsController,
     PublicShopsController,
     PublicCategoriesController,
+    PublicLayoutController,
   ],
 })
 export class PublicModule {}

@@ -30,6 +30,7 @@ import type {
   ListSellersDto,
   UpdateSellerVerificationDto,
   ListOrdersDto,
+  UpdateLayoutDto,
 } from '@tec-shop/dto';
 
 @ApiTags('Admin')
@@ -191,6 +192,28 @@ export class AdminController {
     this.logger.log('Fetching platform statistics');
     return await firstValueFrom(
       this.adminService.send('admin.getStatistics', {})
+    );
+  }
+
+  // ============ Site Layout Endpoints ============
+
+  @Get('layout')
+  @ApiOperation({ summary: 'Get site layout configuration (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Layout retrieved successfully' })
+  async getLayout() {
+    this.logger.log('Fetching site layout');
+    return await firstValueFrom(
+      this.adminService.send('admin.getLayout', {})
+    );
+  }
+
+  @Put('layout')
+  @ApiOperation({ summary: 'Update site layout configuration (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Layout updated successfully' })
+  async updateLayout(@Body() dto: UpdateLayoutDto) {
+    this.logger.log('Updating site layout');
+    return await firstValueFrom(
+      this.adminService.send('admin.updateLayout', dto)
     );
   }
 }

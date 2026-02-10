@@ -41,6 +41,7 @@ const ShopCard: React.FC<ShopCardProps> = ({ shop }) => {
           src="https://ik.imagekit.io/andrieltecshop/products/coverBanner_1.jpg"
           alt={`${shop.businessName} cover banner`}
           fill
+          sizes="(max-width: 768px) 100vw, 300px"
           className="object-cover w-full h-full"
         />
       </div>
