@@ -33,3 +33,19 @@ model LogEntry {
   @@index([category])
   @@index([timestamp(sort: Desc)])
 }
+
+model Notification {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  targetType String
+  targetId   String
+  templateId String
+  title      String
+  message    String
+  type       String
+  isRead     Boolean  @default(false)
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([targetType, targetId, createdAt(sort: Desc)])
+  @@index([targetType, targetId, isRead])
+}
