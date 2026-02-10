@@ -1,0 +1,17 @@
+{
+  "seller.verification_update": {
+    "title": "Verification Status Updated",
+    "message": "Your seller verification status has been updated to: {{status}}.",
+    "type": "SHOP"
+  },
+  "seller.shop_approved": {
+    "title": "Shop Approved",
+    "message": "Your shop {{shopName}} has been approved and is now live.",
+    "type": "SUCCESS"
+  },
+  "seller.payout_completed": {
+    "title": "Payout Processed",
+    "message": "A payout of {{amount}} has been processed for order {{orderNumber}}.",
+    "type": "INFO"
+  }
+}

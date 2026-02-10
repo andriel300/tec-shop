@@ -38,6 +38,9 @@
       ],
       "@tec-shop/logger-prisma-client": ["node_modules/.prisma/logger-client"],
       "@tec-shop/logger-producer": ["libs/shared/logger-producer/src/index.ts"],
+      "@tec-shop/notification-producer": [
+        "libs/shared/notification-producer/src/index.ts"
+      ],
       "@tec-shop/product-client": [
         "libs/prisma-clients/product-client/src/index.ts"
       ],

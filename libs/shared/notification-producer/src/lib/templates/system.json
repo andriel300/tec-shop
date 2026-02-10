@@ -1,0 +1,22 @@
+{
+  "system.new_user_registered": {
+    "title": "New User Registered",
+    "message": "A new user {{name}} ({{email}}) has registered.",
+    "type": "SYSTEM"
+  },
+  "system.new_seller_registered": {
+    "title": "New Seller Registered",
+    "message": "A new seller {{name}} ({{email}}) has registered.",
+    "type": "SYSTEM"
+  },
+  "system.account_banned": {
+    "title": "Account Suspended",
+    "message": "Your account has been suspended. Contact support for more information.",
+    "type": "WARNING"
+  },
+  "system.account_unbanned": {
+    "title": "Account Restored",
+    "message": "Your account has been restored. You can now access all features.",
+    "type": "SUCCESS"
+  }
+}

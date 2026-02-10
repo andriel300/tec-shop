@@ -1,0 +1,12 @@
+{
+  "product.new_rating": {
+    "title": "New Product Review",
+    "message": "{{productName}} received a {{rating}}-star review.",
+    "type": "PRODUCT"
+  },
+  "product.low_stock": {
+    "title": "Low Stock Alert",
+    "message": "{{productName}} (SKU: {{sku}}) has only {{quantity}} units left.",
+    "type": "WARNING"
+  }
+}
