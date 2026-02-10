@@ -28,6 +28,7 @@ import { Payment } from '../../assets/svgs/icons/payment-icon';
 import { useDeletedProducts } from '../../hooks/useProducts';
 import { useAuth } from '../../contexts/auth-context';
 import { toast } from 'sonner';
+import { NotificationBellV2 } from '../notification-bell-v2';
 
 const SidebarBarWrapper = () => {
   const { activeSidebar, setActiveSidebar } = useSidebar();
@@ -78,25 +79,28 @@ const SidebarBarWrapper = () => {
     >
       <Sidebar.Header>
         <Box>
-          <Link href={'/'} className="flex justify-center text-center gap-2">
-            <Logo />
-            <Box>
-              {isLoading ? (
-                <div className="text-xl font-medium text-[#ecedee] animate-pulse">
-                  Loading...
-                </div>
-              ) : isError ? (
-                <div className="text-xl font-medium text-red-400">Error</div>
-              ) : (
-                <h3 className="text-xl font-medium text-[#ecedee]">
-                  {displayName}
-                </h3>
-              )}
-              <h5 className="font-medium pl-2 text-xs text-[#ecedeecf] whitespace-nowrap overflow-hidden text-ellipsis max-w-[170px]">
-                {seller?.shop?.address}
-              </h5>
-            </Box>
-          </Link>
+          <div className="flex items-center justify-between">
+            <Link href={'/'} className="flex justify-center text-center gap-2">
+              <Logo />
+              <Box>
+                {isLoading ? (
+                  <div className="text-xl font-medium text-[#ecedee] animate-pulse">
+                    Loading...
+                  </div>
+                ) : isError ? (
+                  <div className="text-xl font-medium text-red-400">Error</div>
+                ) : (
+                  <h3 className="text-xl font-medium text-[#ecedee]">
+                    {displayName}
+                  </h3>
+                )}
+                <h5 className="font-medium pl-2 text-xs text-[#ecedeecf] whitespace-nowrap overflow-hidden text-ellipsis max-w-[170px]">
+                  {seller?.shop?.address}
+                </h5>
+              </Box>
+            </Link>
+            <NotificationBellV2 />
+          </div>
         </Box>
       </Sidebar.Header>
       <div className="block my-3 h-full">
