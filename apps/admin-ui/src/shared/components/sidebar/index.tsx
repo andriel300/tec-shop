@@ -23,6 +23,7 @@ import {
   Store,
 } from 'lucide-react';
 import { Payment } from '../../../assets/svgs/icons/payment-icon';
+import { NotificationBell } from '../notification-bell';
 
 const SidebarWrapper = () => {
   const { activeSidebar, setActiveSidebar } = useSidebar();
@@ -51,17 +52,20 @@ const SidebarWrapper = () => {
     >
       <Sidebar.Header>
         <Box>
-          <Link href={'/'} className="flex justify-center text-center gap-2">
-            <Logo />
-            <Box>
-              <h3 className="text-xl font-medium text-[#ecedee]">
-                {admin?.name}
-              </h3>
-              <h5 className="font-medium pl-2 text-xs text-[#ecedeecf] whitespace-none">
-                {admin?.email}
-              </h5>
-            </Box>
-          </Link>
+          <div className="flex items-center justify-between">
+            <Link href={'/'} className="flex justify-center text-center gap-2">
+              <Logo />
+              <Box>
+                <h3 className="text-xl font-medium text-[#ecedee]">
+                  {admin?.name}
+                </h3>
+                <h5 className="font-medium pl-2 text-xs text-[#ecedeecf] whitespace-none">
+                  {admin?.email}
+                </h5>
+              </Box>
+            </Link>
+            <NotificationBell />
+          </div>
         </Box>
       </Sidebar.Header>
 
