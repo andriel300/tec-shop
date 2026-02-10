@@ -16,3 +16,16 @@ Table LogEntry {
   ip String
   userAgent String
 }
+
+Table Notification {
+  id String [pk]
+  targetType String [not null]
+  targetId String [not null]
+  templateId String [not null]
+  title String [not null]
+  message String [not null]
+  type String [not null]
+  isRead Boolean [not null, default: false]
+  metadata Json
+  createdAt DateTime [default: `now()`, not null]
+}
