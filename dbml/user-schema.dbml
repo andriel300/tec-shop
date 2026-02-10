@@ -68,6 +68,14 @@ Table ShippingAddress {
   updatedAt DateTime [not null]
 }
 
+Table SiteLayout {
+  id String [pk]
+  logo String
+  banner String
+  updatedAt DateTime [not null]
+  createdAt DateTime [default: `now()`, not null]
+}
+
 Enum ImageType {
   AVATAR
   COVER

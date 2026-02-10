@@ -103,3 +103,11 @@ model ShippingAddress {
   @@index([userProfileId])
   @@index([userId, isDefault]) // Query default address efficiently
 }
+
+model SiteLayout {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  logo      String?
+  banner    String?
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
