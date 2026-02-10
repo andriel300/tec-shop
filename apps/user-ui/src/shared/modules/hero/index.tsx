@@ -1,11 +1,13 @@
 'use client';
 
+import useLayout from '../../../hooks/use-layout';
 import { MoveRight } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import React from 'react';
 
 const Hero = () => {
+  const { layout } = useLayout();
   const router = useRouter();
 
   return (
@@ -38,7 +40,10 @@ const Hero = () => {
           <div className="w-full lg:w-1/2 flex justify-center lg:justify-end">
             <div className="relative w-full max-w-[450px] aspect-square">
               <Image
-                src="https://ik.imagekit.io/andrieltecshop/products/slider-img-1.png"
+                src={
+                  layout?.banner ||
+                  'https://ik.imagekit.io/andrieltecshop/products/slider-img-1.png'
+                }
                 width={450}
                 height={450}
                 alt="Smart Watch Collection 2025"

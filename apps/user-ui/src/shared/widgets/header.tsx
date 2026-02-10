@@ -12,6 +12,8 @@ import { NotificationBell } from '../components/notification-bell';
 import HeaderBottom from './header-bottom';
 import useStore from '../../store';
 import { apiClient } from '../../lib/api/client';
+import useLayout from '../../hooks/use-layout';
+import Image from 'next/image';
 
 interface Product {
   id: string;
@@ -32,6 +34,7 @@ const Header = () => {
   const { isAuthenticated, user, userProfile } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const { layout } = useLayout();
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -129,9 +132,16 @@ const Header = () => {
         {/* Logo */}
         <div className="flex-shrink-0">
           <Link href={'/'}>
-            <span className="text-2xl lg:text-3xl font-heading font-bold text-brand-primary">
-              TecShop
-            </span>
+            <Image
+              src={
+                layout?.logo ||
+                'https://ik.imagekit.io/andrieltecshop/products/tecshop-logo.png'
+              }
+              width={300}
+              height={100}
+              alt=""
+              className="h-[100px] w-auto object-contain"
+            />
           </Link>
         </div>
 

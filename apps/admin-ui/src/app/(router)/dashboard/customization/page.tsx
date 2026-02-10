@@ -30,6 +30,8 @@ import {
   categoryColumns,
   brandColumns,
 } from '../../../../lib/utils/csv-export';
+import { useLayout, useUpdateLayout } from '../../../../hooks/useLayout';
+import type { UpdateLayoutData } from '../../../../lib/api/layout';
 
 // ============ Shared Modal Shell ============
 
@@ -1075,9 +1077,136 @@ const BrandsTab = () => {
   );
 };
 
+// ============ Layout Tab ============
+
+const LayoutTab = () => {
+  const { data: layout, isLoading, error } = useLayout();
+  const updateMutation = useUpdateLayout();
+  const [formData, setFormData] = useState({
+    logo: '',
+    banner: '',
+  });
+  const [initialized, setInitialized] = useState(false);
+
+  // Populate form when layout data loads
+  React.useEffect(() => {
+    if (layout && !initialized) {
+      setFormData({
+        logo: layout.logo || '',
+        banner: layout.banner || '',
+      });
+      setInitialized(true);
+    }
+  }, [layout, initialized]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const data: UpdateLayoutData = {
+      logo: formData.logo.trim() || undefined,
+      banner: formData.banner.trim() || undefined,
+    };
+    updateMutation.mutate(data, {
+      onSuccess: (res) => {
+        setFormData({
+          logo: res.layout.logo || '',
+          banner: res.layout.banner || '',
+        });
+      },
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="bg-slate-800/50 rounded-lg p-8 text-center border border-slate-700">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4" />
+        <p className="text-slate-400">Loading layout...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-slate-800/50 rounded-lg p-8 text-center border border-red-700">
+        <p className="text-red-400">Error: {error.message}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Logo URL */}
+        <div>
+          <label className="text-slate-300 text-sm block mb-2">Logo URL</label>
+          <input
+            type="text"
+            value={formData.logo}
+            onChange={(e) =>
+              setFormData({ ...formData, logo: e.target.value })
+            }
+            className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
+            placeholder="https://example.com/logo.png"
+          />
+          {formData.logo && (
+            <div className="mt-3 p-3 bg-slate-800 rounded border border-slate-600">
+              <p className="text-slate-400 text-xs mb-2">Preview:</p>
+              <img
+                src={formData.logo}
+                alt="Logo preview"
+                className="max-h-20 object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Banner URL */}
+        <div>
+          <label className="text-slate-300 text-sm block mb-2">
+            Banner Image URL
+          </label>
+          <input
+            type="text"
+            value={formData.banner}
+            onChange={(e) =>
+              setFormData({ ...formData, banner: e.target.value })
+            }
+            className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
+            placeholder="https://example.com/banner.png"
+          />
+          {formData.banner && (
+            <div className="mt-3 p-3 bg-slate-800 rounded border border-slate-600">
+              <p className="text-slate-400 text-xs mb-2">Preview:</p>
+              <img
+                src={formData.banner}
+                alt="Banner preview"
+                className="max-h-40 object-contain"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Save Button */}
+        <button
+          type="submit"
+          disabled={updateMutation.isPending}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded font-medium disabled:opacity-50"
+        >
+          {updateMutation.isPending ? 'Saving...' : 'Save Layout'}
+        </button>
+      </form>
+    </div>
+  );
+};
+
 // ============ Main Customization Page ============
 
-type TabType = 'categories' | 'brands';
+type TabType = 'categories' | 'brands' | 'layout';
 
 const CustomizationPage = () => {
   const [activeTab, setActiveTab] = useState<TabType>('categories');
@@ -1101,6 +1230,15 @@ const CustomizationPage = () => {
         </svg>
       ),
     },
+    {
+      id: 'layout',
+      label: 'Layout',
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+        </svg>
+      ),
+    },
   ];
 
   return (
@@ -1108,7 +1246,7 @@ const CustomizationPage = () => {
       <div className="mb-6">
         <h1 className="text-white text-3xl font-semibold">Customization</h1>
         <p className="text-slate-400 mt-1">
-          Manage product categories and brands across the platform
+          Manage categories, brands, and site layout across the platform
         </p>
       </div>
 
@@ -1133,6 +1271,7 @@ const CustomizationPage = () => {
       {/* Tab Content */}
       {activeTab === 'categories' && <CategoriesTab />}
       {activeTab === 'brands' && <BrandsTab />}
+      {activeTab === 'layout' && <LayoutTab />}
     </div>
   );
 };
