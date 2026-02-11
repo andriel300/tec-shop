@@ -45,6 +45,7 @@ export class ModelLoaderService {
 
   async saveModel(model: tf.LayersModel): Promise<void> {
     try {
+      mkdirSync(MODEL_DIR, { recursive: true });
       await model.save(`file://${MODEL_DIR}`);
       this.model = model;
       this.logger.log(`Model saved to ${MODEL_DIR}`);

@@ -220,3 +220,22 @@ export function usePlatformStatistics() {
     refetchInterval: 60 * 1000, // Auto-refetch every minute for live updates
   });
 }
+
+// ============ Recommendation Hooks ============
+
+/**
+ * Hook: Trigger recommendation model training
+ */
+export function useTrainRecommendationModel() {
+  return useMutation({
+    mutationFn: adminApi.trainRecommendationModel,
+    onSuccess: (data) => {
+      toast.success(
+        `Model trained successfully: ${data.interactions} interactions from ${data.users} users across ${data.products} products`
+      );
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to train recommendation model');
+    },
+  });
+}

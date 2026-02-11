@@ -18,6 +18,7 @@ import {
 import {
   usePlatformStatistics,
   useAllOrders,
+  useTrainRecommendationModel,
 } from '../../../hooks/useAdminData';
 
 // Dynamic imports for chart components to avoid SSR issues
@@ -184,6 +185,7 @@ const OrdersTable = () => {
 // Dashboard Layout
 const DashboardPage = () => {
   const { data: stats, isLoading: statsLoading } = usePlatformStatistics();
+  const trainModel = useTrainRecommendationModel();
 
   return (
     <div className="p-8">
@@ -244,6 +246,23 @@ const DashboardPage = () => {
           </div>
         </div>
       ) : null}
+
+      {/* Recommendation Model Training */}
+      <div className="bg-slate-800 rounded-lg p-6 shadow-xl mb-8 flex items-center justify-between">
+        <div>
+          <h3 className="text-white text-lg font-semibold">Recommendation Model</h3>
+          <p className="text-slate-400 text-sm mt-1">
+            Train the collaborative filtering model using collected user analytics data.
+          </p>
+        </div>
+        <button
+          onClick={() => trainModel.mutate()}
+          disabled={trainModel.isPending}
+          className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-800 disabled:cursor-not-allowed text-white font-medium px-6 py-2.5 rounded-lg transition-colors"
+        >
+          {trainModel.isPending ? 'Training...' : 'Train Model'}
+        </button>
+      </div>
 
       {/*Top Charts */}
       <div className="w-full flex gap-8">

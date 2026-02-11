@@ -238,3 +238,16 @@ export const getPlatformStatistics = async (): Promise<PlatformStatistics> => {
   const response = await apiClient.get('/admin/statistics');
   return response.data;
 };
+
+// ============ Recommendation API Functions ============
+
+export interface TrainingStats {
+  interactions: number;
+  users: number;
+  products: number;
+}
+
+export const trainRecommendationModel = async (): Promise<TrainingStats> => {
+  const response = await apiClient.post('/recommendations/train');
+  return response.data;
+};
