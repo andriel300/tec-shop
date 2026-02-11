@@ -10,5 +10,10 @@
     "target": "es2021"
   },
   "include": ["src/**/*.ts"],
-  "exclude": []
+  "exclude": [],
+  "references": [
+    {
+      "path": "../../libs/prisma-clients/analytics-client/tsconfig.lib.json"
+    }
+  ]
 }

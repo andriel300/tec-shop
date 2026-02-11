@@ -4,6 +4,9 @@
   "include": [],
   "references": [
     {
+      "path": "../../libs/prisma-clients/analytics-client"
+    },
+    {
       "path": "./tsconfig.app.json"
     }
   ]

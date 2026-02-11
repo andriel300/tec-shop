@@ -49,7 +49,7 @@ async function bootstrap() {
 
   await app.listen();
   Logger.log(
-    `🚀 Order Service is running on TCP port ${
+    `Recommendation Service is running on TCP port ${
       process.env.RECOMMENDATION_SERVICE_PORT || 6009
     } with mTLS`
   );
