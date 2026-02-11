@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
 import { LoggerModule } from 'nestjs-pino';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
-import { RecommendationService } from './recommendation.service';
+import { PrismaModule } from '../prisma/prisma.module';
+import { RecommendationModule } from '../recommendation/recommendation.module';
 
 @Module({
   imports: [
@@ -23,8 +23,8 @@ import { RecommendationService } from './recommendation.service';
         },
       }),
     }),
+    PrismaModule,
+    RecommendationModule,
   ],
-  controllers: [AppController],
-  providers: [RecommendationService],
 })
 export class AppModule {}
