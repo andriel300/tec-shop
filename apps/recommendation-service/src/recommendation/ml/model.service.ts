@@ -19,7 +19,13 @@ export class ModelService implements OnModuleInit {
   async onModuleInit() {
     const loaded = await this.modelLoader.loadModel();
     if (loaded) {
-      this.logger.log('Recommendation model ready for inference');
+      const mappings = this.modelLoader.loadMappings();
+      if (mappings) {
+        this.idMappings = mappings;
+        this.logger.log('Recommendation model and ID mappings ready for inference');
+      } else {
+        this.logger.warn('Model loaded but ID mappings missing. Retraining required.');
+      }
     } else {
       this.logger.warn(
         'No pre-trained model found. Call train endpoint to create one.'
@@ -124,11 +130,12 @@ export class ModelService implements OnModuleInit {
     productTensor.dispose();
     ratingTensor.dispose();
 
-    // Save model and mappings
+    // Save model and mappings to disk
     await this.modelLoader.saveModel(model);
+    this.modelLoader.saveMappings(mappings);
     this.idMappings = mappings;
 
-    this.logger.log('Training complete. Model saved.');
+    this.logger.log('Training complete. Model and mappings saved.');
   }
 
   /**
