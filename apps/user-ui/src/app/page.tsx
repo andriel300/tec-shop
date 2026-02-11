@@ -8,22 +8,33 @@ import ShopCard from '../components/cards/shop-card';
 import { useQuery } from '@tanstack/react-query';
 import { getPublicProducts } from '../lib/api/products';
 import { getTopShops } from '../lib/api/shops';
+import { useAuth } from '../contexts/auth-context';
+import { useRecommendations, usePopularProducts } from '../hooks/use-recommendations';
 
 const Page = () => {
-  // Fetch suggested products
+  const { user } = useAuth();
+
+  // Fetch personalized recommendations (authenticated) or popular products (public)
   const {
-    data: suggestedData,
-    isLoading: isSuggestedLoading,
-    isError: isSuggestedError,
-    error: suggestedError,
-  } = useQuery({
-    queryKey: ['products', 'suggested', { limit: 10, sort: 'newest' }],
-    queryFn: () =>
-      getPublicProducts({
-        limit: 10,
-        sort: 'newest',
-      }),
-  });
+    data: recommendedData,
+    isLoading: isRecommendedLoading,
+    isError: isRecommendedError,
+    error: recommendedError,
+  } = useRecommendations(10, !!user);
+
+  const {
+    data: popularData,
+    isLoading: isPopularLoading,
+    isError: isPopularError,
+    error: popularError,
+  } = usePopularProducts(10, !user);
+
+  // Use personalized if logged in, else popular
+  const recProducts = user ? recommendedData : popularData;
+  const isRecLoading = user ? isRecommendedLoading : isPopularLoading;
+  const isRecError = user ? isRecommendedError : isPopularError;
+  const recError = user ? recommendedError : popularError;
+  const recTitle = user ? 'Recommended For You' : 'Popular Products';
 
   // Fetch latest products (offset by 10 to show different products)
   const {
@@ -72,12 +83,12 @@ const Page = () => {
     <div className="bg-[#f5f5f5]">
       <Hero />
       <div className="md:w-[80%] w-[90%] my-10 m-auto">
-        {/* Suggested Products Section */}
+        {/* Recommended / Popular Products Section */}
         <div className="mb-8">
-          <SectionTitle title="Suggested Products" />
+          <SectionTitle title={recTitle} />
         </div>
 
-        {isSuggestedLoading && (
+        {isRecLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 2xl:grid-cols-5 gap-5">
             {Array.from({ length: 10 }).map((_, index) => (
               <div
@@ -88,34 +99,34 @@ const Page = () => {
           </div>
         )}
 
-        {isSuggestedError && (
+        {isRecError && (
           <div className="text-center py-10">
             <p className="text-red-600 font-semibold">
-              Failed to load suggested products
+              Failed to load {recTitle.toLowerCase()}
             </p>
             <p className="text-gray-600 text-sm mt-2">
-              {suggestedError instanceof Error
-                ? suggestedError.message
+              {recError instanceof Error
+                ? recError.message
                 : 'An error occurred'}
             </p>
           </div>
         )}
 
-        {suggestedData && suggestedData.products.length > 0 && (
+        {recProducts && recProducts.length > 0 && (
           <div>
             <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 2xl:grid-cols-5 gap-5">
-              {suggestedData.products.map((product) => (
+              {recProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
 
             <div className="mt-6 text-center text-sm text-gray-600">
-              Showing {suggestedData.products.length} products
+              Showing {recProducts.length} products
             </div>
           </div>
         )}
 
-        {suggestedData && suggestedData.products.length === 0 && (
+        {recProducts && recProducts.length === 0 && (
           <div className="text-center py-10">
             <p className="text-gray-600 font-semibold">No products found</p>
             <p className="text-gray-500 text-sm mt-2">
