@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { AnalyticsPrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 import { ModelService } from './ml/model.service';
 import {
   ACTION_SCORES,
@@ -7,6 +8,8 @@ import {
   type IdMappings,
   type RecommendationResult,
 } from './ml/model.types';
+
+const CACHE_TTL_SECONDS = 3600; // 1 hour
 
 interface UserAction {
   productId?: string;
@@ -21,12 +24,14 @@ export class RecommendationService {
 
   constructor(
     private readonly prisma: AnalyticsPrismaService,
-    private readonly modelService: ModelService
+    private readonly modelService: ModelService,
+    private readonly redisService: RedisService,
   ) {}
 
   /**
    * Get personalized product recommendations for a user.
    * Falls back to popular products if model is not trained or user is unknown.
+   * Results are cached in Redis for 1 hour.
    */
   async getRecommendations(
     userId: string,
@@ -34,9 +39,19 @@ export class RecommendationService {
   ): Promise<RecommendationResult[]> {
     this.logger.log(`Getting recommendations for user ${userId}`);
 
+    // Check Redis cache first
+    const cacheKey = `rec:${userId}`;
+    const cached = await this.redisService.get(cacheKey);
+    if (cached) {
+      this.logger.debug(`Cache hit for user ${userId}`);
+      const parsed = JSON.parse(cached) as RecommendationResult[];
+      return parsed.slice(0, limit);
+    }
+
     // Try ML-based recommendations first
     const mlResults = this.modelService.predict(userId, limit);
     if (mlResults.length > 0) {
+      await this.redisService.set(cacheKey, JSON.stringify(mlResults), CACHE_TTL_SECONDS);
       return mlResults;
     }
 
@@ -124,6 +139,10 @@ export class RecommendationService {
 
     await this.modelService.train(trainingData, mappings);
 
+    // Invalidate all cached recommendations after retraining
+    await this.redisService.deleteByPattern('rec:*');
+    this.logger.log('Cleared recommendation cache after training');
+
     const stats = {
       interactions: userIndices.length,
       users: userIdToIndex.size,
@@ -138,9 +157,9 @@ export class RecommendationService {
   }
 
   /**
-   * Fallback: return the most popular products based on view count.
+   * Return the most popular products based on view count.
    */
-  private async getPopularProducts(
+  async getPopularProducts(
     limit: number
   ): Promise<RecommendationResult[]> {
     const popular = await this.prisma.productAnalytics.findMany({
@@ -153,6 +172,51 @@ export class RecommendationService {
     });
 
     return popular.map((p) => ({
+      productId: p.productId,
+      score: p.views,
+    }));
+  }
+
+  /**
+   * Get similar products based on same shop or general popularity.
+   * Finds other products from the same shop, falling back to popular products.
+   */
+  async getSimilarProducts(
+    productId: string,
+    limit = 10
+  ): Promise<RecommendationResult[]> {
+    this.logger.log(`Getting similar products for ${productId}`);
+
+    // Get the target product's analytics to find its shop
+    const targetAnalytics = await this.prisma.productAnalytics.findUnique({
+      where: { productId },
+      select: { shopId: true },
+    });
+
+    if (!targetAnalytics?.shopId) {
+      this.logger.debug(`No analytics for product ${productId}, falling back to popular`);
+      return this.getPopularProducts(limit);
+    }
+
+    // Find other products from the same shop, sorted by engagement
+    const similar = await this.prisma.productAnalytics.findMany({
+      where: {
+        productId: { not: productId },
+        shopId: targetAnalytics.shopId,
+      },
+      orderBy: { views: 'desc' },
+      take: limit,
+      select: {
+        productId: true,
+        views: true,
+      },
+    });
+
+    if (similar.length === 0) {
+      return this.getPopularProducts(limit);
+    }
+
+    return similar.map((p) => ({
       productId: p.productId,
       score: p.views,
     }));
