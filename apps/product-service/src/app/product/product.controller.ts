@@ -86,6 +86,14 @@ export class ProductController {
   }
 
   /**
+   * Get multiple products by IDs (for recommendation enrichment)
+   */
+  @MessagePattern('product-get-by-ids')
+  async findByIds(@Payload() data: { ids: string[] }) {
+    return this.productService.findByIds(data.ids);
+  }
+
+  /**
    * Get all products for a shop
    */
   @MessagePattern('product-get-products')

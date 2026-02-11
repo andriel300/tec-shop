@@ -611,6 +611,27 @@ export class ProductService {
     return restored;
   }
 
+  /**
+   * Find multiple products by their IDs (for recommendation enrichment).
+   * Returns only active, non-deleted products with fields needed by ProductCard.
+   */
+  async findByIds(ids: string[]) {
+    return this.prisma.product.findMany({
+      where: {
+        id: { in: ids },
+        deletedAt: null,
+      },
+      include: {
+        category: {
+          select: { id: true, name: true, slug: true },
+        },
+        brand: {
+          select: { id: true, name: true, slug: true },
+        },
+      },
+    });
+  }
+
   async incrementViews(id: string) {
     return this.prisma.product.update({
       where: { id },
