@@ -27,4 +27,19 @@ export class RecommendationController {
   async trainModel() {
     return this.recommendationService.trainModel();
   }
+
+  @MessagePattern('recommendation.getPopular')
+  async getPopular(@Payload() data: { limit?: number }) {
+    return this.recommendationService.getPopularProducts(data.limit || 10);
+  }
+
+  @MessagePattern('recommendation.getSimilar')
+  async getSimilar(
+    @Payload() data: { productId: string; limit?: number }
+  ) {
+    return this.recommendationService.getSimilarProducts(
+      data.productId,
+      data.limit
+    );
+  }
 }
