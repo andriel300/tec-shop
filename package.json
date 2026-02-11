@@ -24,7 +24,8 @@
     "test": "npx nx run-many --target=test --all",
     "lint": "npx nx run-many --target=lint --all",
     "build": "npx nx run-many --target=build --all",
-    "typecheck": "npx nx run-many --target=typecheck --all"
+    "typecheck": "npx nx run-many --target=typecheck --all",
+    "postinstall": "patch-package"
   },
   "private": true,
   "dependencies": {
@@ -171,7 +172,9 @@
     "jsonc-eslint-parser": "^2.1.0",
     "nock": "^14.0.10",
     "nx": "21.4.1",
+    "patch-package": "^8.0.1",
     "postcss": "8.4.38",
+    "postinstall-postinstall": "^2.1.0",
     "prettier": "^2.6.2",
     "prisma": "6.19",
     "prisma-dbml-generator": "^0.12.0",
