@@ -7,12 +7,12 @@ import StarRating from '../../../components/ui/star-rating';
 import { useAuth } from '../../../contexts/auth-context';
 import useDeviceTracking from '../../../hooks/use-device-tracking';
 import useLocationTracking from '../../../hooks/use-location-tracking';
-import apiClient from '../../../lib/api/client';
 import useStore from '../../../store';
 import { useShop } from '../../../hooks/use-shops';
 import { useRouter } from 'next/navigation';
 import { useCreateConversation } from '../../../hooks/use-chat';
-import type { ProductVariant } from '../../../lib/api/products';
+import { useSimilarProducts } from '../../../hooks/use-recommendations';
+import type { Product, ProductVariant } from '../../../lib/api/products';
 import {
   ChevronLeft,
   ChevronRight,
@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 /**
  * ============================================
@@ -61,7 +61,7 @@ import React, { useEffect, useState, useMemo } from 'react';
  *
  * 6. Add to Cart button enabled when all attributes selected
  */
-const ProductDetails = ({ product }: { product: any }) => {
+const ProductDetails = ({ product }: { product: Product }) => {
   const { user } = useAuth();
   const location = useLocationTracking();
   const deviceInfo = useDeviceTracking();
@@ -89,12 +89,8 @@ const ProductDetails = ({ product }: { product: any }) => {
   // ========== CART/PURCHASE STATE ==========
   const [quantity, setQuantity] = useState(1);
 
-  // ========== RECOMMENDATIONS STATE ==========
-  const [priceRange] = useState([product.price, 1199]);
-  const [recommendedProducts, setRecommendedProducts] = useState([]);
-
-  // ========== SHOP INFO STATE ==========
-  const [shopInfo, setShopInfo] = useState<any>(null);
+  // ========== SIMILAR PRODUCTS ==========
+  const { data: similarProducts } = useSimilarProducts(product.id, 5);
 
   const addToCart = useStore((state) => state.addToCart);
   const cart = useStore((state) => state.cart);
@@ -307,34 +303,6 @@ const ProductDetails = ({ product }: { product: any }) => {
     setQuantity(1); // Reset quantity to 1 when changing variant
   };
 
-  const fetchFilteredProducts = async () => {
-    try {
-      const query = new URLSearchParams();
-
-      // Use the existing public products endpoint with proper parameters
-      query.set('minPrice', priceRange[0].toString());
-      query.set('maxPrice', priceRange[1].toString());
-      query.set('limit', '5');
-      query.set('offset', '0');
-      query.set('sort', 'newest');
-
-      const res = await apiClient.get(`/public/products?${query.toString()}`);
-      setRecommendedProducts(res.data.products);
-    } catch (error) {
-      console.error('Error fetching filtered products:', error);
-    }
-  };
-
-  const fetchShopInfo = async () => {
-    if (!product.shopId) return;
-    try {
-      const res = await apiClient.get(`/public/shops/${product.shopId}`);
-      setShopInfo(res.data);
-    } catch (error) {
-      console.error('Error fetching shop info:', error);
-    }
-  };
-
   const handleChatWithSeller = async () => {
     if (!user) {
       router.push('/login');
@@ -360,11 +328,6 @@ const ProductDetails = ({ product }: { product: any }) => {
       console.error('Failed to create conversation:', error);
     }
   };
-
-  useEffect(() => {
-    fetchFilteredProducts();
-    fetchShopInfo();
-  }, [priceRange, product.shopId]);
 
   return (
     <div className="w-full bg-[#f5f5f5] py-5">
@@ -469,7 +432,7 @@ const ProductDetails = ({ product }: { product: any }) => {
                     );
                   } else {
                     // Get sellerId from shopInfo (required for order processing)
-                    const sellerId = shopInfo?.seller?.id || '';
+                    const sellerId = shop?.seller?.authId || '';
 
                     if (!sellerId) {
                       console.error(
@@ -704,7 +667,7 @@ const ProductDetails = ({ product }: { product: any }) => {
                 }
                 onClick={() => {
                   // Get sellerId from shopInfo (required for order processing)
-                  const sellerId = shopInfo?.seller?.id || '';
+                  const sellerId = shop?.seller?.authId || '';
 
                   if (!sellerId) {
                     console.error(
@@ -782,7 +745,7 @@ const ProductDetails = ({ product }: { product: any }) => {
             <div className="mb-2">
               <span className="text-sm text-gray-600 block mb-1">Sold by</span>
               <span className="block font-medium text-lg text-gray-800">
-                {shopInfo?.businessName || 'Loading...'}
+                {shop?.businessName || 'Loading...'}
               </span>
             </div>
             {/* Chat Button */}
@@ -848,16 +811,18 @@ const ProductDetails = ({ product }: { product: any }) => {
         </div>
       </div>
 
-      <div className="mx-auto w-[90%] lg:w-[80%]">
-        <div className="w-full h-full my-5 p-5">
-          <h3 className="text-xl font-semibold mb-2">You may also like</h3>
-          <div className="m-auto grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
-            {recommendedProducts?.map((i: any) => (
-              <ProductCard key={i.id} product={i} />
-            ))}
+      {similarProducts && similarProducts.length > 0 && (
+        <div className="mx-auto w-[90%] lg:w-[80%]">
+          <div className="w-full h-full my-5 p-5">
+            <h3 className="text-xl font-semibold mb-2">You may also like</h3>
+            <div className="m-auto grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+              {similarProducts.map((item) => (
+                <ProductCard key={item.id} product={item} />
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
