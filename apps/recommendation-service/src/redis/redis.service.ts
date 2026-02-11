@@ -1,0 +1,30 @@
+import { Inject, Injectable } from '@nestjs/common';
+import Redis from 'ioredis';
+
+@Injectable()
+export class RedisService {
+  constructor(@Inject('REDIS_CLIENT') private readonly redisClient: Redis) {}
+
+  async set(key: string, value: string, expireInSeconds?: number): Promise<void> {
+    if (expireInSeconds) {
+      await this.redisClient.set(key, value, 'EX', expireInSeconds);
+    } else {
+      await this.redisClient.set(key, value);
+    }
+  }
+
+  async get(key: string): Promise<string | null> {
+    return this.redisClient.get(key);
+  }
+
+  async del(key: string): Promise<void> {
+    await this.redisClient.del(key);
+  }
+
+  async deleteByPattern(pattern: string): Promise<void> {
+    const keys = await this.redisClient.keys(pattern);
+    if (keys.length > 0) {
+      await this.redisClient.del(...keys);
+    }
+  }
+}
