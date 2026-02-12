@@ -155,12 +155,31 @@ export interface Rating {
   productId: string;
   userId: string;
   rating: number;
+  title?: string | null;
+  content?: string | null;
+  images: string[];
+  reviewerName?: string | null;
+  reviewerAvatar?: string | null;
+  sellerResponse?: string | null;
+  sellerResponseAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
+export interface PaginatedReviewsResponse {
+  reviews: Rating[];
+  total: number;
+  page: number;
+  limit: number;
+  averageRating: number;
+  ratingCount: number;
+  ratingDistribution: Record<string, number>;
+}
+
 export interface CreateRatingDto {
   rating: number;
+  title?: string;
+  content?: string;
 }
 
 export interface UpdateRatingDto {
@@ -169,11 +188,13 @@ export interface UpdateRatingDto {
 
 export const createOrUpdateRating = async (
   productId: string,
-  rating: number
+  formData: FormData
 ): Promise<Rating> => {
-  const response = await apiClient.post(`/products/${productId}/ratings`, {
-    rating,
-  });
+  const response = await apiClient.post(
+    `/products/${productId}/ratings`,
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
+  );
   return response.data;
 };
 
@@ -195,5 +216,17 @@ export const getUserRating = async (
   productId: string
 ): Promise<Rating | null> => {
   const response = await apiClient.get(`/products/${productId}/ratings/me`);
+  return response.data;
+};
+
+export const getProductReviews = async (
+  productId: string,
+  page = 1,
+  limit = 10,
+  sort: 'newest' | 'highest' | 'lowest' = 'newest'
+): Promise<PaginatedReviewsResponse> => {
+  const response = await apiClient.get(
+    `/public/products/reviews/${productId}?page=${page}&limit=${limit}&sort=${sort}`
+  );
   return response.data;
 };

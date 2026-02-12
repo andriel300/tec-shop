@@ -2,6 +2,8 @@
 
 import CartIcon from '../../../assets/svgs/cart-icon';
 import ProductCard from '../../../components/cards/product-card';
+import ReviewForm from '../../../components/reviews/review-form';
+import ReviewList from '../../../components/reviews/review-list';
 import ProductMagnifier from '../../../components/ui/ProductMagnifier';
 import StarRating from '../../../components/ui/star-rating';
 import { useAuth } from '../../../contexts/auth-context';
@@ -413,7 +415,7 @@ const ProductDetails = ({ product }: { product: Product }) => {
                 count={product.ratingCount}
               />
               <Link href={'#reviews'} className="text-blue-500 hover:underline">
-                (0 Reviews)
+                ({product.ratingCount} {product.ratingCount === 1 ? 'Review' : 'Reviews'})
               </Link>
             </div>
             <div>
@@ -803,11 +805,14 @@ const ProductDetails = ({ product }: { product: Product }) => {
         </div>
       </div>
       <div className="w-[90%] lg:w-[80%] mx-auto">
-        <div className="bg-white min-h-[50vh] h-full mt-5 p-5">
-          <h3 className="text-lg font-semibold">
+        <div className="bg-white mt-5 p-5">
+          <h3 className="text-lg font-semibold mb-4">
             Ratings & Reviews of {product.name}
           </h3>
-          <p className="text-center pt-14">No Reviews available yet!</p>
+          <ReviewForm productId={product.id} />
+          <div className="mt-6">
+            <ReviewList productId={product.id} />
+          </div>
         </div>
       </div>
 
