@@ -16,6 +16,9 @@
       "path": "../../libs/prisma-clients/order-client/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/shared/notification-producer/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/shared/dto/tsconfig.lib.json"
     }
   ]

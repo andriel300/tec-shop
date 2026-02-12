@@ -12,6 +12,7 @@ import { PaymentService } from '../services/payment.service';
 import { KafkaProducerService } from '../services/kafka-producer.service';
 import { UserServiceClient } from '../clients/user.client';
 import { SellerServiceClient } from '../clients/seller.client';
+import { NotificationProducerService } from '@tec-shop/notification-producer';
 import {
   CartItemDto,
   CreateCheckoutSessionDto,
@@ -32,7 +33,8 @@ export class OrderService {
     private readonly paymentService: PaymentService,
     private readonly kafkaProducer: KafkaProducerService,
     private readonly userClient: UserServiceClient,
-    private readonly sellerClient: SellerServiceClient
+    private readonly sellerClient: SellerServiceClient,
+    private readonly notificationProducer: NotificationProducerService
   ) {}
 
   async createCheckoutSession(
@@ -800,13 +802,35 @@ export class OrderService {
         ...(trackingNumber ? { trackingNumber } : {}),
       },
       include: {
-        items: {
-          where: { sellerId },
-        },
+        items: true,
       },
     });
 
     this.logger.log(`Order ${orderId} status updated to ${status} by seller ${sellerId}`);
+
+    // Send review prompt notification when order is delivered
+    if (status === OrderStatus.DELIVERED) {
+      try {
+        const items = updatedOrder.items as Array<{ productName: string }>;
+        const productNames = items
+          .map((item) => item.productName)
+          .join(', ');
+
+        await this.notificationProducer.notifyCustomer(
+          order.userId,
+          'order.delivered_review',
+          {
+            orderNumber: (updatedOrder as Record<string, unknown>).orderNumber as string,
+            productNames,
+          },
+          { orderId }
+        );
+      } catch (notifError) {
+        this.logger.warn(
+          `Failed to send delivery review notification: ${notifError instanceof Error ? notifError.message : 'Unknown error'}`
+        );
+      }
+    }
 
     return updatedOrder;
   }

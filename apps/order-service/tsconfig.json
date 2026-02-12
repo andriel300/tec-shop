@@ -7,6 +7,9 @@
       "path": "../../libs/prisma-clients/order-client"
     },
     {
+      "path": "../../libs/shared/notification-producer"
+    },
+    {
       "path": "../../libs/shared/dto"
     },
     {
