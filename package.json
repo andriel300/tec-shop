@@ -20,6 +20,7 @@
     "seed:categories": "npx tsx apps/product-service/src/scripts/seed-categories.ts",
     "seed:products": "npx tsx apps/product-service/src/scripts/seed-products.ts",
     "seed:admin": "npx tsx apps/admin-service/src/scripts/seed-admin.ts",
+    "seed:recommendations": "npx tsx apps/recommendation-service/src/scripts/seed-recommendation-data.ts",
     "get-shop-id": "npx tsx apps/product-service/src/scripts/get-shop-id.ts",
     "test": "npx nx run-many --target=test --all",
     "lint": "npx nx run-many --target=lint --all",

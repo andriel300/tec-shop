@@ -13,6 +13,12 @@
   "exclude": [],
   "references": [
     {
+      "path": "../../libs/prisma-clients/product-client/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/prisma-clients/seller-client/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/prisma-clients/analytics-client/tsconfig.lib.json"
     }
   ]
