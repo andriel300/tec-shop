@@ -13,6 +13,7 @@ import { MockLogisticsService } from '../services/mock-logistics.service';
 import { LoggerModule } from 'nestjs-pino';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { NotificationProducerModule } from '@tec-shop/notification-producer';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     EmailModule,
     UserClientModule,
     SellerClientModule,
+    NotificationProducerModule.forRoot({ clientId: 'order-service-notifications' }),
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
     LoggerModule.forRootAsync({

@@ -33,5 +33,10 @@
     "title": "Order Cancelled",
     "message": "Order {{orderNumber}} has been cancelled by the customer.",
     "type": "ORDER"
+  },
+  "order.delivered_review": {
+    "title": "Share your experience",
+    "message": "Your order {{orderNumber}} has been delivered. Tell us what you think about {{productNames}}.",
+    "type": "DELIVERY"
   }
 }
