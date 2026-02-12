@@ -282,7 +282,7 @@ export interface PaginatedProductsResponseDto {
 
 /**
  * Create Rating Schema
- * Validates rating input (1-5 stars)
+ * Validates rating input (1-5 stars) with optional review fields
  */
 export const CreateRatingSchema = z.object({
   rating: z
@@ -291,6 +291,16 @@ export const CreateRatingSchema = z.object({
     .min(1, 'Rating must be at least 1 star')
     .max(5, 'Rating cannot exceed 5 stars')
     .describe('Star rating from 1 to 5'),
+  title: z
+    .string()
+    .min(3, 'Title must be at least 3 characters')
+    .max(150, 'Title cannot exceed 150 characters')
+    .optional(),
+  content: z
+    .string()
+    .min(10, 'Review content must be at least 10 characters')
+    .max(2000, 'Review content cannot exceed 2000 characters')
+    .optional(),
 });
 
 export type CreateRatingDto = z.infer<typeof CreateRatingSchema>;
@@ -304,16 +314,49 @@ export const UpdateRatingSchema = CreateRatingSchema;
 export type UpdateRatingDto = z.infer<typeof UpdateRatingSchema>;
 
 /**
+ * Seller Response Schema
+ * Validates seller reply to a review
+ */
+export const SellerResponseSchema = z.object({
+  response: z
+    .string()
+    .min(1, 'Response cannot be empty')
+    .max(1000, 'Response cannot exceed 1000 characters'),
+});
+
+export type SellerResponseDto = z.infer<typeof SellerResponseSchema>;
+
+/**
  * Rating Response DTO
- * Matches Prisma ProductRating model structure
+ * Matches Prisma ProductRating model structure with review fields
  */
 export interface RatingResponseDto {
   id: string;
   productId: string;
   userId: string;
   rating: number;
-  createdAt: Date;
-  updatedAt: Date;
+  title?: string | null;
+  content?: string | null;
+  images: string[];
+  reviewerName?: string | null;
+  reviewerAvatar?: string | null;
+  sellerResponse?: string | null;
+  sellerResponseAt?: Date | string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+/**
+ * Paginated Reviews Response
+ */
+export interface PaginatedReviewsResponseDto {
+  reviews: RatingResponseDto[];
+  total: number;
+  page: number;
+  limit: number;
+  averageRating: number;
+  ratingCount: number;
+  ratingDistribution: Record<string, number>;
 }
 
 /**
