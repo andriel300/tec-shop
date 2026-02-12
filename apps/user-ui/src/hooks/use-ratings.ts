@@ -10,7 +10,9 @@ import {
   createOrUpdateRating,
   updateRating as updateRatingApi,
   deleteRating as deleteRatingApi,
+  getProductReviews,
   type Rating,
+  type PaginatedReviewsResponse,
 } from '../lib/api/products';
 
 export const useUserRating = (
@@ -24,15 +26,29 @@ export const useUserRating = (
   });
 };
 
+export const useProductReviews = (
+  productId: string,
+  page = 1,
+  limit = 10,
+  sort: 'newest' | 'highest' | 'lowest' = 'newest'
+): UseQueryResult<PaginatedReviewsResponse, Error> => {
+  return useQuery({
+    queryKey: ['productReviews', productId, page, limit, sort],
+    queryFn: () => getProductReviews(productId, page, limit, sort),
+    enabled: !!productId,
+  });
+};
+
 export const useCreateOrUpdateRating = (
   productId: string
-): UseMutationResult<Rating, Error, number> => {
+): UseMutationResult<Rating, Error, FormData> => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (rating: number) => createOrUpdateRating(productId, rating),
+    mutationFn: (formData: FormData) => createOrUpdateRating(productId, formData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['userRating', productId] });
+      queryClient.invalidateQueries({ queryKey: ['productReviews', productId] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
   });
@@ -47,8 +63,9 @@ export const useUpdateRating = (): UseMutationResult<
 
   return useMutation({
     mutationFn: ({ ratingId, rating }) => updateRatingApi(ratingId, rating),
-    onSuccess: (_data, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['userRating'] });
+      queryClient.invalidateQueries({ queryKey: ['productReviews'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
   });
@@ -66,6 +83,9 @@ export const useDeleteRating = (): UseMutationResult<
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
         queryKey: ['userRating', variables.productId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['productReviews', variables.productId],
       });
       queryClient.invalidateQueries({ queryKey: ['products'] });
     },
