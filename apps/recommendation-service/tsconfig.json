@@ -4,6 +4,12 @@
   "include": [],
   "references": [
     {
+      "path": "../../libs/prisma-clients/product-client"
+    },
+    {
+      "path": "../../libs/prisma-clients/seller-client"
+    },
+    {
       "path": "../../libs/prisma-clients/analytics-client"
     },
     {
