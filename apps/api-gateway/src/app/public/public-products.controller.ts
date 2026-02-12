@@ -401,6 +401,40 @@ Retrieves all available filter options (colors, sizes) dynamically extracted fro
   }
 
   /**
+   * Get paginated reviews for a product
+   * Public endpoint - no authentication required
+   */
+  @Get('reviews/:productId')
+  @Throttle({ long: { limit: 200, ttl: 60000 } })
+  @ApiOperation({
+    summary: 'Get product reviews (public)',
+    description: 'Retrieves paginated reviews for a product with rating distribution.',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+  @ApiQuery({ name: 'sort', required: false, enum: ['newest', 'highest', 'lowest'], example: 'newest' })
+  @ApiResponse({ status: 200, description: 'Reviews retrieved successfully.' })
+  @ApiResponse({ status: 404, description: 'Product not found.' })
+  async getProductReviews(
+    @Param('productId') productId: string,
+    @Query('page') pageStr?: string,
+    @Query('limit') limitStr?: string,
+    @Query('sort') sort?: string
+  ) {
+    const page = pageStr ? parseInt(pageStr, 10) : 1;
+    const limit = limitStr ? Math.min(parseInt(limitStr, 10), 50) : 10;
+
+    return firstValueFrom(
+      this.productService.send('product-get-reviews', {
+        productId,
+        page: Math.max(page, 1),
+        limit: Math.max(limit, 1),
+        sort: sort || 'newest',
+      })
+    );
+  }
+
+  /**
    * Get single product by slug for product detail page
    * Public endpoint - no authentication required
    */
