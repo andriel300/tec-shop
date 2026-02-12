@@ -27,6 +27,42 @@ import { ImageKitModule } from '@tec-shop/shared/imagekit';
           },
         },
       },
+      {
+        name: 'ORDER_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: process.env.ORDER_SERVICE_HOST || 'localhost',
+          port: parseInt(process.env.ORDER_SERVICE_PORT || '6005', 10),
+          tlsOptions: {
+            key: readFileSync(
+              join(process.cwd(), 'certs/api-gateway/api-gateway-key.pem')
+            ),
+            cert: readFileSync(
+              join(process.cwd(), 'certs/api-gateway/api-gateway-cert.pem')
+            ),
+            ca: readFileSync(join(process.cwd(), 'certs/ca/ca-cert.pem')),
+            rejectUnauthorized: true,
+          },
+        },
+      },
+      {
+        name: 'USER_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: process.env.USER_SERVICE_HOST || 'localhost',
+          port: parseInt(process.env.USER_SERVICE_PORT || '6002', 10),
+          tlsOptions: {
+            key: readFileSync(
+              join(process.cwd(), 'certs/api-gateway/api-gateway-key.pem')
+            ),
+            cert: readFileSync(
+              join(process.cwd(), 'certs/api-gateway/api-gateway-cert.pem')
+            ),
+            ca: readFileSync(join(process.cwd(), 'certs/ca/ca-cert.pem')),
+            rejectUnauthorized: true,
+          },
+        },
+      },
     ]),
   ],
   controllers: [ProductController],
