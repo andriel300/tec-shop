@@ -310,8 +310,7 @@ export class ProductController {
   }
 
   /**
-   * Create or update a product rating
-   * Uses upsert pattern - creates new rating or updates existing one
+   * Create or update a product rating with optional review data
    */
   @MessagePattern('product-create-rating')
   async createRating(
@@ -320,6 +319,13 @@ export class ProductController {
       productId: string;
       userId: string;
       rating: CreateRatingDto;
+      reviewData?: {
+        title?: string;
+        content?: string;
+        images?: string[];
+        reviewerName?: string;
+        reviewerAvatar?: string;
+      };
     }
   ) {
     this.logger.log(
@@ -329,7 +335,8 @@ export class ProductController {
     const result = await this.productService.createRating(
       payload.productId,
       payload.userId,
-      payload.rating
+      payload.rating,
+      payload.reviewData
     );
 
     this.logger.log(
@@ -418,6 +425,64 @@ export class ProductController {
         payload.productId
       }, hasRating: ${!!result}`
     );
+
+    return result;
+  }
+
+  /**
+   * Get paginated reviews for a product
+   */
+  @MessagePattern('product-get-reviews')
+  async getProductReviews(
+    @Payload()
+    payload: {
+      productId: string;
+      page?: number;
+      limit?: number;
+      sort?: 'newest' | 'highest' | 'lowest';
+    }
+  ) {
+    this.logger.log(
+      `Received product-get-reviews request - productId: ${payload.productId}, page: ${payload.page}, sort: ${payload.sort}`
+    );
+
+    const result = await this.productService.getProductReviews(
+      payload.productId,
+      payload.page,
+      payload.limit,
+      payload.sort
+    );
+
+    this.logger.log(
+      `Returning ${result.reviews.length} reviews out of ${result.total} total for product ${payload.productId}`
+    );
+
+    return result;
+  }
+
+  /**
+   * Add seller response to a review
+   */
+  @MessagePattern('product-add-seller-response')
+  async addSellerResponse(
+    @Payload()
+    payload: {
+      ratingId: string;
+      sellerId: string;
+      response: string;
+    }
+  ) {
+    this.logger.log(
+      `Received product-add-seller-response request - ratingId: ${payload.ratingId}, sellerId: ${payload.sellerId}`
+    );
+
+    const result = await this.productService.addSellerResponse(
+      payload.ratingId,
+      payload.sellerId,
+      payload.response
+    );
+
+    this.logger.log(`Seller response added - ratingId: ${result.id}`);
 
     return result;
   }
