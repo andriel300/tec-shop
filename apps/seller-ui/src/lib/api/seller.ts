@@ -9,6 +9,30 @@ export interface CreateShopData {
   website?: string;
 }
 
+export interface SocialLink {
+  platform: string;
+  url: string;
+}
+
+export interface NotificationPreferences {
+  ORDER?: boolean;
+  PRODUCT?: boolean;
+  SHOP?: boolean;
+  DELIVERY?: boolean;
+  AUTH?: boolean;
+  SYSTEM?: boolean;
+  INFO?: boolean;
+  SUCCESS?: boolean;
+  WARNING?: boolean;
+  ERROR?: boolean;
+}
+
+export interface ChangePasswordData {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 export interface UpdateShopData {
   businessName?: string;
   bio?: string;
@@ -16,6 +40,10 @@ export interface UpdateShopData {
   address?: string;
   openingHours?: string;
   website?: string;
+  isActive?: boolean;
+  socialLinks?: SocialLink[];
+  returnPolicy?: string;
+  shippingPolicy?: string;
 }
 
 export interface CreateSellerProfileData {
@@ -34,6 +62,9 @@ export interface ShopResponse {
   address: string;
   openingHours: string;
   website?: string;
+  socialLinks?: SocialLink[];
+  returnPolicy?: string;
+  shippingPolicy?: string;
   rating: number;
   totalOrders: number;
   isActive: boolean;
@@ -178,5 +209,24 @@ export interface SellerStatistics {
 
 export const getSellerStatistics = async (): Promise<SellerStatistics> => {
   const response = await apiClient.get('/seller/statistics');
+  return response.data;
+};
+
+// Password change
+export const changePassword = async (data: ChangePasswordData): Promise<{ message: string }> => {
+  const response = await apiClient.post('/auth/change-password', data);
+  return response.data;
+};
+
+// Notification preferences
+export const getNotificationPreferences = async (): Promise<NotificationPreferences> => {
+  const response = await apiClient.get('/seller/notification-preferences');
+  return response.data;
+};
+
+export const updateNotificationPreferences = async (
+  preferences: NotificationPreferences
+): Promise<NotificationPreferences> => {
+  const response = await apiClient.put('/seller/notification-preferences', preferences);
   return response.data;
 };
