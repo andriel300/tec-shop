@@ -33,9 +33,9 @@ const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-gray-900 text-gray-300">
+    <footer className="bg-white text-gray-600">
       {/* Features Bar */}
-      <div className="border-b border-gray-800">
+      <div className="border-b border-gray-200">
         <div className="w-[90%] lg:w-[80%] mx-auto py-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div className="flex items-center gap-3">
@@ -43,10 +43,10 @@ const Footer = () => {
                 <Truck className="w-6 h-6 text-brand-primary" />
               </div>
               <div>
-                <h4 className="font-semibold text-white text-sm">
+                <h4 className="font-semibold text-gray-900 text-sm">
                   Free Shipping
                 </h4>
-                <p className="text-xs text-gray-400">On orders over $50</p>
+                <p className="text-xs text-gray-500">On orders over $50</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -54,10 +54,10 @@ const Footer = () => {
                 <RotateCcw className="w-6 h-6 text-brand-primary" />
               </div>
               <div>
-                <h4 className="font-semibold text-white text-sm">
+                <h4 className="font-semibold text-gray-900 text-sm">
                   Easy Returns
                 </h4>
-                <p className="text-xs text-gray-400">30-day return policy</p>
+                <p className="text-xs text-gray-500">30-day return policy</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -65,10 +65,10 @@ const Footer = () => {
                 <Shield className="w-6 h-6 text-brand-primary" />
               </div>
               <div>
-                <h4 className="font-semibold text-white text-sm">
+                <h4 className="font-semibold text-gray-900 text-sm">
                   Secure Payment
                 </h4>
-                <p className="text-xs text-gray-400">100% secure checkout</p>
+                <p className="text-xs text-gray-500">100% secure checkout</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -76,10 +76,10 @@ const Footer = () => {
                 <Phone className="w-6 h-6 text-brand-primary" />
               </div>
               <div>
-                <h4 className="font-semibold text-white text-sm">
+                <h4 className="font-semibold text-gray-900 text-sm">
                   24/7 Support
                 </h4>
-                <p className="text-xs text-gray-400">Dedicated support</p>
+                <p className="text-xs text-gray-500">Dedicated support</p>
               </div>
             </div>
           </div>
@@ -96,7 +96,7 @@ const Footer = () => {
                 TecShop
               </span>
             </Link>
-            <p className="mt-4 text-sm text-gray-400 leading-relaxed">
+            <p className="mt-4 text-sm text-gray-500 leading-relaxed">
               Your premier destination for quality products at competitive
               prices. We connect buyers with trusted sellers to create a
               seamless shopping experience.
@@ -124,7 +124,7 @@ const Footer = () => {
                 href="https://facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 bg-gray-800 rounded-full hover:bg-brand-primary transition-colors"
+                className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-brand-primary hover:text-white transition-colors"
               >
                 <Facebook className="w-5 h-5" />
               </a>
@@ -132,7 +132,7 @@ const Footer = () => {
                 href="https://twitter.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 bg-gray-800 rounded-full hover:bg-brand-primary transition-colors"
+                className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-brand-primary hover:text-white transition-colors"
               >
                 <Twitter className="w-5 h-5" />
               </a>
@@ -140,7 +140,7 @@ const Footer = () => {
                 href="https://instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 bg-gray-800 rounded-full hover:bg-brand-primary transition-colors"
+                className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-brand-primary hover:text-white transition-colors"
               >
                 <Instagram className="w-5 h-5" />
               </a>
@@ -148,7 +148,7 @@ const Footer = () => {
                 href="https://youtube.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 bg-gray-800 rounded-full hover:bg-brand-primary transition-colors"
+                className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-brand-primary hover:text-white transition-colors"
               >
                 <Youtube className="w-5 h-5" />
               </a>
@@ -157,7 +157,7 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Quick Links</h3>
+            <h3 className="text-gray-900 font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2.5">
               <li>
                 <Link
@@ -204,7 +204,7 @@ const Footer = () => {
 
           {/* Customer Service */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Customer Service</h3>
+            <h3 className="text-gray-900 font-semibold mb-4">Customer Service</h3>
             <ul className="space-y-2.5">
               <li>
                 <Link
@@ -251,8 +251,8 @@ const Footer = () => {
 
           {/* Newsletter */}
           <div>
-            <h3 className="text-white font-semibold mb-4">Newsletter</h3>
-            <p className="text-sm text-gray-400 mb-4">
+            <h3 className="text-gray-900 font-semibold mb-4">Newsletter</h3>
+            <p className="text-sm text-gray-500 mb-4">
               Subscribe to get special offers, free giveaways, and new arrivals.
             </p>
             <form onSubmit={handleNewsletterSubmit} className="space-y-3">
@@ -262,18 +262,18 @@ const Footer = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Your email address"
-                  className="w-full px-4 py-3 pr-12 bg-gray-800 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-brand-primary transition-colors"
+                  className="w-full px-4 py-3 pr-12 bg-gray-100 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-brand-primary transition-colors"
                   required
                 />
                 <button
                   type="submit"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-brand-primary hover:text-white transition-colors"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-brand-primary hover:text-brand-primary/70 transition-colors"
                 >
                   <Send className="w-4 h-4" />
                 </button>
               </div>
               {subscribed && (
-                <p className="text-green-400 text-xs">
+                <p className="text-green-600 text-xs">
                   Thanks for subscribing!
                 </p>
               )}
@@ -281,7 +281,7 @@ const Footer = () => {
 
             {/* Legal Links */}
             <div className="mt-6">
-              <h4 className="text-white font-semibold mb-3 text-sm">Legal</h4>
+              <h4 className="text-gray-900 font-semibold mb-3 text-sm">Legal</h4>
               <ul className="space-y-2">
                 <li>
                   <Link
@@ -314,28 +314,28 @@ const Footer = () => {
       </div>
 
       {/* Bottom Bar */}
-      <div className="border-t border-gray-800">
+      <div className="border-t border-gray-200">
         <div className="w-[90%] lg:w-[80%] mx-auto py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             {/* Copyright */}
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-500">
               {currentYear} TecShop. All rights reserved.
             </p>
 
             {/* Payment Methods */}
             <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-500 mr-2">We accept:</span>
+              <span className="text-xs text-gray-400 mr-2">We accept:</span>
               <div className="flex items-center gap-2">
-                <div className="px-2 py-1 bg-gray-800 rounded text-xs font-medium">
+                <div className="px-2 py-1 bg-gray-100 rounded text-xs font-medium text-gray-700">
                   VISA
                 </div>
-                <div className="px-2 py-1 bg-gray-800 rounded text-xs font-medium">
+                <div className="px-2 py-1 bg-gray-100 rounded text-xs font-medium text-gray-700">
                   MasterCard
                 </div>
-                <div className="px-2 py-1 bg-gray-800 rounded text-xs font-medium">
+                <div className="px-2 py-1 bg-gray-100 rounded text-xs font-medium text-gray-700">
                   PayPal
                 </div>
-                <div className="px-2 py-1 bg-gray-800 rounded text-xs font-medium flex items-center gap-1">
+                <div className="px-2 py-1 bg-gray-100 rounded text-xs font-medium text-gray-700 flex items-center gap-1">
                   <CreditCard className="w-3 h-3" />
                   <span>Stripe</span>
                 </div>

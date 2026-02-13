@@ -10,10 +10,12 @@ import {
 } from '../../../hooks/use-chat';
 import { useChatSocket } from '../../../hooks/use-chat-socket';
 import type { Conversation, ChatMessage } from '../../../lib/api/chat';
+import { uploadChatImage } from '../../../lib/api/chat';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { ArrowLeft, MessageCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import { ArrowLeft, Loader2, MessageCircle } from 'lucide-react';
 import ChatInput from '../../../components/chats/chat-input';
 
 const DEFAULT_AVATAR =
@@ -35,6 +37,7 @@ const InboxPage = () => {
     conversationId: string;
     userId: string;
   } | null>(null);
+  const [isSendingImage, setIsSendingImage] = useState(false);
 
   const conversationIdFromUrl = searchParams.get('conversationId');
 
@@ -452,9 +455,31 @@ const InboxPage = () => {
                                 : 'bg-white border border-gray-200 text-gray-800 rounded-bl-sm'
                             }`}
                           >
-                            <p className="whitespace-pre-wrap break-words">
-                              {message.content}
-                            </p>
+                            {message.attachments && message.attachments.length > 0 && (
+                              <div className="flex flex-wrap gap-2 mb-2">
+                                {message.attachments.map((att, idx) => (
+                                  <a
+                                    key={`att-${message.id}-${idx}`}
+                                    href={att.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <Image
+                                      src={att.url}
+                                      alt={`Attachment ${idx + 1}`}
+                                      width={200}
+                                      height={200}
+                                      className="rounded-lg max-w-[200px] max-h-[200px] object-cover cursor-pointer hover:opacity-90 transition"
+                                    />
+                                  </a>
+                                ))}
+                              </div>
+                            )}
+                            {message.content && (
+                              <p className="whitespace-pre-wrap break-words">
+                                {message.content}
+                              </p>
+                            )}
                             <p
                               className={`text-xs mt-1 ${
                                 isOwnMessage ? 'text-white/70' : 'text-gray-400'
@@ -466,6 +491,16 @@ const InboxPage = () => {
                         </div>
                       );
                     })
+                  )}
+
+                  {/* Image uploading indicator */}
+                  {isSendingImage && (
+                    <div className="flex justify-end">
+                      <div className="bg-brand-primary/50 rounded-2xl px-4 py-2 rounded-br-sm flex items-center gap-2 text-white text-sm">
+                        <Loader2 size={14} className="animate-spin" />
+                        Uploading image...
+                      </div>
+                    </div>
                   )}
 
                   {/* Typing indicator */}
@@ -495,19 +530,44 @@ const InboxPage = () => {
                 <ChatInput
                   value={newMessage}
                   onChange={setNewMessage}
-                  onSend={(message, attachments) => {
-                    if (selectedConversation) {
-                      sendWsMessage(selectedConversation.id, message);
-                      setNewMessage('');
-                      sendTyping(selectedConversation.id, false);
+                  onSend={async (message, attachments) => {
+                    if (!selectedConversation) return;
+
+                    let uploadedAttachments: { url: string; type?: string }[] | undefined;
+
+                    // Upload images to ImageKit if attachments exist
+                    if (attachments && attachments.length > 0) {
+                      setIsSendingImage(true);
+                      try {
+                        const uploads = await Promise.all(
+                          attachments.map((att) => uploadChatImage(att.file))
+                        );
+                        uploadedAttachments = uploads.map((u) => ({
+                          url: u.url,
+                          type: 'image',
+                        }));
+                      } catch (_err) {
+                        toast.error('Failed to upload image. Please try again.');
+                        setIsSendingImage(false);
+                        return;
+                      }
+                      setIsSendingImage(false);
                     }
+
+                    sendWsMessage(
+                      selectedConversation.id,
+                      message,
+                      uploadedAttachments
+                    );
+                    setNewMessage('');
+                    sendTyping(selectedConversation.id, false);
                   }}
                   onTyping={(typing) => {
                     if (selectedConversation) {
                       sendTyping(selectedConversation.id, typing);
                     }
                   }}
-                  disabled={!isConnected}
+                  disabled={!isConnected || isSendingImage}
                   isConnecting={!isConnected}
                 />
               </>

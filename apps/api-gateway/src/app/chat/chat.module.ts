@@ -4,10 +4,12 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { ImageKitModule } from '@tec-shop/shared/imagekit';
 import { ChatController } from './chat.controller';
 
 @Module({
   imports: [
+    ImageKitModule.forRoot(),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

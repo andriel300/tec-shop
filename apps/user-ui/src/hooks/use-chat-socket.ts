@@ -28,7 +28,7 @@ interface UseChatSocketReturn {
   connectionError: string | null;
   joinConversation: (conversationId: string) => void;
   leaveConversation: (conversationId: string) => void;
-  sendMessage: (conversationId: string, content: string) => void;
+  sendMessage: (conversationId: string, content: string, attachments?: { url: string; type?: string }[]) => void;
   sendTyping: (conversationId: string, isTyping: boolean) => void;
   markAsSeen: (conversationId: string) => void;
   reconnect: () => void;
@@ -252,9 +252,13 @@ export const useChatSocket = ({
   }, []);
 
   const sendMessage = useCallback(
-    (conversationId: string, content: string) => {
+    (conversationId: string, content: string, attachments?: { url: string; type?: string }[]) => {
       if (socketRef.current?.connected) {
-        socketRef.current.emit('send_message', { conversationId, content });
+        socketRef.current.emit('send_message', {
+          conversationId,
+          content,
+          ...(attachments && attachments.length > 0 && { attachments }),
+        });
       }
     },
     []
