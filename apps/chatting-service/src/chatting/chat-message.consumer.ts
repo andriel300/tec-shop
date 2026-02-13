@@ -50,7 +50,7 @@ export class ChatMessageConsumer implements OnModuleInit {
   }
 
   private async handleMessage(dto: ChatMessageEventDto) {
-    const { conversationId, senderId, content, senderType, createdAt } = dto;
+    const { conversationId, senderId, content, senderType, createdAt, attachments } = dto;
 
     // 1. Save message in DB
     const saved = await this.prisma.chatMessage.create({
@@ -60,7 +60,7 @@ export class ChatMessageConsumer implements OnModuleInit {
         senderType,
         content,
         createdAt: new Date(createdAt),
-        attachments: [], // Attachments not handled yet
+        attachments: (attachments ?? []) as unknown[],
       },
     });
 
@@ -76,8 +76,17 @@ export class ChatMessageConsumer implements OnModuleInit {
       50,
     );
 
-    // 3. Emit to WebSocket Gateway
-    this.chatGateway.emitMessage(dto);
+    // 3. Emit saved message (with DB id) to WebSocket clients
+    const broadcastPayload = {
+      id: saved.id,
+      conversationId: saved.conversationId,
+      senderId: saved.senderId,
+      senderType: saved.senderType,
+      content: saved.content ?? '',
+      attachments: (saved.attachments ?? []) as { url: string; type?: string }[],
+      createdAt: saved.createdAt.toISOString(),
+    };
+    this.chatGateway.emitBroadcast(broadcastPayload);
     this.logger.log(
       `Processed & broadcasted message in conversation ${conversationId}`,
     );

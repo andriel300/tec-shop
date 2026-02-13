@@ -82,10 +82,10 @@ export class ChatMessageEventDto {
   @IsEnum(SenderType)
   senderType!: SenderType;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  @Length(1, 5000)
-  content!: string;
+  @Length(0, 5000)
+  content?: string;
 
   @IsISO8601()
   createdAt!: string;

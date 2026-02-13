@@ -20,7 +20,7 @@ model ChatMessage {
   senderId      String   @db.ObjectId
   senderType    String
   content       String?
-  attachments   String[]
+  attachments   Json[]
   status        String   @default("sent")
   metadata      Json?
   createdAt     DateTime @default(now())
