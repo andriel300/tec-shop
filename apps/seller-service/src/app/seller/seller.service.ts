@@ -18,22 +18,28 @@ export class SellerService {
 
   constructor(
     private prisma: SellerPrismaService,
-    private readonly logProducer: LogProducerService,
+    private readonly logProducer: LogProducerService
   ) {}
 
   async createProfile(createProfileDto: CreateSellerProfileDto) {
     try {
-      this.logger.log(`Creating seller profile - authId: ${createProfileDto.authId}, email: ${createProfileDto.email}`);
+      this.logger.log(
+        `Creating seller profile - authId: ${createProfileDto.authId}, email: ${createProfileDto.email}`
+      );
       const { authId, name, email, phoneNumber, country } = createProfileDto;
 
       // Check if seller profile already exists
-      this.logger.debug(`Checking if seller profile already exists for authId: ${authId}`);
+      this.logger.debug(
+        `Checking if seller profile already exists for authId: ${authId}`
+      );
       const existingSeller = await this.prisma.seller.findUnique({
         where: { authId },
       });
 
       if (existingSeller) {
-        this.logger.log(`Seller profile already exists - sellerId: ${existingSeller.id}`);
+        this.logger.log(
+          `Seller profile already exists - sellerId: ${existingSeller.id}`
+        );
         return existingSeller;
       }
 
@@ -53,17 +59,26 @@ export class SellerService {
         },
       });
 
-      this.logger.log(`Seller profile created successfully - sellerId: ${seller.id}, email: ${email}`);
-      this.logProducer.info('seller-service', 'seller', 'Seller profile created', {
-        userId: authId,
-        sellerId: seller.id,
-        metadata: { action: 'create_profile' },
-      });
+      this.logger.log(
+        `Seller profile created successfully - sellerId: ${seller.id}, email: ${email}`
+      );
+      this.logProducer.info(
+        'seller-service',
+        'seller',
+        'Seller profile created',
+        {
+          userId: authId,
+          sellerId: seller.id,
+          metadata: { action: 'create_profile' },
+        }
+      );
 
       return seller;
     } catch (error) {
       this.logger.error(
-        `Failed to create seller profile: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to create seller profile: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
         error instanceof Error ? error.stack : undefined
       );
       throw error;
@@ -139,7 +154,11 @@ export class SellerService {
     this.logProducer.info('seller-service', 'seller', 'Shop created', {
       userId: authId,
       sellerId: seller.id,
-      metadata: { action: 'create_shop', shopId: newShop.id, businessName: shopData.businessName },
+      metadata: {
+        action: 'create_shop',
+        shopId: newShop.id,
+        businessName: shopData.businessName,
+      },
     });
 
     return newShop;
@@ -166,6 +185,18 @@ export class SellerService {
           address: shopData.address,
           openingHours: shopData.openingHours,
           website: shopData.website,
+          ...(shopData.isActive !== undefined && {
+            isActive: shopData.isActive,
+          }),
+          ...(shopData.socialLinks !== undefined && {
+            socialLinks: shopData.socialLinks,
+          }),
+          ...(shopData.returnPolicy !== undefined && {
+            returnPolicy: shopData.returnPolicy,
+          }),
+          ...(shopData.shippingPolicy !== undefined && {
+            shippingPolicy: shopData.shippingPolicy,
+          }),
         },
       });
       this.logProducer.info('seller-service', 'seller', 'Shop updated', {
@@ -191,13 +222,19 @@ export class SellerService {
           openingHours: shopData.openingHours || 'Please contact for hours',
           website: shopData.website,
           sellerId: seller.id,
-          socialLinks: [],
+          socialLinks: shopData.socialLinks || [],
+          returnPolicy: shopData.returnPolicy,
+          shippingPolicy: shopData.shippingPolicy,
         },
       });
       this.logProducer.info('seller-service', 'seller', 'Shop created', {
         userId: authId,
         sellerId: seller.id,
-        metadata: { action: 'create_shop', shopId: newShop.id, businessName: shopData.businessName },
+        metadata: {
+          action: 'create_shop',
+          shopId: newShop.id,
+          businessName: shopData.businessName,
+        },
       });
       return newShop;
     }
@@ -252,9 +289,54 @@ export class SellerService {
     };
   }
 
-  // ============================================
+  // Notification Preferences Methods
+
+  async updateNotificationPreferences(
+    authId: string,
+    preferences: Record<string, boolean>
+  ) {
+    const seller = await this.prisma.seller.findUnique({
+      where: { authId },
+    });
+
+    if (!seller) {
+      throw new NotFoundException('Seller profile not found');
+    }
+
+    const updatedSeller = await this.prisma.seller.update({
+      where: { authId },
+      data: {
+        notificationPreferences: preferences,
+      },
+    });
+
+    this.logProducer.info(
+      'seller-service',
+      'seller',
+      'Notification preferences updated',
+      {
+        userId: authId,
+        sellerId: seller.id,
+        metadata: { action: 'update_notification_preferences' },
+      }
+    );
+
+    return updatedSeller.notificationPreferences;
+  }
+
+  async getNotificationPreferences(authId: string) {
+    const seller = await this.prisma.seller.findUnique({
+      where: { authId },
+    });
+
+    if (!seller) {
+      throw new NotFoundException('Seller profile not found');
+    }
+
+    return seller.notificationPreferences ?? {};
+  }
+
   // Product Service Integration Methods
-  // ============================================
 
   /**
    * Verify that a shop exists by its ID
@@ -290,12 +372,11 @@ export class SellerService {
    * Verify that a seller owns a specific shop
    * Used by product-service for authorization checks
    */
-  async verifyShopOwnership(
-    authId: string,
-    shopId: string
-  ): Promise<boolean> {
+  async verifyShopOwnership(authId: string, shopId: string): Promise<boolean> {
     try {
-      this.logger.debug(`Verifying shop ownership - authId: ${authId}, shopId: ${shopId}`);
+      this.logger.debug(
+        `Verifying shop ownership - authId: ${authId}, shopId: ${shopId}`
+      );
 
       const shop = await this.prisma.shop.findUnique({
         where: { id: shopId },
@@ -306,27 +387,45 @@ export class SellerService {
 
       if (!shop) {
         this.logger.debug(`Shop not found: ${shopId}`);
-        this.logProducer.warn('seller-service', 'seller', 'Shop not found during ownership verification', {
-          userId: authId,
-          metadata: { action: 'verify_ownership', shopId },
-        });
+        this.logProducer.warn(
+          'seller-service',
+          'seller',
+          'Shop not found during ownership verification',
+          {
+            userId: authId,
+            metadata: { action: 'verify_ownership', shopId },
+          }
+        );
         return false;
       }
 
       const owns = shop.seller.authId === authId;
-      this.logger.debug(`Ownership verification result - authId: ${authId}, shop.seller.authId: ${shop.seller.authId}, owns: ${owns}`);
+      this.logger.debug(
+        `Ownership verification result - authId: ${authId}, shop.seller.authId: ${shop.seller.authId}, owns: ${owns}`
+      );
 
       if (!owns) {
-        this.logProducer.warn('seller-service', 'seller', 'Shop ownership verification failed', {
-          userId: authId,
-          metadata: { action: 'verify_ownership', shopId, actualOwner: shop.seller.authId },
-        });
+        this.logProducer.warn(
+          'seller-service',
+          'seller',
+          'Shop ownership verification failed',
+          {
+            userId: authId,
+            metadata: {
+              action: 'verify_ownership',
+              shopId,
+              actualOwner: shop.seller.authId,
+            },
+          }
+        );
       }
 
       return owns;
     } catch (error) {
       this.logger.error(
-        `Failed to verify shop ownership: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to verify shop ownership: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
         error instanceof Error ? error.stack : undefined
       );
       return false;
@@ -346,7 +445,9 @@ export class SellerService {
     offset?: number;
   }) {
     try {
-      this.logger.debug(`Fetching filtered shops with filters: ${JSON.stringify(filters)}`);
+      this.logger.debug(
+        `Fetching filtered shops with filters: ${JSON.stringify(filters)}`
+      );
 
       // Build where clause for shop filtering
       const where: Record<string, unknown> = {
@@ -417,7 +518,9 @@ export class SellerService {
         this.prisma.shop.count({ where }),
       ]);
 
-      this.logger.log(`Found ${shops.length} shops out of ${total} total matching filters`);
+      this.logger.log(
+        `Found ${shops.length} shops out of ${total} total matching filters`
+      );
 
       return {
         shops,
@@ -427,7 +530,9 @@ export class SellerService {
       };
     } catch (error) {
       this.logger.error(
-        `Failed to fetch filtered shops: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to fetch filtered shops: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
         error instanceof Error ? error.stack : undefined
       );
       throw error;
@@ -512,7 +617,9 @@ export class SellerService {
       };
     } catch (error) {
       this.logger.error(
-        `Failed to get seller statistics: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Failed to get seller statistics: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
         error instanceof Error ? error.stack : undefined
       );
       throw error;

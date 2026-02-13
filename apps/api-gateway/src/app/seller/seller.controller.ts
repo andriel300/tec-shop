@@ -41,7 +41,13 @@ import { ImageKitService } from '@tec-shop/shared/imagekit';
 // File validation configuration
 const FILE_SIZE_LIMIT = 5 * 1024 * 1024; // 5MB
 const MAX_FILES = 4;
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+];
 
 @ApiTags('Seller')
 @Controller('seller')
@@ -188,7 +194,8 @@ export class SellerController {
   @Roles('SELLER')
   @ApiOperation({
     summary: 'Get seller statistics for dashboard',
-    description: 'Retrieves comprehensive statistics for the authenticated seller including revenue, orders, products, and shop metrics.',
+    description:
+      'Retrieves comprehensive statistics for the authenticated seller including revenue, orders, products, and shop metrics.',
   })
   @ApiResponse({
     status: 200,
@@ -203,16 +210,57 @@ export class SellerController {
     description: 'Forbidden - User is not a seller',
   })
   async getStatistics(@Req() request: { user: { userId: string } }) {
-    this.logger.log(`Fetching statistics for seller authId: ${request.user.userId}`);
+    this.logger.log(
+      `Fetching statistics for seller authId: ${request.user.userId}`
+    );
 
     return firstValueFrom(
       this.sellerService.send('seller-get-statistics', request.user.userId)
     );
   }
 
-  // ============================================
+  // NOTIFICATION PREFERENCES ENDPOINTS
+
+  @Get('notification-preferences')
+  @UseGuards(RolesGuard)
+  @Roles('SELLER')
+  @ApiOperation({ summary: 'Get seller notification preferences' })
+  @ApiResponse({
+    status: 200,
+    description: 'Notification preferences retrieved successfully.',
+  })
+  async getNotificationPreferences(
+    @Req() request: { user: { userId: string } }
+  ) {
+    return firstValueFrom(
+      this.sellerService.send(
+        'get-seller-notification-preferences',
+        request.user.userId
+      )
+    );
+  }
+
+  @Put('notification-preferences')
+  @UseGuards(RolesGuard)
+  @Roles('SELLER')
+  @ApiOperation({ summary: 'Update seller notification preferences' })
+  @ApiResponse({
+    status: 200,
+    description: 'Notification preferences updated successfully.',
+  })
+  async updateNotificationPreferences(
+    @Req() request: { user: { userId: string } },
+    @Body() preferences: Record<string, boolean>
+  ) {
+    return firstValueFrom(
+      this.sellerService.send('update-seller-notification-preferences', {
+        authId: request.user.userId,
+        preferences,
+      })
+    );
+  }
+
   // IMAGE UPLOAD ENDPOINT
-  // ============================================
 
   @Post('upload-image')
   @ApiOperation({ summary: 'Upload a single image to ImageKit (seller only)' })
@@ -261,9 +309,7 @@ export class SellerController {
 
     // Validate file size
     if (file.size > FILE_SIZE_LIMIT) {
-      throw new BadRequestException(
-        `File too large. Maximum size is 5MB`
-      );
+      throw new BadRequestException(`File too large. Maximum size is 5MB`);
     }
 
     // Upload to ImageKit
@@ -283,9 +329,7 @@ export class SellerController {
     };
   }
 
-  // ============================================
   // PRODUCT MANAGEMENT ENDPOINTS
-  // ============================================
 
   @Post('products')
   @ApiOperation({ summary: 'Create a new product with images (seller only)' })
@@ -406,7 +450,10 @@ export class SellerController {
   @ApiOperation({ summary: 'Get deleted products (trash) for seller shop' })
   @UseGuards(RolesGuard)
   @Roles('SELLER')
-  @ApiResponse({ status: 200, description: 'Deleted products retrieved successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Deleted products retrieved successfully.',
+  })
   @ApiResponse({
     status: 403,
     description: 'Forbidden - Seller access required.',
@@ -475,7 +522,8 @@ export class SellerController {
   @Put('products/:id')
   @ApiOperation({
     summary: 'Update a product (seller only)',
-    description: 'Updates product with JSON payload. Since eager upload is used, all images are already ImageKit URLs.',
+    description:
+      'Updates product with JSON payload. Since eager upload is used, all images are already ImageKit URLs.',
   })
   @UseGuards(RolesGuard)
   @Roles('SELLER')
@@ -568,7 +616,8 @@ export class PublicShopsController {
   @Get()
   @ApiOperation({
     summary: 'Get filtered shops (public)',
-    description: 'Retrieves shops with filtering by category, country, rating, etc.',
+    description:
+      'Retrieves shops with filtering by category, country, rating, etc.',
   })
   @ApiQuery({
     name: 'search',
@@ -651,7 +700,8 @@ export class PublicShopsController {
   @Get(':shopId')
   @ApiOperation({
     summary: 'Get shop details by ID (public)',
-    description: 'Retrieves shop information for displaying on product pages and shop storefronts.',
+    description:
+      'Retrieves shop information for displaying on product pages and shop storefronts.',
   })
   @ApiResponse({
     status: 200,
@@ -682,16 +732,15 @@ export class PublicShopsController {
     );
   }
 
-  // ============================================
   // SHOP FOLLOW ENDPOINTS
-  // ============================================
 
   @Post(':shopId/follow')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Follow a shop',
-    description: 'Allows authenticated users to follow a shop to receive updates.',
+    description:
+      'Allows authenticated users to follow a shop to receive updates.',
   })
   @ApiResponse({
     status: 201,

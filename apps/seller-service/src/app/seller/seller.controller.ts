@@ -91,9 +91,7 @@ export class SellerController {
     return this.sellerService.getDashboardData(authId);
   }
 
-  // ============================================
   // Product Service Integration Endpoints
-  // ============================================
 
   /**
    * Verify that a shop exists by its ID
@@ -149,5 +147,22 @@ export class SellerController {
   @MessagePattern('seller-get-statistics')
   async getStatistics(@Payload() authId: string) {
     return this.sellerService.getStatistics(authId);
+  }
+
+  // Notification Preferences
+
+  @MessagePattern('update-seller-notification-preferences')
+  async updateNotificationPreferences(
+    @Payload() payload: { authId: string; preferences: Record<string, boolean> }
+  ) {
+    return this.sellerService.updateNotificationPreferences(
+      payload.authId,
+      payload.preferences
+    );
+  }
+
+  @MessagePattern('get-seller-notification-preferences')
+  async getNotificationPreferences(@Payload() authId: string) {
+    return this.sellerService.getNotificationPreferences(authId);
   }
 }
