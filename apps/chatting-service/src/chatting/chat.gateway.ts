@@ -159,6 +159,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   /**
+   * Emit a saved message (with DB id and resolved attachments) to conversation room
+   */
+  emitBroadcast(message: {
+    id: string;
+    conversationId: string;
+    senderId: string;
+    senderType: string;
+    content: string;
+    attachments: { url: string; type?: string }[];
+    createdAt: string;
+  }) {
+    this.server.to(message.conversationId).emit('chat_message', message);
+  }
+
+  /**
    * Join a conversation room to receive messages
    */
   @SubscribeMessage('join_conversation')
@@ -224,8 +239,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const { conversationId, content, attachments } = data;
 
-    if (!conversationId || !content) {
-      throw new WsException('conversationId and content are required');
+    const hasContent = content && content.trim().length > 0;
+    const hasAttachments = attachments && attachments.length > 0;
+
+    if (!conversationId || (!hasContent && !hasAttachments)) {
+      throw new WsException('conversationId and content or attachments are required');
     }
 
     try {
@@ -234,7 +252,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         conversationId,
         senderId: userInfo.userId, // From JWT, not from client
         senderType: userInfo.userType as 'user' | 'seller',
-        content,
+        content: content || '',
         createdAt: now,
         attachments: attachments?.map((a) => ({ url: a.url, type: a.type })),
       };

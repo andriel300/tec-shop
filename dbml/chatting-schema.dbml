@@ -8,7 +8,7 @@ Table ChatMessage {
   senderId String [not null]
   senderType String [not null]
   content String
-  attachments String[] [not null]
+  attachments Json[] [not null]
   status String [not null, default: 'sent']
   metadata Json
   createdAt DateTime [default: `now()`, not null]
