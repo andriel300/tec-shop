@@ -1,7 +1,7 @@
 'use client';
 import { AlignLeft, ChevronDown, ChevronRight, HeartIcon } from 'lucide-react';
 import Link from 'next/link';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { navItems } from '../../configs/constants';
@@ -20,6 +20,7 @@ const HeaderBottom = () => {
   const [mounted, setMounted] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   // zustand hooks
   const wishlist = useStore((state) => state.wishlist);
@@ -61,6 +62,24 @@ const HeaderBottom = () => {
     router.push('/login');
   };
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setShow(false);
+        setHoveredCategory(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   return (
     <div
       className={`w-full transition-all duration-300 ${
@@ -76,103 +95,121 @@ const HeaderBottom = () => {
       >
         {/* Dropdowns */}
         <div
-          className={`w-[260px] ${
-            isSticky && '-mb-2'
-          } cursor-pointer flex items-center justify-between px-5 h-[50px] bg-brand-primary`}
+          ref={dropdownRef}
+          className={`w-[260px] ${isSticky && '-mb-2'} cursor-pointer relative`}
           onClick={() => setShow(!show)}
         >
-          <div className="flex items-center gap-2">
-            <AlignLeft color="white" />
-            <span className="text-white font-medium font-heading">
-              All Departments
-            </span>
-          </div>
-          <ChevronDown color="white" />
-          {/* Dropdown Menu */}
-          {show && (
-            <div
-              className={`absolute left-0 ${
-                isSticky ? 'top-[70px]' : 'top-[50px]'
-              } w-[260px] max-h-[500px] bg-ui-surface shadow-elev-lg z-50 overflow-y-auto border border-ui-divider`}
-            >
-              {categoriesLoading ? (
-                <div className="p-4 text-center text-text-secondary">
-                  Loading categories...
-                </div>
-              ) : categories && categories.length > 0 ? (
-                <div className="py-2">
-                  {categories.map((category) => (
-                    <div
-                      key={category.id}
-                      className="relative group"
-                      onMouseEnter={() => setHoveredCategory(category.id)}
-                      onMouseLeave={() => setHoveredCategory(null)}
-                    >
-                      <Link
-                        href={`/products?categoryId=${category.id}`}
-                        className="flex items-center justify-between px-4 py-3 hover:bg-ui-muted transition-colors"
-                        onClick={() => setShow(false)}
-                      >
-                        <span className="font-heading font-medium text-sm text-text-primary">
-                          {category.name}
-                        </span>
-                        {category.children && category.children.length > 0 && (
-                          <ChevronRight
-                            size={16}
-                            className="text-text-secondary"
-                          />
-                        )}
-                      </Link>
-
-                      {/* Subcategories Dropdown */}
-                      {category.children &&
-                        category.children.length > 0 &&
-                        hoveredCategory === category.id && (
-                          <div className="absolute left-full top-0 w-[260px] max-h-[500px] bg-ui-surface shadow-elev-lg border border-ui-divider overflow-y-auto ml-1">
-                            <div className="py-2">
-                              {category.children.map((subcategory) => (
-                                <Link
-                                  key={subcategory.id}
-                                  href={`/products?categoryId=${subcategory.id}`}
-                                  className="block px-4 py-3 hover:bg-ui-muted transition-colors"
-                                  onClick={() => setShow(false)}
-                                >
-                                  <span className="font-heading text-sm text-text-primary">
-                                    {subcategory.name}
-                                  </span>
-                                  {subcategory.description && (
-                                    <p className="text-xs text-text-secondary mt-1 line-clamp-1">
-                                      {subcategory.description}
-                                    </p>
-                                  )}
-                                </Link>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-4 text-center text-text-secondary">
-                  No categories available
-                </div>
-              )}
-
-              {/* View All Categories Link */}
-              {categories && categories.length > 0 && (
-                <div className="border-t border-ui-divider p-3">
-                  <Link
-                    href="/categories"
-                    onClick={() => setShow(false)}
-                    className="block text-center text-brand-primary font-medium hover:underline text-sm"
-                  >
-                    View All Categories
-                  </Link>
-                </div>
-              )}
+          <div
+            className="flex items-center justify-between px-5 h-[50px] bg-brand-primary"
+            onClick={() => setShow(!show)}
+          >
+            <div className="flex items-center gap-2">
+              <AlignLeft color="white" />
+              <span className="text-white font-medium font-heading">
+                All Departments
+              </span>
             </div>
-          )}
+            <ChevronDown color="white" />
+            {/* Dropdown Menu */}
+            {show && (
+              <div
+                className={`absolute left-0 ${
+                  isSticky ? 'top-[70px]' : 'top-[50px]'
+                } flex z-50`}
+                onMouseLeave={() => setHoveredCategory(null)}
+              >
+                {/* Main categories column */}
+                <div className="w-[260px] max-h-[500px] bg-ui-surface shadow-elev-lg border border-ui-divider flex flex-col">
+                  <div className="overflow-y-auto flex-1">
+                    {categoriesLoading ? (
+                      <div className="p-4 text-center text-text-secondary">
+                        Loading categories...
+                      </div>
+                    ) : categories && categories.length > 0 ? (
+                      <div className="py-2">
+                        {categories.map((category) => (
+                          <div
+                            key={category.id}
+                            onMouseEnter={() => setHoveredCategory(category.id)}
+                          >
+                            <Link
+                              href={`/products?categoryId=${category.id}`}
+                              className={`flex items-center justify-between px-4 py-3 transition-colors ${
+                                hoveredCategory === category.id
+                                  ? 'bg-ui-muted'
+                                  : 'hover:bg-ui-muted'
+                              }`}
+                              onClick={() => setShow(false)}
+                            >
+                              <span className="font-heading font-medium text-sm text-text-primary">
+                                {category.name}
+                              </span>
+                              {category.children &&
+                                category.children.length > 0 && (
+                                  <ChevronRight
+                                    size={16}
+                                    className="text-text-secondary"
+                                  />
+                                )}
+                            </Link>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-4 text-center text-text-secondary">
+                        No categories available
+                      </div>
+                    )}
+                  </div>
+
+                  {/* View All Categories Link */}
+                  {categories && categories.length > 0 && (
+                    <div className="border-t border-ui-divider p-3 flex-shrink-0">
+                      <Link
+                        href="/categories"
+                        onClick={() => setShow(false)}
+                        className="block text-center text-brand-primary font-medium hover:underline text-sm"
+                      >
+                        View All Categories
+                      </Link>
+                    </div>
+                  )}
+                </div>
+
+                {/* Subcategories panel - outside the scroll container to avoid clipping */}
+                {hoveredCategory &&
+                  categories?.find((c) => c.id === hoveredCategory)?.children
+                    ?.length && (
+                    <div
+                      className="w-[260px] max-h-[500px] bg-ui-surface shadow-elev-lg border border-ui-divider overflow-y-auto ml-px"
+                      onMouseEnter={() => setHoveredCategory(hoveredCategory)}
+                    >
+                      <div className="py-2">
+                        {categories
+                          ?.find((c) => c.id === hoveredCategory)
+                          ?.children?.map((subcategory) => (
+                            <Link
+                              key={subcategory.id}
+                              href={`/products?categoryId=${subcategory.id}`}
+                              className="block px-4 py-3 hover:bg-ui-muted transition-colors"
+                              onClick={() => setShow(false)}
+                            >
+                              <span className="font-heading text-sm text-text-primary">
+                                {subcategory.name}
+                              </span>
+                              {subcategory.description && (
+                                <p className="text-xs text-text-secondary mt-1 line-clamp-1">
+                                  {subcategory.description}
+                                </p>
+                              )}
+                            </Link>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+              </div>
+            )}
+          </div>
         </div>
         {/* Navigation Links */}
 
