@@ -1,7 +1,7 @@
 {
   "product.new_rating": {
-    "title": "New Product Review",
-    "message": "{{productName}} received a {{rating}}-star review.",
+    "title": "New Review on {{productName}}",
+    "message": "{{reviewerName}} left a {{rating}}-star review on {{productName}}.",
     "type": "PRODUCT"
   },
   "product.low_stock": {

@@ -1,235 +1,263 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
-  useNotifications,
-  useMarkNotificationAsRead,
-  useMarkAllNotificationsAsRead,
-  useDeleteNotification,
-} from '../../../../hooks/useNotifications';
-import type { NotificationResponse } from '../../../../lib/api/notifications';
+  Bell,
+  Check,
+  CheckCheck,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+} from 'lucide-react';
+import {
+  useNotificationsV2,
+  useMarkAsReadV2,
+  useMarkAllAsReadV2,
+  useDeleteNotificationV2,
+} from '../../../../hooks/use-notifications-v2';
+import type {
+  NotificationType,
+  NotificationEntry,
+} from '../../../../lib/api/notifications-v2';
+
+const USER_UI_URL =
+  process.env.NEXT_PUBLIC_USER_UI_URL || 'http://localhost:3000';
+
+function getNotificationLink(notification: NotificationEntry): string | null {
+  const metadata = notification.metadata;
+  if (!metadata) return null;
+
+  const productSlug = metadata.productSlug as string | undefined;
+  if (productSlug) {
+    return `${USER_UI_URL}/product/${productSlug}`;
+  }
+
+  return null;
+}
+
+const NOTIFICATION_TYPES: NotificationType[] = [
+  'INFO',
+  'SUCCESS',
+  'WARNING',
+  'ERROR',
+  'ORDER',
+  'PRODUCT',
+  'SHOP',
+  'SYSTEM',
+  'AUTH',
+  'DELIVERY',
+];
+
+const typeColors: Record<string, string> = {
+  INFO: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  SUCCESS: 'bg-green-500/20 text-green-400 border-green-500/30',
+  WARNING: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  ERROR: 'bg-red-500/20 text-red-400 border-red-500/30',
+  ORDER: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+  PRODUCT: 'bg-pink-500/20 text-pink-400 border-pink-500/30',
+  SHOP: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+  SYSTEM: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+  AUTH: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+  DELIVERY: 'bg-teal-500/20 text-teal-400 border-teal-500/30',
+};
+
+function timeAgo(dateStr: string): string {
+  const now = Date.now();
+  const diff = now - new Date(dateStr).getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return 'Just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+const ITEMS_PER_PAGE = 20;
 
 const NotificationsPage = () => {
-  const [filterType, setFilterType] = useState<string | undefined>(undefined);
-  const [filterRead, setFilterRead] = useState<boolean | undefined>(undefined);
+  const [page, setPage] = useState(1);
+  const [filterType, setFilterType] = useState<NotificationType | ''>('');
+  const [filterRead, setFilterRead] = useState<string>('');
 
-  const { data, isLoading, error } = useNotifications({
-    type: filterType,
-    isRead: filterRead,
-    limit: 50,
+  const { data, isLoading } = useNotificationsV2({
+    page,
+    limit: ITEMS_PER_PAGE,
+    type: filterType || undefined,
+    isRead: filterRead || undefined,
   });
 
-  const markAsReadMutation = useMarkNotificationAsRead();
-  const markAllAsReadMutation = useMarkAllNotificationsAsRead();
-  const deleteNotificationMutation = useDeleteNotification();
+  const markAsRead = useMarkAsReadV2();
+  const markAllRead = useMarkAllAsReadV2();
+  const deleteNotification = useDeleteNotificationV2();
 
-  const handleMarkAsRead = async (notificationId: string) => {
-    try {
-      await markAsReadMutation.mutateAsync(notificationId);
-    } catch (err) {
-      console.error('Failed to mark notification as read:', err);
-    }
-  };
-
-  const handleMarkAllAsRead = async () => {
-    try {
-      await markAllAsReadMutation.mutateAsync();
-    } catch (err) {
-      console.error('Failed to mark all notifications as read:', err);
-    }
-  };
-
-  const handleDelete = async (notificationId: string) => {
-    if (window.confirm('Are you sure you want to delete this notification?')) {
-      try {
-        await deleteNotificationMutation.mutateAsync(notificationId);
-      } catch (err) {
-        console.error('Failed to delete notification:', err);
-      }
-    }
-  };
-
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'SUCCESS':
-        return <span className="text-2xl">&#10003;</span>;
-      case 'ERROR':
-        return <span className="text-2xl">&#10005;</span>;
-      case 'WARNING':
-        return <span className="text-2xl">&#9888;</span>;
-      case 'ORDER':
-        return <span className="text-2xl">&#128230;</span>;
-      case 'PRODUCT':
-        return <span className="text-2xl">&#128230;</span>;
-      case 'SHOP':
-        return <span className="text-2xl">&#127970;</span>;
-      case 'SYSTEM':
-        return <span className="text-2xl">&#9881;</span>;
-      default:
-        return <span className="text-2xl">&#9432;</span>;
-    }
-  };
-
-  const getNotificationColor = (type: string) => {
-    switch (type) {
-      case 'SUCCESS':
-        return 'bg-green-500/20 border-green-500/50';
-      case 'ERROR':
-        return 'bg-red-500/20 border-red-500/50';
-      case 'WARNING':
-        return 'bg-yellow-500/20 border-yellow-500/50';
-      case 'ORDER':
-        return 'bg-blue-500/20 border-blue-500/50';
-      case 'PRODUCT':
-        return 'bg-purple-500/20 border-purple-500/50';
-      case 'SHOP':
-        return 'bg-cyan-500/20 border-cyan-500/50';
-      case 'SYSTEM':
-        return 'bg-gray-500/20 border-gray-500/50';
-      default:
-        return 'bg-slate-500/20 border-slate-500/50';
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="p-8">
-        <div className="text-white text-center py-8">Loading notifications...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-8">
-        <div className="text-red-400 text-center py-8">
-          Error loading notifications: {error.message}
-        </div>
-      </div>
-    );
-  }
+  const totalPages = data ? Math.ceil(data.total / ITEMS_PER_PAGE) : 0;
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Notifications</h1>
-          <p className="text-slate-400 text-sm mt-1">
-            {data?.unreadCount || 0} unread notification{data?.unreadCount !== 1 ? 's' : ''}
-          </p>
-        </div>
-        <button
-          onClick={handleMarkAllAsRead}
-          disabled={!data?.unreadCount || markAllAsReadMutation.isPending}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-        >
-          {markAllAsReadMutation.isPending ? 'Marking...' : 'Mark All as Read'}
-        </button>
+    <div className="w-full min-h-screen p-8">
+      <div className="mb-6">
+        <h2 className="text-2xl text-white font-semibold mb-1">
+          Notifications
+        </h2>
+        <p className="text-slate-400 text-sm">
+          Stay updated with orders, reviews, and shop activity
+        </p>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-4 mb-6">
+      <div className="flex flex-col lg:flex-row gap-4 mb-6">
         <select
-          value={filterType || ''}
-          onChange={(e) => setFilterType(e.target.value || undefined)}
-          className="px-4 py-2 bg-slate-800 border border-slate-700 text-white rounded-lg"
+          className="bg-slate-800 text-white p-3 rounded-lg border border-slate-700 outline-none"
+          value={filterType}
+          onChange={(e) => {
+            setFilterType(e.target.value as NotificationType | '');
+            setPage(1);
+          }}
         >
           <option value="">All Types</option>
-          <option value="INFO">Info</option>
-          <option value="SUCCESS">Success</option>
-          <option value="WARNING">Warning</option>
-          <option value="ERROR">Error</option>
-          <option value="ORDER">Order</option>
-          <option value="PRODUCT">Product</option>
-          <option value="SHOP">Shop</option>
-          <option value="SYSTEM">System</option>
+          {NOTIFICATION_TYPES.map((type) => (
+            <option key={type} value={type}>
+              {type}
+            </option>
+          ))}
         </select>
 
         <select
-          value={filterRead === undefined ? '' : filterRead ? 'read' : 'unread'}
+          className="bg-slate-800 text-white p-3 rounded-lg border border-slate-700 outline-none"
+          value={filterRead}
           onChange={(e) => {
-            const value = e.target.value;
-            setFilterRead(value === '' ? undefined : value === 'read');
+            setFilterRead(e.target.value);
+            setPage(1);
           }}
-          className="px-4 py-2 bg-slate-800 border border-slate-700 text-white rounded-lg"
         >
-          <option value="">All Notifications</option>
-          <option value="unread">Unread Only</option>
-          <option value="read">Read Only</option>
+          <option value="">All</option>
+          <option value="false">Unread</option>
+          <option value="true">Read</option>
         </select>
+
+        {data && data.unreadCount > 0 && (
+          <button
+            onClick={() => markAllRead.mutate()}
+            disabled={markAllRead.isPending}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg transition-colors flex items-center gap-2"
+          >
+            <CheckCheck size={16} />
+            Mark all as read ({data.unreadCount})
+          </button>
+        )}
       </div>
 
-      {/* Notifications List */}
-      <div className="space-y-4">
-        {data?.data?.length === 0 ? (
-          <div className="bg-slate-800/50 rounded-lg p-8 border border-slate-700 text-center">
-            <p className="text-slate-400">No notifications found</p>
+      <div className="bg-slate-900 rounded-lg border border-slate-700 overflow-hidden">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+          </div>
+        ) : !data?.notifications?.length ? (
+          <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+            <Bell size={48} className="mb-4 opacity-50" />
+            <p className="text-lg font-medium">No notifications</p>
+            <p className="text-sm mt-1">
+              {filterType || filterRead
+                ? 'Try adjusting your filters'
+                : 'You will see notifications here when events occur'}
+            </p>
           </div>
         ) : (
-          data?.data?.map((notification: NotificationResponse) => (
-            <div
-              key={notification.id}
-              className={`rounded-lg p-6 border ${
-                notification.isRead ? 'bg-slate-800/30 border-slate-700' : `${getNotificationColor(notification.type)}`
-              } transition`}
-            >
-              <div className="flex items-start gap-4">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                  notification.isRead ? 'bg-slate-700' : 'bg-slate-600'
-                }`}>
-                  {getNotificationIcon(notification.type)}
+          <div className="divide-y divide-slate-800">
+            {data.notifications.map((notification) => (
+              <div
+                key={notification.id}
+                className={`px-6 py-4 hover:bg-slate-800/50 transition-colors flex items-start gap-4 ${
+                  !notification.isRead ? 'bg-slate-800/20' : ''
+                }`}
+              >
+                <div className="flex-shrink-0 mt-1">
+                  <span
+                    className={`inline-flex px-2 py-1 rounded text-xs font-medium border ${
+                      typeColors[notification.type] || typeColors.INFO
+                    }`}
+                  >
+                    {notification.type}
+                  </span>
                 </div>
 
-                <div className="flex-1">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="text-white font-semibold text-lg">
-                        {notification.title}
-                        {!notification.isRead && (
-                          <span className="ml-2 inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
-                        )}
-                      </h3>
-                      <p className="text-slate-400 text-sm">
-                        {new Date(notification.createdAt).toLocaleString()}
-                      </p>
-                    </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      notification.type === 'SUCCESS' ? 'bg-green-500/20 text-green-400' :
-                      notification.type === 'ERROR' ? 'bg-red-500/20 text-red-400' :
-                      notification.type === 'WARNING' ? 'bg-yellow-500/20 text-yellow-400' :
-                      notification.type === 'ORDER' ? 'bg-blue-500/20 text-blue-400' :
-                      notification.type === 'PRODUCT' ? 'bg-purple-500/20 text-purple-400' :
-                      notification.type === 'SHOP' ? 'bg-cyan-500/20 text-cyan-400' :
-                      'bg-slate-500/20 text-slate-400'
-                    }`}>
-                      {notification.type}
-                    </span>
-                  </div>
-
-                  <p className="text-slate-300 mb-4">{notification.message}</p>
-
-                  <div className="flex gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-white font-medium text-sm">
+                      {notification.title}
+                    </p>
                     {!notification.isRead && (
-                      <button
-                        onClick={() => handleMarkAsRead(notification.id)}
-                        disabled={markAsReadMutation.isPending}
-                        className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50 transition"
-                      >
-                        Mark as Read
-                      </button>
+                      <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
                     )}
-                    <button
-                      onClick={() => handleDelete(notification.id)}
-                      disabled={deleteNotificationMutation.isPending}
-                      className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50 transition"
-                    >
-                      Delete
-                    </button>
                   </div>
+                  <p className="text-slate-400 text-sm mt-1">
+                    {notification.message}
+                  </p>
+                  <div className="flex items-center gap-3 mt-2">
+                    <p className="text-slate-500 text-xs">
+                      {timeAgo(notification.createdAt)}
+                    </p>
+                    {getNotificationLink(notification) && (
+                      <a
+                        href={getNotificationLink(notification) as string}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
+                      >
+                        View Product
+                        <ExternalLink size={12} />
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {!notification.isRead && (
+                    <button
+                      onClick={() => markAsRead.mutate(notification.id)}
+                      className="p-2 text-slate-500 hover:text-blue-400 transition-colors rounded-lg hover:bg-slate-700"
+                      title="Mark as read"
+                    >
+                      <Check size={16} />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => deleteNotification.mutate(notification.id)}
+                    className="p-2 text-slate-500 hover:text-red-400 transition-colors rounded-lg hover:bg-slate-700"
+                    title="Delete"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               </div>
+            ))}
+          </div>
+        )}
+
+        {totalPages > 1 && (
+          <div className="bg-slate-800 px-6 py-4 flex items-center justify-between border-t border-slate-700">
+            <span className="text-sm text-slate-400">
+              Page {page} of {totalPages} ({data?.total} total)
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="px-3 py-2 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-600 text-white rounded-lg transition-colors flex items-center gap-1"
+              >
+                <ChevronLeft size={16} />
+                Previous
+              </button>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="px-3 py-2 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-600 text-white rounded-lg transition-colors flex items-center gap-1"
+              >
+                Next
+                <ChevronRight size={16} />
+              </button>
             </div>
-          ))
+          </div>
         )}
       </div>
     </div>
