@@ -12,6 +12,8 @@ import {
   Max,
   IsEnum,
   IsObject,
+  IsArray,
+  ValidateNested,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 
@@ -38,6 +40,17 @@ export class CreateSellerProfileDto {
   @IsString()
   @IsNotEmpty()
   country!: string;
+}
+
+export class SocialLinkDto {
+  @IsString()
+  @IsNotEmpty()
+  platform!: string;
+
+  @IsString()
+  @IsUrl()
+  @MaxLength(500)
+  url!: string;
 }
 
 export class CreateShopDto {
@@ -69,6 +82,22 @@ export class CreateShopDto {
   @IsUrl()
   @MaxLength(255)
   website?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SocialLinkDto)
+  socialLinks?: SocialLinkDto[];
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(5000)
+  returnPolicy?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(5000)
+  shippingPolicy?: string;
 }
 
 export class UpdateShopDto {
@@ -100,6 +129,72 @@ export class UpdateShopDto {
   @IsUrl()
   @MaxLength(255)
   website?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SocialLinkDto)
+  socialLinks?: SocialLinkDto[];
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(5000)
+  returnPolicy?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(5000)
+  shippingPolicy?: string;
+}
+
+// ============================================
+// Notification Preferences DTO
+// ============================================
+
+export class UpdateNotificationPreferencesDto {
+  @IsOptional()
+  @IsBoolean()
+  ORDER?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  PRODUCT?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  SHOP?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  DELIVERY?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  AUTH?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  SYSTEM?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  INFO?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  SUCCESS?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  WARNING?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  ERROR?: boolean;
 }
 
 // ============================================
@@ -226,6 +321,9 @@ export interface ShopResponse {
   address: string;
   openingHours: string;
   website?: string;
+  socialLinks?: { platform: string; url: string }[];
+  returnPolicy?: string;
+  shippingPolicy?: string;
   rating: number;
   totalOrders: number;
   isActive: boolean;
