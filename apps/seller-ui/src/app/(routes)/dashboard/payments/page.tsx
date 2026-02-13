@@ -251,7 +251,6 @@ const PaymentsPage = () => {
         ),
         cell: ({ row }: { row: { original: (typeof payments)[0] } }) => (
           <div className="flex items-center gap-2 text-green-400 font-semibold">
-            <DollarSign size={16} />
             <span>${(row.original.earnings / 100).toFixed(2)}</span>
           </div>
         ),
@@ -371,7 +370,7 @@ const PaymentsPage = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-gradient-to-br from-green-900/40 to-green-800/20 rounded-lg p-6 border border-green-700/50">
+        <div className="bg-gradient-to-br from-gray-600/40 to-gray-500/20 rounded-lg p-6 border border-gray-700/50">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm mb-1">Total Earnings</p>
@@ -385,7 +384,7 @@ const PaymentsPage = () => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 rounded-lg p-6 border border-blue-700/50">
+        <div className="bg-gradient-to-br from-gray-600/40 to-gray-500/20 rounded-lg p-6 border border-gray-700/50">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm mb-1">Completed Payouts</p>
@@ -399,7 +398,7 @@ const PaymentsPage = () => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-yellow-900/40 to-yellow-800/20 rounded-lg p-6 border border-yellow-700/50">
+        <div className="bg-gradient-to-br from-gray-600/40 to-gray-500/20 rounded-lg p-6 border border-gray-700/50">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm mb-1">Pending Payouts</p>
@@ -413,7 +412,7 @@ const PaymentsPage = () => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-900/40 to-purple-800/20 rounded-lg p-6 border border-purple-700/50">
+        <div className="bg-gradient-to-br from-gray-600/40 to-gray-500/20 rounded-lg p-6 border border-gray-700/50">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-400 text-sm mb-1">Total Transactions</p>
@@ -529,7 +528,7 @@ const PaymentsPage = () => {
               <div className="bg-gray-800 px-6 py-4 flex items-center justify-between border-t border-gray-700">
                 <div className="flex items-center gap-2 text-sm text-gray-400">
                   <span>
-                    Showing{' '}
+                    Showing{''}
                     <span className="font-medium text-white">
                       {table.getState().pagination.pageIndex *
                         table.getState().pagination.pageSize +

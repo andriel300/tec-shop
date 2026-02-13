@@ -52,10 +52,14 @@ const DashboardPage = () => {
       {/* Statistics Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg p-6 shadow-xl">
+          <div className="bg-gradient-to-br from-gray-600/40 to-gray-500/20 rounded-lg p-6 border border-gray-700/50">
             <div className="text-blue-100 text-sm mb-2">Total Revenue</div>
             <div className="text-white text-3xl font-semibold mb-2">
-              ${(stats.revenue.total / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              $
+              {(stats.revenue.total / 100).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </div>
             <div className="text-blue-200 text-xs">
               {stats.revenue.growth > 0 ? '+' : ''}
@@ -63,7 +67,7 @@ const DashboardPage = () => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-green-600 to-green-800 rounded-lg p-6 shadow-xl">
+          <div className="bg-gradient-to-br from-gray-600/40 to-gray-500/20 rounded-lg p-6 border border-gray-700/50">
             <div className="text-green-100 text-sm mb-2">Total Orders</div>
             <div className="text-white text-3xl font-semibold mb-2">
               {stats.orders.total.toLocaleString()}
@@ -73,17 +77,18 @@ const DashboardPage = () => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-lg p-6 shadow-xl">
+          <div className="bg-gradient-to-br from-gray-600/40 to-gray-500/20 rounded-lg p-6 border border-gray-700/50">
             <div className="text-purple-100 text-sm mb-2">Total Products</div>
             <div className="text-white text-3xl font-semibold mb-2">
               {stats.products.total.toLocaleString()}
             </div>
             <div className="text-purple-200 text-xs">
-              {stats.products.active} active, {stats.products.outOfStock} out of stock
+              {stats.products.active} active, {stats.products.outOfStock} out of
+              stock
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-orange-600 to-orange-800 rounded-lg p-6 shadow-xl">
+          <div className="bg-gradient-to-br from-gray-600/40 to-gray-500/20 rounded-lg p-6 border border-gray-700/50">
             <div className="text-orange-100 text-sm mb-2">Shop Rating</div>
             <div className="text-white text-3xl font-semibold mb-2">
               {stats.shop.rating.toFixed(1)} &#9733;
@@ -98,7 +103,7 @@ const DashboardPage = () => {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Revenue Chart */}
-        <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
+        <div className="bg-gradient-to-br from-gray-700/40 to-gray-500/20 rounded-lg p-6 border border-slate-700">
           <h2 className="text-white text-xl font-semibold mb-4">
             Revenue Trend
             <span className="block text-sm text-slate-400 font-normal">
@@ -130,7 +135,7 @@ const DashboardPage = () => {
         </div>
 
         {/* Order Status Distribution */}
-        <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
+        <div className="bg-gradient-to-br from-gray-700/40 to-gray-500/20 rounded-lg p-6 border border-slate-700">
           <h2 className="text-white text-xl font-semibold mb-4">
             Order Status Distribution
             <span className="block text-sm text-slate-400 font-normal">

@@ -141,12 +141,26 @@ export const getWebSocketToken = async (): Promise<{
   return response.data;
 };
 
-// WebSocket URL helper
+/**
+ * Upload an image for chat attachment via ImageKit
+ */
+export const uploadChatImage = async (
+  file: File
+): Promise<{ url: string; fileId: string; name: string; size: number }> => {
+  const formData = new FormData();
+  formData.append('image', file);
+
+  const response = await apiClient.post('/chat/upload-image', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
+// WebSocket URL helper - Socket.IO uses http:// for initial handshake
 export const getWebSocketUrl = (): string => {
-  const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const wsHost =
-    process.env.NODE_ENV === 'production'
-      ? window.location.host
-      : process.env.NEXT_PUBLIC_WS_URL || 'localhost:6007';
-  return `${wsProtocol}//${wsHost}`;
+  if (process.env.NODE_ENV === 'production') {
+    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+    return `${protocol}//${window.location.host}`;
+  }
+  return process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:6007';
 };

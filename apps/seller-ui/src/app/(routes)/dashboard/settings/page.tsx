@@ -99,7 +99,7 @@ export default function SettingsPage() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-left ${
                     activeTab === tab.id
-                      ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
+                      ? ' text-blue-500 border border-blue-500/30'
                       : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
                   }`}
                 >
@@ -113,7 +113,7 @@ export default function SettingsPage() {
 
         {/* Tab Content */}
         <div className="flex-1 min-w-0">
-          <div className="bg-slate-900 border border-slate-700 rounded-xl p-6">
+          <div className="bg-ui-background-dark border border-slate-700 rounded-xl p-6">
             {activeTab === 'account' && <AccountInfoTab />}
             {activeTab === 'security' && <SecurityTab />}
             {activeTab === 'visibility' && <VisibilityTab />}

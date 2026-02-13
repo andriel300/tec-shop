@@ -7,22 +7,29 @@ import {
   Body,
   Inject,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
   Req,
   BadRequestException,
   NotFoundException,
   Logger,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtService } from '@nestjs/jwt';
 import { firstValueFrom } from 'rxjs';
 import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
 import { RolesGuard } from '../../guards/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
+import { ImageKitService } from '@tec-shop/shared/imagekit';
 import type {
   CreateConversationDto,
   GetConversationsDto,
   ParticipantType,
 } from '@tec-shop/dto';
+
+const CHAT_IMAGE_SIZE_LIMIT = 5 * 1024 * 1024; // 5MB
+const CHAT_ALLOWED_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
 
 interface AuthenticatedRequest {
   user: {
@@ -63,7 +70,8 @@ export class ChatController {
 
   constructor(
     @Inject('CHATTING_SERVICE') private readonly chattingService: ClientProxy,
-    private readonly jwtService: JwtService
+    private readonly jwtService: JwtService,
+    private readonly imagekitService: ImageKitService
   ) {}
 
   /**
@@ -262,6 +270,43 @@ export class ChatController {
     return firstValueFrom(
       this.chattingService.send('chatting.checkOnline', { userId })
     );
+  }
+
+  /**
+   * Upload an image for chat attachment
+   * Both CUSTOMER and SELLER can upload chat images
+   */
+  @Post('upload-image')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('CUSTOMER', 'SELLER')
+  @UseInterceptors(FileInterceptor('image'))
+  async uploadChatImage(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('No image file provided');
+    }
+
+    if (!CHAT_ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+      throw new BadRequestException(
+        'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed'
+      );
+    }
+
+    if (file.size > CHAT_IMAGE_SIZE_LIMIT) {
+      throw new BadRequestException('File too large. Maximum size is 5MB');
+    }
+
+    const uploadResult = await this.imagekitService.uploadFile(
+      file.buffer,
+      file.originalname,
+      'chat'
+    );
+
+    return {
+      url: uploadResult.url,
+      fileId: uploadResult.fileId,
+      name: uploadResult.name,
+      size: file.size,
+    };
   }
 
   /**
