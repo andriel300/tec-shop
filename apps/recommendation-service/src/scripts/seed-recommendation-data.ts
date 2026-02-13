@@ -1,6 +1,6 @@
-import { PrismaClient as SellerPrismaClient } from '@tec-shop/seller-client';
 import { PrismaClient as ProductPrismaClient } from '@tec-shop/product-client';
 import { PrismaClient as AnalyticsPrismaClient } from '@tec-shop/analytics-client';
+import { PrismaClient as AuthPrismaClient } from '@tec-shop/auth-client';
 import { faker } from '@faker-js/faker';
 import * as dotenv from 'dotenv';
 import { resolve } from 'path';
@@ -9,11 +9,9 @@ import { randomBytes } from 'crypto';
 // Load environment variables from root .env
 dotenv.config({ path: resolve(__dirname, '../../../../.env') });
 
-const sellerDb = new SellerPrismaClient();
 const productDb = new ProductPrismaClient();
 const analyticsDb = new AnalyticsPrismaClient();
-
-// --- Helpers ---
+const authDb = new AuthPrismaClient();
 
 /** Generate a valid 24-hex-char MongoDB ObjectId string */
 function generateObjectId(): string {
@@ -35,140 +33,34 @@ function pickRandomAction(): string {
   return ACTION_TYPES[Math.floor(Math.random() * ACTION_TYPES.length)];
 }
 
-// --- Seed Sellers & Shops ---
-
-async function seedSellers(count: number) {
-  console.log(`\nSeeding ${count} sellers + shops...`);
-
-  const sellers: Array<{ sellerId: string; shopId: string }> = [];
-
-  for (let i = 0; i < count; i++) {
-    const authId = generateObjectId();
-    const email = faker.internet.email().toLowerCase();
-    const name = faker.person.fullName();
-
-    // Check if seller with this email already exists
-    const existing = await sellerDb.seller.findFirst({ where: { email } });
-    if (existing) {
-      const shop = await sellerDb.shop.findFirst({ where: { sellerId: existing.id } });
-      if (shop) {
-        sellers.push({ sellerId: existing.id, shopId: shop.id });
-        console.log(`  Reusing existing seller: ${existing.name}`);
-        continue;
-      }
-    }
-
-    const seller = await sellerDb.seller.create({
-      data: {
-        authId,
-        name,
-        email,
-        phoneNumber: faker.phone.number(),
-        country: faker.location.country(),
-        isVerified: true,
-        stripeAccountId: `seed_${generateObjectId()}`, // unique placeholder to avoid null unique constraint
-      },
-    });
-
-    const shop = await sellerDb.shop.create({
-      data: {
-        sellerId: seller.id,
-        businessName: faker.company.name(),
-        bio: faker.company.catchPhrase(),
-        category: faker.commerce.department(),
-        address: faker.location.streetAddress(),
-        openingHours: '9:00 AM - 5:00 PM',
-        isActive: true,
-        socialLinks: [],
-      },
-    });
-
-    sellers.push({ sellerId: seller.id, shopId: shop.id });
-    console.log(`  Created seller: ${name} -> shop: ${shop.businessName}`);
-  }
-
-  return sellers;
-}
-
-// --- Seed Products ---
-
-async function seedProducts(
-  shops: Array<{ sellerId: string; shopId: string }>,
-  productsPerShop: number
-) {
-  console.log(`\nSeeding ~${shops.length * productsPerShop} products across ${shops.length} shops...`);
-
-  // Get existing categories and brands from product DB
-  const categories = await productDb.category.findMany({ where: { isActive: true } });
-  const brands = await productDb.brand.findMany({ where: { isActive: true } });
-
-  if (categories.length === 0) {
-    console.error('No categories found. Run seed:categories first.');
-    process.exit(1);
-  }
-
-  const allProducts: Array<{ productId: string; shopId: string }> = [];
-
-  for (const shop of shops) {
-    for (let i = 0; i < productsPerShop; i++) {
-      const category = faker.helpers.arrayElement(categories);
-      const brand = brands.length > 0 ? faker.helpers.arrayElement(brands) : null;
-      const name = `${faker.commerce.productAdjective()} ${faker.commerce.product()} ${faker.string.alphanumeric(4).toUpperCase()}`;
-      const slug = name
-        .toLowerCase()
-        .replace(/[^\w\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-');
-
-      const price = parseFloat(faker.commerce.price({ min: 10, max: 500 }));
-
-      const product = await productDb.product.create({
-        data: {
-          shopId: shop.shopId,
-          name,
-          description: `<p>${faker.commerce.productDescription()}</p>`,
-          categoryId: category.id,
-          brandId: brand?.id ?? null,
-          productType: 'SIMPLE',
-          price,
-          salePrice: Math.random() > 0.6 ? parseFloat((price * 0.8).toFixed(2)) : null,
-          stock: faker.number.int({ min: 5, max: 200 }),
-          images: [`https://picsum.photos/seed/${faker.number.int({ min: 1, max: 9999 })}/800/600`],
-          slug,
-          tags: [faker.commerce.department().toLowerCase(), faker.commerce.productMaterial().toLowerCase()],
-          status: 'PUBLISHED',
-          visibility: 'PUBLIC',
-          isActive: true,
-          isFeatured: Math.random() > 0.85,
-          averageRating: faker.number.float({ min: 2.5, max: 5.0, fractionDigits: 1 }),
-          ratingCount: faker.number.int({ min: 0, max: 80 }),
-          views: faker.number.int({ min: 10, max: 500 }),
-          sales: faker.number.int({ min: 0, max: 50 }),
-        },
-      });
-
-      allProducts.push({ productId: product.id, shopId: shop.shopId });
-    }
-
-    console.log(`  Created ${productsPerShop} products for shop ${shop.shopId}`);
-  }
-
-  return allProducts;
-}
-
-// --- Seed User Analytics (interactions) ---
+// --- Seed User Analytics (interactions) using real product IDs ---
 
 async function seedAnalytics(
   products: Array<{ productId: string; shopId: string }>,
-  userCount: number,
+  realUserIds: string[],
+  fakeUserCount: number,
   actionsPerUser: { min: number; max: number }
 ) {
-  console.log(`\nSeeding analytics for ${userCount} fake users...`);
+  console.log(`\nSeeding analytics for ${realUserIds.length} real users + ${fakeUserCount} fake users...`);
 
   let totalActions = 0;
 
-  for (let u = 0; u < userCount; u++) {
-    const userId = generateObjectId();
+  // Combine real user IDs with fake user IDs
+  const allUserIds = [
+    ...realUserIds,
+    ...Array.from({ length: fakeUserCount }, () => generateObjectId()),
+  ];
+
+  for (const userId of allUserIds) {
+    // Skip if user already has analytics
+    const existing = await analyticsDb.userAnalytics.findUnique({
+      where: { userId },
+    });
+    if (existing) {
+      console.log(`  Skipping existing analytics for user ${userId}`);
+      continue;
+    }
+
     const numActions = faker.number.int(actionsPerUser);
 
     const actions: Array<{
@@ -228,16 +120,16 @@ async function seedAnalytics(
     totalActions += numActions;
   }
 
-  console.log(`  Created ${userCount} UserAnalytics records with ${totalActions} total actions`);
+  console.log(`  Created analytics for ${allUserIds.length} users with ${totalActions} total actions`);
   return totalActions;
 }
 
-// --- Seed Product Analytics ---
+// --- Seed Product Analytics using real product IDs ---
 
 async function seedProductAnalytics(
   products: Array<{ productId: string; shopId: string }>
 ) {
-  console.log('\nSeeding ProductAnalytics entries...');
+  console.log('\nSeeding ProductAnalytics entries for existing products...');
 
   let created = 0;
 
@@ -281,33 +173,69 @@ async function seedProductAnalytics(
 
 async function main() {
   console.log('=== Recommendation Data Seeder ===\n');
+  console.log('Using EXISTING products and users from your database.\n');
 
   try {
-    // 1. Seed 5 sellers + shops
-    const sellers = await seedSellers(5);
+    // 0. Clear old analytics data to avoid stale fake IDs
+    console.log('Clearing old analytics data...');
+    await analyticsDb.userAnalytics.deleteMany({});
+    await analyticsDb.productAnalytics.deleteMany({});
+    console.log('  Cleared UserAnalytics and ProductAnalytics tables');
 
-    // 2. Seed ~100 products (20 per shop)
-    const products = await seedProducts(sellers, 20);
+    // 1. Fetch existing published products from product DB
+    const existingProducts = await productDb.product.findMany({
+      where: {
+        status: 'PUBLISHED',
+        isActive: true,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        shopId: true,
+        name: true,
+      },
+    });
 
-    // 3. Seed 50 users with 10-40 actions each
-    const totalActions = await seedAnalytics(products, 50, { min: 10, max: 40 });
+    if (existingProducts.length === 0) {
+      console.error('No published products found in the database. Create some products first.');
+      process.exit(1);
+    }
 
-    // 4. Seed ProductAnalytics for all products
+    console.log(`Found ${existingProducts.length} existing published products`);
+
+    const products = existingProducts.map((p) => ({
+      productId: p.id,
+      shopId: p.shopId,
+    }));
+
+    // 2. Fetch existing real user IDs from auth DB
+    const existingUsers = await authDb.user.findMany({
+      select: { id: true },
+      take: 100,
+    });
+
+    const realUserIds = existingUsers.map((u) => u.id);
+    console.log(`Found ${realUserIds.length} existing users`);
+
+    // 3. Seed user analytics (real users + 30 fake users for diversity)
+    const totalActions = await seedAnalytics(products, realUserIds, 30, { min: 10, max: 40 });
+
+    // 4. Seed ProductAnalytics for all real products
     await seedProductAnalytics(products);
 
     console.log('\n=== Seeding Summary ===');
-    console.log(`  Sellers/Shops: ${sellers.length}`);
-    console.log(`  Products:      ${products.length}`);
-    console.log(`  Users:         50`);
-    console.log(`  Interactions:  ${totalActions}`);
-    console.log('\nDone! You can now click "Train Model" in the admin dashboard.');
+    console.log(`  Products (existing): ${products.length}`);
+    console.log(`  Real users:          ${realUserIds.length}`);
+    console.log(`  Fake users:          30`);
+    console.log(`  Total interactions:  ${totalActions}`);
+    console.log('\nDone! Now click "Train Model" in the admin dashboard or restart the recommendation service.');
   } catch (error) {
     console.error('Fatal error during seeding:', error);
     process.exit(1);
   } finally {
-    await sellerDb.$disconnect();
     await productDb.$disconnect();
     await analyticsDb.$disconnect();
+    await authDb.$disconnect();
   }
 }
 
