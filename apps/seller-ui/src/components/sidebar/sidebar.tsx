@@ -184,13 +184,13 @@ const SidebarBarWrapper = () => {
                 }
               />
               <SidebarItems
-                isActive={activeSidebar === '/dashboard/all-events'}
+                isActive={activeSidebar === '/dashboard/events'}
                 title="All Events"
-                href="/dashboard/all-events"
+                href="/dashboard/events"
                 icon={
                   <BellPlus
                     size={24}
-                    color={getIconColor('/dashboard/all-events')}
+                    color={getIconColor('/dashboard/events')}
                   />
                 }
               />

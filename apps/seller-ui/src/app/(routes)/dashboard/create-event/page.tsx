@@ -193,7 +193,7 @@ const CreateEventPage = () => {
               Start Date *
             </label>
             <input
-              type="datetime-local"
+              type="date"
               id="startDate"
               name="startDate"
               value={formData.startDate}
@@ -212,7 +212,7 @@ const CreateEventPage = () => {
               End Date *
             </label>
             <input
-              type="datetime-local"
+              type="date"
               id="endDate"
               name="endDate"
               value={formData.endDate}
