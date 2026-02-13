@@ -1099,16 +1099,19 @@ export class ProductService {
       if (reviewData?.content) {
         try {
           const shopInfo = await this.sellerClient.getShop(product.shopId);
-          const sellerId = shopInfo?.sellerId as string | undefined;
-          if (sellerId) {
+          // notifySeller expects the auth User ID (authId), not the Seller record ID
+          const seller = shopInfo?.seller as Record<string, unknown> | undefined;
+          const sellerAuthId = seller?.authId as string | undefined;
+          if (sellerAuthId) {
             await this.notificationProducer.notifySeller(
-              sellerId,
+              sellerAuthId,
               'product.new_rating',
               {
                 productName: product.name,
                 rating: String(createRatingDto.rating),
+                reviewerName: reviewData?.reviewerName || 'A customer',
               },
-              { productId, ratingId: result.id }
+              { productId, ratingId: result.id, productSlug: product.slug }
             );
           }
         } catch (notifError) {

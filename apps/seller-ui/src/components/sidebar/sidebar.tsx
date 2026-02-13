@@ -166,10 +166,7 @@ const SidebarBarWrapper = () => {
                 title="Trash"
                 href="/dashboard/trash"
                 icon={
-                  <Trash2
-                    size={22}
-                    color={getIconColor('/dashboard/trash')}
-                  />
+                  <Trash2 size={22} color={getIconColor('/dashboard/trash')} />
                 }
                 badge={deletedCount}
               />
@@ -221,7 +218,7 @@ const SidebarBarWrapper = () => {
               <SidebarItems
                 isActive={activeSidebar === '/dashboard/notifications'}
                 title="Notifications"
-                href="/dashboard/Notifications"
+                href="/dashboard/notifications"
                 icon={
                   <BellRing
                     size={24}
