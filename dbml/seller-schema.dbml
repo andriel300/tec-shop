@@ -21,6 +21,7 @@ Table Seller {
   shop Shop
   discountCodes DiscountCode [not null]
   notifications Notification [not null]
+  notificationPreferences Json
   createdAt DateTime [default: `now()`, not null]
   updatedAt DateTime [not null]
 }
@@ -37,6 +38,8 @@ Table Shop {
   openingHours String [not null]
   website String
   socialLinks Json[] [not null]
+  returnPolicy String
+  shippingPolicy String
   rating Float [not null, default: 0]
   totalOrders Int [not null, default: 0]
   isActive Boolean [not null, default: true]
