@@ -40,7 +40,8 @@ model Seller {
   discountCodes DiscountCode[]
 
   // Notifications
-  notifications Notification[]
+  notifications           Notification[]
+  notificationPreferences Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -58,7 +59,9 @@ model Shop {
   address      String
   openingHours String
   website      String?
-  socialLinks  Json[]
+  socialLinks    Json[]
+  returnPolicy   String?
+  shippingPolicy String?
 
   // Shop metrics
   rating      Float   @default(0)
