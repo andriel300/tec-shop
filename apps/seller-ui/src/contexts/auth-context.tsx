@@ -67,7 +67,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
           // Try to refresh the token - this will validate the session
           // If successful, new tokens will be set in cookies
-          const response = await apiClient.post('/auth/refresh');
+          const response = await apiClient.post('/auth/refresh', null, {
+            skipAuthRefresh: true, // Prevent interceptor from recursively trying to refresh
+          } as Record<string, unknown>);
 
           if (response.data) {
             // Session is valid, create a minimal user object

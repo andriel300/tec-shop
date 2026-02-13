@@ -5,6 +5,7 @@ import {
   getSellerDashboard,
   type SellerDashboardData,
 } from '../lib/api/seller';
+import { useAuth } from '../contexts/auth-context';
 
 interface UseSellerDashboardReturn {
   dashboard: SellerDashboardData | null;
@@ -16,43 +17,32 @@ interface UseSellerDashboardReturn {
 
 /**
  * Custom hook to fetch seller dashboard data (lightweight version)
- * Use this for dashboard overview and metrics
- *
- * @returns {UseSellerDashboardReturn} Dashboard data with seller and shop summary
- *
- * @example
- * const { dashboard, isLoading } = useSellerDashboard();
- *
- * if (isLoading) return <Spinner />;
- *
- * return (
- *   <div>
- *     <h2>Welcome, {dashboard?.seller.name}</h2>
- *     <p>Total Orders: {dashboard?.shop?.totalOrders}</p>
- *   </div>
- * );
+ * Only fetches when user is authenticated to prevent unnecessary API errors
  */
 const useSellerDashboard = (): UseSellerDashboardReturn => {
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+
   const {
     data: dashboard,
-    isLoading,
+    isLoading: isQueryLoading,
     isError,
     error,
     refetch,
   } = useQuery<SellerDashboardData, Error>({
     queryKey: ['seller-dashboard'],
     queryFn: getSellerDashboard,
-    staleTime: 5 * 60 * 1000, // 5 minutes (increased from 2 to reduce API calls)
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    enabled: isAuthenticated && !isAuthLoading,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     retry: 1,
-    refetchOnWindowFocus: false, // Disabled - prevents excessive requests
-    refetchOnMount: false, // Disabled - only fetch if stale
-    refetchOnReconnect: false, // Disabled - prevent refetch on network reconnect
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
   return {
     dashboard: dashboard ?? null,
-    isLoading,
+    isLoading: isAuthLoading || isQueryLoading,
     isError,
     error: error ?? null,
     refetch,

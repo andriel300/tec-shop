@@ -1,7 +1,32 @@
-import React from 'react';
-import SidebarBarWrapper from '../../../components/sidebar/sidebar';
+'use client';
 
-const Sidebar = ({ children }: { children: React.ReactNode }) => {
+import React from 'react';
+import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
+import SidebarBarWrapper from '../../../components/sidebar/sidebar';
+import { useAuth } from '../../../contexts/auth-context';
+
+const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    router.replace('/login');
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full bg-black min-h-screen">
       {/* sidebar */}
@@ -12,7 +37,6 @@ const Sidebar = ({ children }: { children: React.ReactNode }) => {
       </aside>
 
       {/* main content */}
-
       <main className="flex-1 ">
         <div className="overflow-auto">{children}</div>
       </main>
@@ -20,4 +44,4 @@ const Sidebar = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export default Sidebar;
+export default DashboardLayout;

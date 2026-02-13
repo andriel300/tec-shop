@@ -53,7 +53,10 @@ apiClient.interceptors.response.use(
       try {
         // Attempt to refresh the token using cookies
         // Backend will read refresh_token from httpOnly cookie and set new cookies
-        await apiClient.post('/auth/refresh');
+        // skipAuthRefresh prevents infinite recursion if the refresh call itself fails with 401/403
+        await apiClient.post('/auth/refresh', null, {
+          skipAuthRefresh: true,
+        } as Record<string, unknown>);
 
         // Retry the original request (new access_token cookie will be used automatically)
         return apiClient(originalRequest);

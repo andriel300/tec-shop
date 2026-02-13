@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import * as sellerApi from '../lib/api/seller';
 import type { SellerStatistics } from '../lib/api/seller';
+import { useAuth } from '../contexts/auth-context';
 
 // Query keys
 export const sellerKeys = {
@@ -10,10 +11,13 @@ export const sellerKeys = {
 
 // Hooks
 export const useSellerStatistics = () => {
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+
   return useQuery<SellerStatistics, Error>({
     queryKey: sellerKeys.statistics(),
     queryFn: sellerApi.getSellerStatistics,
-    refetchInterval: 60000, // Auto-refetch every minute for live data
-    staleTime: 30000, // 30 seconds
+    enabled: isAuthenticated && !isAuthLoading,
+    refetchInterval: isAuthenticated ? 60000 : false,
+    staleTime: 30000,
   });
 };
