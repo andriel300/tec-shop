@@ -5,6 +5,7 @@ import {
   getSellerProfile,
   type SellerProfileResponse,
 } from '../lib/api/seller';
+import { useAuth } from '../contexts/auth-context';
 
 interface UseSellerReturn {
   seller: SellerProfileResponse | null;
@@ -17,38 +18,32 @@ interface UseSellerReturn {
 /**
  * Custom hook to fetch and manage seller profile data
  * Uses TanStack Query for caching and automatic background refetching
- *
- * @returns {UseSellerReturn} Seller data, loading state, error state, and refetch function
- *
- * @example
- * const { seller, isLoading, isError } = useSeller();
- *
- * if (isLoading) return <div>Loading...</div>;
- * if (isError) return <div>Error loading seller data</div>;
- *
- * return <h1>{seller?.name}</h1>;
+ * Only fetches when user is authenticated to prevent unnecessary API errors
  */
 const useSeller = (): UseSellerReturn => {
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+
   const {
     data: seller,
-    isLoading,
+    isLoading: isQueryLoading,
     isError,
     error,
     refetch,
   } = useQuery<SellerProfileResponse, Error>({
     queryKey: ['seller-profile'],
     queryFn: getSellerProfile,
-    staleTime: 10 * 60 * 1000, // Consider data fresh for 10 minutes (increased from 5)
-    gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
-    retry: 1, // Reduced from 2 - less aggressive retrying
-    refetchOnWindowFocus: false, // Disabled - prevents excessive requests on tab switch
-    refetchOnMount: false, // Disabled - only fetch if data is stale, not on every mount
-    refetchOnReconnect: false, // Disabled - prevent refetch on network reconnect
+    enabled: isAuthenticated && !isAuthLoading,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
   return {
     seller: seller ?? null,
-    isLoading,
+    isLoading: isAuthLoading || isQueryLoading,
     isError,
     error: error ?? null,
     refetch,

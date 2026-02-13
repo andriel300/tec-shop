@@ -20,7 +20,9 @@ const fetchAdmin = async (): Promise<AdminUser | null> => {
 
   // Try to refresh the session - this validates if admin is logged in
   try {
-    const response = await apiClient.post('/auth/refresh');
+    const response = await apiClient.post('/auth/refresh', null, {
+      skipAuthRefresh: true,
+    } as Record<string, unknown>);
     if (response.data?.userType === 'admin' && response.data?.user) {
       const admin = response.data.user;
       sessionStorage.setItem('admin', JSON.stringify(admin));

@@ -131,7 +131,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
           // Try to refresh the token - this will validate the session
           // If successful, new tokens will be set in cookies
-          const response = await apiClient.post('/auth/refresh');
+          const response = await apiClient.post('/auth/refresh', null, {
+            skipAuthRefresh: true,
+          } as Record<string, unknown>);
 
           console.log('[AuthContext] Token refresh response:', !!response.data);
 
