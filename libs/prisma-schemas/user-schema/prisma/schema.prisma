@@ -105,9 +105,27 @@ model ShippingAddress {
 }
 
 model SiteLayout {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  logo      String?
-  banner    String?
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now())
+  id         String      @id @default(auto()) @map("_id") @db.ObjectId
+  logo       String?
+  banner     String?
+  heroSlides HeroSlide[]
+  updatedAt  DateTime    @updatedAt
+  createdAt  DateTime    @default(now())
+}
+
+model HeroSlide {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  siteLayout   SiteLayout @relation(fields: [siteLayoutId], references: [id], onDelete: Cascade)
+  siteLayoutId String     @db.ObjectId
+  title        String
+  subtitle     String?
+  imageUrl     String
+  actionUrl    String?
+  actionLabel  String?
+  order        Int        @default(0)
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([siteLayoutId])
 }
