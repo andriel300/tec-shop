@@ -415,7 +415,8 @@ const ProductDetails = ({ product }: { product: Product }) => {
                 count={product.ratingCount}
               />
               <Link href={'#reviews'} className="text-blue-500 hover:underline">
-                ({product.ratingCount} {product.ratingCount === 1 ? 'Review' : 'Reviews'})
+                ({product.ratingCount}{' '}
+                {product.ratingCount === 1 ? 'Review' : 'Reviews'})
               </Link>
             </div>
             <div>
@@ -595,9 +596,9 @@ const ProductDetails = ({ product }: { product: Product }) => {
                             onClick={() =>
                               handleAttributeChange(attribute.name, value)
                             }
-                            className={`px-4 py-2 text-sm font-medium rounded-lg border-2 transition ${
+                            className={`px-4 py-2 text-sm font-medium transition ${
                               isSelected
-                                ? 'border-brand-primary bg-brand-primary text-white' // Selected: filled with brand color
+                                ? 'border-brand-primary text-blue-500 underline' // Selected: filled with brand color
                                 : 'border-gray-300 bg-white text-gray-700 hover:border-brand-primary hover:text-brand-primary' // Not selected: gray outline
                             }`}
                           >

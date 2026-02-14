@@ -9,7 +9,7 @@ import ProfileIcon from '../../assets/svgs/profile-icon';
 import HeartIcon from '../../assets/svgs/heart-icon';
 import CartIcon from '../../assets/svgs/cart-icon';
 import { NotificationBell } from '../components/notification-bell';
-import HeaderBottom from './header-bottom';
+import StickyNavbar from './sticky-navbar';
 import useStore from '../../store';
 import { apiClient } from '../../lib/api/client';
 import useLayout from '../../hooks/use-layout';
@@ -29,7 +29,7 @@ interface Shop {
   category: string;
 }
 
-const Header = () => {
+const Navbar = () => {
   const router = useRouter();
   const { isAuthenticated, user, userProfile } = useAuth();
   const [mounted, setMounted] = useState(false);
@@ -386,9 +386,9 @@ const Header = () => {
           </div>
         </div>
       </div>
-      <HeaderBottom />
+      <StickyNavbar />
     </div>
   );
 };
 
-export default Header;
+export default Navbar;

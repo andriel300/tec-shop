@@ -47,9 +47,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
 
   // Zustand store hooks
   const addToCart = useStore((state) => state.addToCart);
-  // const removeFromCart = useStore((state) => state.removeFromCart);
   const addToWishList = useStore((state) => state.addToWishList);
-  // const removeFromWishList = useStore((state) => state.removeFromWishList);
   const wishlist = useStore((state) => state.wishlist);
   const cart = useStore((state) => state.cart);
 
@@ -696,7 +694,9 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                     ) : (
                       <MessageCircle size={16} />
                     )}
-                    {createConversation.isPending ? 'Opening chat...' : 'Chat with Seller'}
+                    {createConversation.isPending
+                      ? 'Opening chat...'
+                      : 'Chat with Seller'}
                   </button>
                 </div>
               ) : (

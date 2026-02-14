@@ -1,8 +1,8 @@
-import Header from '../shared/widgets/header';
 import ConditionalFooter from '../shared/widgets/conditional-footer';
 import './global.css';
 import { Inter, Poppins, Roboto, Oregano, Jost } from 'next/font/google';
 import { Providers } from './providers';
+import Navbar from '../shared/widgets/navbar';
 
 // Configure your fonts
 const inter = Inter({
@@ -57,7 +57,7 @@ export default function RootLayout({
     >
       <body suppressHydrationWarning>
         <Providers>
-          <Header />
+          <Navbar />
           <main className="min-h-[calc(100vh-400px)]">{children}</main>
           <ConditionalFooter />
         </Providers>
