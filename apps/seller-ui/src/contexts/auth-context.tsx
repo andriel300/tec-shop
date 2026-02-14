@@ -67,18 +67,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
           // Try to refresh the token - this will validate the session
           // If successful, new tokens will be set in cookies
-          const response = await apiClient.post('/auth/refresh', null, {
+          const response = await apiClient.post('/auth/refresh', {}, {
             skipAuthRefresh: true, // Prevent interceptor from recursively trying to refresh
           } as Record<string, unknown>);
 
-          if (response.data) {
-            // Session is valid, create a minimal user object
+          if (response.data?.userType === 'seller') {
+            // Session is valid and belongs to a seller
             // User profile will be fetched later by the dashboard
             const minimalUser: User = {
-              id: '',
-              email: '',
+              id: response.data.user?.id || '',
+              email: response.data.user?.email || '',
               isEmailVerified: true,
-              name: '',
+              name: response.data.user?.name || '',
             };
 
             setAuthState({
@@ -90,6 +90,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             // Store minimal user data so we don't have to refresh again
             sessionStorage.setItem('user', JSON.stringify(minimalUser));
+          } else {
+            // Token belongs to a different user type (customer/admin) — not authenticated as seller
+            setAuthState((prev) => ({
+              ...prev,
+              isAuthenticated: false,
+              isLoading: false,
+            }));
           }
         } catch {
           // Refresh failed - user is not authenticated

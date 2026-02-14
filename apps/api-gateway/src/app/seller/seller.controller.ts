@@ -51,7 +51,8 @@ const ALLOWED_MIME_TYPES = [
 
 @ApiTags('Seller')
 @Controller('seller')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('SELLER')
 @ApiBearerAuth()
 export class SellerController {
   private readonly logger = new Logger(SellerController.name);
