@@ -9,6 +9,9 @@ import type {
   UpdateSellerVerificationDto,
   ListOrdersDto,
   UpdateLayoutDto,
+  CreateHeroSlideDto,
+  UpdateHeroSlideDto,
+  ReorderHeroSlidesDto,
 } from '@tec-shop/dto';
 
 @Controller()
@@ -95,5 +98,27 @@ export class AdminController {
   @MessagePattern('admin.updateLayout')
   updateLayout(@Payload() dto: UpdateLayoutDto) {
     return this.adminService.updateLayout(dto);
+  }
+
+  // ============ Hero Slide Message Patterns ============
+
+  @MessagePattern('admin.createHeroSlide')
+  createHeroSlide(@Payload() dto: CreateHeroSlideDto) {
+    return this.adminService.createHeroSlide(dto);
+  }
+
+  @MessagePattern('admin.updateHeroSlide')
+  updateHeroSlide(@Payload() payload: { slideId: string; dto: UpdateHeroSlideDto }) {
+    return this.adminService.updateHeroSlide(payload.slideId, payload.dto);
+  }
+
+  @MessagePattern('admin.deleteHeroSlide')
+  deleteHeroSlide(@Payload() slideId: string) {
+    return this.adminService.deleteHeroSlide(slideId);
+  }
+
+  @MessagePattern('admin.reorderHeroSlides')
+  reorderHeroSlides(@Payload() dto: ReorderHeroSlidesDto) {
+    return this.adminService.reorderHeroSlides(dto.slideIds);
   }
 }
