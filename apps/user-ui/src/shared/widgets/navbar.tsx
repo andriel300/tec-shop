@@ -9,6 +9,7 @@ import ProfileIcon from '../../assets/svgs/profile-icon';
 import HeartIcon from '../../assets/svgs/heart-icon';
 import CartIcon from '../../assets/svgs/cart-icon';
 import { NotificationBell } from '../components/notification-bell';
+import LanguageSwitcher from '../components/language-switcher';
 import StickyNavbar from './sticky-navbar';
 import useStore from '../../store';
 import { apiClient } from '../../lib/api/client';
@@ -357,6 +358,9 @@ const Navbar = () => {
 
             {/* Notification Bell */}
             {mounted && isAuthenticated && <NotificationBell />}
+
+            {/* Language Switcher */}
+            <LanguageSwitcher />
 
             {/* Wishlist Icon */}
             <Link

@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Payment } from '../../../assets/svgs/icons/payment-icon';
 import { NotificationBell } from '../notification-bell';
+import LanguageSwitcher from '../language-switcher';
 
 const SidebarWrapper = () => {
   const { activeSidebar, setActiveSidebar } = useSidebar();
@@ -64,7 +65,10 @@ const SidebarWrapper = () => {
                 </h5>
               </Box>
             </Link>
-            <NotificationBell />
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher />
+              <NotificationBell />
+            </div>
           </div>
         </Box>
       </Sidebar.Header>

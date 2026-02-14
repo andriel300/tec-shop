@@ -92,6 +92,7 @@
     "mongodb": "^6.19.0",
     "nestjs-pino": "^4.4.0",
     "next": "~15.2.4",
+    "next-intl": "^4.8.2",
     "nodemailer": "^7.0.5",
     "passport": "^0.7.0",
     "passport-auth0": "^1.4.4",

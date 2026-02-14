@@ -29,6 +29,7 @@ import { useDeletedProducts } from '../../hooks/useProducts';
 import { useAuth } from '../../contexts/auth-context';
 import { toast } from 'sonner';
 import { NotificationBellV2 } from '../notification-bell-v2';
+import LanguageSwitcher from '../language-switcher';
 
 const SidebarBarWrapper = () => {
   const { activeSidebar, setActiveSidebar } = useSidebar();
@@ -99,7 +100,10 @@ const SidebarBarWrapper = () => {
                 </h5>
               </Box>
             </Link>
-            <NotificationBellV2 />
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher />
+              <NotificationBellV2 />
+            </div>
           </div>
         </Box>
       </Sidebar.Header>
