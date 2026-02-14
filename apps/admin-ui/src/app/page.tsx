@@ -24,7 +24,7 @@ const Page = () => {
       await apiClient.post('/auth/admin/login', data);
 
       // Fetch admin data using refresh endpoint
-      const refreshResponse = await apiClient.post('/auth/refresh', null, {
+      const refreshResponse = await apiClient.post('/auth/refresh', {}, {
         skipAuthRefresh: true,
       } as Record<string, unknown>);
       return refreshResponse.data;
