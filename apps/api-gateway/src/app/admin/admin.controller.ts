@@ -31,6 +31,9 @@ import type {
   UpdateSellerVerificationDto,
   ListOrdersDto,
   UpdateLayoutDto,
+  CreateHeroSlideDto,
+  UpdateHeroSlideDto,
+  ReorderHeroSlidesDto,
 } from '@tec-shop/dto';
 
 @ApiTags('Admin')
@@ -214,6 +217,53 @@ export class AdminController {
     this.logger.log('Updating site layout');
     return await firstValueFrom(
       this.adminService.send('admin.updateLayout', dto)
+    );
+  }
+
+  // ============ Hero Slide Endpoints ============
+
+  @Put('layout/hero-slides/reorder')
+  @ApiOperation({ summary: 'Reorder hero slides (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Hero slides reordered successfully' })
+  async reorderHeroSlides(@Body() dto: ReorderHeroSlidesDto) {
+    this.logger.log('Reordering hero slides');
+    return await firstValueFrom(
+      this.adminService.send('admin.reorderHeroSlides', dto)
+    );
+  }
+
+  @Post('layout/hero-slides')
+  @ApiOperation({ summary: 'Create a new hero slide (Admin only)' })
+  @ApiResponse({ status: 201, description: 'Hero slide created successfully' })
+  async createHeroSlide(@Body() dto: CreateHeroSlideDto) {
+    this.logger.log(`Creating hero slide: ${dto.title}`);
+    return await firstValueFrom(
+      this.adminService.send('admin.createHeroSlide', dto)
+    );
+  }
+
+  @Put('layout/hero-slides/:id')
+  @ApiOperation({ summary: 'Update a hero slide (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Hero slide updated successfully' })
+  @ApiResponse({ status: 404, description: 'Hero slide not found' })
+  async updateHeroSlide(
+    @Param('id') slideId: string,
+    @Body() dto: UpdateHeroSlideDto
+  ) {
+    this.logger.log(`Updating hero slide: ${slideId}`);
+    return await firstValueFrom(
+      this.adminService.send('admin.updateHeroSlide', { slideId, dto })
+    );
+  }
+
+  @Delete('layout/hero-slides/:id')
+  @ApiOperation({ summary: 'Delete a hero slide (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Hero slide deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Hero slide not found' })
+  async deleteHeroSlide(@Param('id') slideId: string) {
+    this.logger.log(`Deleting hero slide: ${slideId}`);
+    return await firstValueFrom(
+      this.adminService.send('admin.deleteHeroSlide', slideId)
     );
   }
 }
