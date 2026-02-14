@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../../lib/api/client';
 import Link from 'next/link';
 import React, { useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Range } from 'react-range';
 import { ChevronDown, X } from 'lucide-react';
 import ProductCard from '../../../components/cards/product-card';
@@ -12,11 +13,15 @@ const MIN = 0;
 const MAX = 1199;
 
 const Page = () => {
+  const searchParams = useSearchParams();
   const [isProductLoading, setIsProductLoading] = React.useState(false);
   const [priceRange, setPriceRange] = React.useState([0, 1199]);
-  const [selectedCategories, setSelectedCategories] = React.useState<string[]>(
-    []
-  );
+  const [selectedCategoryIds, setSelectedCategoryIds] = React.useState<
+    string[]
+  >(() => {
+    const catId = searchParams.get('categoryId');
+    return catId ? [catId] : [];
+  });
   const [selectedSizes, setSelectedSizes] = React.useState<string[]>([]);
   const [selectedColors, setSelectedColors] = React.useState<string[]>([]);
   const [page, setPage] = React.useState(1);
@@ -75,7 +80,11 @@ const Page = () => {
   const updateURL = () => {
     const params = new URLSearchParams(window.location.search);
     params.set('priceRange', priceRange.join(','));
-    params.set('categories', selectedCategories.join(','));
+    if (selectedCategoryIds.length > 0) {
+      params.set('categoryId', selectedCategoryIds.join(','));
+    } else {
+      params.delete('categoryId');
+    }
     params.set('page', page.toString());
     params.set('colors', selectedColors.join(','));
     params.set('sizes', selectedSizes.join(','));
@@ -91,9 +100,9 @@ const Page = () => {
       query.set('minPrice', priceRange[0].toString());
       query.set('maxPrice', priceRange[1].toString());
 
-      // Category filter (backend expects single category or comma-separated)
-      if (selectedCategories.length > 0) {
-        query.set('category', selectedCategories.join(','));
+      // Category filter — backend expects categoryId
+      if (selectedCategoryIds.length > 0) {
+        query.set('categoryId', selectedCategoryIds.join(','));
       }
 
       // Color filter - backend now supports variant filtering
@@ -137,7 +146,7 @@ const Page = () => {
     fetchFilteredProducts();
   }, [
     priceRange,
-    selectedCategories,
+    selectedCategoryIds,
     selectedColors,
     selectedSizes,
     page,
@@ -162,28 +171,31 @@ const Page = () => {
     staleTime: 1000 * 60 * 30,
   });
 
-  const toggleCategory = (categoryName: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(categoryName)
-        ? prev.filter((cat) => cat !== categoryName)
-        : [...prev, categoryName]
+  const toggleCategory = (categoryId: string) => {
+    setSelectedCategoryIds((prev) =>
+      prev.includes(categoryId)
+        ? prev.filter((id) => id !== categoryId)
+        : [...prev, categoryId]
     );
+    setPage(1);
   };
 
   const toggleColor = (color: string) => {
     setSelectedColors((prev) =>
       prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color]
     );
+    setPage(1);
   };
 
   const toggleSize = (size: string) => {
     setSelectedSizes((prev) =>
       prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]
     );
+    setPage(1);
   };
 
   const clearAllFilters = () => {
-    setSelectedCategories([]);
+    setSelectedCategoryIds([]);
     setSelectedColors([]);
     setSelectedSizes([]);
     setPriceRange([0, 1199]);
@@ -192,17 +204,24 @@ const Page = () => {
   };
 
   const hasActiveFilters =
-    selectedCategories.length > 0 ||
+    selectedCategoryIds.length > 0 ||
     selectedColors.length > 0 ||
     selectedSizes.length > 0 ||
     priceRange[0] !== 0 ||
     priceRange[1] !== 1199;
 
+  const getCategoryName = (id: string): string => {
+    const cat = (categories as { id: string; name: string }[] | undefined)?.find(
+      (c) => c.id === id
+    );
+    return cat?.name || id;
+  };
+
   const getPageTitle = () => {
-    if (selectedCategories.length === 1) {
-      return selectedCategories[0];
+    if (selectedCategoryIds.length === 1) {
+      return getCategoryName(selectedCategoryIds[0]);
     }
-    if (selectedCategories.length > 1) {
+    if (selectedCategoryIds.length > 1) {
       return 'Multiple Categories';
     }
     return 'All Products';
@@ -304,7 +323,7 @@ const Page = () => {
                   ) : categories &&
                     Array.isArray(categories) &&
                     categories.length > 0 ? (
-                    categories.map((category: any) => (
+                    categories.map((category: { id: string; name: string }) => (
                       <li
                         key={category.id}
                         className="flex items-center justify-between"
@@ -312,8 +331,8 @@ const Page = () => {
                         <label className="flex items-center gap-3 text-sm text-gray-700 cursor-pointer hover:text-blue-600 transition-colors">
                           <input
                             type="checkbox"
-                            checked={selectedCategories.includes(category.name)}
-                            onChange={() => toggleCategory(category.name)}
+                            checked={selectedCategoryIds.includes(category.id)}
+                            onChange={() => toggleCategory(category.id)}
                             className="w-4 h-4 accent-blue-600 cursor-pointer rounded-sm border-gray-300 focus:ring-2 focus:ring-blue-500"
                           />
                           {category.name}
@@ -478,14 +497,15 @@ const Page = () => {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {/* Category filters */}
-                  {selectedCategories.map((category) => (
+                  {selectedCategoryIds.map((catId) => (
                     <span
-                      key={category}
+                      key={catId}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-800 rounded-full text-sm"
                     >
-                      <span className="font-medium">Category:</span> {category}
+                      <span className="font-medium">Category:</span>{' '}
+                      {getCategoryName(catId)}
                       <button
-                        onClick={() => toggleCategory(category)}
+                        onClick={() => toggleCategory(catId)}
                         className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
                       >
                         <X className="w-3.5 h-3.5" />

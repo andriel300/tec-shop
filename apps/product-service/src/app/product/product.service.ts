@@ -717,7 +717,11 @@ export class ProductService {
       deletedAt: null,
 
       // Filters
-      ...(categoryId && { categoryId }),
+      ...(categoryId && {
+        categoryId: categoryId.includes(',')
+          ? { in: categoryId.split(',').map((id) => id.trim()) }
+          : categoryId,
+      }),
       ...(brandId && { brandId }),
       ...(shopId && { shopId }),
       ...(isFeatured !== undefined && { isFeatured }),
