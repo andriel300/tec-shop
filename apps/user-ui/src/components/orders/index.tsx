@@ -1,13 +1,83 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useOrders } from '../../hooks/use-orders';
-import { Loader2, Package, Truck, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { Loader2, Package, Truck, CheckCircle, Clock, XCircle, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import ReviewForm from '../reviews/review-form';
+import type { Order } from '../../lib/api/orders';
+
+const ReviewItemsModal = ({
+  order,
+  onClose,
+}: {
+  order: Order;
+  onClose: () => void;
+}) => (
+  <div
+    className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4"
+    onClick={onClose}
+  >
+    <div
+      className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-white rounded-xl shadow-2xl"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Review Items</h2>
+          <p className="text-xs text-gray-500 mt-0.5">Order #{order.orderNumber}</p>
+        </div>
+        <button
+          onClick={onClose}
+          className="p-2 hover:bg-gray-100 rounded-full transition"
+          aria-label="Close"
+        >
+          <X size={18} className="text-gray-600" />
+        </button>
+      </div>
+
+      <div className="px-6 py-4 space-y-6">
+        {order.items.map((item) => (
+          <div key={item.id} className="border border-gray-200 rounded-lg overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 border-b border-gray-200">
+              {item.productImage ? (
+                <Image
+                  src={item.productImage}
+                  alt={item.productName}
+                  width={44}
+                  height={44}
+                  className="rounded object-cover flex-shrink-0"
+                />
+              ) : (
+                <div className="w-11 h-11 bg-gray-200 rounded flex items-center justify-center flex-shrink-0">
+                  <Package size={18} className="text-gray-400" />
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-800 truncate">
+                  {item.productName}
+                </p>
+                <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
+              </div>
+            </div>
+            <div className="px-4 py-3">
+              <ReviewForm productId={item.productId} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
 
 const OrdersSection = () => {
   const { data: orders = [], isLoading, error } = useOrders();
+  const [reviewOrderId, setReviewOrderId] = useState<string | null>(null);
+
+  const reviewOrder = reviewOrderId
+    ? orders.find((o) => o.id === reviewOrderId) ?? null
+    : null;
 
   if (isLoading) {
     return (
@@ -145,13 +215,23 @@ const OrdersSection = () => {
               View Details
             </Link>
             {order.status === 'DELIVERED' && (
-              <button className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1.5 rounded transition">
+              <button
+                onClick={() => setReviewOrderId(order.id)}
+                className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1.5 rounded transition"
+              >
                 Review Items
               </button>
             )}
           </div>
         </div>
       ))}
+
+      {reviewOrder && (
+        <ReviewItemsModal
+          order={reviewOrder}
+          onClose={() => setReviewOrderId(null)}
+        />
+      )}
     </div>
   );
 };
