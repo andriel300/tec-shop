@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ChatMessageEventDto } from '@tec-shop/dto';
+import type { NotificationEventDto, NotificationTargetType } from '@tec-shop/dto';
 import { KafkaService } from '../kafka/kafka.service';
 import { Consumer } from 'kafkajs';
 import { ChatGateway } from './chat.gateway';
@@ -105,6 +106,31 @@ export class ChatMessageConsumer implements OnModuleInit {
         );
         this.logger.log(
           `Incremented unseen count for ${participantId} in ${conversationId}`,
+        );
+
+        // Publish notification event for the receiver
+        const targetType: NotificationTargetType = participant.userId
+          ? 'customer'
+          : 'seller';
+        const preview =
+          content && content.trim().length > 0
+            ? content.slice(0, 80)
+            : 'Sent you an image';
+        const senderLabel = senderType === 'seller' ? 'A seller' : 'A customer';
+        const notification: NotificationEventDto = {
+          targetType,
+          targetId: participantId,
+          templateId: 'chat.new_message',
+          title: 'New Message',
+          message: `${senderLabel}: ${preview}`,
+          type: 'INFO',
+          metadata: { conversationId, senderId, senderType },
+          timestamp: new Date().toISOString(),
+        };
+        await this.kafka.sendMessage(
+          'notification-events',
+          participantId,
+          notification,
         );
       }
     }
