@@ -11,7 +11,7 @@ const Hero = () => {
   const router = useRouter();
 
   return (
-    <div className="bg-[#115061] min-h-[85vh] flex items-center w-full py-12 lg:py-0">
+    <div className="bg-[#1e1e1e] min-h-[85vh] flex items-center w-full py-12 lg:py-0">
       <div className="w-[90%] lg:w-[80%] mx-auto">
         <div className="flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12">
           {/* Text Content */}

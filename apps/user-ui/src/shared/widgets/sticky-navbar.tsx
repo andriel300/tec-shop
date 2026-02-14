@@ -10,8 +10,9 @@ import CartIcon from '../../assets/svgs/cart-icon';
 import { useAuth } from '../../hooks/use-auth';
 import useStore from '../../store';
 import { useCategoryTree } from '../../hooks/use-categories';
+import { NotificationBell } from '../components/notification-bell';
 
-const HeaderBottom = () => {
+const StickyNavbar = () => {
   const { isAuthenticated, user, userProfile, logout } = useAuth();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -21,6 +22,7 @@ const HeaderBottom = () => {
   const [imageError, setImageError] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // zustand hooks
   const wishlist = useStore((state) => state.wishlist);
@@ -62,6 +64,27 @@ const HeaderBottom = () => {
     router.push('/login');
   };
 
+  const handleCategoryMouseEnter = (categoryId: string) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setHoveredCategory(categoryId);
+  };
+
+  const handleDropdownMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredCategory(null);
+    }, 80);
+  };
+
+  const handleSubcategoryMouseEnter = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -97,7 +120,6 @@ const HeaderBottom = () => {
         <div
           ref={dropdownRef}
           className={`w-[260px] ${isSticky && '-mb-2'} cursor-pointer relative`}
-          onClick={() => setShow(!show)}
         >
           <div
             className="flex items-center justify-between px-5 h-[50px] bg-brand-primary"
@@ -116,7 +138,7 @@ const HeaderBottom = () => {
                 className={`absolute left-0 ${
                   isSticky ? 'top-[70px]' : 'top-[50px]'
                 } flex z-50`}
-                onMouseLeave={() => setHoveredCategory(null)}
+                onMouseLeave={handleDropdownMouseLeave}
               >
                 {/* Main categories column */}
                 <div className="w-[260px] max-h-[500px] bg-ui-surface shadow-elev-lg border border-ui-divider flex flex-col">
@@ -130,7 +152,7 @@ const HeaderBottom = () => {
                         {categories.map((category) => (
                           <div
                             key={category.id}
-                            onMouseEnter={() => setHoveredCategory(category.id)}
+                            onMouseEnter={() => handleCategoryMouseEnter(category.id)}
                           >
                             <Link
                               href={`/products?categoryId=${category.id}`}
@@ -182,7 +204,7 @@ const HeaderBottom = () => {
                     ?.length && (
                     <div
                       className="w-[260px] max-h-[500px] bg-ui-surface shadow-elev-lg border border-ui-divider overflow-y-auto ml-px"
-                      onMouseEnter={() => setHoveredCategory(hoveredCategory)}
+                      onMouseEnter={handleSubcategoryMouseEnter}
                     >
                       <div className="py-2">
                         {categories
@@ -281,6 +303,8 @@ const HeaderBottom = () => {
                     </div>
                   </Link>
                 )}
+                {/* Notification Bell */}
+                {mounted && isAuthenticated && <NotificationBell />}
 
                 {/* Wishlist Icon */}
                 <Link
@@ -318,4 +342,4 @@ const HeaderBottom = () => {
   );
 };
 
-export default HeaderBottom;
+export default StickyNavbar;
