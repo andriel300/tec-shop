@@ -16,6 +16,7 @@ import { Logger as PinoLogger } from 'nestjs-pino';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { raw } from 'express';
+import { RpcExceptionFilter } from './filters/rpc-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -102,6 +103,7 @@ async function bootstrap() {
 
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
+  app.useGlobalFilters(new RpcExceptionFilter());
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true, // Strip non-whitelisted properties
