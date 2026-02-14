@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Bell, Check, CheckCheck, Trash2 } from 'lucide-react';
+import { Bell, Check, CheckCheck, Trash2, X, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   useNotifications,
   useMarkAsRead,
@@ -14,6 +15,7 @@ import { useNotificationSocket } from '../../hooks/use-notification-socket';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAuth } from '../../hooks/use-auth';
+import type { NotificationEntry } from '../../lib/api/notifications';
 
 const typeColors: Record<string, string> = {
   INFO: 'bg-blue-500',
@@ -28,6 +30,19 @@ const typeColors: Record<string, string> = {
   DELIVERY: 'bg-teal-500',
 };
 
+const typeBorders: Record<string, string> = {
+  INFO: 'border-l-blue-500',
+  SUCCESS: 'border-l-green-500',
+  WARNING: 'border-l-yellow-500',
+  ERROR: 'border-l-red-500',
+  ORDER: 'border-l-purple-500',
+  PRODUCT: 'border-l-pink-500',
+  SHOP: 'border-l-orange-500',
+  SYSTEM: 'border-l-gray-500',
+  AUTH: 'border-l-cyan-500',
+  DELIVERY: 'border-l-teal-500',
+};
+
 function timeAgo(dateStr: string): string {
   const now = Date.now();
   const diff = now - new Date(dateStr).getTime();
@@ -38,6 +53,84 @@ function timeAgo(dateStr: string): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
+}
+
+function getNotificationLink(notification: NotificationEntry): string | null {
+  if (notification.templateId === 'chat.new_message') {
+    const conversationId = notification.metadata?.conversationId as
+      | string
+      | undefined;
+    if (conversationId) return `/inbox?conversationId=${conversationId}`;
+  }
+  return null;
+}
+
+function NotificationToast({
+  notification,
+  link,
+  onClose,
+}: {
+  notification: NotificationEntry;
+  link: string | null;
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const borderColor = typeBorders[notification.type] || 'border-l-gray-500';
+
+  const handleBodyClick = () => {
+    if (link) {
+      router.push(link);
+      onClose();
+    }
+  };
+
+  return (
+    <div
+      className={`flex items-start gap-3 bg-white border border-gray-200 border-l-4 ${borderColor} rounded-lg shadow-lg p-3.5 w-[360px] max-w-[calc(100vw-32px)]`}
+    >
+      <div
+        className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+          notification.templateId === 'chat.new_message'
+            ? 'bg-blue-100'
+            : 'bg-gray-100'
+        }`}
+      >
+        {notification.templateId === 'chat.new_message' ? (
+          <MessageSquare size={14} className="text-blue-600" />
+        ) : (
+          <div
+            className={`w-2 h-2 rounded-full ${typeColors[notification.type] || 'bg-gray-500'}`}
+          />
+        )}
+      </div>
+
+      <div
+        className={`flex-1 min-w-0 ${link ? 'cursor-pointer' : ''}`}
+        onClick={handleBodyClick}
+      >
+        <p className="text-sm font-semibold text-gray-900 leading-tight">
+          {notification.title}
+        </p>
+        <p className="text-xs text-gray-600 mt-0.5 line-clamp-2 leading-relaxed">
+          {notification.message}
+        </p>
+        {link && (
+          <p className="text-xs text-blue-600 mt-1.5 font-medium flex items-center gap-1">
+            <span>Open conversation</span>
+            <span className="text-[10px]">&#8594;</span>
+          </p>
+        )}
+      </div>
+
+      <button
+        onClick={onClose}
+        className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors mt-0.5"
+        aria-label="Close"
+      >
+        <X size={13} />
+      </button>
+    </div>
+  );
 }
 
 export function NotificationBell() {
@@ -51,15 +144,43 @@ export function NotificationBell() {
   const markAllRead = useMarkAllAsRead();
   const deleteNotification = useDeleteNotification();
 
-  const { unreadCount } = useNotificationSocket({
+  const { unreadCount, setUnreadCount } = useNotificationSocket({
     enabled: !!isAuthenticated,
     onNotification: (notification) => {
-      toast(notification.title, { description: notification.message });
+      const link = getNotificationLink(notification);
+      toast.custom(
+        (toastId) => (
+          <NotificationToast
+            notification={notification}
+            link={link}
+            onClose={() => toast.dismiss(toastId)}
+          />
+        ),
+        { duration: 6000 }
+      );
       queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
   });
 
-  const displayCount = unreadCount || data?.unreadCount || 0;
+  // Use socket count when it reflects real-time arrivals; fall back to server count.
+  // After mark-all-read the socket count is reset to 0 so server count takes over.
+  const displayCount = Math.max(unreadCount, data?.unreadCount ?? 0);
+
+  const handleMarkAllRead = () => {
+    markAllRead.mutate(undefined, {
+      onSuccess: () => {
+        setUnreadCount(0);
+      },
+    });
+  };
+
+  const handleMarkAsRead = (id: string) => {
+    markAsRead.mutate(id, {
+      onSuccess: () => {
+        setUnreadCount(Math.max(0, unreadCount - 1));
+      },
+    });
+  };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -98,7 +219,7 @@ export function NotificationBell() {
             </h3>
             {displayCount > 0 && (
               <button
-                onClick={() => markAllRead.mutate()}
+                onClick={handleMarkAllRead}
                 className="text-xs text-brand-primary hover:text-brand-primary-800 flex items-center gap-1"
               >
                 <CheckCheck size={14} />
@@ -113,13 +234,9 @@ export function NotificationBell() {
                 No notifications yet
               </div>
             ) : (
-              data.notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`px-4 py-3 border-b border-ui-divider hover:bg-ui-muted transition-colors ${
-                    !notification.isRead ? 'bg-brand-primary/5' : ''
-                  }`}
-                >
+              data.notifications.map((notification) => {
+                const link = getNotificationLink(notification);
+                const rowContent = (
                   <div className="flex items-start gap-3">
                     <div
                       className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
@@ -142,7 +259,8 @@ export function NotificationBell() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            markAsRead.mutate(notification.id);
+                            e.preventDefault();
+                            handleMarkAsRead(notification.id);
                           }}
                           className="p-1 text-text-tertiary hover:text-brand-primary transition-colors"
                           title="Mark as read"
@@ -153,6 +271,7 @@ export function NotificationBell() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
+                          e.preventDefault();
                           deleteNotification.mutate(notification.id);
                         }}
                         className="p-1 text-text-tertiary hover:text-red-500 transition-colors"
@@ -162,8 +281,30 @@ export function NotificationBell() {
                       </button>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+
+                return link ? (
+                  <Link
+                    key={notification.id}
+                    href={link}
+                    onClick={() => setIsOpen(false)}
+                    className={`block px-4 py-3 border-b border-ui-divider hover:bg-ui-muted transition-colors ${
+                      !notification.isRead ? 'bg-brand-primary/5' : ''
+                    }`}
+                  >
+                    {rowContent}
+                  </Link>
+                ) : (
+                  <div
+                    key={notification.id}
+                    className={`px-4 py-3 border-b border-ui-divider hover:bg-ui-muted transition-colors ${
+                      !notification.isRead ? 'bg-brand-primary/5' : ''
+                    }`}
+                  >
+                    {rowContent}
+                  </div>
+                );
+              })
             )}
           </div>
 

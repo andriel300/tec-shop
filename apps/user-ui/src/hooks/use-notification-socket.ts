@@ -12,6 +12,7 @@ interface UseNotificationSocketOptions {
 interface UseNotificationSocketReturn {
   isConnected: boolean;
   unreadCount: number;
+  setUnreadCount: (count: number) => void;
 }
 
 const NOTIFICATION_WS_URL =
@@ -79,5 +80,6 @@ export function useNotificationSocket(
   return {
     isConnected,
     unreadCount,
+    setUnreadCount,
   };
 }
