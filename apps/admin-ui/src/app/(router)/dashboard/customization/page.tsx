@@ -45,7 +45,7 @@ import type {
   UpdateHeroSlideData,
 } from '../../../../lib/api/layout';
 
-// ============ Shared Modal Shell ============
+// Shared Modal Shell
 
 const ModalShell = ({
   isOpen,
@@ -68,8 +68,18 @@ const ModalShell = ({
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-white"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
         </button>
         <h3 className="text-white text-xl font-semibold mb-4">{title}</h3>
@@ -79,7 +89,7 @@ const ModalShell = ({
   );
 };
 
-// ============ Delete Confirmation Modal ============
+// Delete Confirmation Modal
 
 const DeleteConfirmModal = ({
   isOpen,
@@ -130,7 +140,7 @@ const DeleteConfirmModal = ({
   );
 };
 
-// ============ Category Form Modal ============
+// Category Form Modal
 
 const CategoryFormModal = ({
   isOpen,
@@ -189,19 +199,13 @@ const CategoryFormModal = ({
       if (cat.id === excludeId) continue;
       result.push({ id: cat.id, name: cat.name, level });
       if (cat.children) {
-        result.push(
-          ...flattenCategories(cat.children, level + 1, excludeId)
-        );
+        result.push(...flattenCategories(cat.children, level + 1, excludeId));
       }
     }
     return result;
   };
 
-  const parentOptions = flattenCategories(
-    allCategories,
-    0,
-    initialData?.id
-  );
+  const parentOptions = flattenCategories(allCategories, 0, initialData?.id);
 
   const generateSlug = (name: string) => {
     return name
@@ -269,9 +273,7 @@ const CategoryFormModal = ({
           <input
             type="text"
             value={formData.slug}
-            onChange={(e) =>
-              setFormData({ ...formData, slug: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
             className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
             placeholder="Auto-generated from name"
           />
@@ -355,7 +357,7 @@ const CategoryFormModal = ({
   );
 };
 
-// ============ Brand Form Modal ============
+// Brand Form Modal
 
 const BrandFormModal = ({
   isOpen,
@@ -463,9 +465,7 @@ const BrandFormModal = ({
           <input
             type="text"
             value={formData.slug}
-            onChange={(e) =>
-              setFormData({ ...formData, slug: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
             className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
             placeholder="Auto-generated from name"
           />
@@ -491,9 +491,7 @@ const BrandFormModal = ({
           <input
             type="text"
             value={formData.logo}
-            onChange={(e) =>
-              setFormData({ ...formData, logo: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
             className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
             placeholder="https://example.com/logo.png"
           />
@@ -553,7 +551,7 @@ const BrandFormModal = ({
   );
 };
 
-// ============ Category Tree Item ============
+// Category Tree Item
 
 const CategoryTreeItem = ({
   category,
@@ -631,8 +629,18 @@ const CategoryTreeItem = ({
             className="text-blue-400 hover:text-blue-300 p-1"
             title="Edit"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
             </svg>
           </button>
           <button
@@ -640,8 +648,18 @@ const CategoryTreeItem = ({
             className="text-red-400 hover:text-red-300 p-1"
             title="Delete"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
             </svg>
           </button>
         </div>
@@ -665,7 +683,7 @@ const CategoryTreeItem = ({
   );
 };
 
-// ============ Helper: Flatten category tree ============
+// Helper: Flatten category tree
 
 const flattenCategories_export = (
   cats: Category[],
@@ -756,8 +774,18 @@ const CategoriesTab = () => {
             disabled={!categories?.length}
             className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded text-sm font-medium disabled:opacity-50 flex items-center gap-2"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
             </svg>
             Export CSV
           </button>
@@ -785,8 +813,18 @@ const CategoriesTab = () => {
         </div>
       ) : !categories?.length ? (
         <div className="bg-slate-800/50 rounded-lg p-8 text-center border border-slate-700">
-          <svg className="w-12 h-12 text-slate-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+          <svg
+            className="w-12 h-12 text-slate-600 mx-auto mb-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+            />
           </svg>
           <p className="text-slate-400 mb-3">No categories yet</p>
           <button
@@ -838,7 +876,7 @@ const CategoriesTab = () => {
   );
 };
 
-// ============ Brands Tab ============
+// Brands Tab
 
 const BrandsTab = () => {
   const [formModalOpen, setFormModalOpen] = useState(false);
@@ -976,7 +1014,8 @@ const BrandsTab = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <div className="text-slate-400 text-sm">
-          {brands?.length || 0} {(brands?.length || 0) === 1 ? 'brand' : 'brands'} total
+          {brands?.length || 0}{' '}
+          {(brands?.length || 0) === 1 ? 'brand' : 'brands'} total
         </div>
         <div className="flex gap-2">
           <button
@@ -984,8 +1023,18 @@ const BrandsTab = () => {
             disabled={!brands?.length}
             className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded text-sm font-medium disabled:opacity-50 flex items-center gap-2"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
             </svg>
             Export CSV
           </button>
@@ -1013,8 +1062,18 @@ const BrandsTab = () => {
         </div>
       ) : !brands?.length ? (
         <div className="bg-slate-800/50 rounded-lg p-8 text-center border border-slate-700">
-          <svg className="w-12 h-12 text-slate-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+          <svg
+            className="w-12 h-12 text-slate-600 mx-auto mb-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+            />
           </svg>
           <p className="text-slate-400 mb-3">No brands yet</p>
           <button
@@ -1171,7 +1230,9 @@ const HeroSlideFormModal = ({
           <input
             type="text"
             value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, title: e.target.value })
+            }
             className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
             placeholder="e.g. Discover Premium Products"
           />
@@ -1185,18 +1246,24 @@ const HeroSlideFormModal = ({
           <input
             type="text"
             value={formData.subtitle}
-            onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, subtitle: e.target.value })
+            }
             className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
             placeholder="e.g. Shop the latest from top vendors"
           />
         </div>
 
         <div>
-          <label className="text-slate-300 text-sm block mb-2">Image URL *</label>
+          <label className="text-slate-300 text-sm block mb-2">
+            Image URL *
+          </label>
           <input
             type="text"
             value={formData.imageUrl}
-            onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, imageUrl: e.target.value })
+            }
             className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
             placeholder="https://ik.imagekit.io/..."
           />
@@ -1220,21 +1287,29 @@ const HeroSlideFormModal = ({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-slate-300 text-sm block mb-2">Action URL</label>
+            <label className="text-slate-300 text-sm block mb-2">
+              Action URL
+            </label>
             <input
               type="text"
               value={formData.actionUrl}
-              onChange={(e) => setFormData({ ...formData, actionUrl: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, actionUrl: e.target.value })
+              }
               className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
               placeholder="/products or /categories/..."
             />
           </div>
           <div>
-            <label className="text-slate-300 text-sm block mb-2">Action Label</label>
+            <label className="text-slate-300 text-sm block mb-2">
+              Action Label
+            </label>
             <input
               type="text"
               value={formData.actionLabel}
-              onChange={(e) => setFormData({ ...formData, actionLabel: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, actionLabel: e.target.value })
+              }
               className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
               placeholder="e.g. Shop Now"
             />
@@ -1247,7 +1322,10 @@ const HeroSlideFormModal = ({
             type="number"
             value={formData.order}
             onChange={(e) =>
-              setFormData({ ...formData, order: parseInt(e.target.value, 10) || 0 })
+              setFormData({
+                ...formData,
+                order: parseInt(e.target.value, 10) || 0,
+              })
             }
             className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
             min={0}
@@ -1469,8 +1547,18 @@ const HeroSlidesTab = () => {
         </div>
       ) : !slides.length ? (
         <div className="bg-slate-800/50 rounded-lg p-8 text-center border border-slate-700">
-          <svg className="w-12 h-12 text-slate-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          <svg
+            className="w-12 h-12 text-slate-600 mx-auto mb-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
           </svg>
           <p className="text-slate-400 mb-3">No hero slides yet</p>
           <p className="text-slate-500 text-sm mb-4">
@@ -1612,9 +1700,7 @@ const LayoutTab = () => {
           <input
             type="text"
             value={formData.logo}
-            onChange={(e) =>
-              setFormData({ ...formData, logo: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
             className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
             placeholder="https://example.com/logo.png"
           />
@@ -1687,8 +1773,18 @@ const CustomizationPage = () => {
       id: 'categories',
       label: 'Categories',
       icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+        <svg
+          className="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+          />
         </svg>
       ),
     },
@@ -1696,8 +1792,18 @@ const CustomizationPage = () => {
       id: 'brands',
       label: 'Brands',
       icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+        <svg
+          className="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+          />
         </svg>
       ),
     },
@@ -1705,8 +1811,18 @@ const CustomizationPage = () => {
       id: 'heroSlides',
       label: 'Hero Slides',
       icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        <svg
+          className="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+          />
         </svg>
       ),
     },
@@ -1714,8 +1830,18 @@ const CustomizationPage = () => {
       id: 'layout',
       label: 'Layout',
       icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+        <svg
+          className="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+          />
         </svg>
       ),
     },
