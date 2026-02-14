@@ -460,6 +460,43 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                       {attribute.values.map((value) => {
                         const isSelected =
                           selectedAttributes[attribute.name] === value;
+                        const isColorAttribute =
+                          attribute.name.toLowerCase() === 'color';
+
+                        if (isColorAttribute) {
+                          return (
+                            <button
+                              key={value}
+                              onClick={() =>
+                                handleAttributeChange(attribute.name, value)
+                              }
+                              className={`relative w-10 h-10 rounded-full border-2 transition-all ${
+                                isSelected
+                                  ? 'border-brand-primary ring-2 ring-brand-primary ring-offset-2 scale-110'
+                                  : 'border-gray-300 hover:border-gray-400 hover:scale-105'
+                              }`}
+                              style={{ backgroundColor: value.toLowerCase() }}
+                              title={value}
+                              aria-label={`Select ${value} color`}
+                            >
+                              {isSelected && (
+                                <svg
+                                  className="absolute inset-0 m-auto w-5 h-5 text-white drop-shadow-md"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={3}
+                                    d="M5 13l4 4L19 7"
+                                  />
+                                </svg>
+                              )}
+                            </button>
+                          );
+                        }
 
                         return (
                           <button
