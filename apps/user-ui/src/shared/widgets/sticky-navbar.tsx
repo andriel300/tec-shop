@@ -11,6 +11,7 @@ import { useAuth } from '../../hooks/use-auth';
 import useStore from '../../store';
 import { useCategoryTree } from '../../hooks/use-categories';
 import { NotificationBell } from '../components/notification-bell';
+import LanguageSwitcher from '../components/language-switcher';
 
 const StickyNavbar = () => {
   const { isAuthenticated, user, userProfile, logout } = useAuth();
@@ -305,6 +306,9 @@ const StickyNavbar = () => {
                 )}
                 {/* Notification Bell */}
                 {mounted && isAuthenticated && <NotificationBell />}
+
+                {/* Language Switcher */}
+                <LanguageSwitcher />
 
                 {/* Wishlist Icon */}
                 <Link
