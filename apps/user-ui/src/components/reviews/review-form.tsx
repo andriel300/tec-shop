@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import Image from 'next/image';
 import { ChevronDown, ChevronUp, ImagePlus, X, Loader2 } from 'lucide-react';
 import StarRating from '../ui/star-rating';

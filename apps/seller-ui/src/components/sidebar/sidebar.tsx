@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import useSidebar from '../../hooks/useSidebar';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter } from '@/i18n/navigation';
 import useSeller from '../../hooks/useSeller';
 import Box from '../box';
 import { Sidebar } from './sidebar.styles';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { Logo } from '../../assets/svgs/logo';
 import SidebarItems from './sidebar.item';
 import Home from '../../assets/svgs/icons/home-icon';
@@ -32,6 +33,7 @@ import { NotificationBellV2 } from '../notification-bell-v2';
 import LanguageSwitcher from '../language-switcher';
 
 const SidebarBarWrapper = () => {
+  const t = useTranslations('Sidebar');
   const { activeSidebar, setActiveSidebar } = useSidebar();
   const pathName = usePathname();
   const router = useRouter();
@@ -110,7 +112,7 @@ const SidebarBarWrapper = () => {
       <div className="block my-3 h-full">
         <Sidebar.Body className="body sidebar">
           <SidebarItems
-            title="Dashboard"
+            title={t('dashboard')}
             icon={
               <Home className="w-8 h-8" fill={getIconColor('/dashboard')} />
             }
@@ -118,10 +120,10 @@ const SidebarBarWrapper = () => {
             href="/dashboard"
           />
           <div className="mt-2 block">
-            <SidebarMenu title="Main Menu">
+            <SidebarMenu title={t('mainMenu')}>
               <SidebarItems
                 isActive={activeSidebar === '/dashboard/orders'}
-                title="Orders"
+                title={t('orders')}
                 href="/dashboard/orders"
                 icon={
                   <ListOrdered
@@ -132,7 +134,7 @@ const SidebarBarWrapper = () => {
               />
               <SidebarItems
                 isActive={activeSidebar === '/dashboard/payments'}
-                title="Payments"
+                title={t('payments')}
                 href="/dashboard/payments"
                 icon={
                   <Payment
@@ -142,10 +144,10 @@ const SidebarBarWrapper = () => {
                 }
               />
             </SidebarMenu>
-            <SidebarMenu title="Products">
+            <SidebarMenu title={t('products')}>
               <SidebarItems
                 isActive={activeSidebar === '/dashboard/create-product'}
-                title="Create Product"
+                title={t('createProduct')}
                 href="/dashboard/create-product"
                 icon={
                   <SquarePlus
@@ -156,7 +158,7 @@ const SidebarBarWrapper = () => {
               />
               <SidebarItems
                 isActive={activeSidebar === '/dashboard/all-products'}
-                title="All Products"
+                title={t('allProducts')}
                 href="/dashboard/all-products"
                 icon={
                   <PackageSearch
@@ -167,7 +169,7 @@ const SidebarBarWrapper = () => {
               />
               <SidebarItems
                 isActive={activeSidebar === '/dashboard/trash'}
-                title="Trash"
+                title={t('trash')}
                 href="/dashboard/trash"
                 icon={
                   <Trash2 size={22} color={getIconColor('/dashboard/trash')} />
@@ -175,10 +177,10 @@ const SidebarBarWrapper = () => {
                 badge={deletedCount}
               />
             </SidebarMenu>
-            <SidebarMenu title="Events">
+            <SidebarMenu title={t('events')}>
               <SidebarItems
                 isActive={activeSidebar === '/dashboard/create-event'}
-                title="Create Event"
+                title={t('createEvent')}
                 href="/dashboard/create-event"
                 icon={
                   <CalendarPlus
@@ -189,7 +191,7 @@ const SidebarBarWrapper = () => {
               />
               <SidebarItems
                 isActive={activeSidebar === '/dashboard/events'}
-                title="All Events"
+                title={t('allEvents')}
                 href="/dashboard/events"
                 icon={
                   <BellPlus
@@ -199,10 +201,10 @@ const SidebarBarWrapper = () => {
                 }
               />
             </SidebarMenu>
-            <SidebarMenu title="Controllers">
+            <SidebarMenu title={t('controllers')}>
               <SidebarItems
                 isActive={activeSidebar === '/dashboard/inbox'}
-                title="Inbox"
+                title={t('inbox')}
                 href="/dashboard/inbox"
                 icon={
                   <Mail size={20} color={getIconColor('/dashboard/inbox')} />
@@ -210,7 +212,7 @@ const SidebarBarWrapper = () => {
               />
               <SidebarItems
                 isActive={activeSidebar === '/dashboard/settings'}
-                title="Settings"
+                title={t('settings')}
                 href="/dashboard/settings"
                 icon={
                   <Settings
@@ -221,7 +223,7 @@ const SidebarBarWrapper = () => {
               />
               <SidebarItems
                 isActive={activeSidebar === '/dashboard/notifications'}
-                title="Notifications"
+                title={t('notifications')}
                 href="/dashboard/notifications"
                 icon={
                   <BellRing
@@ -231,10 +233,10 @@ const SidebarBarWrapper = () => {
                 }
               />
             </SidebarMenu>
-            <SidebarMenu title="Extras">
+            <SidebarMenu title={t('extras')}>
               <SidebarItems
                 isActive={activeSidebar === '/dashboard/discount-codes'}
-                title="Discount Codes"
+                title={t('discountCodes')}
                 href="/dashboard/discount-codes"
                 icon={
                   <TicketPercent
@@ -245,7 +247,7 @@ const SidebarBarWrapper = () => {
               />
               <SidebarItems
                 isActive={false}
-                title="Logout"
+                title={t('logout')}
                 onClick={handleLogout}
                 icon={<LogOut size={20} color="#969696" />}
               />

@@ -1,0 +1,45 @@
+{
+  "Common": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "logout": "Logout",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "noResults": "No results found",
+    "viewAll": "View All",
+    "hello": "Hello,",
+    "welcome": "Welcome",
+    "error": "Error",
+    "shopNow": "Shop Now",
+    "learnMore": "Learn More"
+  },
+  "Navbar": {
+    "allDepartments": "All Departments",
+    "signInRegister": "Sign In / Register",
+    "searchPlaceholder": "Search for products and shops...",
+    "viewAllResults": "View all results for \"{query}\"",
+    "home": "Home",
+    "products": "Products",
+    "shops": "Shops",
+    "offers": "Offers",
+    "becomeASeller": "Become A Seller",
+    "termsOfService": "Terms of Service",
+    "viewAllCategories": "View All Categories",
+    "loadingCategories": "Loading categories...",
+    "noCategories": "No categories available",
+    "noResultsFor": "No results found for \"{query}\"",
+    "tryDifferent": "Try different keywords or browse our categories",
+    "account": "Account",
+    "wishlist": "Wishlist",
+    "cart": "Cart"
+  },
+  "LanguageSwitcher": {
+    "changeLanguage": "Change language",
+    "english": "English",
+    "portuguese": "Portuguese (BR)"
+  }
+}

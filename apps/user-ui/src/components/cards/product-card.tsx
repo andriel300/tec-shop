@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import type { Product } from '../../lib/api/products';
 import StarRating from '../ui/star-rating';
 import { Eye, Heart, ShoppingBag } from 'lucide-react';

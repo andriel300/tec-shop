@@ -1,0 +1,45 @@
+{
+  "Common": {
+    "signIn": "Entrar",
+    "signUp": "Cadastrar",
+    "logout": "Sair",
+    "loading": "Carregando...",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "search": "Buscar",
+    "noResults": "Nenhum resultado encontrado",
+    "viewAll": "Ver Tudo",
+    "hello": "Ola,",
+    "welcome": "Bem-vindo",
+    "error": "Erro",
+    "shopNow": "Comprar Agora",
+    "learnMore": "Saiba Mais"
+  },
+  "Navbar": {
+    "allDepartments": "Todos os Departamentos",
+    "signInRegister": "Entrar / Cadastrar",
+    "searchPlaceholder": "Buscar produtos e lojas...",
+    "viewAllResults": "Ver todos os resultados para \"{query}\"",
+    "home": "Inicio",
+    "products": "Produtos",
+    "shops": "Lojas",
+    "offers": "Ofertas",
+    "becomeASeller": "Seja um Vendedor",
+    "termsOfService": "Termos de Servico",
+    "viewAllCategories": "Ver Todas as Categorias",
+    "loadingCategories": "Carregando categorias...",
+    "noCategories": "Nenhuma categoria disponivel",
+    "noResultsFor": "Nenhum resultado encontrado para \"{query}\"",
+    "tryDifferent": "Tente palavras-chave diferentes ou navegue pelas categorias",
+    "account": "Conta",
+    "wishlist": "Lista de Desejos",
+    "cart": "Carrinho"
+  },
+  "LanguageSwitcher": {
+    "changeLanguage": "Alterar idioma",
+    "english": "Ingles",
+    "portuguese": "Portugues (BR)"
+  }
+}

@@ -1,12 +1,13 @@
 /* eslint-disable @nx/enforce-module-boundaries */
 'use client';
 import useSidebar from '../../../hooks/useSidebar';
+import { useTranslations } from 'next-intl';
 import React, { useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname } from '@/i18n/navigation';
 import useAdmin from '../../../hooks/useAdmin';
 import Box from '../box';
 import { Sidebar } from './sidebar.styles';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { Logo } from '../../../assets/svgs/logo';
 import SidebarItem from './sidebar.item';
 import Home from '../../../assets/svgs/icons/home-icon';
@@ -27,6 +28,7 @@ import { NotificationBell } from '../notification-bell';
 import LanguageSwitcher from '../language-switcher';
 
 const SidebarWrapper = () => {
+  const t = useTranslations('Sidebar');
   const { activeSidebar, setActiveSidebar } = useSidebar();
   const pathName = usePathname();
   const { admin } = useAdmin();
@@ -76,16 +78,16 @@ const SidebarWrapper = () => {
       <div className="block my-3 h-full">
         <Sidebar.Body className="body sidebar">
           <SidebarItem
-            title="Dashboard"
+            title={t('dashboard')}
             icon={<Home fill={getIconColor('dashboard')} />}
             isActive={activeSidebar === '/dashboard'}
             href="/dashboard"
           >
             <div className="mt-2 block">
-              <SidebarMenu title="Main Menu">
+              <SidebarMenu title={t('mainMenu')}>
                 <SidebarItem
                   isActive={activeSidebar === '/dashboard/orders'}
-                  title="Orders"
+                  title={t('orders')}
                   href="/dashboard/orders"
                   icon={
                     <ListOrdered
@@ -97,14 +99,14 @@ const SidebarWrapper = () => {
 
                 <SidebarItem
                   isActive={activeSidebar === '/dashboard/payment'}
-                  title="Payments"
+                  title={t('payments')}
                   href="/dashboard/payment"
                   icon={<Payment fill={getIconColor('/dashboard/payment')} />}
                 />
 
                 <SidebarItem
                   isActive={activeSidebar === '/dashboard/products'}
-                  title="Products"
+                  title={t('products')}
                   href="/dashboard/products"
                   icon={
                     <PackageSearch
@@ -115,7 +117,7 @@ const SidebarWrapper = () => {
                 />
                 <SidebarItem
                   isActive={activeSidebar === '/dashboard/events'}
-                  title="Events"
+                  title={t('events')}
                   href="/dashboard/events"
                   icon={
                     <BellPlus
@@ -127,14 +129,14 @@ const SidebarWrapper = () => {
 
                 <SidebarItem
                   isActive={activeSidebar === '/dashboard/users'}
-                  title="Users"
+                  title={t('users')}
                   href="/dashboard/users"
                   icon={<Payment fill={getIconColor('/dashboard/users')} />}
                 />
 
                 <SidebarItem
                   isActive={activeSidebar === '/dashboard/sellers'}
-                  title="Sellers"
+                  title={t('sellers')}
                   href="/dashboard/sellers"
                   icon={
                     <Store
@@ -147,10 +149,10 @@ const SidebarWrapper = () => {
 
               {/* Controllers */}
 
-              <SidebarMenu title="Controllers">
+              <SidebarMenu title={t('controllers')}>
                 <SidebarItem
                   isActive={activeSidebar === '/dashboard/loggers'}
-                  title="Loggers"
+                  title={t('loggers')}
                   href="/dashboard/loggers"
                   icon={
                     <FileClock
@@ -162,7 +164,7 @@ const SidebarWrapper = () => {
 
                 <SidebarItem
                   isActive={activeSidebar === '/dashboard/management'}
-                  title="Management"
+                  title={t('management')}
                   href="/dashboard/management"
                   icon={
                     <Settings
@@ -174,7 +176,7 @@ const SidebarWrapper = () => {
 
                 <SidebarItem
                   isActive={activeSidebar === '/dashboard/notifications'}
-                  title="Notifications"
+                  title={t('notifications')}
                   href="/dashboard/notifications"
                   icon={
                     <BellRing
@@ -184,10 +186,10 @@ const SidebarWrapper = () => {
                   }
                 />
               </SidebarMenu>
-              <SidebarMenu title="Customization">
+              <SidebarMenu title={t('customization')}>
                 <SidebarItem
                   isActive={activeSidebar === '/dashboard/customization'}
-                  title="All Customization"
+                  title={t('allCustomization')}
                   href="/dashboard/customization"
                   icon={
                     <PencilRuler
@@ -198,10 +200,10 @@ const SidebarWrapper = () => {
                 />
               </SidebarMenu>
 
-              <SidebarMenu title="Extras">
+              <SidebarMenu title={t('extras')}>
                 <SidebarItem
                   isActive={activeSidebar === '/logout'}
-                  title="Logout"
+                  title={t('logout')}
                   href="/"
                   icon={<LogOut size={20} color={getIconColor('/logout')} />}
                 />

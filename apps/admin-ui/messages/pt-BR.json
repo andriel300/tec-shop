@@ -1,0 +1,38 @@
+{
+  "Common": {
+    "signIn": "Entrar",
+    "signUp": "Cadastrar",
+    "logout": "Sair",
+    "loading": "Carregando...",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "search": "Buscar",
+    "noResults": "Nenhum resultado encontrado",
+    "error": "Erro"
+  },
+  "Sidebar": {
+    "dashboard": "Painel",
+    "mainMenu": "Menu Principal",
+    "orders": "Pedidos",
+    "payments": "Pagamentos",
+    "products": "Produtos",
+    "events": "Eventos",
+    "users": "Usuarios",
+    "sellers": "Vendedores",
+    "controllers": "Controladores",
+    "loggers": "Registros",
+    "management": "Gerenciamento",
+    "notifications": "Notificacoes",
+    "customization": "Personalizacao",
+    "allCustomization": "Toda Personalizacao",
+    "extras": "Extras",
+    "logout": "Sair"
+  },
+  "LanguageSwitcher": {
+    "changeLanguage": "Alterar idioma",
+    "english": "Ingles",
+    "portuguese": "Portugues (BR)"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "Common": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "logout": "Logout",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "noResults": "No results found",
+    "error": "Error"
+  },
+  "Sidebar": {
+    "dashboard": "Dashboard",
+    "mainMenu": "Main Menu",
+    "orders": "Orders",
+    "payments": "Payments",
+    "products": "Products",
+    "events": "Events",
+    "users": "Users",
+    "sellers": "Sellers",
+    "controllers": "Controllers",
+    "loggers": "Loggers",
+    "management": "Management",
+    "notifications": "Notifications",
+    "customization": "Customization",
+    "allCustomization": "All Customization",
+    "extras": "Extras",
+    "logout": "Logout"
+  },
+  "LanguageSwitcher": {
+    "changeLanguage": "Change language",
+    "english": "English",
+    "portuguese": "Portuguese (BR)"
+  }
+}

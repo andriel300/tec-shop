@@ -1,0 +1,49 @@
+{
+  "Common": {
+    "signIn": "Entrar",
+    "signUp": "Cadastrar",
+    "logout": "Sair",
+    "loading": "Carregando...",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "search": "Buscar",
+    "noResults": "Nenhum resultado encontrado",
+    "error": "Erro"
+  },
+  "Sidebar": {
+    "dashboard": "Painel",
+    "mainMenu": "Menu Principal",
+    "orders": "Pedidos",
+    "payments": "Pagamentos",
+    "products": "Produtos",
+    "createProduct": "Criar Produto",
+    "allProducts": "Todos os Produtos",
+    "trash": "Lixeira",
+    "events": "Eventos",
+    "createEvent": "Criar Evento",
+    "allEvents": "Todos os Eventos",
+    "controllers": "Controladores",
+    "inbox": "Caixa de Entrada",
+    "settings": "Configuracoes",
+    "notifications": "Notificacoes",
+    "extras": "Extras",
+    "discountCodes": "Codigos de Desconto",
+    "logout": "Sair"
+  },
+  "Auth": {
+    "loginTitle": "Bem-vindo de Volta",
+    "signupTitle": "Crie Sua Conta de Vendedor",
+    "email": "Email",
+    "password": "Senha",
+    "forgotPassword": "Esqueceu a Senha?",
+    "noAccount": "Nao tem uma conta?",
+    "haveAccount": "Ja tem uma conta?"
+  },
+  "LanguageSwitcher": {
+    "changeLanguage": "Alterar idioma",
+    "english": "Ingles",
+    "portuguese": "Portugues (BR)"
+  }
+}

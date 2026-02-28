@@ -1,18 +1,10 @@
 import './global.css';
 import { Inter, Poppins, Roboto } from 'next/font/google';
-import { Providers } from './providers';
 
-// Configure fonts with emoji support
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
   display: 'swap',
-  fallback: [
-    'Apple Color Emoji',
-    'Segoe UI Emoji',
-    'Segoe UI Symbol',
-    'Noto Color Emoji',
-  ],
 });
 
 const poppins = Poppins({
@@ -20,12 +12,6 @@ const poppins = Poppins({
   weight: ['400', '500', '600', '700'],
   variable: '--font-poppins',
   display: 'swap',
-  fallback: [
-    'Apple Color Emoji',
-    'Segoe UI Emoji',
-    'Segoe UI Symbol',
-    'Noto Color Emoji',
-  ],
 });
 
 const roboto = Roboto({
@@ -33,12 +19,6 @@ const roboto = Roboto({
   weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
   variable: '--font-roboto',
   display: 'swap',
-  fallback: [
-    'Apple Color Emoji',
-    'Segoe UI Emoji',
-    'Segoe UI Symbol',
-    'Noto Color Emoji',
-  ],
 });
 
 export const metadata = {
@@ -53,11 +33,10 @@ export default function RootLayout({
 }) {
   return (
     <html
-      lang="en"
       className={`min-h-screen bg-slate-900 font-heading antialiased ${inter.variable} ${poppins.variable} ${roboto.variable}`}
     >
-      <body className="font-sans">
-        <Providers>{children}</Providers>
+      <body suppressHydrationWarning className="font-sans">
+        {children}
       </body>
     </html>
   );
