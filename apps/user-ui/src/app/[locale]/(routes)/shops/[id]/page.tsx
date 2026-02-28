@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
-import SellerProfile from '../../../../shared/modules/seller/seller-profile';
-import { getShopById, getShopFollowersCount } from '../../../../lib/api/shops';
+import SellerProfile from '../../../../../shared/modules/seller/seller-profile';
+import {
+  getShopById,
+  getShopFollowersCount,
+} from '../../../../../lib/api/shops';
 
 async function fetchShopDetails(id: string) {
   try {
@@ -74,7 +77,9 @@ const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Shop Not Found</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            Shop Not Found
+          </h1>
           <p className="text-gray-600">
             The shop you are looking for does not exist or has been removed.
           </p>

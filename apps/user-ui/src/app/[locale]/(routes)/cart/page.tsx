@@ -1,16 +1,16 @@
 'use client';
 
-import { Input } from '../../../components/ui/core/Input';
-import { useAuth } from '../../../hooks/use-auth';
-import useDeviceTracking from '../../../hooks/use-device-tracking';
-import useLocationTracking from '../../../hooks/use-location-tracking';
-import useStore from '../../../store';
+import { Input } from '../../../../components/ui/core/Input';
+import { useAuth } from '../../../../hooks/use-auth';
+import useDeviceTracking from '../../../../hooks/use-device-tracking';
+import useLocationTracking from '../../../../hooks/use-location-tracking';
+import useStore from '../../../../store';
 import { Loader2, MapPin } from 'lucide-react';
 import Image from 'next/image';
-import { Link } from '@/i18n/navigation';
+import { Link } from '../../../../i18n/navigation';
 import React from 'react';
-import { useShippingAddresses } from '../../../hooks/use-shipping-addresses';
-import { apiClient } from '../../../lib/api/client';
+import { useShippingAddresses } from '../../../../hooks/use-shipping-addresses';
+import { apiClient } from '../../../../lib/api/client';
 import { toast } from 'sonner';
 
 const CartPage = () => {

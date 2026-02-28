@@ -1,11 +1,11 @@
 'use client';
 
-import { apiClient } from '../../../lib/api/client';
-import { Link } from '@/i18n/navigation';
+import { apiClient } from '../../../../lib/api/client';
+import { Link } from '../../../../i18n/navigation';
 import React, { useEffect } from 'react';
 import { ChevronDown, X, Store, Search, Star } from 'lucide-react';
-import ShopCard from '../../../components/cards/shop-card';
-import { countries } from '../../../lib/utils/countries';
+import ShopCard from '../../../../components/cards/shop-card';
+import { countries } from '../../../../lib/utils/countries';
 
 // Shop categories (different from product categories)
 const SHOP_CATEGORIES = [
@@ -377,7 +377,8 @@ const Page = () => {
 
                   {minRating > 0 && (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-100 text-yellow-800 rounded-full text-sm">
-                      <span className="font-medium">Rating:</span> {minRating}+ ⭐
+                      <span className="font-medium">Rating:</span> {minRating}+
+                      ⭐
                       <button
                         onClick={() => setMinRating(0)}
                         className="hover:bg-yellow-200 rounded-full p-0.5 transition-colors"

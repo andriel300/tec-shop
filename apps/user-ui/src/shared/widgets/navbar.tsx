@@ -1,6 +1,6 @@
 'use client';
 
-import { Link } from '@/i18n/navigation';
+import { Link } from '../../i18n/navigation';
 import { useTranslations } from 'next-intl';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/use-auth';

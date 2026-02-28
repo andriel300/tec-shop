@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname } from '@/i18n/navigation';
+import { usePathname } from '../../i18n/navigation';
 import Footer from './footer';
 
 // Pages where footer should be hidden

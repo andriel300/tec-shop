@@ -1,6 +1,6 @@
 'use client';
 
-import { Link } from '@/i18n/navigation';
+import { Link } from '../../i18n/navigation';
 import React, { useState } from 'react';
 import {
   Facebook,

@@ -2,34 +2,35 @@
 
 import { useForm } from '@tanstack/react-form';
 import React, { useState, useEffect } from 'react';
-import { useRouter } from '@/i18n/navigation';
 import { useParams } from 'next/navigation';
 import { Package, DollarSign, Tag, Boxes } from 'lucide-react';
 import {
   useProduct,
   useUpdateProduct,
-} from '../../../../../../hooks/useProducts';
-import { Alert } from '../../../../../../shared/components/ui/core/Alert';
-import { Breadcrumb } from '../../../../../../shared/components/navigation/Breadcrumb';
-import { ProductImageUploader } from '../../../../../../shared/components/ui/form/ProductImageUploader';
-import { FormField } from '../../../../../../shared/components/ui/form/FormField';
-import { Select } from '../../../../../../shared/components/ui/core/Select';
+} from '../../../../../../../hooks/useProducts';
+import { Alert } from '../../../../../../../shared/components/ui/core/Alert';
+import { Breadcrumb } from '../../../../../../../shared/components/navigation/Breadcrumb';
+import { ProductImageUploader } from '../../../../../../../shared/components/ui/form/ProductImageUploader';
+import { FormField } from '../../../../../../../shared/components/ui/form/FormField';
+import { Select } from '../../../../../../../shared/components/ui/core/Select';
 import { Input } from '@tec-shop/input';
-import { RichTextEditor } from '../../../../../../shared/components/ui/form/RichTextEditor';
+import { RichTextEditor } from '../../../../../../../shared/components/ui/form/RichTextEditor';
 import {
   CategorySelector,
   type Category,
-} from '../../../../../../shared/components/ui/form/CategorySelector';
+} from '../../../../../../../shared/components/ui/form/CategorySelector';
 import {
   BrandSelector,
   type Brand,
-} from '../../../../../../shared/components/ui/form/BrandSelector';
-import { DiscountSelector } from '../../../../../../shared/components/ui/form/DiscountSelector';
-import { TagInput } from '../../../../../../shared/components/ui/form/TagInput';
-import { VariantManager } from '../../../../../../shared/components/ui/form/VariantManager';
-import { DimensionsInput } from '../../../../../../shared/components/ui/form/DimensionsInput';
-import { SEOFields } from '../../../../../../shared/components/ui/form/SEOFields';
-import { ProductVariant } from '../../../../../../shared/components/ui/form/variant-manager/VariantTable';
+} from '../../../../../../../shared/components/ui/form/BrandSelector';
+import { DiscountSelector } from '../../../../../../../shared/components/ui/form/DiscountSelector';
+import { TagInput } from '../../../../../../../shared/components/ui/form/TagInput';
+import { VariantManager } from '../../../../../../../shared/components/ui/form/VariantManager';
+import { DimensionsInput } from '../../../../../../../shared/components/ui/form/DimensionsInput';
+import { SEOFields } from '../../../../../../../shared/components/ui/form/SEOFields';
+import { ProductVariant } from '../../../../../../../shared/components/ui/form/variant-manager/VariantTable';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { useRouter } from 'apps/admin-ui/src/i18n/navigation';
 
 const PRODUCT_TYPES = [
   { value: 'simple', label: 'Simple Product' },

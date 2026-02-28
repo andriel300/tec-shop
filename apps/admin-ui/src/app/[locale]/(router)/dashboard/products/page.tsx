@@ -8,8 +8,8 @@ import {
   type ColumnDef,
 } from '@tanstack/react-table';
 import { useQuery } from '@tanstack/react-query';
-import apiClient from '../../../../lib/api/client';
-import type { ProductResponse } from '../../../../lib/api/products';
+import apiClient from '../../../../../lib/api/client';
+import type { ProductResponse } from '../../../../../lib/api/products';
 
 interface PublicProductsResponse {
   products: ProductResponse[];
@@ -275,10 +275,7 @@ const ProductsPage = () => {
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (
-                      <th
-                        key={header.id}
-                        className="p-3 text-left font-medium"
-                      >
+                      <th key={header.id} className="p-3 text-left font-medium">
                         {flexRender(
                           header.column.columnDef.header,
                           header.getContext()

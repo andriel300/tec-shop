@@ -1,10 +1,10 @@
 'use client';
 import { AlignLeft, ChevronDown, ChevronRight, HeartIcon } from 'lucide-react';
-import { Link } from '@/i18n/navigation';
+import { Link } from '../../i18n/navigation';
 import { useTranslations } from 'next-intl';
 import React, { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from '@/i18n/navigation';
+import { useRouter } from '../../i18n/navigation';
 import { navItems } from '../../configs/constants';
 import ProfileIcon from '../../assets/svgs/profile-icon';
 import CartIcon from '../../assets/svgs/cart-icon';

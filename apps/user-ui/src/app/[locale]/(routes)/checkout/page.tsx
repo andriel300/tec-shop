@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { useRouter } from '@/i18n/navigation';
+import { useRouter } from '../../../../i18n/navigation';
 
 /**
  * Checkout Page - Redirects to Stripe Hosted Checkout

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Search, X } from 'lucide-react';
-import { useRouter } from '@/i18n/navigation';
+import { useRouter } from '../../i18n/navigation';
 import { apiClient } from '../../lib/api/client';
 import SearchDropdown from './SearchDropdown';
 import { Input } from '../../components/ui/core/Input';

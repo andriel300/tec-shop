@@ -1,10 +1,11 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from '@/i18n/navigation';
 import { Loader2 } from 'lucide-react';
-import SidebarBarWrapper from '../../../components/sidebar/sidebar';
-import { useAuth } from '../../../contexts/auth-context';
+import SidebarBarWrapper from '../../../../components/sidebar/sidebar';
+import { useAuth } from '../../../../contexts/auth-context';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { useRouter } from 'apps/seller-ui/src/i18n/navigation';
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, isLoading } = useAuth();

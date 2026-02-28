@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { Link } from '@/i18n/navigation';
 import type { Product } from '../../lib/api/products';
 import StarRating from '../ui/star-rating';
 import { Eye, Heart, ShoppingBag } from 'lucide-react';
@@ -12,6 +11,7 @@ import useLocationTracking from '../../hooks/use-location-tracking';
 import useDeviceTracking from '../../hooks/use-device-tracking';
 import useStore from '../../store';
 import { useShop } from '../../hooks/use-shops';
+import { Link } from '../../i18n/navigation';
 
 interface ProductCardProps {
   product: Product;

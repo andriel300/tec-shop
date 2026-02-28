@@ -16,10 +16,11 @@ import {
   AlertCircle,
   ChevronLeft,
 } from 'lucide-react';
-import { Link } from '@/i18n/navigation';
 import { toast } from 'sonner';
-import apiClient from '../../../../../lib/api/client';
-import { Breadcrumb } from '../../../../../shared/components/navigation/Breadcrumb';
+import apiClient from '../../../../../../lib/api/client';
+import { Breadcrumb } from '../../../../../../shared/components/navigation/Breadcrumb';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { Link } from 'apps/admin-ui/src/i18n/navigation';
 
 interface OrderItem {
   id: string;

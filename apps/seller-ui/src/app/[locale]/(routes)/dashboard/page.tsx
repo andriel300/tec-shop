@@ -16,7 +16,7 @@ import {
   Cell,
   Legend,
 } from 'recharts';
-import { useSellerStatistics } from '../../../hooks/useSellerData';
+import { useSellerStatistics } from '../../../../hooks/useSellerData';
 
 // Mock data for charts (will be replaced with real data from order-service)
 const revenueData = [

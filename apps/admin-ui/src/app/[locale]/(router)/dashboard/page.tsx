@@ -19,18 +19,28 @@ import {
   usePlatformStatistics,
   useAllOrders,
   useTrainRecommendationModel,
-} from '../../../hooks/useAdminData';
+} from '../../../../hooks/useAdminData';
 
 // Dynamic imports for chart components to avoid SSR issues
-const SaleChart = dynamic(() => import('../../../shared/components/charts/sale-chart'), {
-  ssr: false,
-  loading: () => <div className="text-white text-center py-8">Loading chart...</div>,
-});
+const SaleChart = dynamic(
+  () => import('../../../../shared/components/charts/sale-chart'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="text-white text-center py-8">Loading chart...</div>
+    ),
+  }
+);
 
-const GeographicalMap = dynamic(() => import('../../../shared/components/charts/geographicalMap'), {
-  ssr: false,
-  loading: () => <div className="text-white text-center py-8">Loading map...</div>,
-});
+const GeographicalMap = dynamic(
+  () => import('../../../../shared/components/charts/geographicalMap'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="text-white text-center py-8">Loading map...</div>
+    ),
+  }
+);
 
 // Device data (placeholder - can be replaced with real analytics data later)
 const deviceData = [
@@ -250,9 +260,12 @@ const DashboardPage = () => {
       {/* Recommendation Model Training */}
       <div className="bg-slate-800 rounded-lg p-6 shadow-xl mb-8 flex items-center justify-between">
         <div>
-          <h3 className="text-white text-lg font-semibold">Recommendation Model</h3>
+          <h3 className="text-white text-lg font-semibold">
+            Recommendation Model
+          </h3>
           <p className="text-slate-400 text-sm mt-1">
-            Train the collaborative filtering model using collected user analytics data.
+            Train the collaborative filtering model using collected user
+            analytics data.
           </p>
         </div>
         <button

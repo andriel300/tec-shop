@@ -4,14 +4,14 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { resetPassword, validateResetToken } from '../../../lib/api/auth';
-import { ProtectedRoute } from '../../../components/auth/protected-route';
-import { Button } from '../../../components/ui/core/Button';
-import { Input } from '../../../components/ui/core/Input';
+import { resetPassword, validateResetToken } from '../../../../lib/api/auth';
+import { ProtectedRoute } from '../../../../components/auth/protected-route';
+import { Button } from '../../../../components/ui/core/Button';
+import { Input } from '../../../../components/ui/core/Input';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
-import { useRouter } from '@/i18n/navigation';
+import { useRouter } from '../../../../i18n/navigation';
 import { useSearchParams } from 'next/navigation';
-import { Link } from '@/i18n/navigation';
+import { Link } from '../../../../i18n/navigation';
 
 function ResetPasswordContent() {
   const router = useRouter();
@@ -22,7 +22,11 @@ function ResetPasswordContent() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Validate token when component mounts
-  const { data: tokenValidation, isLoading: isValidating, error: tokenError } = useQuery({
+  const {
+    data: tokenValidation,
+    isLoading: isValidating,
+    error: tokenError,
+  } = useQuery({
     queryKey: ['validate-reset-token', token],
     queryFn: () => validateResetToken({ token: token! }),
     enabled: !!token,
@@ -31,14 +35,18 @@ function ResetPasswordContent() {
 
   useEffect(() => {
     if (!token) {
-      toast.error('No reset token provided. Please check your email for the reset link.');
+      toast.error(
+        'No reset token provided. Please check your email for the reset link.'
+      );
       router.push('/forgot-password');
     }
   }, [token, router]);
 
   useEffect(() => {
     if (tokenError) {
-      toast.error('This password reset link is invalid or has expired. Please request a new one.');
+      toast.error(
+        'This password reset link is invalid or has expired. Please request a new one.'
+      );
       router.push('/forgot-password');
     }
   }, [tokenError, router]);
@@ -76,7 +84,9 @@ function ResetPasswordContent() {
           <div className="w-full max-w-md p-8 space-y-6 bg-ui-muted rounded-lg shadow-elev-lg border border-ui-divider">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto"></div>
-              <p className="mt-4 text-text-secondary">Validating reset link...</p>
+              <p className="mt-4 text-text-secondary">
+                Validating reset link...
+              </p>
             </div>
           </div>
         </main>
@@ -92,7 +102,9 @@ function ResetPasswordContent() {
           <div className="w-full max-w-md p-8 space-y-6 bg-ui-muted rounded-lg shadow-elev-lg border border-ui-divider">
             <div className="text-center">
               <AlertCircle className="h-12 w-12 text-feedback-error mx-auto mb-4" />
-              <h1 className="text-xl font-bold text-text-primary mb-2">Invalid Reset Link</h1>
+              <h1 className="text-xl font-bold text-text-primary mb-2">
+                Invalid Reset Link
+              </h1>
               <p className="text-text-secondary mb-6">
                 This password reset link is invalid or has expired.
               </p>
@@ -130,7 +142,6 @@ function ResetPasswordContent() {
             }}
             className="space-y-4"
           >
-
             {/* New Password field */}
             <form.Field
               name="newPassword"

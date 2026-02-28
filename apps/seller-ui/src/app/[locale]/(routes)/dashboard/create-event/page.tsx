@@ -1,8 +1,9 @@
+/* eslint-disable @nx/enforce-module-boundaries */
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from '@/i18n/navigation';
-import { useCreateEvent } from '../../../../hooks/useEvents';
+import { useCreateEvent } from '../../../../../hooks/useEvents';
+import { useRouter } from 'apps/seller-ui/src/i18n/navigation';
 
 const CreateEventPage = () => {
   const router = useRouter();
@@ -14,19 +15,27 @@ const CreateEventPage = () => {
     bannerImage: '',
     startDate: '',
     endDate: '',
-    status: 'DRAFT' as 'DRAFT' | 'SCHEDULED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED',
+    status: 'DRAFT' as
+      | 'DRAFT'
+      | 'SCHEDULED'
+      | 'ACTIVE'
+      | 'COMPLETED'
+      | 'CANCELLED',
     isActive: true,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
   ) => {
     const { name, value, type } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
+      [name]:
+        type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
     }));
 
     // Clear error for this field when user starts typing
@@ -100,7 +109,10 @@ const CreateEventPage = () => {
     } catch (error) {
       console.error('Failed to create event:', error);
       setErrors({
-        submit: error instanceof Error ? error.message : 'Failed to create event. Please try again.',
+        submit:
+          error instanceof Error
+            ? error.message
+            : 'Failed to create event. Please try again.',
       });
     }
   };
@@ -145,7 +157,10 @@ const CreateEventPage = () => {
 
         {/* Description */}
         <div>
-          <label htmlFor="description" className="block text-white font-medium mb-2">
+          <label
+            htmlFor="description"
+            className="block text-white font-medium mb-2"
+          >
             Description *
           </label>
           <textarea
@@ -169,7 +184,10 @@ const CreateEventPage = () => {
 
         {/* Banner Image URL */}
         <div>
-          <label htmlFor="bannerImage" className="block text-white font-medium mb-2">
+          <label
+            htmlFor="bannerImage"
+            className="block text-white font-medium mb-2"
+          >
             Banner Image URL (Optional)
           </label>
           <input
@@ -189,7 +207,10 @@ const CreateEventPage = () => {
         {/* Date Range */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label htmlFor="startDate" className="block text-white font-medium mb-2">
+            <label
+              htmlFor="startDate"
+              className="block text-white font-medium mb-2"
+            >
               Start Date *
             </label>
             <input
@@ -208,7 +229,10 @@ const CreateEventPage = () => {
           </div>
 
           <div>
-            <label htmlFor="endDate" className="block text-white font-medium mb-2">
+            <label
+              htmlFor="endDate"
+              className="block text-white font-medium mb-2"
+            >
               End Date *
             </label>
             <input

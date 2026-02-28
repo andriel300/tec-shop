@@ -1,7 +1,7 @@
 'use client';
 import { ArrowUpRight, MapPin, Star, BadgeCheck } from 'lucide-react';
 import Image from 'next/image';
-import { Link } from '@/i18n/navigation';
+import { Link } from '../../i18n/navigation';
 import React from 'react';
 
 interface ShopCardProps {

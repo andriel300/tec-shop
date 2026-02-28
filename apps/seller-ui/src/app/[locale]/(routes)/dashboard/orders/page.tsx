@@ -9,7 +9,6 @@ import {
   flexRender,
 } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
-import { Link } from '@/i18n/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
   Eye,
@@ -21,6 +20,7 @@ import {
 } from 'lucide-react';
 import { apiClient } from 'apps/seller-ui/src/lib/api/client';
 import { Breadcrumb } from 'apps/seller-ui/src/components/navigation/Breadcrumb';
+import { Link } from 'apps/seller-ui/src/i18n/navigation';
 
 interface Order {
   id: string;

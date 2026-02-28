@@ -1,13 +1,13 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '../../../lib/api/client';
-import { Link } from '@/i18n/navigation';
+import { apiClient } from '../../../../lib/api/client';
+import { Link } from '../../../../i18n/navigation';
 import React, { useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Range } from 'react-range';
 import { ChevronDown, X } from 'lucide-react';
-import ProductCard from '../../../components/cards/product-card';
+import ProductCard from '../../../../components/cards/product-card';
 
 const MIN = 0;
 const MAX = 1199;
@@ -211,9 +211,9 @@ const Page = () => {
     priceRange[1] !== 1199;
 
   const getCategoryName = (id: string): string => {
-    const cat = (categories as { id: string; name: string }[] | undefined)?.find(
-      (c) => c.id === id
-    );
+    const cat = (
+      categories as { id: string; name: string }[] | undefined
+    )?.find((c) => c.id === id);
     return cat?.name || id;
   };
 

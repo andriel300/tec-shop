@@ -1,14 +1,14 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import ProfileIcon from '../../../assets/svgs/profile-icon';
-import QuickActionCard from '../../../components/cards/quick-action.card';
-import StatCard from '../../../components/cards/stat.card';
-import ShippingAddressSection from '../../../components/shippingAddress';
-import OrdersSection from '../../../components/orders';
-import ChangePassword from '../../../components/changePassword';
-import { useAuth } from '../../../hooks/use-auth';
-import { useOrders } from '../../../hooks/use-orders';
+import ProfileIcon from '../../../../assets/svgs/profile-icon';
+import QuickActionCard from '../../../../components/cards/quick-action.card';
+import StatCard from '../../../../components/cards/stat.card';
+import ShippingAddressSection from '../../../../components/shippingAddress';
+import OrdersSection from '../../../../components/orders';
+import ChangePassword from '../../../../components/changePassword';
+import { useAuth } from '../../../../hooks/use-auth';
+import { useOrders } from '../../../../hooks/use-orders';
 import {
   BadgeCheck,
   Bell,
@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
-import { useRouter } from '@/i18n/navigation';
+import { useRouter } from '../../../../i18n/navigation';
 import React, { Suspense, useEffect, useState } from 'react';
 
 const Page = () => {

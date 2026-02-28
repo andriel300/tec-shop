@@ -9,7 +9,7 @@ import { Button } from '../ui/core/Button';
 import { Input } from '../ui/core/Input';
 import { Checkbox } from '../ui/core/Checkbox';
 import { Eye, EyeOff } from 'lucide-react';
-import { Link } from '@/i18n/navigation';
+import { Link } from '../../i18n/navigation';
 
 interface SignUpFormProps {
   onSuccess: (email: string, name: string, pass: string) => void;

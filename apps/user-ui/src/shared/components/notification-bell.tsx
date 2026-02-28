@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Bell, Check, CheckCheck, Trash2, X, MessageSquare } from 'lucide-react';
-import { Link } from '@/i18n/navigation';
-import { useRouter } from '@/i18n/navigation';
+import { Link } from '../../i18n/navigation';
+import { useRouter } from '../../i18n/navigation';
 import {
   useNotifications,
   useMarkAsRead,

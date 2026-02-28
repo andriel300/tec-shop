@@ -2,23 +2,22 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { Link } from '@/i18n/navigation';
-import { SignUpForm } from '../../../components/forms/signup-form';
-import { VerifyOtpForm } from '../../../components/forms/verify-otp-form';
-import { ProtectedRoute } from '../../../components/auth/protected-route';
-import { useRouter } from '@/i18n/navigation';
-import CreateShop from '../../../shared/modules/auth/create-shop';
-import { StripeIcon } from '../../../assets/svgs/stripe-logo';
-import { Button } from '../../../components/ui/core/Button';
+import { SignUpForm } from '../../../../components/forms/signup-form';
+import { VerifyOtpForm } from '../../../../components/forms/verify-otp-form';
+import { ProtectedRoute } from '../../../../components/auth/protected-route';
+import CreateShop from '../../../../shared/modules/auth/create-shop';
+import { StripeIcon } from '../../../../assets/svgs/stripe-logo';
+import { Button } from '../../../../components/ui/core/Button';
 import { CreditCard, CheckCircle, Shield } from 'lucide-react';
 import {
   createStripeOnboardingLink,
   getStripeAccountStatus,
-} from '../../../lib/api/seller';
-import { loginUser } from '../../../lib/api/auth';
+} from '../../../../lib/api/seller';
+import { loginUser } from '../../../../lib/api/auth';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
+import { Link, useRouter } from 'apps/seller-ui/src/i18n/navigation';
 
 function SignupPageContent() {
   const router = useRouter();

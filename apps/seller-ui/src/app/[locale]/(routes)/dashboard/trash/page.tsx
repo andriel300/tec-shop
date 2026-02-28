@@ -4,10 +4,10 @@ import React, { useState } from 'react';
 import {
   useDeletedProducts,
   useRestoreProduct,
-} from '../../../../hooks/useProducts';
+} from '../../../../../hooks/useProducts';
 import { Search, RotateCcw, Clock, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
-import type { ProductResponse } from '../../../../lib/api/products';
+import type { ProductResponse } from '../../../../../lib/api/products';
 
 const TrashPage = () => {
   const [searchQuery, setSearchQuery] = useState('');

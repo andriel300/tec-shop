@@ -14,8 +14,8 @@ import {
   useMarkAsRead,
   useMarkAllAsRead,
   useDeleteNotification,
-} from '../../../hooks/use-notifications';
-import type { NotificationType } from '../../../lib/api/notifications';
+} from '../../../../hooks/use-notifications';
+import type { NotificationType } from '../../../../lib/api/notifications';
 
 const NOTIFICATION_TYPES: NotificationType[] = [
   'INFO',

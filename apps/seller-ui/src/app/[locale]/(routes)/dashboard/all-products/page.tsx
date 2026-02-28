@@ -1,18 +1,21 @@
+/* eslint-disable @nx/enforce-module-boundaries */
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from '@/i18n/navigation';
-import { Link } from '@/i18n/navigation';
 import { IKImage } from 'imagekitio-next';
 import { Package, Plus, Edit, Trash2, Search } from 'lucide-react';
-import { useProducts, useDeleteProduct } from '../../../../hooks/useProducts';
-import { Alert } from '../../../../components/ui/core/Alert';
-import { Breadcrumb } from '../../../../components/navigation/Breadcrumb';
-import { DeleteConfirmationModal } from '../../../../components/ui/modal/DeleteConfirmationModal';
+import {
+  useProducts,
+  useDeleteProduct,
+} from '../../../../../hooks/useProducts';
+import { Alert } from '../../../../../components/ui/core/Alert';
+import { Breadcrumb } from '../../../../../components/navigation/Breadcrumb';
+import { DeleteConfirmationModal } from '../../../../../components/ui/modal/DeleteConfirmationModal';
 import {
   imagekitConfig,
   getImageKitPath,
-} from '../../../../lib/imagekit-config';
+} from '../../../../../lib/imagekit-config';
+import { Link, useRouter } from 'apps/seller-ui/src/i18n/navigation';
 
 const ProductsPage = () => {
   const router = useRouter();
@@ -37,7 +40,8 @@ const ProductsPage = () => {
   } = useProducts({
     search: searchTerm || undefined,
   });
-  const { mutate: deleteProductMutation, isPending: isDeleting } = useDeleteProduct();
+  const { mutate: deleteProductMutation, isPending: isDeleting } =
+    useDeleteProduct();
 
   const error = fetchError
     ? 'Failed to load products. Please try again.'
@@ -279,7 +283,9 @@ const ProductsPage = () => {
                         <Edit size={18} />
                       </button>
                       <button
-                        onClick={() => openDeleteModal(product.id, product.name)}
+                        onClick={() =>
+                          openDeleteModal(product.id, product.name)
+                        }
                         className="p-2 text-red-400 hover:bg-red-900/30 rounded transition-colors"
                         title="Delete product"
                       >

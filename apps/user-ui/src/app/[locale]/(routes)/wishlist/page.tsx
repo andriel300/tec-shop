@@ -1,11 +1,11 @@
 'use client';
 
-import { useAuth } from '../../../hooks/use-auth';
-import useDeviceTracking from '../../../hooks/use-device-tracking';
-import useLocationTracking from '../../../hooks/use-location-tracking';
-import useStore from '../../../store';
+import { useAuth } from '../../../../hooks/use-auth';
+import useDeviceTracking from '../../../../hooks/use-device-tracking';
+import useLocationTracking from '../../../../hooks/use-location-tracking';
+import useStore from '../../../../store';
 import Image from 'next/image';
-import { Link } from '@/i18n/navigation';
+import { Link } from '../../../../i18n/navigation';
 
 import React from 'react';
 
@@ -33,7 +33,12 @@ const WishListPage = () => {
   };
 
   const removeItem = (id: string) => {
-    removeFromWishList(id, user ?? undefined, location ?? undefined, deviceInfo ?? undefined);
+    removeFromWishList(
+      id,
+      user ?? undefined,
+      location ?? undefined,
+      deviceInfo ?? undefined
+    );
   };
   const addToCart = useStore((state) => state.addToCart);
   const removeFromWishList = useStore((state) => state.removeFromWishList);
@@ -77,7 +82,11 @@ const WishListPage = () => {
                   <tr key={item.id} className="border-b border-b-[#0000000e]">
                     <td className="flex items-center gap-3 p-4">
                       <Image
-                        src={(typeof item.image === 'string' ? item.image : '/placeholder.png')}
+                        src={
+                          typeof item.image === 'string'
+                            ? item.image
+                            : '/placeholder.png'
+                        }
                         width={80}
                         height={80}
                         alt={item.title}
@@ -116,7 +125,12 @@ const WishListPage = () => {
                       <button
                         className="bg-brand-primary-500 text-white hover:bg-brand-primary-900 px-5 py-2 rounded-md transition-all"
                         onClick={() =>
-                          addToCart(item, user ?? undefined, location ?? undefined, deviceInfo ?? undefined)
+                          addToCart(
+                            item,
+                            user ?? undefined,
+                            location ?? undefined,
+                            deviceInfo ?? undefined
+                          )
                         }
                       >
                         Add to Cart

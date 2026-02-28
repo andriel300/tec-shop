@@ -29,16 +29,20 @@ import {
   Filter,
   X,
 } from 'lucide-react';
-import { useLoggerSocket } from '../../../../hooks/useLoggerSocket';
-import { useLogs, useLogStats, useLogServices } from '../../../../hooks/useLogs';
-import { downloadLogsAsFile } from '../../../../lib/api/logs';
+import { useLoggerSocket } from '../../../../../hooks/useLoggerSocket';
+import {
+  useLogs,
+  useLogStats,
+  useLogServices,
+} from '../../../../../hooks/useLogs';
+import { downloadLogsAsFile } from '../../../../../lib/api/logs';
 import type {
   LogEntry,
   LogLevel,
   LogCategory,
   LogQueryParams,
-} from '../../../../lib/api/logs';
-import { Breadcrumb } from '../../../../shared/components/navigation/Breadcrumb';
+} from '../../../../../lib/api/logs';
+import { Breadcrumb } from '../../../../../shared/components/navigation/Breadcrumb';
 import { toast } from 'sonner';
 
 const LOG_LEVELS: LogLevel[] = ['debug', 'info', 'warn', 'error', 'fatal'];
@@ -105,21 +109,26 @@ const LoggersPage = () => {
     onError: (error) => toast.error(`WebSocket error: ${error}`),
   });
 
-  const { data: historicalData, isLoading: isLoadingHistorical, refetch } = useLogs(
-    mode === 'historical' ? filters : undefined
-  );
+  const {
+    data: historicalData,
+    isLoading: isLoadingHistorical,
+    refetch,
+  } = useLogs(mode === 'historical' ? filters : undefined);
 
   const { data: statsData } = useLogStats();
   const { data: servicesData } = useLogServices();
 
-  const rawLogs = mode === 'realtime' ? realtimeLogs : (historicalData?.logs || []);
-  const logs = excludePatterns.length > 0
-    ? rawLogs.filter((log) =>
-        !excludePatterns.some((pattern) =>
-          log.message.toLowerCase().includes(pattern.toLowerCase())
+  const rawLogs =
+    mode === 'realtime' ? realtimeLogs : historicalData?.logs || [];
+  const logs =
+    excludePatterns.length > 0
+      ? rawLogs.filter(
+          (log) =>
+            !excludePatterns.some((pattern) =>
+              log.message.toLowerCase().includes(pattern.toLowerCase())
+            )
         )
-      )
-    : rawLogs;
+      : rawLogs;
 
   const handleFilterChange = useCallback(
     (key: keyof LogQueryParams, value: string | undefined) => {
@@ -141,7 +150,11 @@ const LoggersPage = () => {
     (value: string) => {
       setGlobalFilter(value);
       if (mode === 'historical') {
-        setFilters((prev) => ({ ...prev, search: value || undefined, page: 1 }));
+        setFilters((prev) => ({
+          ...prev,
+          search: value || undefined,
+          page: 1,
+        }));
       }
     },
     [mode]
@@ -159,12 +172,9 @@ const LoggersPage = () => {
     setExcludePatterns((prev) => prev.filter((p) => p !== pattern));
   }, []);
 
-  const handleHistoricalPageChange = useCallback(
-    (newPage: number) => {
-      setFilters((prev) => ({ ...prev, page: newPage }));
-    },
-    []
-  );
+  const handleHistoricalPageChange = useCallback((newPage: number) => {
+    setFilters((prev) => ({ ...prev, page: newPage }));
+  }, []);
 
   const handleDownload = useCallback(async () => {
     try {
@@ -238,7 +248,9 @@ const LoggersPage = () => {
         size: 100,
         cell: ({ row }) => (
           <span
-            className={`text-sm font-medium ${categoryColors[row.original.category]}`}
+            className={`text-sm font-medium ${
+              categoryColors[row.original.category]
+            }`}
           >
             {row.original.category}
           </span>
@@ -353,7 +365,9 @@ const LoggersPage = () => {
               </p>
             </div>
             <div
-              className={`p-3 rounded-lg ${isConnected ? 'bg-green-500/20' : 'bg-gray-500/20'}`}
+              className={`p-3 rounded-lg ${
+                isConnected ? 'bg-green-500/20' : 'bg-gray-500/20'
+              }`}
             >
               {isConnected ? (
                 <Wifi size={20} className="text-green-400" />
@@ -461,7 +475,8 @@ const LoggersPage = () => {
             }`}
           >
             <Filter size={16} />
-            Exclude{excludePatterns.length > 0 ? ` (${excludePatterns.length})` : ''}
+            Exclude
+            {excludePatterns.length > 0 ? ` (${excludePatterns.length})` : ''}
           </button>
           {mode === 'realtime' && (
             <>
@@ -508,7 +523,9 @@ const LoggersPage = () => {
         <div className="mb-4 bg-gray-900 rounded-lg border border-gray-700 p-4">
           <div className="flex items-center gap-2 mb-3">
             <Filter size={16} className="text-orange-400" />
-            <span className="text-white font-medium text-sm">Exclude logs containing:</span>
+            <span className="text-white font-medium text-sm">
+              Exclude logs containing:
+            </span>
           </div>
           <div className="flex gap-2 mb-3">
             <input
@@ -553,7 +570,9 @@ const LoggersPage = () => {
               </button>
             </div>
           ) : (
-            <p className="text-gray-500 text-sm">No exclude patterns. Add patterns to hide matching logs.</p>
+            <p className="text-gray-500 text-sm">
+              No exclude patterns. Add patterns to hide matching logs.
+            </p>
           )}
         </div>
       )}
@@ -633,12 +652,16 @@ const LoggersPage = () => {
                   {mode === 'historical' && historicalData ? (
                     <span>
                       Page{' '}
-                      <span className="font-medium text-white">{filters.page || 1}</span>
-                      {' '}of{' '}
                       <span className="font-medium text-white">
-                        {Math.ceil(historicalData.total / (filters.limit || 50))}
-                      </span>
-                      {' '}({historicalData.total.toLocaleString()} total logs)
+                        {filters.page || 1}
+                      </span>{' '}
+                      of{' '}
+                      <span className="font-medium text-white">
+                        {Math.ceil(
+                          historicalData.total / (filters.limit || 50)
+                        )}
+                      </span>{' '}
+                      ({historicalData.total.toLocaleString()} total logs)
                     </span>
                   ) : (
                     <span>
@@ -666,7 +689,11 @@ const LoggersPage = () => {
                   {mode === 'realtime' && (
                     <span className="ml-4 flex items-center gap-2">
                       <span
-                        className={`w-2 h-2 rounded-full ${isPaused ? 'bg-yellow-400' : 'bg-green-400 animate-pulse'}`}
+                        className={`w-2 h-2 rounded-full ${
+                          isPaused
+                            ? 'bg-yellow-400'
+                            : 'bg-green-400 animate-pulse'
+                        }`}
                       />
                       {isPaused ? 'Paused' : 'Live'}
                     </span>
@@ -677,7 +704,9 @@ const LoggersPage = () => {
                   {mode === 'historical' && historicalData ? (
                     <>
                       <button
-                        onClick={() => handleHistoricalPageChange((filters.page || 1) - 1)}
+                        onClick={() =>
+                          handleHistoricalPageChange((filters.page || 1) - 1)
+                        }
                         disabled={(filters.page || 1) <= 1}
                         className="px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-1"
                       >
@@ -688,10 +717,18 @@ const LoggersPage = () => {
                       <div className="flex items-center gap-1">
                         {(() => {
                           const currentPage = filters.page || 1;
-                          const totalPages = Math.ceil(historicalData.total / (filters.limit || 50));
+                          const totalPages = Math.ceil(
+                            historicalData.total / (filters.limit || 50)
+                          );
                           const maxButtons = 5;
-                          let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
-                          const endPage = Math.min(totalPages, startPage + maxButtons - 1);
+                          let startPage = Math.max(
+                            1,
+                            currentPage - Math.floor(maxButtons / 2)
+                          );
+                          const endPage = Math.min(
+                            totalPages,
+                            startPage + maxButtons - 1
+                          );
                           startPage = Math.max(1, endPage - maxButtons + 1);
 
                           return Array.from(
@@ -700,7 +737,9 @@ const LoggersPage = () => {
                           ).map((pageNum) => (
                             <button
                               key={pageNum}
-                              onClick={() => handleHistoricalPageChange(pageNum)}
+                              onClick={() =>
+                                handleHistoricalPageChange(pageNum)
+                              }
                               className={`px-3 py-2 rounded-lg transition-colors ${
                                 currentPage === pageNum
                                   ? 'bg-brand-primary text-white'
@@ -714,8 +753,15 @@ const LoggersPage = () => {
                       </div>
 
                       <button
-                        onClick={() => handleHistoricalPageChange((filters.page || 1) + 1)}
-                        disabled={(filters.page || 1) >= Math.ceil(historicalData.total / (filters.limit || 50))}
+                        onClick={() =>
+                          handleHistoricalPageChange((filters.page || 1) + 1)
+                        }
+                        disabled={
+                          (filters.page || 1) >=
+                          Math.ceil(
+                            historicalData.total / (filters.limit || 50)
+                          )
+                        }
                         className="px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-1"
                       >
                         Next
@@ -742,7 +788,8 @@ const LoggersPage = () => {
                             key={pageIndex}
                             onClick={() => table.setPageIndex(pageIndex)}
                             className={`px-3 py-2 rounded-lg transition-colors ${
-                              table.getState().pagination.pageIndex === pageIndex
+                              table.getState().pagination.pageIndex ===
+                              pageIndex
                                 ? 'bg-brand-primary text-white'
                                 : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
                             }`}

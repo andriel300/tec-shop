@@ -1,24 +1,25 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../../../../contexts/auth-context';
-import useSeller from '../../../../hooks/useSeller';
+import { useAuth } from '../../../../../contexts/auth-context';
+import useSeller from '../../../../../hooks/useSeller';
 import {
   useConversations,
   useMessages,
   useMarkConversationSeen,
   useUserOnlineStatus,
-} from '../../../../hooks/use-chat';
-import { useChatSocket } from '../../../../hooks/use-chat-socket';
-import type { Conversation, ChatMessage } from '../../../../lib/api/chat';
-import { uploadChatImage } from '../../../../lib/api/chat';
+} from '../../../../../hooks/use-chat';
+import { useChatSocket } from '../../../../../hooks/use-chat-socket';
+import type { Conversation, ChatMessage } from '../../../../../lib/api/chat';
+import { uploadChatImage } from '../../../../../lib/api/chat';
 import Image from 'next/image';
-import { useRouter } from '@/i18n/navigation';
 import { useSearchParams } from 'next/navigation';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader2, MessageCircle, Users } from 'lucide-react';
-import ChatInput from '../../../../components/chats/chat-input';
+import ChatInput from '../../../../../components/chats/chat-input';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { useRouter } from 'apps/seller-ui/src/i18n/navigation';
 
 const DEFAULT_AVATAR =
   'https://ik.imagekit.io/andrieltecshop/products/avatar.jpg?updatedAt=1763005913773';
@@ -168,7 +169,13 @@ const InboxPage = () => {
       };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedConversationId, isConnected, joinConversation, leaveConversation, markAsSeen]);
+  }, [
+    selectedConversationId,
+    isConnected,
+    joinConversation,
+    leaveConversation,
+    markAsSeen,
+  ]);
 
   // Reset markedSeenRef when conversation changes
   useEffect(() => {
@@ -307,7 +314,10 @@ const InboxPage = () => {
               </div>
             ) : !conversationsData?.conversations?.length ? (
               <div className="p-8 text-center">
-                <MessageCircle size={40} className="text-gray-600 mx-auto mb-3" />
+                <MessageCircle
+                  size={40}
+                  className="text-gray-600 mx-auto mb-3"
+                />
                 <p className="text-sm text-gray-400">No conversations yet</p>
                 <p className="text-xs text-gray-500 mt-1">
                   Customer messages will appear here
@@ -330,7 +340,8 @@ const InboxPage = () => {
                       <div className="relative">
                         <Image
                           src={
-                            conversation.otherParticipant.avatar || DEFAULT_AVATAR
+                            conversation.otherParticipant.avatar ||
+                            DEFAULT_AVATAR
                           }
                           alt={conversation.otherParticipant.name}
                           width={44}
@@ -367,7 +378,8 @@ const InboxPage = () => {
                             hasUnread ? 'text-gray-300' : 'text-gray-500'
                           }`}
                         >
-                          {conversation.lastMessage?.content || 'No messages yet'}
+                          {conversation.lastMessage?.content ||
+                            'No messages yet'}
                         </p>
                       </div>
                     </div>
@@ -400,7 +412,8 @@ const InboxPage = () => {
                 <div className="relative">
                   <Image
                     src={
-                      selectedConversation.otherParticipant.avatar || DEFAULT_AVATAR
+                      selectedConversation.otherParticipant.avatar ||
+                      DEFAULT_AVATAR
                     }
                     alt={selectedConversation.otherParticipant.name}
                     width={40}
@@ -441,7 +454,9 @@ const InboxPage = () => {
                   <div className="flex flex-col items-center justify-center h-full text-gray-500">
                     <MessageCircle size={40} className="mb-2" />
                     <p>No messages yet</p>
-                    <p className="text-sm">Send a message to start the conversation</p>
+                    <p className="text-sm">
+                      Send a message to start the conversation
+                    </p>
                   </div>
                 ) : (
                   localMessages.map((message) => {
@@ -461,26 +476,27 @@ const InboxPage = () => {
                               : 'bg-gray-700 text-gray-100 rounded-bl-sm'
                           }`}
                         >
-                          {message.attachments && message.attachments.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-2">
-                              {message.attachments.map((att, idx) => (
-                                <a
-                                  key={`att-${message.id}-${idx}`}
-                                  href={att.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  <Image
-                                    src={att.url}
-                                    alt={`Attachment ${idx + 1}`}
-                                    width={200}
-                                    height={200}
-                                    className="rounded-lg max-w-[200px] max-h-[200px] object-cover cursor-pointer hover:opacity-90 transition"
-                                  />
-                                </a>
-                              ))}
-                            </div>
-                          )}
+                          {message.attachments &&
+                            message.attachments.length > 0 && (
+                              <div className="flex flex-wrap gap-2 mb-2">
+                                {message.attachments.map((att, idx) => (
+                                  <a
+                                    key={`att-${message.id}-${idx}`}
+                                    href={att.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <Image
+                                      src={att.url}
+                                      alt={`Attachment ${idx + 1}`}
+                                      width={200}
+                                      height={200}
+                                      className="rounded-lg max-w-[200px] max-h-[200px] object-cover cursor-pointer hover:opacity-90 transition"
+                                    />
+                                  </a>
+                                ))}
+                              </div>
+                            )}
                           {message.content && (
                             <p className="whitespace-pre-wrap break-words">
                               {message.content}
@@ -539,7 +555,9 @@ const InboxPage = () => {
                 onSend={async (message, attachments) => {
                   if (!selectedConversation) return;
 
-                  let uploadedAttachments: { url: string; type?: string }[] | undefined;
+                  let uploadedAttachments:
+                    | { url: string; type?: string }[]
+                    | undefined;
 
                   // Upload images to ImageKit if attachments exist
                   if (attachments && attachments.length > 0) {

@@ -2,29 +2,33 @@
 
 import { useForm } from '@tanstack/react-form';
 import React, { useState } from 'react';
-import { useRouter } from '@/i18n/navigation';
 import { Package, DollarSign, Tag, Boxes } from 'lucide-react';
-import { createProduct } from '../../../../lib/api/products';
-import { Alert } from '../../../../components/ui/core/Alert';
-import { Input } from '../../../../components/ui/core/Input';
-import { Select } from '../../../../components/ui/core/Select';
-import { FormField } from '../../../../components/ui/form/FormField';
-import { ProductImageUploader } from '../../../../components/ui/form/ProductImageUploader';
-import { RichTextEditor } from '../../../../components/ui/form/RichTextEditor';
-import { VariantManager, type ProductVariant } from '../../../../components/ui/form/VariantManager';
-import { DimensionsInput } from '../../../../components/ui/form/DimensionsInput';
-import { SEOFields } from '../../../../components/ui/form/SEOFields';
+import { createProduct } from '../../../../../lib/api/products';
+import { Alert } from '../../../../../components/ui/core/Alert';
+import { Input } from '../../../../../components/ui/core/Input';
+import { Select } from '../../../../../components/ui/core/Select';
+import { FormField } from '../../../../../components/ui/form/FormField';
+import { ProductImageUploader } from '../../../../../components/ui/form/ProductImageUploader';
+import { RichTextEditor } from '../../../../../components/ui/form/RichTextEditor';
+import {
+  VariantManager,
+  type ProductVariant,
+} from '../../../../../components/ui/form/VariantManager';
+import { DimensionsInput } from '../../../../../components/ui/form/DimensionsInput';
+import { SEOFields } from '../../../../../components/ui/form/SEOFields';
 import {
   CategorySelector,
   type Category,
-} from '../../../../components/ui/form/CategorySelector';
+} from '../../../../../components/ui/form/CategorySelector';
 import {
   BrandSelector,
   type Brand,
-} from '../../../../components/ui/form/BrandSelector';
-import { TagInput } from '../../../../components/ui/form/TagInput';
-import { DiscountSelector } from '../../../../components/ui/form/DiscountSelector';
-import { Breadcrumb } from '../../../../components/navigation/Breadcrumb';
+} from '../../../../../components/ui/form/BrandSelector';
+import { TagInput } from '../../../../../components/ui/form/TagInput';
+import { DiscountSelector } from '../../../../../components/ui/form/DiscountSelector';
+import { Breadcrumb } from '../../../../../components/navigation/Breadcrumb';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { useRouter } from 'apps/seller-ui/src/i18n/navigation';
 
 const PRODUCT_TYPES = [
   { value: 'simple', label: 'Simple Product' },
@@ -76,7 +80,11 @@ const Page = () => {
         weight: 0,
         dimensions: { length: 0, width: 0, height: 0 },
         freeShipping: false,
-        shippingClass: 'standard' as 'standard' | 'express' | 'fragile' | 'heavy',
+        shippingClass: 'standard' as
+          | 'standard'
+          | 'express'
+          | 'fragile'
+          | 'heavy',
       },
       seo: {
         title: '',
@@ -421,15 +429,17 @@ const Page = () => {
                           const regularPrice = form.getFieldValue('price') || 0;
                           const salePrice = field.state.value || 0;
                           const discount =
-                            regularPrice > 0 && salePrice > 0 && salePrice < regularPrice
-                              ? Math.round(((regularPrice - salePrice) / regularPrice) * 100)
+                            regularPrice > 0 &&
+                            salePrice > 0 &&
+                            salePrice < regularPrice
+                              ? Math.round(
+                                  ((regularPrice - salePrice) / regularPrice) *
+                                    100
+                                )
                               : 0;
 
                           return (
-                            <FormField
-                              field={field}
-                              label="Sale Price ($)"
-                            >
+                            <FormField field={field} label="Sale Price ($)">
                               <div className="space-y-2">
                                 <Input
                                   type="number"
@@ -452,7 +462,8 @@ const Page = () => {
                                       {discount}% OFF
                                     </span>
                                     <span className="text-gray-500">
-                                      Save ${(regularPrice - salePrice).toFixed(2)}
+                                      Save $
+                                      {(regularPrice - salePrice).toFixed(2)}
                                     </span>
                                   </div>
                                 )}
@@ -505,7 +516,9 @@ const Page = () => {
                     {(field) => (
                       <DiscountSelector
                         value={field.state.value}
-                        onChange={(discountId) => field.handleChange(discountId)}
+                        onChange={(discountId) =>
+                          field.handleChange(discountId)
+                        }
                       />
                     )}
                   </form.Field>

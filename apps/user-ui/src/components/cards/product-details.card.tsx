@@ -20,7 +20,7 @@ import { useAuth } from '../../hooks/use-auth';
 import useLocationTracking from '../../hooks/use-location-tracking';
 import useDeviceTracking from '../../hooks/use-device-tracking';
 import useStore from '../../store';
-import { useRouter } from '@/i18n/navigation';
+import { useRouter } from '../../i18n/navigation';
 import { useCreateConversation } from '../../hooks/use-chat';
 
 interface ProductDetailsCardProps {
