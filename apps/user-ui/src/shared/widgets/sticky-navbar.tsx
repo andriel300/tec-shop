@@ -1,9 +1,10 @@
 'use client';
 import { AlignLeft, ChevronDown, ChevronRight, HeartIcon } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import React, { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { navItems } from '../../configs/constants';
 import ProfileIcon from '../../assets/svgs/profile-icon';
 import CartIcon from '../../assets/svgs/cart-icon';
@@ -14,6 +15,8 @@ import { NotificationBell } from '../components/notification-bell';
 import LanguageSwitcher from '../components/language-switcher';
 
 const StickyNavbar = () => {
+  const t = useTranslations('Navbar');
+  const tCommon = useTranslations('Common');
   const { isAuthenticated, user, userProfile, logout } = useAuth();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -129,7 +132,7 @@ const StickyNavbar = () => {
             <div className="flex items-center gap-2">
               <AlignLeft color="white" />
               <span className="text-white font-medium font-heading">
-                All Departments
+                {t('allDepartments')}
               </span>
             </div>
             <ChevronDown color="white" />
@@ -146,7 +149,7 @@ const StickyNavbar = () => {
                   <div className="overflow-y-auto flex-1">
                     {categoriesLoading ? (
                       <div className="p-4 text-center text-text-secondary">
-                        Loading categories...
+                        {t('loadingCategories')}
                       </div>
                     ) : categories && categories.length > 0 ? (
                       <div className="py-2">
@@ -180,7 +183,7 @@ const StickyNavbar = () => {
                       </div>
                     ) : (
                       <div className="p-4 text-center text-text-secondary">
-                        No categories available
+                        {t('noCategories')}
                       </div>
                     )}
                   </div>
@@ -193,7 +196,7 @@ const StickyNavbar = () => {
                         onClick={() => setShow(false)}
                         className="block text-center text-brand-primary font-medium hover:underline text-sm"
                       >
-                        View All Categories
+                        {t('viewAllCategories')}
                       </Link>
                     </div>
                   )}
@@ -284,7 +287,7 @@ const StickyNavbar = () => {
                 {/* User Info / Sign In */}
                 {mounted && isAuthenticated ? (
                   <div className="hidden md:flex flex-col">
-                    <span className="block font-medium text-sm">Hello,</span>
+                    <span className="block font-medium text-sm">{tCommon('hello')}</span>
                     <button
                       onClick={handleLogout}
                       className="block font-semibold text-brand-primary text-sm hover:underline text-left"
@@ -297,9 +300,9 @@ const StickyNavbar = () => {
                 ) : (
                   <Link href={'/login'} className="hidden md:block">
                     <div className="flex flex-col">
-                      <span className="block font-medium text-sm">Hello,</span>
+                      <span className="block font-medium text-sm">{tCommon('hello')}</span>
                       <span className="block font-semibold text-brand-primary text-sm">
-                        Sign In
+                        {tCommon('signIn')}
                       </span>
                     </div>
                   </Link>

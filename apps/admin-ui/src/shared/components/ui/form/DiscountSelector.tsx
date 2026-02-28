@@ -1,6 +1,6 @@
 import React from 'react';
 import { Ticket, ExternalLink, AlertCircle } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { useDiscounts } from '../../../../hooks/useDiscounts';
 import { Select } from '../core/Select';
 

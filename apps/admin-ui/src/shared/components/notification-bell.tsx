@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Bell, Check, CheckCheck, Trash2 } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import {
   useNotifications,
   useMarkAsRead,

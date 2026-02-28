@@ -11,7 +11,7 @@ import { Checkbox } from '../ui/core/Checkbox';
 import { Select } from '../ui/core/Select';
 import { PhoneInput, validatePhoneNumber } from '../ui/core/PhoneInput';
 import { Eye, EyeOff } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { getCountryOptions } from '../../lib/data/countries';
 
 interface SignUpFormProps {

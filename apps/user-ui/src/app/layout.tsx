@@ -1,8 +1,5 @@
-import ConditionalFooter from '../shared/widgets/conditional-footer';
 import './global.css';
 import { Inter, Poppins, Roboto, Oregano, Jost } from 'next/font/google';
-import { Providers } from './providers';
-import Navbar from '../shared/widgets/navbar';
 
 // Configure your fonts
 const inter = Inter({
@@ -52,16 +49,9 @@ export default function RootLayout({
 }) {
   return (
     <html
-      lang="en"
       className={`${inter.variable} ${poppins.variable} ${roboto.variable} ${oregano.variable} ${jost.variable}`}
     >
-      <body suppressHydrationWarning>
-        <Providers>
-          <Navbar />
-          <main className="min-h-[calc(100vh-400px)]">{children}</main>
-          <ConditionalFooter />
-        </Providers>
-      </body>
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }

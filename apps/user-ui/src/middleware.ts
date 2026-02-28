@@ -1,17 +1,20 @@
+import createIntlMiddleware from 'next-intl/middleware';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { routing } from './i18n/routing';
 
-// Define protected routes that require authentication
+const intlMiddleware = createIntlMiddleware(routing);
+
 const protectedRoutes = ['/profile', '/dashboard', '/settings', '/orders'];
-
-// Define auth routes that should redirect to home if user is already authenticated
 const authRoutes = ['/login', '/signup', '/forgot-password'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Get token from cookies - check both production and development cookie names
-  // Backend sets: customer_access_token (dev) or __Host-customer_access_token (prod)
+  // Strip locale prefix to get the actual path for route matching
+  const pathnameWithoutLocale =
+    pathname.replace(/^\/(en|pt-BR)/, '') || '/';
+
   const customerAccessToken =
     request.cookies.get('__Host-customer_access_token')?.value ||
     request.cookies.get('customer_access_token')?.value;
@@ -22,37 +25,29 @@ export function middleware(request: NextRequest) {
 
   const token = customerAccessToken || sellerAccessToken;
 
-  // Check if current route is protected
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
+  const isProtectedRoute = protectedRoutes.some((r) =>
+    pathnameWithoutLocale.startsWith(r)
   );
-  const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
+  const isAuthRoute = authRoutes.some((r) =>
+    pathnameWithoutLocale.startsWith(r)
+  );
 
-  // If trying to access protected route without token
+  const localeMatch = pathname.match(/^\/(en|pt-BR)/);
+  const locale = localeMatch?.[1] ?? 'en';
+
   if (isProtectedRoute && !token) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
+    const loginUrl = new URL(`/${locale}/login`, request.url);
+    loginUrl.searchParams.set('redirect', pathnameWithoutLocale);
     return NextResponse.redirect(loginUrl);
   }
 
-  // If trying to access auth routes with valid token
   if (isAuthRoute && token) {
-    return NextResponse.redirect(new URL('/', request.url));
+    return NextResponse.redirect(new URL(`/${locale}`, request.url));
   }
 
-  return NextResponse.next();
+  return intlMiddleware(request);
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/', '/(en|pt-BR)/:path*', '/((?!api|_next|favicon.ico).*)'],
 };
-

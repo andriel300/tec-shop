@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useAuth } from '../../hooks/use-auth';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { toast } from 'sonner';
 
 interface ProtectedRouteProps {

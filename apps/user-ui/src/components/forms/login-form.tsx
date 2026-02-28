@@ -3,9 +3,9 @@
 import React, { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { loginUser } from '../../lib/api/auth';
 import { getCurrentUser } from '../../lib/api/user';
 import { useAuth } from '../../hooks/use-auth';

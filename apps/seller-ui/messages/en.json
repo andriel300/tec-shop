@@ -1,0 +1,49 @@
+{
+  "Common": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "logout": "Logout",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "noResults": "No results found",
+    "error": "Error"
+  },
+  "Sidebar": {
+    "dashboard": "Dashboard",
+    "mainMenu": "Main Menu",
+    "orders": "Orders",
+    "payments": "Payments",
+    "products": "Products",
+    "createProduct": "Create Product",
+    "allProducts": "All Products",
+    "trash": "Trash",
+    "events": "Events",
+    "createEvent": "Create Event",
+    "allEvents": "All Events",
+    "controllers": "Controllers",
+    "inbox": "Inbox",
+    "settings": "Settings",
+    "notifications": "Notifications",
+    "extras": "Extras",
+    "discountCodes": "Discount Codes",
+    "logout": "Logout"
+  },
+  "Auth": {
+    "loginTitle": "Welcome Back",
+    "signupTitle": "Create Your Seller Account",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?"
+  },
+  "LanguageSwitcher": {
+    "changeLanguage": "Change language",
+    "english": "English",
+    "portuguese": "Portuguese (BR)"
+  }
+}

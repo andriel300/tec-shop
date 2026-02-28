@@ -1,6 +1,5 @@
 import './global.css';
 import { Poppins } from 'next/font/google';
-import Providers from './provider';
 
 export const metadata = {
   title: 'Tecshop - Admin',
@@ -21,9 +20,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
+        suppressHydrationWarning
         className={`min-h-screen bg-slate-900 font-sans antialiased ${poppins.variable}`}
       >
-        <Providers>{children}</Providers>
+        {children}
       </body>
     </html>
   );

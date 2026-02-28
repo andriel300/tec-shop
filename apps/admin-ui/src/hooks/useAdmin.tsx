@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '../lib/api/client';
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 
 interface AdminUser {
   id: string;

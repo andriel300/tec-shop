@@ -2,6 +2,9 @@
 
 const { composePlugins, withNx } = require('@nx/next');
 const { withSentryConfig } = require('@sentry/nextjs');
+const createNextIntlPlugin = require('next-intl/plugin');
+
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 /**
  * @type {import('@nx/next/plugins/with-nx').WithNxOptions}
@@ -53,7 +56,7 @@ const composedConfig = composePlugins(...plugins)(nextConfig);
 
 // Injected content via Sentry wizard below
 
-module.exports = withSentryConfig(composedConfig, {
+module.exports = withSentryConfig(withNextIntl(composedConfig), {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 

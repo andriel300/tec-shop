@@ -5,7 +5,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 import useLayout from '../../../hooks/use-layout';
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { MoveRight } from 'lucide-react';
 
 interface SlideData {

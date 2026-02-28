@@ -9,8 +9,8 @@ import {
   X,
   MessageSquare,
 } from 'lucide-react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { Link } from '@/i18n/navigation';
+import { useRouter } from '@/i18n/navigation';
 import {
   useNotificationsV2,
   useMarkAsReadV2,

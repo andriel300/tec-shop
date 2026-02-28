@@ -1,30 +1,24 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useTransition } from 'react';
 import { Globe, ChevronDown, Check } from 'lucide-react';
+import { useLocale } from 'next-intl';
+import { useRouter, usePathname } from '../../i18n/navigation';
 
-type Language = 'en' | 'pt-BR';
-
-const LANGUAGES: { code: Language; label: string; short: string }[] = [
+const LANGUAGES = [
   { code: 'en', label: 'English', short: 'EN' },
   { code: 'pt-BR', label: 'Português (BR)', short: 'PT' },
-];
+] as const;
 
-const STORAGE_KEY = 'preferred-language';
+type LocaleCode = (typeof LANGUAGES)[number]['code'];
 
 const LanguageSwitcher = () => {
-  const [language, setLanguage] = useState<Language>('en');
+  const locale = useLocale() as LocaleCode;
+  const router = useRouter();
+  const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setMounted(true);
-    const stored = localStorage.getItem(STORAGE_KEY) as Language | null;
-    if (stored === 'en' || stored === 'pt-BR') {
-      setLanguage(stored);
-    }
-  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -36,21 +30,21 @@ const LanguageSwitcher = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSelect = (lang: Language) => {
-    setLanguage(lang);
-    localStorage.setItem(STORAGE_KEY, lang);
+  const handleSelect = (newLocale: LocaleCode) => {
     setOpen(false);
+    startTransition(() => {
+      router.replace(pathname, { locale: newLocale });
+    });
   };
 
-  if (!mounted) return null;
-
-  const current = LANGUAGES.find((l) => l.code === language)!;
+  const current = LANGUAGES.find((l) => l.code === locale) ?? LANGUAGES[0];
 
   return (
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-ui-divider hover:bg-ui-muted transition-colors text-sm font-medium text-text-primary"
+        disabled={isPending}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-ui-divider hover:bg-ui-muted transition-colors text-sm font-medium text-text-primary disabled:opacity-50"
         title="Change language"
       >
         <Globe size={15} className="flex-shrink-0" />
@@ -71,14 +65,14 @@ const LanguageSwitcher = () => {
             >
               <span
                 className={
-                  language === lang.code
+                  locale === lang.code
                     ? 'font-semibold text-brand-primary'
                     : 'text-text-primary'
                 }
               >
                 {lang.label}
               </span>
-              {language === lang.code && (
+              {locale === lang.code && (
                 <Check size={14} className="text-brand-primary" />
               )}
             </button>
