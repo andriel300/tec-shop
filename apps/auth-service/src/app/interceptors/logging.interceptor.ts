@@ -25,10 +25,9 @@ export class LoggingInterceptor implements NestInterceptor<unknown, unknown> {
               `[${pattern}] Outgoing RPC Response: ${JSON.stringify(response)} - ${Date.now() - now}ms`
             );
           },
-          (err) => {
+          (err: Error) => {
             this.logger.error(
-              `[${pattern}] RPC Error: ${err.message} - ${Date.now() - now}ms`,
-              err.stack
+              `[${pattern}] RPC Error: ${err.message} - ${Date.now() - now}ms`
             );
           }
         )

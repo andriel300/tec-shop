@@ -26,7 +26,7 @@ import {
   ApiBearerAuth,
   ApiConsumes,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../../guards/auth';
 import { RolesGuard } from '../../guards/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
 import * as Dto from '@tec-shop/dto';
@@ -44,9 +44,9 @@ export class ProductController {
   private readonly logger = new Logger(ProductController.name);
 
   constructor(
-    @Inject('PRODUCT_SERVICE') private productService: ClientProxy,
-    @Inject('ORDER_SERVICE') private orderService: ClientProxy,
-    @Inject('USER_SERVICE') private userService: ClientProxy,
+    @Inject('PRODUCT_SERVICE') private readonly productService: ClientProxy,
+    @Inject('ORDER_SERVICE') private readonly orderService: ClientProxy,
+    @Inject('USER_SERVICE') private readonly userService: ClientProxy,
     private readonly imagekitService: ImageKitService
   ) {}
 

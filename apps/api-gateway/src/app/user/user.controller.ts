@@ -17,7 +17,7 @@ import type {
   CreateShippingAddressDto,
   UpdateShippingAddressDto,
 } from '@tec-shop/dto';
-import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../../guards/auth';
 import {
   ApiBearerAuth,
   ApiOperation,

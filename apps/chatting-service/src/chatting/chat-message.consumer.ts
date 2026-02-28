@@ -87,7 +87,7 @@ export class ChatMessageConsumer implements OnModuleInit {
       attachments: (saved.attachments ?? []) as { url: string; type?: string }[],
       createdAt: saved.createdAt.toISOString(),
     };
-    this.chatGateway.emitBroadcast(broadcastPayload);
+    void this.chatGateway.emitBroadcast(broadcastPayload);
     this.logger.log(
       `Processed & broadcasted message in conversation ${conversationId}`,
     );

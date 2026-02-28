@@ -1,16 +1,20 @@
-import { Controller, Post, Get, Inject, Req, Res, UseGuards, Query, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Inject, Req, Res, UseGuards, Query, BadRequestException, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../../guards/auth';
 import type { Request, Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('Stripe Connect')
 @Controller('seller/stripe')
 export class StripeController {
+  private readonly logger = new Logger(StripeController.name);
+
   constructor(
-    @Inject('SELLER_SERVICE') private readonly sellerService: ClientProxy
+    @Inject('SELLER_SERVICE') private readonly sellerService: ClientProxy,
+    private readonly configService: ConfigService
   ) {}
 
   @Post('onboard')
@@ -101,7 +105,7 @@ export class StripeController {
       }
     } catch (error) {
       // Log error without exposing sensitive parameters
-      console.error('Stripe return handling failed:', { error: error instanceof Error ? error.message : 'Unknown error' });
+      this.logger.error('Stripe return handling failed:', error instanceof Error ? error.message : 'Unknown error');
       // Redirect to error page
       const errorUrl = `${this.getFrontendUrl()}/signup?step=3&stripe=error`;
       response.redirect(errorUrl);
@@ -135,7 +139,7 @@ export class StripeController {
       }
     } catch (error) {
       // Log error without exposing sensitive parameters
-      console.error('Stripe refresh handling failed:', { error: error instanceof Error ? error.message : 'Unknown error' });
+      this.logger.error('Stripe refresh handling failed:', error instanceof Error ? error.message : 'Unknown error');
       // Redirect to error page
       const errorUrl = `${this.getFrontendUrl()}/signup?step=3&stripe=error`;
       response.redirect(errorUrl);
@@ -146,6 +150,6 @@ export class StripeController {
    * Get frontend URL for redirects
    */
   private getFrontendUrl(): string {
-    return process.env.SELLER_UI_URL || 'http://localhost:3001';
+    return this.configService.get<string>('SELLER_UI_URL') ?? 'http://localhost:3001';
   }
 }

@@ -70,6 +70,6 @@ import { KafkaService } from './kafka.service';
     },
     KafkaService,
   ],
-  exports: ['KAFKA_CLIENT', KafkaService],
+  exports: [KafkaService],
 })
 export class KafkaModule {}
