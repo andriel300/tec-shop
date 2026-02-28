@@ -18,7 +18,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtService } from '@nestjs/jwt';
 import { firstValueFrom } from 'rxjs';
-import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../../guards/auth';
 import { RolesGuard } from '../../guards/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
 import { ImageKitService } from '@tec-shop/shared/imagekit';
@@ -109,22 +109,8 @@ export class ChatController {
     @Body() dto: CreateConversationDto
   ) {
     const { userId, userType } = req.user;
-
-    // Determine initiator type based on user role
-    const initiatorType: ParticipantType =
-      userType === 'SELLER' ? 'seller' : 'user';
-
-    // Validate: users can only target sellers, sellers can only target users
-    if (initiatorType === 'user' && dto.targetType !== 'seller') {
-      throw new BadRequestException(
-        'Users can only start conversations with sellers'
-      );
-    }
-    if (initiatorType === 'seller' && dto.targetType !== 'user') {
-      throw new BadRequestException(
-        'Sellers can only start conversations with users'
-      );
-    }
+    const initiatorType = this.resolveInitiatorType(userType);
+    this.validateConversationParticipants(initiatorType, dto.targetType);
 
     this.logger.log(
       `Creating conversation: ${initiatorType}(${userId}) -> ${dto.targetType}(${dto.targetId})`
@@ -148,6 +134,36 @@ export class ChatController {
     }
 
     return result.conversation;
+  }
+
+  private validateChatImage(file: Express.Multer.File): void {
+    if (!file) {
+      throw new BadRequestException('No image file provided');
+    }
+    if (!CHAT_ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+      throw new BadRequestException(
+        'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed'
+      );
+    }
+    if (file.size > CHAT_IMAGE_SIZE_LIMIT) {
+      throw new BadRequestException('File too large. Maximum size is 5MB');
+    }
+  }
+
+  private resolveInitiatorType(userType?: string): ParticipantType {
+    return userType === 'SELLER' ? 'seller' : 'user';
+  }
+
+  private validateConversationParticipants(
+    initiatorType: ParticipantType,
+    targetType: string
+  ): void {
+    if (initiatorType === 'user' && targetType !== 'seller') {
+      throw new BadRequestException('Users can only start conversations with sellers');
+    }
+    if (initiatorType === 'seller' && targetType !== 'user') {
+      throw new BadRequestException('Sellers can only start conversations with users');
+    }
   }
 
   /**
@@ -281,19 +297,7 @@ export class ChatController {
   @Roles('CUSTOMER', 'SELLER')
   @UseInterceptors(FileInterceptor('image'))
   async uploadChatImage(@UploadedFile() file: Express.Multer.File) {
-    if (!file) {
-      throw new BadRequestException('No image file provided');
-    }
-
-    if (!CHAT_ALLOWED_MIME_TYPES.includes(file.mimetype)) {
-      throw new BadRequestException(
-        'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed'
-      );
-    }
-
-    if (file.size > CHAT_IMAGE_SIZE_LIMIT) {
-      throw new BadRequestException('File too large. Maximum size is 5MB');
-    }
+    this.validateChatImage(file);
 
     const uploadResult = await this.imagekitService.uploadFile(
       file.buffer,

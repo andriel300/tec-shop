@@ -1,9 +1,9 @@
-import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ForbiddenException, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@tec-shop/seller-client';
 import type { CreateEventDto, UpdateEventDto, EventResponse } from '@tec-shop/dto';
 
 @Injectable()
-export class EventService {
+export class EventService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(EventService.name);
   private prisma: PrismaClient;
 

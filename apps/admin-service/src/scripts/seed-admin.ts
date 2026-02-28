@@ -8,14 +8,21 @@ dotenv.config({ path: resolve(__dirname, '../../../../.env') });
 
 const prisma = new AuthPrismaClient();
 
+const seedPassword = process.env.SEED_ADMIN_PASSWORD;
+if (!seedPassword) {
+  console.error(
+    'SEED_ADMIN_PASSWORD environment variable is required. Set it in your .env file before running this script.'
+  );
+  process.exit(1);
+}
+
 /**
  * Default admin credentials
  * IMPORTANT: Change these credentials after first login!
  */
 const defaultAdmin = {
-  email: 'admin@tec-shop.com',
-  // name: 'TecShop Administrator',
-  password: 'Admin@123456', // Must meet password requirements: min 8 chars, uppercase, lowercase, number, special char
+  email: process.env.SEED_ADMIN_EMAIL || 'admin@tec-shop.com',
+  password: seedPassword,
 };
 
 /**

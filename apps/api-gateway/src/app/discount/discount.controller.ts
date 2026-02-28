@@ -20,7 +20,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../../guards/auth';
 import { RolesGuard } from '../../guards/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
 import * as Dto from '@tec-shop/dto';

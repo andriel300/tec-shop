@@ -10,6 +10,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import type {
   LoginDto,
@@ -25,8 +26,7 @@ import type {
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Response, Request, CookieOptions } from 'express';
-import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
-import { GoogleAuthGuard } from '../../guards/auth/google-auth.guard';
+import { JwtAuthGuard, GoogleAuthGuard } from '../../guards/auth';
 
 type UserType = 'customer' | 'seller' | 'admin';
 type TokenType = 'access' | 'refresh';
@@ -40,7 +40,8 @@ interface CookieConfig {
 @Controller('auth')
 export class AuthController {
   constructor(
-    @Inject('AUTH_SERVICE') private readonly authService: ClientProxy
+    @Inject('AUTH_SERVICE') private readonly authService: ClientProxy,
+    private readonly configService: ConfigService
   ) {}
 
   /**
@@ -52,7 +53,7 @@ export class AuthController {
     tokenType: TokenType,
     isRememberMe: boolean
   ): CookieConfig {
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction = this.configService.get('NODE_ENV') === 'production';
 
     // Calculate expiration times based on remember me preference
     const accessTokenMaxAge = isRememberMe
@@ -178,7 +179,7 @@ export class AuthController {
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response
   ) {
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction = this.configService.get('NODE_ENV') === 'production';
     const prefix = isProduction ? '__Host-' : '';
 
     // Try to extract refresh token from customer, seller, or admin cookies
@@ -263,7 +264,7 @@ export class AuthController {
     @Req() request: Request & { user: { userId: string; userType?: string } },
     @Res({ passthrough: true }) response: Response
   ) {
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction = this.configService.get('NODE_ENV') === 'production';
     const prefix = isProduction ? '__Host-' : '';
 
     try {
@@ -549,9 +550,8 @@ export class AuthController {
     status: 302,
     description: 'Redirect to Google OAuth consent screen',
   })
-  async googleAuth() {
-    // Guard redirects to Google OAuth consent screen
-    // No implementation needed here
+  googleAuth() {
+    // Guard handles the redirect to Google OAuth consent screen
   }
 
   @Get('google/callback')
@@ -623,7 +623,7 @@ export class AuthController {
     }));
 
     // Redirect to frontend home page with user data
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
     response.redirect(`${frontendUrl}?auth=success&user=${userData}`);
   }
 }

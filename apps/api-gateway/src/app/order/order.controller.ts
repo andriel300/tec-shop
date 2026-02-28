@@ -13,7 +13,7 @@ import {
 import { firstValueFrom } from 'rxjs';
 import { ClientProxy } from '@nestjs/microservices';
 import type { CreateCheckoutSessionDto, GetSellerOrdersDto } from '@tec-shop/dto';
-import { JwtAuthGuard } from '../../guards/auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../../guards/auth';
 import { RolesGuard } from '../../guards/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
 import {

@@ -1,9 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@tec-shop/seller-client';
 import type { CreateNotificationDto, NotificationResponse } from '@tec-shop/dto';
 
 @Injectable()
-export class NotificationService {
+export class NotificationService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(NotificationService.name);
   private prisma: PrismaClient;
 
