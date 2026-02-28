@@ -1,23 +1,23 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../../../hooks/use-auth';
+import { useAuth } from '../../../../hooks/use-auth';
 import {
   useConversations,
   useMessages,
   useMarkConversationSeen,
   useUserOnlineStatus,
-} from '../../../hooks/use-chat';
-import { useChatSocket } from '../../../hooks/use-chat-socket';
-import type { Conversation, ChatMessage } from '../../../lib/api/chat';
-import { uploadChatImage } from '../../../lib/api/chat';
+} from '../../../../hooks/use-chat';
+import { useChatSocket } from '../../../../hooks/use-chat-socket';
+import type { Conversation, ChatMessage } from '../../../../lib/api/chat';
+import { uploadChatImage } from '../../../../lib/api/chat';
 import Image from 'next/image';
-import { useRouter } from '@/i18n/navigation';
+import { useRouter } from '../../../../i18n/navigation';
 import { useSearchParams } from 'next/navigation';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader2, MessageCircle } from 'lucide-react';
-import ChatInput from '../../../components/chats/chat-input';
+import ChatInput from '../../../../components/chats/chat-input';
 
 const DEFAULT_AVATAR =
   'https://ik.imagekit.io/andrieltecshop/products/avatar.jpg?updatedAt=1763005913773';
@@ -166,7 +166,13 @@ const InboxPage = () => {
       };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedConversationId, isConnected, joinConversation, leaveConversation, markAsSeen]);
+  }, [
+    selectedConversationId,
+    isConnected,
+    joinConversation,
+    leaveConversation,
+    markAsSeen,
+  ]);
 
   // Reset markedSeenRef when conversation changes
   useEffect(() => {
@@ -193,7 +199,6 @@ const InboxPage = () => {
     setLocalMessages([]);
     router.push(`/inbox?conversationId=${conversation.id}`, { scroll: false });
   };
-
 
   // Format time for display
   const formatTime = (dateString: string) => {
@@ -456,26 +461,27 @@ const InboxPage = () => {
                                 : 'bg-white border border-gray-200 text-gray-800 rounded-bl-sm'
                             }`}
                           >
-                            {message.attachments && message.attachments.length > 0 && (
-                              <div className="flex flex-wrap gap-2 mb-2">
-                                {message.attachments.map((att, idx) => (
-                                  <a
-                                    key={`att-${message.id}-${idx}`}
-                                    href={att.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    <Image
-                                      src={att.url}
-                                      alt={`Attachment ${idx + 1}`}
-                                      width={200}
-                                      height={200}
-                                      className="rounded-lg max-w-[200px] max-h-[200px] object-cover cursor-pointer hover:opacity-90 transition"
-                                    />
-                                  </a>
-                                ))}
-                              </div>
-                            )}
+                            {message.attachments &&
+                              message.attachments.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                  {message.attachments.map((att, idx) => (
+                                    <a
+                                      key={`att-${message.id}-${idx}`}
+                                      href={att.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      <Image
+                                        src={att.url}
+                                        alt={`Attachment ${idx + 1}`}
+                                        width={200}
+                                        height={200}
+                                        className="rounded-lg max-w-[200px] max-h-[200px] object-cover cursor-pointer hover:opacity-90 transition"
+                                      />
+                                    </a>
+                                  ))}
+                                </div>
+                              )}
                             {message.content && (
                               <p className="whitespace-pre-wrap break-words">
                                 {message.content}
@@ -534,7 +540,9 @@ const InboxPage = () => {
                   onSend={async (message, attachments) => {
                     if (!selectedConversation) return;
 
-                    let uploadedAttachments: { url: string; type?: string }[] | undefined;
+                    let uploadedAttachments:
+                      | { url: string; type?: string }[]
+                      | undefined;
 
                     // Upload images to ImageKit if attachments exist
                     if (attachments && attachments.length > 0) {
@@ -548,7 +556,9 @@ const InboxPage = () => {
                           type: 'image',
                         }));
                       } catch (_err) {
-                        toast.error('Failed to upload image. Please try again.');
+                        toast.error(
+                          'Failed to upload image. Please try again.'
+                        );
                         setIsSendingImage(false);
                         return;
                       }

@@ -1,31 +1,42 @@
 'use client';
 
 import React from 'react';
-import { Link } from '@/i18n/navigation';
-import { Store, TrendingUp, Package, ShieldCheck, ArrowRight, Loader2 } from 'lucide-react';
-import { useAuth } from '../hooks/use-auth';
-import ShopProfileEditor from '../components/shop-profile/shop-profile-editor';
+import {
+  Store,
+  TrendingUp,
+  Package,
+  ShieldCheck,
+  ArrowRight,
+  Loader2,
+} from 'lucide-react';
+import { useAuth } from '../../hooks/use-auth';
+import ShopProfileEditor from '../../components/shop-profile/shop-profile-editor';
+import { Link } from '../../i18n/navigation';
 
 const features = [
   {
     icon: Store,
     title: 'Create Your Shop',
-    description: 'Set up your online store in minutes with our easy-to-use platform.',
+    description:
+      'Set up your online store in minutes with our easy-to-use platform.',
   },
   {
     icon: Package,
     title: 'Manage Products',
-    description: 'Easily add, edit, and organize your product catalog with powerful tools.',
+    description:
+      'Easily add, edit, and organize your product catalog with powerful tools.',
   },
   {
     icon: TrendingUp,
     title: 'Track Performance',
-    description: 'Monitor your sales, orders, and revenue with detailed analytics.',
+    description:
+      'Monitor your sales, orders, and revenue with detailed analytics.',
   },
   {
     icon: ShieldCheck,
     title: 'Secure Payments',
-    description: 'Accept payments securely with Stripe integration and instant payouts.',
+    description:
+      'Accept payments securely with Stripe integration and instant payouts.',
   },
 ];
 
@@ -37,7 +48,9 @@ const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Store className="w-8 h-8 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900">TecShop Seller</span>
+            <span className="text-xl font-bold text-gray-900">
+              TecShop Seller
+            </span>
           </div>
           <div className="flex items-center gap-4">
             <Link
@@ -112,8 +125,8 @@ const LandingPage: React.FC = () => {
             Ready to Start Selling?
           </h2>
           <p className="text-blue-100 text-lg max-w-2xl mx-auto mb-8">
-            Join TecShop today and take your business to the next level.
-            No monthly fees - only pay when you make a sale.
+            Join TecShop today and take your business to the next level. No
+            monthly fees - only pay when you make a sale.
           </p>
           <Link
             href="/signup"
@@ -143,7 +156,9 @@ const AuthenticatedHomePage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Store className="w-8 h-8 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900">TecShop Seller</span>
+            <span className="text-xl font-bold text-gray-900">
+              TecShop Seller
+            </span>
           </div>
           <Link
             href="/dashboard"

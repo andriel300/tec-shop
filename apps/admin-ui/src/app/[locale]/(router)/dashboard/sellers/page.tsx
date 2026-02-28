@@ -10,9 +10,12 @@ import {
 import {
   useSellers,
   useUpdateSellerVerification,
-} from '../../../../hooks/useAdminData';
-import type { SellerWithShopResponse } from '../../../../lib/api/admin';
-import { exportToCSV, sellerColumns } from '../../../../lib/utils/csv-export';
+} from '../../../../../hooks/useAdminData';
+import type { SellerWithShopResponse } from '../../../../../lib/api/admin';
+import {
+  exportToCSV,
+  sellerColumns,
+} from '../../../../../lib/utils/csv-export';
 
 // Verification Confirmation Modal
 const VerificationModal = ({
@@ -97,13 +100,7 @@ const VerificationModal = ({
 };
 
 // Avatar component
-const SellerAvatar = ({
-  name,
-  image,
-}: {
-  name: string;
-  image?: string;
-}) => {
+const SellerAvatar = ({ name, image }: { name: string; image?: string }) => {
   const initials = name
     .split(' ')
     .map((n) => n[0])
@@ -132,13 +129,21 @@ const SellersPage = () => {
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [search, setSearch] = useState('');
-  const [verificationFilter, setVerificationFilter] = useState<'all' | 'verified' | 'unverified'>('all');
+  const [verificationFilter, setVerificationFilter] = useState<
+    'all' | 'verified' | 'unverified'
+  >('all');
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedSeller, setSelectedSeller] = useState<SellerWithShopResponse | null>(null);
+  const [selectedSeller, setSelectedSeller] =
+    useState<SellerWithShopResponse | null>(null);
 
   // Build API params
   const apiParams = useMemo(() => {
-    const params: { page: number; limit: number; search?: string; isVerified?: boolean } = {
+    const params: {
+      page: number;
+      limit: number;
+      search?: string;
+      isVerified?: boolean;
+    } = {
       page,
       limit,
     };
@@ -211,7 +216,9 @@ const SellersPage = () => {
         return (
           <div>
             <div className="text-white font-medium">{shop.businessName}</div>
-            <div className="text-slate-400 text-xs">{shop.category || 'No category'}</div>
+            <div className="text-slate-400 text-xs">
+              {shop.category || 'No category'}
+            </div>
           </div>
         );
       },
@@ -307,7 +314,9 @@ const SellersPage = () => {
     <div className="p-8">
       <div className="mb-6 flex justify-between items-start">
         <div>
-          <h1 className="text-white text-3xl font-semibold">Seller Management</h1>
+          <h1 className="text-white text-3xl font-semibold">
+            Seller Management
+          </h1>
           <p className="text-slate-400 mt-1">
             Manage sellers, verify accounts, and view shop information
           </p>
@@ -338,19 +347,27 @@ const SellersPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
           <div className="text-slate-400 text-sm">Total Sellers</div>
-          <div className="text-white text-2xl font-semibold mt-1">{stats.total}</div>
+          <div className="text-white text-2xl font-semibold mt-1">
+            {stats.total}
+          </div>
         </div>
         <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
           <div className="text-slate-400 text-sm">Verified</div>
-          <div className="text-green-400 text-2xl font-semibold mt-1">{stats.verified}</div>
+          <div className="text-green-400 text-2xl font-semibold mt-1">
+            {stats.verified}
+          </div>
         </div>
         <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
           <div className="text-slate-400 text-sm">Pending Verification</div>
-          <div className="text-yellow-400 text-2xl font-semibold mt-1">{stats.pending}</div>
+          <div className="text-yellow-400 text-2xl font-semibold mt-1">
+            {stats.pending}
+          </div>
         </div>
         <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
           <div className="text-slate-400 text-sm">With Active Shop</div>
-          <div className="text-blue-400 text-2xl font-semibold mt-1">{stats.withShop}</div>
+          <div className="text-blue-400 text-2xl font-semibold mt-1">
+            {stats.withShop}
+          </div>
         </div>
       </div>
 
@@ -371,7 +388,9 @@ const SellersPage = () => {
           <select
             value={verificationFilter}
             onChange={(e) => {
-              setVerificationFilter(e.target.value as typeof verificationFilter);
+              setVerificationFilter(
+                e.target.value as typeof verificationFilter
+              );
               setPage(1);
             }}
             className="bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"

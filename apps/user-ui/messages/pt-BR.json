@@ -18,7 +18,7 @@
     "learnMore": "Saiba Mais"
   },
   "Navbar": {
-    "allDepartments": "Todos os Departamentos",
+    "allDepartments": "Departamentos",
     "signInRegister": "Entrar / Cadastrar",
     "searchPlaceholder": "Buscar produtos e lojas...",
     "viewAllResults": "Ver todos os resultados para \"{query}\"",
@@ -26,7 +26,7 @@
     "products": "Produtos",
     "shops": "Lojas",
     "offers": "Ofertas",
-    "becomeASeller": "Seja um Vendedor",
+    "becomeASeller": "Monte sua loja",
     "termsOfService": "Termos de Servico",
     "viewAllCategories": "Ver Todas as Categorias",
     "loadingCategories": "Carregando categorias...",

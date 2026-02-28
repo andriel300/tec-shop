@@ -1,9 +1,9 @@
 'use client';
 
-import { Breadcrumb } from '../../../../components/navigation/Breadcrumb';
-import { Button } from '../../../../components/ui/core/Button';
-import { Modal } from '../../../../components/ui/core/Modal';
-import { DiscountForm } from '../../../../components/forms/DiscountForm';
+import { Breadcrumb } from '../../../../../components/navigation/Breadcrumb';
+import { Button } from '../../../../../components/ui/core/Button';
+import { Modal } from '../../../../../components/ui/core/Modal';
+import { DiscountForm } from '../../../../../components/forms/DiscountForm';
 import { Plus, Pencil, Trash2, Copy, Eye, EyeOff } from 'lucide-react';
 import React, { useState } from 'react';
 import {
@@ -11,16 +11,17 @@ import {
   useDeleteDiscount,
   useCreateDiscount,
   useUpdateDiscount,
-} from '../../../../hooks/useDiscounts';
+} from '../../../../../hooks/useDiscounts';
 import type {
   DiscountResponse,
   CreateDiscountData,
-} from '../../../../lib/api/discounts';
+} from '../../../../../lib/api/discounts';
 import { toast } from 'sonner';
 
 const Page = () => {
   const [showModal, setShowModal] = useState(false);
-  const [editingDiscount, setEditingDiscount] = useState<DiscountResponse | null>(null);
+  const [editingDiscount, setEditingDiscount] =
+    useState<DiscountResponse | null>(null);
 
   // Fetch discount codes using TanStack Query
   const { data: discounts, isLoading, error } = useDiscounts();
@@ -305,20 +306,31 @@ const Page = () => {
         <DiscountForm
           onSubmit={handleSubmitDiscount}
           onCancel={handleCloseModal}
-          isLoading={editingDiscount ? updateMutation.isPending : createMutation.isPending}
-          initialData={editingDiscount ? {
-            publicName: editingDiscount.publicName,
-            code: editingDiscount.code,
-            description: editingDiscount.description ?? undefined,
-            discountType: editingDiscount.discountType,
-            discountValue: editingDiscount.discountValue,
-            usageLimit: editingDiscount.usageLimit ?? undefined,
-            minimumPurchase: editingDiscount.minimumPurchase ?? undefined,
-            maxUsesPerCustomer: editingDiscount.maxUsesPerCustomer ?? undefined,
-            startDate: new Date(editingDiscount.startDate),
-            endDate: editingDiscount.endDate ? new Date(editingDiscount.endDate) : undefined,
-            isActive: editingDiscount.isActive,
-          } : undefined}
+          isLoading={
+            editingDiscount
+              ? updateMutation.isPending
+              : createMutation.isPending
+          }
+          initialData={
+            editingDiscount
+              ? {
+                  publicName: editingDiscount.publicName,
+                  code: editingDiscount.code,
+                  description: editingDiscount.description ?? undefined,
+                  discountType: editingDiscount.discountType,
+                  discountValue: editingDiscount.discountValue,
+                  usageLimit: editingDiscount.usageLimit ?? undefined,
+                  minimumPurchase: editingDiscount.minimumPurchase ?? undefined,
+                  maxUsesPerCustomer:
+                    editingDiscount.maxUsesPerCustomer ?? undefined,
+                  startDate: new Date(editingDiscount.startDate),
+                  endDate: editingDiscount.endDate
+                    ? new Date(editingDiscount.endDate)
+                    : undefined,
+                  isActive: editingDiscount.isActive,
+                }
+              : undefined
+          }
         />
       </Modal>
     </div>

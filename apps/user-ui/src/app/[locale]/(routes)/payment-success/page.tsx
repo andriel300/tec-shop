@@ -2,11 +2,11 @@
 
 import React, { Suspense, useEffect, useState } from 'react';
 import { CheckCircle, Truck, Loader2, XCircle } from 'lucide-react';
-import { useRouter } from '@/i18n/navigation';
+import { useRouter } from '../../../../i18n/navigation';
 import { useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import useStore from '../../../store';
-import { apiClient } from '../../../lib/api/client';
+import useStore from '../../../../store';
+import { apiClient } from '../../../../lib/api/client';
 import confetti from 'canvas-confetti';
 
 type Order = {

@@ -17,10 +17,10 @@ import {
   AlertCircle,
   ChevronLeft,
 } from 'lucide-react';
-import { Link } from '@/i18n/navigation';
 import { toast } from 'sonner';
 import { apiClient } from 'apps/seller-ui/src/lib/api/client';
 import { Breadcrumb } from 'apps/seller-ui/src/components/navigation/Breadcrumb';
+import { Link } from 'apps/seller-ui/src/i18n/navigation';
 
 interface OrderItem {
   id: string;

@@ -1,14 +1,19 @@
+/* eslint-disable @nx/enforce-module-boundaries */
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from '@/i18n/navigation';
-import { useEvents, useDeleteEvent } from '../../../../hooks/useEvents';
-import type { EventResponse } from '../../../../lib/api/events';
+import { useEvents, useDeleteEvent } from '../../../../../hooks/useEvents';
+import type { EventResponse } from '../../../../../lib/api/events';
+import { useRouter } from 'apps/seller-ui/src/i18n/navigation';
 
 const EventsPage = () => {
   const router = useRouter();
-  const [filterStatus, setFilterStatus] = useState<string | undefined>(undefined);
-  const [filterActive, setFilterActive] = useState<boolean | undefined>(undefined);
+  const [filterStatus, setFilterStatus] = useState<string | undefined>(
+    undefined
+  );
+  const [filterActive, setFilterActive] = useState<boolean | undefined>(
+    undefined
+  );
 
   const { data, isLoading, error } = useEvents({
     status: filterStatus,
@@ -103,7 +108,13 @@ const EventsPage = () => {
         </select>
 
         <select
-          value={filterActive === undefined ? '' : filterActive ? 'active' : 'inactive'}
+          value={
+            filterActive === undefined
+              ? ''
+              : filterActive
+              ? 'active'
+              : 'inactive'
+          }
           onChange={(e) => {
             const value = e.target.value;
             setFilterActive(value === '' ? undefined : value === 'active');
@@ -176,7 +187,11 @@ const EventsPage = () => {
                 </div>
 
                 <div className="flex items-center gap-2 mb-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(event.status)}`}>
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                      event.status
+                    )}`}
+                  >
                     {event.status}
                   </span>
                   {event.isActive && (
@@ -188,7 +203,9 @@ const EventsPage = () => {
 
                 <div className="flex gap-2">
                   <button
-                    onClick={() => router.push(`/dashboard/events/edit/${event.id}`)}
+                    onClick={() =>
+                      router.push(`/dashboard/events/edit/${event.id}`)
+                    }
                     className="flex-1 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition"
                   >
                     Edit

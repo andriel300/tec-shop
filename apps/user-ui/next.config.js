@@ -48,7 +48,10 @@ const plugins = [
   withNx,
 ];
 
-const composedConfig = composePlugins(...plugins)(nextConfig);
+const composedConfig = {
+  ...composePlugins(...plugins)(nextConfig),
+  images: nextConfig.images,
+};
 
 // Injected content via Sentry wizard below
 

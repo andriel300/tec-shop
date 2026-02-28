@@ -8,7 +8,6 @@ import {
   flexRender,
 } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
-import { Link } from '@/i18n/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
   Eye,
@@ -18,8 +17,10 @@ import {
   Package,
   DollarSign,
 } from 'lucide-react';
-import { Breadcrumb } from '../../../../shared/components/navigation/Breadcrumb';
-import apiClient from '../../../../lib/api/client';
+import { Breadcrumb } from '../../../../../shared/components/navigation/Breadcrumb';
+import apiClient from '../../../../../lib/api/client';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { Link } from 'apps/admin-ui/src/i18n/navigation';
 
 interface Order {
   id: string;

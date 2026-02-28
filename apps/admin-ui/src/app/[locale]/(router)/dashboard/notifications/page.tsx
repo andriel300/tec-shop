@@ -9,14 +9,14 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { Breadcrumb } from '../../../../shared/components/navigation/Breadcrumb';
+import { Breadcrumb } from '../../../../../shared/components/navigation/Breadcrumb';
 import {
   useNotifications,
   useMarkAsRead,
   useMarkAllAsRead,
   useDeleteNotification,
-} from '../../../../hooks/useNotifications';
-import type { NotificationType } from '../../../../lib/api/notifications';
+} from '../../../../../hooks/useNotifications';
+import type { NotificationType } from '../../../../../lib/api/notifications';
 
 const NOTIFICATION_TYPES: NotificationType[] = [
   'INFO',

@@ -11,7 +11,7 @@ import useDeviceTracking from '../../../hooks/use-device-tracking';
 import useLocationTracking from '../../../hooks/use-location-tracking';
 import useStore from '../../../store';
 import { useShop } from '../../../hooks/use-shops';
-import { useRouter } from '@/i18n/navigation';
+import { useRouter } from '../../../i18n/navigation';
 import { useCreateConversation } from '../../../hooks/use-chat';
 import { useSimilarProducts } from '../../../hooks/use-recommendations';
 import type { Product, ProductVariant } from '../../../lib/api/products';
@@ -25,7 +25,7 @@ import {
   WalletMinimal,
 } from 'lucide-react';
 import Image from 'next/image';
-import { Link } from '@/i18n/navigation';
+import { Link } from '../../../i18n/navigation';
 import React, { useState, useEffect, useMemo } from 'react';
 
 /**

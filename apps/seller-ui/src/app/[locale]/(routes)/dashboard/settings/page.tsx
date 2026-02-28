@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from '@/i18n/navigation';
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
@@ -18,20 +17,22 @@ import {
   X,
   AlertTriangle,
 } from 'lucide-react';
-import useSeller from '../../../../hooks/useSeller';
-import { useAuth } from '../../../../contexts/auth-context';
+import useSeller from '../../../../../hooks/useSeller';
+import { useAuth } from '../../../../../contexts/auth-context';
 import {
   updateSellerProfile,
   updateShop,
   changePassword,
   getNotificationPreferences,
   updateNotificationPreferences,
-} from '../../../../lib/api/seller';
+} from '../../../../../lib/api/seller';
 import type {
   SocialLink,
   NotificationPreferences,
   ChangePasswordData,
-} from '../../../../lib/api/seller';
+} from '../../../../../lib/api/seller';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { useRouter } from 'apps/seller-ui/src/i18n/navigation';
 
 // Tab definitions
 

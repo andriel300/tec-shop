@@ -1,15 +1,18 @@
 'use client';
 
 import React from 'react';
-import Hero from '../shared/modules/hero';
-import SectionTitle from '../components/section/section-title';
-import ProductCard from '../components/cards/product-card';
-import ShopCard from '../components/cards/shop-card';
+import SectionTitle from '../../components/section/section-title';
+import ProductCard from '../../components/cards/product-card';
+import ShopCard from '../../components/cards/shop-card';
 import { useQuery } from '@tanstack/react-query';
-import { getPublicProducts } from '../lib/api/products';
-import { getTopShops } from '../lib/api/shops';
-import { useAuth } from '../contexts/auth-context';
-import { useRecommendations, usePopularProducts } from '../hooks/use-recommendations';
+import { getPublicProducts } from '../../lib/api/products';
+import { getTopShops } from '../../lib/api/shops';
+import { useAuth } from '../../contexts/auth-context';
+import {
+  useRecommendations,
+  usePopularProducts,
+} from '../../hooks/use-recommendations';
+import Hero from '../../shared/modules/hero';
 
 const Page = () => {
   const { user } = useAuth();

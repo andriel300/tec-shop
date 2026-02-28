@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Link } from '@/i18n/navigation';
 // import { GoogleLoginButton } from '../../../components/ui/google-login-button';
-import { LoginForm } from '../../../components/forms/login-form';
+import { LoginForm } from '../../../../components/forms/login-form';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { Link } from 'apps/seller-ui/src/i18n/navigation';
 // import { ProtectedRoute } from '../../../components/auth/protected-route';
 export default function LoginPage() {
   return (

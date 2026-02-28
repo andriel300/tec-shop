@@ -1,6 +1,6 @@
 'use client';
 
-import apiClient from '../../../../lib/api/client';
+import apiClient from '../../../../../lib/api/client';
 import {
   Loader2,
   PackageX,
@@ -11,7 +11,7 @@ import {
   Package,
 } from 'lucide-react';
 import Image from 'next/image';
-import { useRouter } from '@/i18n/navigation';
+import { useRouter } from '../../../../../i18n/navigation';
 import { useParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
@@ -179,7 +179,9 @@ const Page = () => {
             <div
               className="absolute top-5 left-[5%] h-1 bg-green-500 rounded-full transition-all duration-500"
               style={{
-                width: `${(currentStatusIndex / (ORDER_STEPS.length - 1)) * 90}%`,
+                width: `${
+                  (currentStatusIndex / (ORDER_STEPS.length - 1)) * 90
+                }%`,
               }}
             />
 

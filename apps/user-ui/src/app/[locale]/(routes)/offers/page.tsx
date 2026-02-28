@@ -1,12 +1,12 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '../../../lib/api/client';
-import { Link } from '@/i18n/navigation';
+import { apiClient } from '../../../../lib/api/client';
+import { Link } from '../../../../i18n/navigation';
 import React, { useEffect } from 'react';
 import { Range } from 'react-range';
 import { ChevronDown, X, Tag } from 'lucide-react';
-import ProductCard from '../../../components/cards/product-card';
+import ProductCard from '../../../../components/cards/product-card';
 
 const MIN = 0;
 const MAX = 1199;

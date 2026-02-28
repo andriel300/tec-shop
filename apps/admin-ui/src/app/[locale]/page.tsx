@@ -1,12 +1,12 @@
 'use client';
 
-import { useRouter } from '@/i18n/navigation';
 import { useForm } from '@tanstack/react-form';
 import { useMutation } from '@tanstack/react-query';
 import React, { useState } from 'react';
 import { Input } from '@tec-shop/input';
 import type { AxiosError } from 'axios';
-import apiClient from '../lib/api/client';
+import apiClient from '../../lib/api/client';
+import { useRouter } from '../../i18n/navigation';
 
 type FormData = {
   email: string;

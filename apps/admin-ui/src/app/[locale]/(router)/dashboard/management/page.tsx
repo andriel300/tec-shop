@@ -11,8 +11,8 @@ import {
   useAdmins,
   useCreateAdmin,
   useDeleteAdmin,
-} from '../../../../hooks/useAdminData';
-import type { AdminResponse } from '../../../../lib/api/admin';
+} from '../../../../../hooks/useAdminData';
+import type { AdminResponse } from '../../../../../lib/api/admin';
 
 // Modal Component for Adding New Admin
 const AddAdminModal = ({

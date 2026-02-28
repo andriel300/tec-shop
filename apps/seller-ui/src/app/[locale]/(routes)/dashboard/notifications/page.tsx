@@ -15,14 +15,13 @@ import {
   useMarkAsReadV2,
   useMarkAllAsReadV2,
   useDeleteNotificationV2,
-} from '../../../../hooks/use-notifications-v2';
+} from '../../../../../hooks/use-notifications-v2';
 import type {
   NotificationType,
   NotificationEntry,
-} from '../../../../lib/api/notifications-v2';
+} from '../../../../../lib/api/notifications-v2';
 
-const USER_UI_URL =
-  process.env.NEXT_PUBLIC_USER_UI_URL || 'http://localhost:3000';
+const USER_UI_URL = process.env.NEXT_PUBLIC_USER_UI_URL;
 
 function getNotificationLink(notification: NotificationEntry): string | null {
   const metadata = notification.metadata;

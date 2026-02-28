@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useOrders } from '../../hooks/use-orders';
 import { Loader2, Package, Truck, CheckCircle, Clock, XCircle, X } from 'lucide-react';
 import Image from 'next/image';
-import { Link } from '@/i18n/navigation';
+import { Link } from '../../i18n/navigation';
 import ReviewForm from '../reviews/review-form';
 import type { Order } from '../../lib/api/orders';
 
