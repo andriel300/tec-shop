@@ -9,38 +9,21 @@ import {
   ArrowRight,
   Loader2,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '../../hooks/use-auth';
 import ShopProfileEditor from '../../components/shop-profile/shop-profile-editor';
 import { Link } from '../../i18n/navigation';
 
-const features = [
-  {
-    icon: Store,
-    title: 'Create Your Shop',
-    description:
-      'Set up your online store in minutes with our easy-to-use platform.',
-  },
-  {
-    icon: Package,
-    title: 'Manage Products',
-    description:
-      'Easily add, edit, and organize your product catalog with powerful tools.',
-  },
-  {
-    icon: TrendingUp,
-    title: 'Track Performance',
-    description:
-      'Monitor your sales, orders, and revenue with detailed analytics.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Secure Payments',
-    description:
-      'Accept payments securely with Stripe integration and instant payouts.',
-  },
-];
-
 const LandingPage: React.FC = () => {
+  const t = useTranslations('LandingPage');
+
+  const features = [
+    { icon: Store, title: t('feature1Title'), description: t('feature1Desc') },
+    { icon: Package, title: t('feature2Title'), description: t('feature2Desc') },
+    { icon: TrendingUp, title: t('feature3Title'), description: t('feature3Desc') },
+    { icon: ShieldCheck, title: t('feature4Title'), description: t('feature4Desc') },
+  ];
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       {/* Header */}
@@ -49,7 +32,7 @@ const LandingPage: React.FC = () => {
           <div className="flex items-center gap-2">
             <Store className="w-8 h-8 text-blue-600" />
             <span className="text-xl font-bold text-gray-900">
-              TecShop Seller
+              {t('brandName')}
             </span>
           </div>
           <div className="flex items-center gap-4">
@@ -57,13 +40,13 @@ const LandingPage: React.FC = () => {
               href="/login"
               className="text-gray-600 hover:text-gray-900 font-medium"
             >
-              Login
+              {t('login')}
             </Link>
             <Link
               href="/signup"
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
             >
-              Get Started
+              {t('getStarted')}
             </Link>
           </div>
         </div>
@@ -72,25 +55,24 @@ const LandingPage: React.FC = () => {
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-4 py-20 text-center">
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-          Start Selling on TecShop Today
+          {t('heroTitle')}
         </h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
-          Join thousands of sellers and reach millions of customers worldwide.
-          Set up your shop in minutes and start earning.
+          {t('heroDesc')}
         </p>
         <div className="flex items-center justify-center gap-4">
           <Link
             href="/signup"
             className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium text-lg flex items-center gap-2"
           >
-            Create Your Shop
+            {t('createShop')}
             <ArrowRight className="w-5 h-5" />
           </Link>
           <Link
             href="/login"
             className="bg-white text-gray-700 px-8 py-3 rounded-lg hover:bg-gray-50 transition-colors font-medium text-lg border border-gray-300"
           >
-            Sign In
+            {t('signIn')}
           </Link>
         </div>
       </section>
@@ -98,7 +80,7 @@ const LandingPage: React.FC = () => {
       {/* Features Section */}
       <section className="max-w-7xl mx-auto px-4 py-16">
         <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
-          Everything You Need to Succeed
+          {t('featuresTitle')}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((feature) => (
@@ -122,17 +104,16 @@ const LandingPage: React.FC = () => {
       <section className="bg-blue-600 py-16">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold text-white mb-4">
-            Ready to Start Selling?
+            {t('ctaTitle')}
           </h2>
           <p className="text-blue-100 text-lg max-w-2xl mx-auto mb-8">
-            Join TecShop today and take your business to the next level. No
-            monthly fees - only pay when you make a sale.
+            {t('ctaDesc')}
           </p>
           <Link
             href="/signup"
             className="bg-white text-blue-600 px-8 py-3 rounded-lg hover:bg-blue-50 transition-colors font-medium text-lg inline-flex items-center gap-2"
           >
-            Get Started Free
+            {t('getStartedFree')}
             <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
@@ -141,7 +122,7 @@ const LandingPage: React.FC = () => {
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-400 py-8">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p>2026 TecShop. All rights reserved.</p>
+          <p>{t('copyright')}</p>
         </div>
       </footer>
     </div>
@@ -149,6 +130,8 @@ const LandingPage: React.FC = () => {
 };
 
 const AuthenticatedHomePage: React.FC = () => {
+  const t = useTranslations('LandingPage');
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -157,14 +140,14 @@ const AuthenticatedHomePage: React.FC = () => {
           <div className="flex items-center gap-2">
             <Store className="w-8 h-8 text-blue-600" />
             <span className="text-xl font-bold text-gray-900">
-              TecShop Seller
+              {t('brandName')}
             </span>
           </div>
           <Link
             href="/dashboard"
             className="text-blue-600 hover:text-blue-700 font-medium"
           >
-            Go to Dashboard
+            {t('goToDashboard')}
           </Link>
         </div>
       </header>

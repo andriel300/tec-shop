@@ -246,7 +246,7 @@ const StickyNavbar = () => {
               href={i.href}
               key={index}
             >
-              {i.title}
+              {t(i.translationKey as Parameters<typeof t>[0])}
             </Link>
           ))}
         </div>

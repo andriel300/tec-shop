@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import type { Product } from '../../lib/api/products';
 import StarRating from '../ui/star-rating';
 import { Eye, Heart, ShoppingBag } from 'lucide-react';
@@ -18,6 +19,7 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product }: ProductCardProps) => {
+  const tCommon = useTranslations('Common');
   const displayPrice = product.salePrice || product.price;
   const hasDiscount = product.salePrice && product.salePrice < product.price;
   const [open, setOpen] = useState(false);
@@ -195,12 +197,12 @@ const ProductCard = ({ product }: ProductCardProps) => {
             {/* Badges */}
             {hasDiscount && (
               <div className="absolute top-2 left-3 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded">
-                SALE
+                {tCommon('sale')}
               </div>
             )}
             {product.isFeatured && (
               <div className="absolute top-12 left-3 bg-yellow-500 text-white text-xs font-semibold px-2 py-1 rounded">
-                FEATURED
+                {tCommon('featured')}
               </div>
             )}
           </div>
