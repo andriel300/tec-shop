@@ -1,17 +1,4 @@
 {
-  "Common": {
-    "signIn": "Sign In",
-    "signUp": "Sign Up",
-    "logout": "Logout",
-    "loading": "Loading...",
-    "save": "Save",
-    "cancel": "Cancel",
-    "delete": "Delete",
-    "edit": "Edit",
-    "search": "Search",
-    "noResults": "No results found",
-    "error": "Error"
-  },
   "Sidebar": {
     "dashboard": "Dashboard",
     "mainMenu": "Main Menu",
@@ -38,10 +25,5 @@
     "invalidEmail": "Invalid email format",
     "passwordRequired": "Password is required",
     "login": "Login"
-  },
-  "LanguageSwitcher": {
-    "changeLanguage": "Change language",
-    "english": "English",
-    "portuguese": "Portuguese (BR)"
   }
 }

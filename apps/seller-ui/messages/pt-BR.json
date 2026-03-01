@@ -1,16 +1,5 @@
 {
   "Common": {
-    "signIn": "Entrar",
-    "signUp": "Cadastrar",
-    "logout": "Sair",
-    "loading": "Carregando...",
-    "save": "Salvar",
-    "cancel": "Cancelar",
-    "delete": "Excluir",
-    "edit": "Editar",
-    "search": "Buscar",
-    "noResults": "Nenhum resultado encontrado",
-    "error": "Erro",
     "loggedOut": "Saiu com sucesso",
     "logoutFailed": "Falha ao sair. Por favor, tente novamente."
   },
@@ -47,6 +36,7 @@
     "noAccount": "Nao tem uma conta?",
     "haveAccount": "Ja tem uma conta?",
     "signingIn": "Entrando...",
+    "signIn": "Entrar",
     "emailRequired": "Um email e obrigatorio",
     "passwordRequired": "Uma senha e obrigatoria",
     "anErrorOccurred": "Ocorreu um erro",
@@ -77,10 +67,5 @@
     "getStartedFree": "Comecar Gratuitamente",
     "copyright": "2026 TecShop. Todos os direitos reservados.",
     "goToDashboard": "Ir para o Painel"
-  },
-  "LanguageSwitcher": {
-    "changeLanguage": "Alterar idioma",
-    "english": "Ingles",
-    "portuguese": "Portugues (BR)"
   }
 }

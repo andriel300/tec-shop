@@ -1,19 +1,8 @@
 {
   "Common": {
-    "signIn": "Entrar",
-    "signUp": "Cadastrar",
-    "logout": "Sair",
-    "loading": "Carregando...",
-    "save": "Salvar",
-    "cancel": "Cancelar",
-    "delete": "Excluir",
-    "edit": "Editar",
-    "search": "Buscar",
-    "noResults": "Nenhum resultado encontrado",
     "viewAll": "Ver Tudo",
     "hello": "Ola,",
     "welcome": "Bem-vindo",
-    "error": "Erro",
     "shopNow": "Comprar Agora",
     "learnMore": "Saiba Mais",
     "sale": "PROMO",
@@ -40,11 +29,6 @@
     "account": "Conta",
     "wishlist": "Lista de Desejos",
     "cart": "Carrinho"
-  },
-  "LanguageSwitcher": {
-    "changeLanguage": "Alterar idioma",
-    "english": "Ingles",
-    "portuguese": "Portugues (BR)"
   },
   "HomePage": {
     "recommendedForYou": "Recomendado Para Voce",

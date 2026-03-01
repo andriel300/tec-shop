@@ -1,6 +1,1 @@
-import { defineRouting } from 'next-intl/routing';
-
-export const routing = defineRouting({
-  locales: ['en', 'pt-BR'],
-  defaultLocale: 'en',
-});
+export { routing } from '@tec-shop/i18n';

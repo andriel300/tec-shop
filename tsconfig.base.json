@@ -33,6 +33,7 @@
         "libs/prisma-clients/chatting-client/src/index.ts"
       ],
       "@tec-shop/dto": ["libs/shared/dto/src/*"],
+      "@tec-shop/i18n": ["libs/shared/i18n/src/index.ts"],
       "@tec-shop/logger-client": [
         "libs/prisma-clients/logger-client/src/index.ts"
       ],

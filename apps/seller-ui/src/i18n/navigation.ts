@@ -1,5 +1,1 @@
-import { createNavigation } from 'next-intl/navigation';
-import { routing } from './routing';
-
-export const { Link, redirect, usePathname, useRouter, getPathname } =
-  createNavigation(routing);
+export { Link, redirect, usePathname, useRouter, getPathname } from '@tec-shop/i18n';

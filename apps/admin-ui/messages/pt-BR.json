@@ -1,17 +1,4 @@
 {
-  "Common": {
-    "signIn": "Entrar",
-    "signUp": "Cadastrar",
-    "logout": "Sair",
-    "loading": "Carregando...",
-    "save": "Salvar",
-    "cancel": "Cancelar",
-    "delete": "Excluir",
-    "edit": "Editar",
-    "search": "Buscar",
-    "noResults": "Nenhum resultado encontrado",
-    "error": "Erro"
-  },
   "Sidebar": {
     "dashboard": "Painel",
     "mainMenu": "Menu Principal",
@@ -38,10 +25,5 @@
     "invalidEmail": "Formato de email invalido",
     "passwordRequired": "Senha e obrigatoria",
     "login": "Entrar"
-  },
-  "LanguageSwitcher": {
-    "changeLanguage": "Alterar idioma",
-    "english": "Ingles",
-    "portuguese": "Portugues (BR)"
   }
 }
