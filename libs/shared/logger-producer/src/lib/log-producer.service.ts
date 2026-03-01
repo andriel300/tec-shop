@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Kafka, Producer } from 'kafkajs';
 import type { LogEventDto, LogLevel, LogCategory } from '@tec-shop/dto';
 
@@ -65,7 +65,9 @@ export class LogProducerService {
     service: string,
     category: LogCategory,
     message: string,
-    options?: Partial<Omit<LogEventDto, 'service' | 'level' | 'category' | 'message'>>
+    options?: Partial<
+      Omit<LogEventDto, 'service' | 'level' | 'category' | 'message'>
+    >
   ): Promise<void> {
     await this.emit({
       service,
@@ -80,7 +82,9 @@ export class LogProducerService {
     service: string,
     category: LogCategory,
     message: string,
-    options?: Partial<Omit<LogEventDto, 'service' | 'level' | 'category' | 'message'>>
+    options?: Partial<
+      Omit<LogEventDto, 'service' | 'level' | 'category' | 'message'>
+    >
   ): Promise<void> {
     await this.emit({
       service,
@@ -95,7 +99,9 @@ export class LogProducerService {
     service: string,
     category: LogCategory,
     message: string,
-    options?: Partial<Omit<LogEventDto, 'service' | 'level' | 'category' | 'message'>>
+    options?: Partial<
+      Omit<LogEventDto, 'service' | 'level' | 'category' | 'message'>
+    >
   ): Promise<void> {
     await this.emit({
       service,
@@ -110,7 +116,9 @@ export class LogProducerService {
     service: string,
     category: LogCategory,
     message: string,
-    options?: Partial<Omit<LogEventDto, 'service' | 'level' | 'category' | 'message'>>
+    options?: Partial<
+      Omit<LogEventDto, 'service' | 'level' | 'category' | 'message'>
+    >
   ): Promise<void> {
     await this.emit({
       service,
@@ -125,7 +133,9 @@ export class LogProducerService {
     service: string,
     category: LogCategory,
     message: string,
-    options?: Partial<Omit<LogEventDto, 'service' | 'level' | 'category' | 'message'>>
+    options?: Partial<
+      Omit<LogEventDto, 'service' | 'level' | 'category' | 'message'>
+    >
   ): Promise<void> {
     await this.emit({
       service,

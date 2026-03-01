@@ -1,7 +1,7 @@
 import { Module, DynamicModule, Global } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Kafka } from 'kafkajs';
-import { LogProducerService } from './log-producer.service';
+import { LogProducerService } from './log-producer.service.js';
 
 export interface LogProducerModuleOptions {
   clientId?: string;

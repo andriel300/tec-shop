@@ -50,7 +50,8 @@
         "libs/prisma-schemas/chatting-schema/*",
         "libs/prisma-clients/chatting-client/*",
         "libs/prisma-schemas/logger-schema/*",
-        "libs/prisma-clients/logger-client/*"
+        "libs/prisma-clients/logger-client/*",
+        "libs/shared/i18n/*"
       ]
     },
     {
@@ -115,7 +116,8 @@
         "libs/prisma-schemas/chatting-schema/*",
         "libs/prisma-clients/chatting-client/*",
         "libs/prisma-schemas/logger-schema/*",
-        "libs/prisma-clients/logger-client/*"
+        "libs/prisma-clients/logger-client/*",
+        "libs/shared/i18n/*"
       ],
       "options": {
         "typecheck": {

@@ -1,19 +1,8 @@
 {
   "Common": {
-    "signIn": "Sign In",
-    "signUp": "Sign Up",
-    "logout": "Logout",
-    "loading": "Loading...",
-    "save": "Save",
-    "cancel": "Cancel",
-    "delete": "Delete",
-    "edit": "Edit",
-    "search": "Search",
-    "noResults": "No results found",
     "viewAll": "View All",
     "hello": "Hello,",
     "welcome": "Welcome",
-    "error": "Error",
     "shopNow": "Shop Now",
     "learnMore": "Learn More",
     "sale": "SALE",
@@ -40,11 +29,6 @@
     "account": "Account",
     "wishlist": "Wishlist",
     "cart": "Cart"
-  },
-  "LanguageSwitcher": {
-    "changeLanguage": "Change language",
-    "english": "English",
-    "portuguese": "Portuguese (BR)"
   },
   "HomePage": {
     "recommendedForYou": "Recommended For You",
