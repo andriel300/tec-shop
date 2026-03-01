@@ -121,13 +121,13 @@ const Page = () => {
                 active={activeTab === 'Inbox'}
                 onClick={() => router.push('/inbox')}
               />
-              <NavItem
-                label="Notifications"
-                Icon={Bell}
-                active={activeTab === 'Notifications'}
-                // onClick={() => setActiveTab('Notifications')}
-                onClick={() => router.push('/notifications')}
-              />
+              {/* <NavItem */}
+              {/*   label="Notifications" */}
+              {/*   Icon={Bell} */}
+              {/*   active={activeTab === 'Notifications'} */}
+              {/*   // onClick={() => setActiveTab('Notifications')} */}
+              {/*   onClick={() => router.push('/notifications')} */}
+              {/* /> */}
               <NavItem
                 label="Shipping Address"
                 Icon={MapPin}

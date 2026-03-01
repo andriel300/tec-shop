@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Search, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useRouter } from '../../i18n/navigation';
 import { apiClient } from '../../lib/api/client';
 import SearchDropdown from './SearchDropdown';
@@ -22,6 +23,7 @@ export interface Shop {
 }
 
 const SearchBar = () => {
+  const t = useTranslations('Navbar');
   const router = useRouter();
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -65,8 +67,8 @@ const SearchBar = () => {
         });
 
         setShow(true);
-      } catch (err: any) {
-        if (err.name !== 'CanceledError') {
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name !== 'CanceledError') {
           console.error(err);
         }
       } finally {
@@ -117,7 +119,7 @@ const SearchBar = () => {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.length >= 2 && setShow(true)}
-          placeholder="Search for products and shops..."
+          placeholder={t('searchPlaceholder')}
           className={`w-full px-4 pr-[120px] border-2 border-brand-primary outline-none h-[55px] ${
             show ? 'rounded-t-md rounded-b-none' : 'rounded-md'
           }`}

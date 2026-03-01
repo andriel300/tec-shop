@@ -34,6 +34,7 @@ import LanguageSwitcher from '../language-switcher';
 
 const SidebarBarWrapper = () => {
   const t = useTranslations('Sidebar');
+  const tCommon = useTranslations('Common');
   const { activeSidebar, setActiveSidebar } = useSidebar();
   const pathName = usePathname();
   const router = useRouter();
@@ -59,11 +60,11 @@ const SidebarBarWrapper = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      toast.success('Logged out successfully');
+      toast.success(tCommon('loggedOut'));
       router.push('/login');
     } catch (error) {
       console.error('Logout error:', error);
-      toast.error('Failed to logout. Please try again.');
+      toast.error(tCommon('logoutFailed'));
     }
   };
 
@@ -88,10 +89,10 @@ const SidebarBarWrapper = () => {
               <Box>
                 {isLoading ? (
                   <div className="text-xl font-medium text-[#ecedee] animate-pulse">
-                    Loading...
+                    {tCommon('loading')}
                   </div>
                 ) : isError ? (
-                  <div className="text-xl font-medium text-red-400">Error</div>
+                  <div className="text-xl font-medium text-red-400">{tCommon('error')}</div>
                 ) : (
                   <h3 className="text-xl font-medium text-[#ecedee]">
                     {displayName}

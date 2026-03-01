@@ -2,6 +2,7 @@
 
 import { Link } from '../../i18n/navigation';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { Product, Shop } from './SearchBar';
 
 interface Props {
@@ -24,6 +25,8 @@ const SearchDropdown = ({
   close,
   clear,
 }: Props) => {
+  const t = useTranslations('Navbar');
+
   if (!show) return null;
 
   const hasResults = results.products.length > 0 || results.shops.length > 0;
@@ -31,12 +34,12 @@ const SearchDropdown = ({
   return (
     <div className="absolute top-full left-0 w-full bg-ui-surface border-2 border-t-0 border-brand-primary rounded-b-md shadow-elev-lg z-50 max-h-[500px] overflow-y-auto">
       {isSearching && (
-        <div className="p-4 text-center text-text-secondary">Searching...</div>
+        <div className="p-4 text-center text-text-secondary">{t('searching')}</div>
       )}
 
       {!isSearching && !hasResults && (
         <div className="p-4 text-sm text-gray-500">
-          No results found for "{query}"
+          {t('noResultsFor', { query })}
         </div>
       )}
 
@@ -44,7 +47,7 @@ const SearchDropdown = ({
       {results.products.length > 0 && (
         <div className="border-b border-ui-divider">
           <div className="px-4 pt-3 pb-1 text-xs font-semibold text-gray-400 uppercase">
-            Products
+            {t('products')}
           </div>
 
           {results.products.map((product) => (
@@ -84,7 +87,7 @@ const SearchDropdown = ({
       {results.shops.length > 0 && (
         <div>
           <div className="px-4 pt-3 pb-1 text-xs font-semibold text-gray-400 uppercase">
-            Shops
+            {t('shops')}
           </div>
 
           {results.shops.map((shop) => (

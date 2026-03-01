@@ -30,6 +30,15 @@
     "extras": "Extras",
     "logout": "Sair"
   },
+  "Auth": {
+    "welcomeAdmin": "Bem-vindo Administrador",
+    "email": "Email",
+    "password": "Senha",
+    "emailRequired": "Email e obrigatorio",
+    "invalidEmail": "Formato de email invalido",
+    "passwordRequired": "Senha e obrigatoria",
+    "login": "Entrar"
+  },
   "LanguageSwitcher": {
     "changeLanguage": "Alterar idioma",
     "english": "Ingles",

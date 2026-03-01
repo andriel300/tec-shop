@@ -15,12 +15,16 @@
     "welcome": "Welcome",
     "error": "Error",
     "shopNow": "Shop Now",
-    "learnMore": "Learn More"
+    "learnMore": "Learn More",
+    "sale": "SALE",
+    "featured": "FEATURED",
+    "anErrorOccurred": "An error occurred"
   },
   "Navbar": {
     "allDepartments": "All Departments",
     "signInRegister": "Sign In / Register",
     "searchPlaceholder": "Search for products and shops...",
+    "searching": "Searching...",
     "viewAllResults": "View all results for \"{query}\"",
     "home": "Home",
     "products": "Products",
@@ -41,5 +45,25 @@
     "changeLanguage": "Change language",
     "english": "English",
     "portuguese": "Portuguese (BR)"
+  },
+  "HomePage": {
+    "recommendedForYou": "Recommended For You",
+    "popularProducts": "Popular Products",
+    "latestProducts": "Latest Products",
+    "topShops": "Top Shops",
+    "topOffers": "Top Offers",
+    "showingProducts": "Showing {count} products",
+    "showingShops": "Showing {count} top-rated shops",
+    "showingOffers": "Showing {count} special offers",
+    "noProductsFound": "No products found",
+    "checkBackProducts": "Check back later for new products",
+    "noShopsFound": "No top shops found",
+    "checkBackShops": "Check back later for featured shops",
+    "noOffersAvailable": "No offers available",
+    "checkBackDeals": "Check back later for special deals",
+    "failedToLoadRec": "Failed to load recommendations",
+    "failedToLoadLatest": "Failed to load latest products",
+    "failedToLoadShops": "Failed to load top shops",
+    "failedToLoadOffers": "Failed to load top offers"
   }
 }

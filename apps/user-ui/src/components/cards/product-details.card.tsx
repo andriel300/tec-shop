@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import React, { useState, useMemo, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import StarRating from '../ui/star-rating';
 import type { Product, ProductVariant } from '../../lib/api/products';
 import {
@@ -29,6 +30,7 @@ interface ProductDetailsCardProps {
 }
 
 const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
+  const tCommon = useTranslations('Common');
   const [activeImage, setActiveImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [showFullDescription, setShowFullDescription] = useState(false);
@@ -359,12 +361,12 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
               {/* Badges */}
               {hasDiscount && (
                 <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-semibold px-3 py-1 rounded">
-                  SALE
+                  {tCommon('sale')}
                 </div>
               )}
               {product.isFeatured && (
                 <div className="absolute top-3 right-3 bg-yellow-500 text-white text-xs font-semibold px-3 py-1 rounded">
-                  FEATURED
+                  {tCommon('featured')}
                 </div>
               )}
             </div>

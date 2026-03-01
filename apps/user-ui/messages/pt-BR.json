@@ -15,12 +15,16 @@
     "welcome": "Bem-vindo",
     "error": "Erro",
     "shopNow": "Comprar Agora",
-    "learnMore": "Saiba Mais"
+    "learnMore": "Saiba Mais",
+    "sale": "PROMO",
+    "featured": "DESTAQUE",
+    "anErrorOccurred": "Ocorreu um erro"
   },
   "Navbar": {
     "allDepartments": "Departamentos",
     "signInRegister": "Entrar / Cadastrar",
     "searchPlaceholder": "Buscar produtos e lojas...",
+    "searching": "Buscando...",
     "viewAllResults": "Ver todos os resultados para \"{query}\"",
     "home": "Inicio",
     "products": "Produtos",
@@ -41,5 +45,25 @@
     "changeLanguage": "Alterar idioma",
     "english": "Ingles",
     "portuguese": "Portugues (BR)"
+  },
+  "HomePage": {
+    "recommendedForYou": "Recomendado Para Voce",
+    "popularProducts": "Produtos Populares",
+    "latestProducts": "Produtos Mais Recentes",
+    "topShops": "Melhores Lojas",
+    "topOffers": "Melhores Ofertas",
+    "showingProducts": "Mostrando {count} produtos",
+    "showingShops": "Mostrando {count} lojas avaliadas",
+    "showingOffers": "Mostrando {count} ofertas especiais",
+    "noProductsFound": "Nenhum produto encontrado",
+    "checkBackProducts": "Volte mais tarde para novos produtos",
+    "noShopsFound": "Nenhuma loja em destaque encontrada",
+    "checkBackShops": "Volte mais tarde para lojas em destaque",
+    "noOffersAvailable": "Nenhuma oferta disponivel",
+    "checkBackDeals": "Volte mais tarde para ofertas especiais",
+    "failedToLoadRec": "Falha ao carregar recomendacoes",
+    "failedToLoadLatest": "Falha ao carregar produtos recentes",
+    "failedToLoadShops": "Falha ao carregar melhores lojas",
+    "failedToLoadOffers": "Falha ao carregar melhores ofertas"
   }
 }

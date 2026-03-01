@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import SectionTitle from '../../components/section/section-title';
 import ProductCard from '../../components/cards/product-card';
 import ShopCard from '../../components/cards/shop-card';
@@ -15,6 +16,8 @@ import {
 import Hero from '../../shared/modules/hero';
 
 const Page = () => {
+  const t = useTranslations('HomePage');
+  const tCommon = useTranslations('Common');
   const { user } = useAuth();
 
   // Fetch personalized recommendations (authenticated) or popular products (public)
@@ -37,7 +40,7 @@ const Page = () => {
   const isRecLoading = user ? isRecommendedLoading : isPopularLoading;
   const isRecError = user ? isRecommendedError : isPopularError;
   const recError = user ? recommendedError : popularError;
-  const recTitle = user ? 'Recommended For You' : 'Popular Products';
+  const recTitle = user ? t('recommendedForYou') : t('popularProducts');
 
   // Fetch latest products (offset by 10 to show different products)
   const {
@@ -105,12 +108,12 @@ const Page = () => {
         {isRecError && (
           <div className="text-center py-10">
             <p className="text-red-600 font-semibold">
-              Failed to load {recTitle.toLowerCase()}
+              {t('failedToLoadRec')}
             </p>
             <p className="text-gray-600 text-sm mt-2">
               {recError instanceof Error
                 ? recError.message
-                : 'An error occurred'}
+                : tCommon('anErrorOccurred')}
             </p>
           </div>
         )}
@@ -124,23 +127,23 @@ const Page = () => {
             </div>
 
             <div className="mt-6 text-center text-sm text-gray-600">
-              Showing {recProducts.length} products
+              {t('showingProducts', { count: recProducts.length })}
             </div>
           </div>
         )}
 
         {recProducts && recProducts.length === 0 && (
           <div className="text-center py-10">
-            <p className="text-gray-600 font-semibold">No products found</p>
+            <p className="text-gray-600 font-semibold">{t('noProductsFound')}</p>
             <p className="text-gray-500 text-sm mt-2">
-              Check back later for new products
+              {t('checkBackProducts')}
             </p>
           </div>
         )}
 
         {/* Latest Products Section */}
         <div className="my-10 block">
-          <SectionTitle title="Latest Products" />
+          <SectionTitle title={t('latestProducts')} />
         </div>
 
         {isLatestLoading && (
@@ -157,12 +160,12 @@ const Page = () => {
         {isLatestError && (
           <div className="text-center py-10">
             <p className="text-red-600 font-semibold">
-              Failed to load latest products
+              {t('failedToLoadLatest')}
             </p>
             <p className="text-gray-600 text-sm mt-2">
               {latestError instanceof Error
                 ? latestError.message
-                : 'An error occurred'}
+                : tCommon('anErrorOccurred')}
             </p>
           </div>
         )}
@@ -176,25 +179,23 @@ const Page = () => {
             </div>
 
             <div className="mt-6 text-center text-sm text-gray-600">
-              Showing {latestData.products.length} products
+              {t('showingProducts', { count: latestData.products.length })}
             </div>
           </div>
         )}
 
         {latestData && latestData.products.length === 0 && (
           <div className="text-center py-10">
-            <p className="text-gray-600 font-semibold">
-              No latest products found
-            </p>
+            <p className="text-gray-600 font-semibold">{t('noProductsFound')}</p>
             <p className="text-gray-500 text-sm mt-2">
-              Check back later for new products
+              {t('checkBackProducts')}
             </p>
           </div>
         )}
 
         {/* Top Shops Section */}
         <div className="my-10 block">
-          <SectionTitle title="Top Shops" />
+          <SectionTitle title={t('topShops')} />
         </div>
 
         {isTopShopsLoading && (
@@ -211,12 +212,12 @@ const Page = () => {
         {isTopShopsError && (
           <div className="text-center py-10">
             <p className="text-red-600 font-semibold">
-              Failed to load top shops
+              {t('failedToLoadShops')}
             </p>
             <p className="text-gray-600 text-sm mt-2">
               {topShopsError instanceof Error
                 ? topShopsError.message
-                : 'An error occurred'}
+                : tCommon('anErrorOccurred')}
             </p>
           </div>
         )}
@@ -230,23 +231,23 @@ const Page = () => {
             </div>
 
             <div className="mt-6 text-center text-sm text-gray-600">
-              Showing {topShopsData.shops.length} top-rated shops
+              {t('showingShops', { count: topShopsData.shops.length })}
             </div>
           </div>
         )}
 
         {topShopsData && topShopsData.shops.length === 0 && (
           <div className="text-center py-10">
-            <p className="text-gray-600 font-semibold">No top shops found</p>
+            <p className="text-gray-600 font-semibold">{t('noShopsFound')}</p>
             <p className="text-gray-500 text-sm mt-2">
-              Check back later for featured shops
+              {t('checkBackShops')}
             </p>
           </div>
         )}
 
         {/* Top Offers Section */}
         <div className="my-10 block">
-          <SectionTitle title="Top Offers" />
+          <SectionTitle title={t('topOffers')} />
         </div>
 
         {isTopOffersLoading && (
@@ -263,12 +264,12 @@ const Page = () => {
         {isTopOffersError && (
           <div className="text-center py-10">
             <p className="text-red-600 font-semibold">
-              Failed to load top offers
+              {t('failedToLoadOffers')}
             </p>
             <p className="text-gray-600 text-sm mt-2">
               {topOffersError instanceof Error
                 ? topOffersError.message
-                : 'An error occurred'}
+                : tCommon('anErrorOccurred')}
             </p>
           </div>
         )}
@@ -282,16 +283,16 @@ const Page = () => {
             </div>
 
             <div className="mt-6 text-center text-sm text-gray-600">
-              Showing {topOffersData.products.length} special offers
+              {t('showingOffers', { count: topOffersData.products.length })}
             </div>
           </div>
         )}
 
         {topOffersData && topOffersData.products.length === 0 && (
           <div className="text-center py-10">
-            <p className="text-gray-600 font-semibold">No offers available</p>
+            <p className="text-gray-600 font-semibold">{t('noOffersAvailable')}</p>
             <p className="text-gray-500 text-sm mt-2">
-              Check back later for special deals
+              {t('checkBackDeals')}
             </p>
           </div>
         )}

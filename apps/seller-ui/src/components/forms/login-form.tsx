@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { toast } from 'sonner';
 import { useRouter } from '@/i18n/navigation';
@@ -14,6 +15,7 @@ import { Input } from '../ui/core/Input';
 import { Eye, EyeOff } from 'lucide-react';
 
 export function LoginForm() {
+  const t = useTranslations('Auth');
   const queryClient = useQueryClient();
   const router = useRouter();
   const { login } = useAuth();
@@ -39,12 +41,12 @@ export function LoginForm() {
 
         login(user);
         queryClient.invalidateQueries({ queryKey: ['seller'] });
-        toast.success(`Welcome back, ${sellerProfile.name}!`);
+        toast.success(t('loginTitle') + ', ' + sellerProfile.name + '!');
         router.push('/dashboard'); // Redirect to dashboard
       } catch (error) {
         console.error('Failed to fetch seller profile:', error);
         // Login was successful but profile fetch failed - still allow login
-        toast.success('Login successful!');
+        toast.success(t('loginTitle') + '!');
         router.push('/dashboard');
       }
     },
@@ -70,9 +72,7 @@ export function LoginForm() {
         message.toLowerCase().includes('credential')
       ) {
         setTimeout(() => {
-          toast.info(
-            "Don't have an account? Check the sign up link below the form."
-          );
+          toast.info(t('checkSignup'));
         }, 1000);
       }
     },
@@ -107,7 +107,7 @@ export function LoginForm() {
           name="email"
           validators={{
             onChange: ({ value }) =>
-              !value ? 'An email is required' : undefined,
+              !value ? t('emailRequired') : undefined,
           }}
         >
           {(field) => (
@@ -116,7 +116,7 @@ export function LoginForm() {
                 htmlFor={field.name}
                 className="block py-2 text-sm font-medium text-text-secondary"
               >
-                Email Address
+                {t('emailAddress')}
               </label>
               <Input
                 id={field.name}
@@ -125,7 +125,7 @@ export function LoginForm() {
                 value={field.state.value}
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="Enter your Email"
+                placeholder={t('enterEmail')}
                 autoFocus
               />
               {field.state.meta.errors.length > 0 ? (
@@ -141,7 +141,7 @@ export function LoginForm() {
           name="password"
           validators={{
             onChange: ({ value }) =>
-              !value ? 'A password is required' : undefined,
+              !value ? t('passwordRequired') : undefined,
           }}
         >
           {(field) => (
@@ -150,7 +150,7 @@ export function LoginForm() {
                 htmlFor={field.name}
                 className="block py-2 text-sm font-medium text-text-secondary"
               >
-                Password
+                {t('passwordLabel')}
               </label>
               <div className="relative">
                 <Input
@@ -160,7 +160,7 @@ export function LoginForm() {
                   value={field.state.value}
                   onBlur={field.handleBlur}
                   onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder={t('enterPassword')}
                   className="pr-10" // Add padding for the toggle button
                 />
                 <button
@@ -197,7 +197,7 @@ export function LoginForm() {
                   htmlFor={field.name}
                   className="ml-2 block text-sm text-text-secondary"
                 >
-                  Remember me
+                  {t('rememberMe')}
                 </label>
               </div>
             )}
@@ -207,7 +207,7 @@ export function LoginForm() {
               href="/forgot-password"
               className="font-medium text-brand-primary hover:underline"
             >
-              Forgot your password?
+              {t('forgotPassword')}
             </Link>
           </div>
         </div>
@@ -215,7 +215,7 @@ export function LoginForm() {
         {/* Show error message below the form if needed */}
         {error && (
           <div className="p-3 text-sm text-center text-white bg-feedback-error rounded-md">
-            {error instanceof Error ? error.message : 'An error occurred'}
+            {error instanceof Error ? error.message : t('anErrorOccurred')}
           </div>
         )}
 
@@ -252,10 +252,10 @@ export function LoginForm() {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       ></path>
                     </svg>
-                    Signing In...
+                    {t('signingIn')}
                   </>
                 ) : (
-                  'Sign In'
+                  t('signIn')
                 )}
               </Button>
             )}

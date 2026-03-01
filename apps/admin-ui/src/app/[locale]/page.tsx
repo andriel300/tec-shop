@@ -3,6 +3,7 @@
 import { useForm } from '@tanstack/react-form';
 import { useMutation } from '@tanstack/react-query';
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Input } from '@tec-shop/input';
 import type { AxiosError } from 'axios';
 import apiClient from '../../lib/api/client';
@@ -14,6 +15,7 @@ type FormData = {
 };
 
 const Page = () => {
+  const t = useTranslations('Auth');
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -68,7 +70,7 @@ const Page = () => {
           }}
         >
           <h1 className="text-3xl pb-3 pt-4 font-semibold text-center text-white font-heading">
-            Welcome Admin
+            {t('welcomeAdmin')}
           </h1>
 
           {/* EMAIL FIELD */}
@@ -77,16 +79,16 @@ const Page = () => {
             validators={{
               onChange: ({ value }) =>
                 !value
-                  ? 'Email is required'
+                  ? t('emailRequired')
                   : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-                  ? 'Invalid email format'
+                  ? t('invalidEmail')
                   : undefined,
             }}
           >
             {(field) => (
               <div className="mt-3">
                 <Input
-                  label="Email"
+                  label={t('email')}
                   placeholder="support@tecshop.com"
                   value={field.state.value}
                   onChange={(e) => field.handleChange(e.target.value)}
@@ -106,13 +108,13 @@ const Page = () => {
             name="password"
             validators={{
               onChange: ({ value }) =>
-                !value ? 'Password is required' : undefined,
+                !value ? t('passwordRequired') : undefined,
             }}
           >
             {(field) => (
               <div className="mt-3">
                 <Input
-                  label="Password"
+                  label={t('password')}
                   type="password"
                   placeholder="********"
                   value={field.state.value}
@@ -137,7 +139,7 @@ const Page = () => {
             {loginMutation.isPending ? (
               <div className="w-6 h-6 border-2 border-gray-100 border-t-transparent rounded-full animate-spin" />
             ) : (
-              <>Login</>
+              <>{t('login')}</>
             )}
           </button>
 
