@@ -24,13 +24,17 @@ TecShop uses Apache Kafka for asynchronous event streaming and communication bet
 
 ### Services Using Kafka
 
-| Service            | Role     | Topics                   | Purpose                          |
-| ------------------ | -------- | ------------------------ | -------------------------------- |
-| `api-gateway`      | Producer | `users-event`            | Sends analytics events           |
-| `order-service`    | Producer | `users-event`            | Sends purchase events            |
-| `chatting-service` | Both     | `chat.new_message`       | Chat message streaming           |
-| `kafka-service`    | Consumer | `users-event`            | Processes analytics in batch     |
-| `chatting-service` | Consumer | `chat.new_message`       | Saves messages to DB and WebSocket |
+| Service | Role | Topics | Purpose |
+|---|---|---|---|
+| `api-gateway` | Producer | `users-event` | Analytics events (views, cart, etc.) |
+| `order-service` | Producer | `users-event` | Purchase events after checkout |
+| `chatting-service` | Producer | `chat.new_message` | Chat message streaming from WS gateway |
+| `chatting-service` | Consumer | `chat.new_message` | Persists messages to DB + Redis cache |
+| `kafka-service` | Consumer | `users-event` | Aggregates analytics into MongoDB |
+| `product-service` | Producer | (via `@tec-shop/logger-producer`) | Structured log events |
+| `seller-service` | Producer | (via `@tec-shop/logger-producer`) | Structured log events |
+| `logger-service` | Consumer | log events | Persists logs, streams to admin via WS |
+| `product-service` | Producer | (via `@tec-shop/notification-producer`) | Notification events |
 
 ---
 

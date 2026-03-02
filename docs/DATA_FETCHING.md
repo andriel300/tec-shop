@@ -159,20 +159,27 @@ apiClient.interceptors.response.use(
 
 ### File Structure
 
+This pattern applies equally to all three frontend apps (`user-ui`, `seller-ui`, `admin-ui`).
+
 ```
 src/
 ├── hooks/
-│   ├── useProducts.ts      # Product hooks
-│   ├── useCategories.ts    # Category hooks
-│   ├── useBrands.ts        # Brand hooks
-│   ├── use-ratings.ts      # Rating hooks
-│   └── index.ts            # Export all hooks
+│   ├── useProducts.ts        # Product hooks
+│   ├── useCategories.ts      # Category hooks
+│   ├── useBrands.ts          # Brand hooks
+│   ├── use-ratings.ts        # Rating hooks
+│   ├── use-orders.ts         # Order hooks
+│   ├── use-recommendations.ts# Recommendation hooks
+│   └── index.ts              # Export all hooks
+├── store/                    # Zustand stores (UI/client state only)
+│   └── index.ts
 ├── lib/
 │   └── api/
-│       ├── client.ts       # Axios configuration
-│       ├── products.ts     # Product API functions
-│       ├── categories.ts   # Category API functions
-│       └── brands.ts       # Brand API functions
+│       ├── client.ts         # Axios configuration
+│       ├── products.ts       # Product API functions + types
+│       ├── categories.ts     # Category API functions
+│       ├── brands.ts         # Brand API functions
+│       └── orders.ts         # Order API functions
 ```
 
 ### Anatomy of a Custom Hook
@@ -1242,4 +1249,4 @@ export function useCreateEntity() {
 
 ---
 
-**Last Updated:** November 2025
+**Last Updated:** March 2026

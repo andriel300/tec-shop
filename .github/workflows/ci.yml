@@ -43,6 +43,11 @@ jobs:
           npx nx run @tec-shop/auth-schema:generate-types
           npx nx run @tec-shop/user-schema:generate-types
           npx nx run @tec-shop/seller-schema:generate-types
+          npx nx run @tec-shop/product-schema:generate-types
+          npx nx run @tec-shop/order-schema:generate-types
+          npx nx run @tec-shop/analytics-schema:generate-types
+          npx nx run @tec-shop/chatting-schema:generate-types
+          npx nx run @tec-shop/logger-schema:generate-types
 
       # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
       # - run: npx nx-cloud record -- echo Hello World

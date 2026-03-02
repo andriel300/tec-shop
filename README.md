@@ -10,9 +10,15 @@ I will add a video demo link later.
 
 ## Kanban Project Management Methodology
 
-<!-- Jira board screenshots go here (GitVisuals/) -->
+The project is managed using the Kanban methodology via Jira, with tasks tracked across backlog, in-progress, review, and done columns.
 
-I will add pictures of my agile methodologies later.
+### Kanban Board
+
+![Kanban Board](GitVisuals/kanban-tecshop.png)
+
+### Kanban Workflow
+
+![Kanban Workflow](GitVisuals/kanbanworkflow.png)
 
 ## Architecture
 
