@@ -21,25 +21,32 @@ A comprehensive guide for newcomers to understand and work with the NestJS micro
 This project uses a **microservices architecture** where the application is split into multiple independent services that communicate with each other. Each service has its own database and business logic.
 
 ```
-┌─────────────┐
-│  User-UI    │ (Next.js Frontend)
-└──────┬──────┘
-       │
-       │ HTTP REST API
-       ▼
-┌─────────────────┐
-│  API Gateway    │ (Port 8080)
-│  (REST API)     │
-└────────┬────────┘
-         │
-         │ TCP Microservices
+┌──────────┐  ┌───────────┐  ┌──────────┐
+│ user-ui  │  │ seller-ui │  │ admin-ui │  (Next.js frontends)
+│ :3000    │  │ :3001     │  │ :3002    │
+└────┬─────┘  └─────┬─────┘  └────┬─────┘
+     │               │              │
+     │       HTTP REST + Cookies    │
+     ▼               ▼              ▼
+┌──────────────────────────────────────────┐
+│           API Gateway  :8080             │
+│  (REST, Guards, Rate limiting, Swagger)  │
+└──┬────┬────┬────┬────┬────┬────┬────────┘
+   │    │    │    │    │    │    │  TCP (mTLS supported)
+   ▼    ▼    ▼    ▼    ▼    ▼    ▼
+┌──────────────────────────────────────────────────────────────┐
+│  auth    │ user   │ seller │ product │ order │ admin │ chat  │
+│  :6001   │ :6002  │ :6003  │ :6004   │ :6005 │ :6006 │ :6007 │
+│          │        │        │         │       │       │  +WS  │
+├──────────────────────────────────────────────────────────────┤
+│  logger-service :6008 (WS)  │  recommendation-service :6009  │
+└──────────────────────────────────────────────────────────────┘
+         │ Kafka events (analytics, chat, logs, notifications)
          ▼
 ┌────────────────────────────────────────┐
-│  auth-service   │ user-service         │
-│  (Port 6001)    │ (Port 6002)          │
-│                 │                      │
-│  seller-service │ product-service      │
-│  (Port 6003)    │ (Port 6004)          │
+│  kafka-service  (analytics consumer)  │
+│  MongoDB (separate DB per service)    │
+│  Redis   (@tec-shop/redis-client)     │
 └────────────────────────────────────────┘
 ```
 
@@ -60,7 +67,14 @@ This project uses a **microservices architecture** where the application is spli
    - Each has its own Prisma database schema
 
 3. **Shared Libraries**
-   - `libs/shared/dto/` - Data Transfer Objects (DTOs) shared across services
+   - `@tec-shop/dto` (`libs/shared/dto/`) - Shared DTOs across all services
+   - `@tec-shop/interceptor` - `LoggingInterceptor`, `ErrorInterceptor`, `AllExceptionsFilter`
+   - `@tec-shop/service-auth` - `ServiceAuthUtil` for HMAC inter-service signing
+   - `@tec-shop/redis-client` - `RedisModule.forRoot()` + `RedisService`
+   - `@tec-shop/kafka-events` - Typed Kafka topic constants and event interfaces
+   - `@tec-shop/logger-producer` - Kafka producer for structured log events
+   - `@tec-shop/notification-producer` - Kafka producer for notification events
+   - `@tec-shop/i18n` - Shared `next-intl` v4 routing config (frontend)
    - `libs/prisma-clients/` - Generated Prisma clients per service
    - `libs/prisma-schemas/` - Prisma schemas per service
 
@@ -71,35 +85,58 @@ This project uses a **microservices architecture** where the application is spli
 ```
 tec-shop/
 ├── apps/
-│   ├── api-gateway/          # REST API Gateway (HTTP)
+│   ├── api-gateway/              # REST API Gateway (HTTP :8080)
+│   │   └── src/app/
+│   │       ├── auth/             # Auth endpoints
+│   │       ├── user/             # User endpoints
+│   │       ├── seller/           # Seller endpoints
+│   │       ├── product/          # Product endpoints
+│   │       ├── order/            # Order endpoints
+│   │       ├── admin/            # Admin endpoints
+│   │       ├── chat/             # Chat endpoints
+│   │       ├── recommendations/  # Recommendation endpoints
+│   │       ├── webhooks/         # Stripe webhook receiver
+│   │       └── guards/           # JwtAuthGuard, RolesGuard
+│   │
+│   ├── auth-service/             # Auth TCP microservice (:6001)
+│   │   └── src/app/auth/
+│   │       ├── auth.controller.ts   # @MessagePattern handlers
+│   │       ├── auth.service.ts      # Business logic
+│   │       └── entities/            # Pure TS entity classes
+│   │
+│   ├── user-service/             # User TCP microservice (:6002)
+│   ├── seller-service/           # Seller TCP microservice (:6003)
+│   ├── product-service/          # Product TCP microservice (:6004)
+│   ├── order-service/            # Order TCP microservice (:6005)
+│   ├── admin-service/            # Admin TCP microservice (:6006)
+│   ├── chatting-service/         # Chat TCP + Socket.IO (:6007)
+│   ├── logger-service/           # Logger TCP + Socket.IO (:6008)
+│   ├── recommendation-service/   # Recommendations TCP (:6009)
+│   ├── kafka-service/            # Kafka analytics consumer
+│   │
+│   ├── user-ui/                  # Next.js customer storefront (:3000)
 │   │   └── src/
-│   │       └── app/
-│   │           ├── auth/     # Auth endpoints
-│   │           ├── user/     # User endpoints
-│   │           ├── seller/   # Seller endpoints
-│   │           └── product/  # Product endpoints
-│   │
-│   ├── auth-service/         # Auth microservice (TCP)
-│   │   └── src/
-│   │       └── app/
-│   │           └── auth/
-│   │               ├── auth.controller.ts  # @MessagePattern handlers
-│   │               └── auth.service.ts     # Business logic
-│   │
-│   ├── user-service/         # User microservice (TCP)
-│   ├── seller-service/       # Seller microservice (TCP)
-│   ├── product-service/      # Product microservice (TCP)
-│   │
-│   └── user-ui/              # Next.js Frontend
-│       └── src/
-│           ├── lib/api/      # API client functions
-│           ├── hooks/        # React Query hooks
-│           └── app/          # Next.js pages
+│   │       ├── lib/api/          # Axios API client functions + types
+│   │       ├── hooks/            # React Query hooks
+│   │       ├── store/            # Zustand client state
+│   │       └── app/[locale]/     # Next.js locale-aware pages
+│   ├── seller-ui/                # Next.js seller dashboard (:3001)
+│   └── admin-ui/                 # Next.js admin panel (:3002)
 │
 └── libs/
-    ├── shared/dto/           # Shared DTOs
-    ├── prisma-schemas/       # Database schemas
-    └── prisma-clients/       # Generated Prisma clients
+    ├── shared/
+    │   ├── dto/                  # @tec-shop/dto
+    │   ├── validation/           # @tec-shop/validation
+    │   ├── interceptor/          # @tec-shop/interceptor
+    │   ├── service-auth/         # @tec-shop/service-auth
+    │   ├── redis-client/         # @tec-shop/redis-client
+    │   ├── kafka-events/         # @tec-shop/kafka-events
+    │   ├── logger-producer/      # @tec-shop/logger-producer
+    │   ├── notification-producer/# @tec-shop/notification-producer
+    │   ├── i18n/                 # @tec-shop/i18n (frontend)
+    │   └── components/           # @tec-shop/components (frontend)
+    ├── prisma-schemas/           # Prisma schema per service
+    └── prisma-clients/           # Generated Prisma clients per service
 ```
 
 ---
@@ -1166,16 +1203,23 @@ npx nx run-many --target=test --all
 
 ### Important File Locations
 
-| Purpose                  | Location                                |
-| ------------------------ | --------------------------------------- |
-| DTOs                     | `libs/shared/dto/src/lib/`              |
-| Prisma Schemas           | `libs/prisma-schemas/<service>-schema/` |
-| API Gateway Controllers  | `apps/api-gateway/src/app/*/`           |
-| Microservice Controllers | `apps/<service>/src/app/*/`             |
-| Frontend API Clients     | `apps/user-ui/src/lib/api/`             |
-| React Query Hooks        | `apps/user-ui/src/hooks/`               |
-| Guards                   | `apps/api-gateway/src/guards/`          |
-| Environment Variables    | `.env` (root)                           |
+| Purpose | Location |
+|---|---|
+| Shared DTOs | `libs/shared/dto/src/lib/` |
+| Shared interceptors / exception filter | `libs/shared/interceptor/src/lib/` |
+| HMAC inter-service signing | `libs/shared/service-auth/src/lib/` |
+| Shared Redis module + service | `libs/shared/redis-client/src/lib/` |
+| Kafka topic constants + event types | `libs/shared/kafka-events/src/lib/` |
+| Prisma Schemas | `libs/prisma-schemas/<service>-schema/` |
+| Generated Prisma clients | `libs/prisma-clients/<service>-client/` |
+| API Gateway Controllers | `apps/api-gateway/src/app/*/` |
+| Microservice Controllers | `apps/<service>/src/app/<domain>/` |
+| Domain entity classes | `apps/<service>/src/app/<domain>/entities/` |
+| Frontend API client functions | `apps/<ui>/src/lib/api/` |
+| React Query hooks | `apps/<ui>/src/hooks/` |
+| Zustand stores | `apps/<ui>/src/store/` |
+| Guards | `apps/api-gateway/src/guards/` |
+| Environment variables | `.env` (monorepo root) |
 
 ### Decorator Quick Reference
 

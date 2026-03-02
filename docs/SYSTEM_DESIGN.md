@@ -1,8 +1,8 @@
 # TecShop - System Design Documentation
 
-> **Last Updated:** October 7, 2025
-> **Version:** 1.0
-> **Architecture:** Microservices with API Gateway
+> **Last Updated:** March 2026
+> **Version:** 2.0
+> **Architecture:** Microservices with API Gateway + Kafka + WebSockets
 
 ---
 
@@ -10,14 +10,15 @@
 
 1. [Architecture Overview](#architecture-overview)
 2. [Core Services](#core-services)
-3. [Data Architecture](#data-architecture)
-4. [Communication Patterns](#communication-patterns)
-5. [Security Architecture](#security-architecture)
-6. [Frontend Architecture](#frontend-architecture)
-7. [Infrastructure & DevOps](#infrastructure--devops)
-8. [File Upload Architecture](#file-upload-architecture)
-9. [Marketplace Business Model](#marketplace-business-model)
-10. [Environment Configuration](#environment-configuration)
+3. [Shared Libraries](#shared-libraries)
+4. [Data Architecture](#data-architecture)
+5. [Communication Patterns](#communication-patterns)
+6. [Security Architecture](#security-architecture)
+7. [Frontend Architecture](#frontend-architecture)
+8. [Infrastructure & DevOps](#infrastructure--devops)
+9. [File Upload Architecture](#file-upload-architecture)
+10. [Marketplace Business Model](#marketplace-business-model)
+11. [Environment Configuration](#environment-configuration)
 
 ---
 
@@ -28,49 +29,60 @@ TecShop is a **multi-vendor e-commerce marketplace** built with a microservices 
 ### High-Level Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        CLIENT LAYER                              │
-├─────────────────────────────────────────────────────────────────┤
-│  user-ui (Next.js)          │  seller-ui (Next.js)              │
-│  Port: 3000                 │  Port: 3001                        │
-│  Customer Interface         │  Seller Dashboard                  │
-└────────────┬────────────────┴───────────────┬────────────────────┘
-             │                                │
-             │ HTTP/REST + Cookies            │
-             │                                │
-┌────────────▼────────────────────────────────▼────────────────────┐
-│                     API GATEWAY (Port 8080)                       │
-│  • REST API with Swagger docs                                    │
-│  • JWT Authentication (httpOnly cookies)                         │
-│  • RBAC Authorization (JwtAuthGuard, RolesGuard)                │
-│  • Rate limiting & Throttling                                    │
-│  • Helmet security headers (CSP, HSTS, XSS)                     │
-│  • CORS configuration                                            │
-│  • ImageKit integration (file upload)                           │
-└───┬─────────┬──────────┬──────────┬──────────────────────────────┘
-    │         │          │          │
-    │ TCP     │ TCP      │ TCP      │ TCP (mTLS supported)
-    │         │          │          │
-┌───▼───┐ ┌──▼────┐ ┌───▼────┐ ┌──▼──────────┐
-│ Auth  │ │ User  │ │ Seller │ │  Product    │
-│Service│ │Service│ │Service │ │  Service    │
-│:6001  │ │:6002  │ │:6003   │ │  :6004      │
-└───┬───┘ └──┬────┘ └───┬────┘ └──┬──────────┘
-    │        │          │          │
-┌───▼────────▼──────────▼──────────▼──────────┐
-│        MongoDB (Separate Databases)          │
-│  • auth_service_dev    • user_service_dev   │
-│  • seller_service_dev  • product_service_dev│
-└──────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────────┐
+│                              CLIENT LAYER                                   │
+├────────────────────────────────────────────────────────────────────────────┤
+│  user-ui (Next.js :3000)  │  seller-ui (Next.js :3001)  │  admin-ui (:3002) │
+│  Customer storefront      │  Seller dashboard            │  Admin panel       │
+└──────────┬────────────────┴──────────────┬───────────────┴────────┬─────────┘
+           │                               │                        │
+           │        HTTP/REST + httpOnly Cookies                    │
+           │                               │                        │
+┌──────────▼───────────────────────────────▼────────────────────────▼─────────┐
+│                          API GATEWAY (Port 8080)                             │
+│  • REST API with Swagger docs (/api-docs)                                   │
+│  • JWT authentication (JwtAuthGuard) + RBAC (RolesGuard)                   │
+│  • Three-tier rate limiting (short/medium/long, env-aware)                  │
+│  • Helmet security headers (CSP, HSTS, XSS protection)                     │
+│  • CORS with restricted origins                                             │
+│  • File upload handling → ImageKit CDN                                      │
+│  • Stripe webhook verification                                              │
+│  • Kafka analytics event production                                         │
+└──┬──────┬────────┬─────────┬──────────┬──────────┬──────────┬──────────────┘
+   │TCP   │TCP     │TCP      │TCP       │TCP       │TCP       │TCP
+   │      │        │         │          │          │          │
+┌──▼──┐ ┌─▼────┐ ┌─▼─────┐ ┌▼───────┐ ┌▼───────┐ ┌▼───────┐ ┌▼────────────┐
+│Auth │ │User  │ │Seller │ │Product │ │Order   │ │Admin   │ │Chatting    │
+│:6001│ │:6002 │ │:6003  │ │:6004   │ │:6005   │ │:6006   │ │:6007 +WS   │
+└──┬──┘ └─┬────┘ └─┬─────┘ └┬───────┘ └┬───────┘ └────────┘ └─────────────┘
+   │      │        │         │           │
+   │      │        │  (also)  │           │     ┌─────────────┐ ┌────────────┐
+   │      │        │         │           │     │Logger :6008 │ │Recommend.  │
+   │      │        │         │           │     │+WS          │ │:6009       │
+   │      │        │         │           │     └─────────────┘ └────────────┘
+   │      │        │         │           │
+┌──▼──────▼────────▼─────────▼───────────▼──────────────────────────────────┐
+│                   MongoDB (Separate database per service)                   │
+│  auth  │  user  │  seller  │  product  │  order  │  chatting  │  logger   │
+└────────────────────────────────────────────────────────────────────────────┘
 
-┌──────────────────────────────────────────────┐
-│        External Services                      │
-│  • Redis (Upstash) - Sessions, OTP, Cache    │
-│  • ImageKit - CDN & Image Management         │
-│  • Stripe - Payment Processing               │
-│  • Google OAuth - Social Authentication      │
-│  • MailSlurp - Email Service                 │
-└──────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────────┐
+│                          Async / Event Layer                                │
+│  • Apache Kafka — analytics events (users-event), chat (chat.new_message)  │
+│    Producers: api-gateway, order-service, chatting-service                 │
+│    Consumers: kafka-service (analytics DB), chatting-service (DB + cache)  │
+│  • @tec-shop/logger-producer — log events to Kafka / logger-service        │
+│  • @tec-shop/notification-producer — notification events                   │
+└────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│                          External Services                                  │
+│  • Redis (ioredis) — sessions, OTP, token blacklist, cache                 │
+│  • ImageKit — CDN & image management                                       │
+│  • Stripe — Checkout Sessions, Connect, webhooks                           │
+│  • Google OAuth 2.0 — social authentication                                │
+│  • SMTP — transactional email (OTPs, password reset)                       │
+└────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Architecture Principles
@@ -78,7 +90,10 @@ TecShop is a **multi-vendor e-commerce marketplace** built with a microservices 
 - **Domain-Driven Design**: Each microservice represents a bounded context
 - **Database per Service**: Ensures service autonomy and independent scaling
 - **API Gateway Pattern**: Single entry point for all client requests
-- **Event-Driven (Async)**: TCP message patterns for inter-service communication
+- **Synchronous (TCP)**: NestJS TCP microservices for request/response operations
+- **Asynchronous (Kafka)**: Event streaming for analytics and notifications
+- **Real-Time (WebSocket)**: Socket.IO gateways for chat and live notifications
+- **Shared Libraries**: Extracted cross-cutting concerns into `@tec-shop/*` libs
 - **Fail-Safe Security**: Services refuse to start without required configuration
 
 ---
@@ -110,13 +125,20 @@ TecShop is a **multi-vendor e-commerce marketplace** built with a microservices 
 
 **Endpoints:**
 
-- `/api/auth/*` - Authentication endpoints
-- `/api/users/*` - User management
-- `/api/seller/*` - Seller operations
-- `/api/products/*` - Product catalog
-- `/api/categories/*` - Category management
-- `/api/brands/*` - Brand management
+- `/api/auth/*` - Authentication (signup, login, OTP, OAuth, password reset)
+- `/api/user/*` - User profile and settings
+- `/api/seller/*` - Seller accounts and shops
+- `/api/products/*` - Product catalog (public read)
+- `/api/categories/*` - Category taxonomy (admin write)
+- `/api/brands/*` - Brand directory (admin write)
 - `/api/discounts/*` - Discount codes
+- `/api/orders/*` - Order management and Stripe Checkout
+- `/api/admin/*` - Platform administration
+- `/api/chat/*` - Chat conversation management
+- `/api/recommendations/*` - Product recommendations
+- `/api/analytics/*` - Analytics event tracking
+- `/api/webhooks/stripe` - Stripe webhook receiver
+- `/api-docs` - Swagger / OpenAPI interactive docs
 
 ---
 
@@ -382,6 +404,140 @@ model DiscountCode {
 
 ---
 
+### 5. Order Service (Port 6005)
+
+**Purpose:** Manages the full order lifecycle and payment processing.
+
+**Responsibilities:**
+
+- Stripe Checkout Session creation
+- Webhook-driven order status transitions (`PENDING` → `PAID` → `SHIPPED` → `DELIVERED`)
+- Per-seller payout tracking
+- Order history and item-level detail
+- Coupon code validation via seller-service
+
+**Inter-Service Communication:**
+
+- → Seller Service: Shop/seller lookup, coupon verification
+- → User Service: Shipping address and profile lookup
+
+**Message Patterns:**
+
+- `order-create-checkout-session`
+- `order-get-orders`
+- `order-get-order`
+- `handle-stripe-webhook`
+
+---
+
+### 6. Admin Service (Port 6006)
+
+**Purpose:** Platform administration — user management, moderation, and oversight.
+
+**Responsibilities:**
+
+- List and manage all users/sellers
+- Ban/unban accounts
+- View platform-wide orders and analytics
+- Moderate products and shops
+
+**Message Patterns:**
+
+- `admin-get-users`
+- `admin-ban-user`
+- `admin-get-orders`
+
+---
+
+### 7. Chatting Service (Port 6007 + WebSocket)
+
+**Purpose:** Real-time buyer-to-seller messaging.
+
+**Responsibilities:**
+
+- Socket.IO gateway for real-time message delivery
+- Conversation management (create, list, fetch)
+- Message persistence to MongoDB via Kafka consumer
+- Online presence tracking (Redis)
+- Group chat support
+
+**Key Design:**
+
+- Messages are produced to the `chat.new_message` Kafka topic by the Socket.IO gateway
+- A Kafka consumer in the same service persists messages to MongoDB and updates the Redis cache
+- Online status stored in Redis with `chatting:` key prefix
+
+---
+
+### 8. Logger Service (Port 6008 + WebSocket)
+
+**Purpose:** Centralized structured logging and live admin notifications.
+
+**Responsibilities:**
+
+- Consumes structured log events from `@tec-shop/logger-producer`
+- Persists log entries to MongoDB
+- Streams live logs to admin dashboard via Socket.IO
+- Notification delivery to connected clients
+
+---
+
+### 9. Recommendation Service (Port 6009)
+
+**Purpose:** ML-powered product recommendation engine.
+
+**Responsibilities:**
+
+- Collaborative filtering model trained on Kafka analytics events
+- Popularity-based fallback for cold-start users
+- Similar product discovery within shop context
+- Redis-cached recommendations with background retraining scheduler (`@nestjs/schedule`)
+
+---
+
+### 10. Kafka Service (Analytics Consumer)
+
+**Purpose:** Analytics event consumer that aggregates user interaction data.
+
+**Responsibilities:**
+
+- Consumes `users-event` topic (group: `kafka-service-group`)
+- Aggregates `product_view`, `add_to_cart`, `purchase`, `shop_visit` events
+- Writes to analytics MongoDB database (user-analytics, product-analytics, shop-analytics models)
+- Powers recommendation model training data
+
+---
+
+## Shared Libraries
+
+All shared code lives in `libs/shared/` and is aliased via `tsconfig.base.json`.
+
+| Library | Alias | Scope | Purpose |
+|---|---|---|---|
+| `dto` | `@tec-shop/dto` | shared | Shared DTOs for all services |
+| `validation` | `@tec-shop/validation` | shared | Shared validation helpers |
+| `interceptor` | `@tec-shop/interceptor` | backend | `LoggingInterceptor`, `ErrorInterceptor`, `AllExceptionsFilter` |
+| `service-auth` | `@tec-shop/service-auth` | backend | `ServiceAuthUtil` — HMAC inter-service request signing |
+| `redis-client` | `@tec-shop/redis-client` | backend | `RedisModule.forRoot()` + comprehensive `RedisService` |
+| `kafka-events` | `@tec-shop/kafka-events` | backend | `KafkaTopics` enum + typed event interfaces |
+| `logger-producer` | `@tec-shop/logger-producer` | backend | Kafka producer for structured log events |
+| `notification-producer` | `@tec-shop/notification-producer` | backend | Kafka producer for notification events |
+| `i18n` | `@tec-shop/i18n` | frontend | Shared `next-intl` v4 routing config and navigation helpers |
+| `imagekit` | `@tec-shop/imagekit` | shared | ImageKit CDN integration |
+| `components` | `@tec-shop/components` | frontend | Shared UI component primitives |
+
+### Entity Pattern
+
+Every domain module has an `entities/` subfolder containing pure TypeScript class entities that mirror the Prisma schema without any Prisma imports. These are used for type-safe service return types and response shaping.
+
+```
+apps/<service>/src/app/<domain>/entities/
+├── <model>.entity.ts   # Pure TS class, nullable fields as `string | null`
+└── index.ts            # Barrel export
+```
+
+---
+
 ## Data Architecture
 
 ### Database Strategy: Database per Service
@@ -477,16 +633,19 @@ app.enableCors({
   origin: [
     'http://localhost:3000', // user-ui
     'http://localhost:3001', // seller-ui
+    'http://localhost:3002', // admin-ui
   ],
   credentials: true, // Allow cookies
 });
 ```
 
-**Rate Limiting:**
+**Rate Limiting (environment-aware):**
 
-- **Short**: 20 requests/minute (general operations)
-- **Medium**: 10 requests/15 minutes (auth operations)
-- **Long**: 100 requests/minute (high-frequency operations)
+| Tier | Scope | Dev | Prod |
+|---|---|---|---|
+| Short | General | 1000 req/min | 100 req/min |
+| Medium | Auth operations | 100 req/15min | 20 req/15min |
+| Long | Search / high-frequency | 2000 req/min | 200 req/min |
 
 ---
 
@@ -567,6 +726,35 @@ For **sensitive cross-service operations** (e.g., profile creation), services us
 - Prevents unauthorized inter-service calls
 - Ensures request integrity (tamper-proof)
 - Shared secret (`SERVICE_MASTER_SECRET`) known only to services
+- `ServiceAuthUtil` centralized in `@tec-shop/service-auth` (no duplication)
+
+---
+
+### 3. Async Events: Apache Kafka
+
+**Protocol:** KafkaJS with optional SCRAM-SHA-256 for cloud brokers
+
+**Topics:**
+
+| Topic | Partitions | Producers | Consumers | Purpose |
+|---|---|---|---|---|
+| `users-event` | 3 | api-gateway, order-service | kafka-service | User analytics events |
+| `chat.new_message` | 3 | chatting-service (WS gateway) | chatting-service (consumer) | Chat persistence |
+
+**Auto-detected auth:** If `KAFKA_USERNAME` and `KAFKA_PASSWORD` are set, SSL + SCRAM is enabled automatically. For local development, no credentials needed.
+
+---
+
+### 4. Real-Time: Socket.IO WebSockets
+
+**Services with WebSocket gateways:**
+
+| Service | Port | Events | Purpose |
+|---|---|---|---|
+| chatting-service | 6007 | `send_message`, `receive_message`, `user_online`, `user_offline` | Buyer-seller chat |
+| logger-service | 6008 | `log_event`, `notification` | Live admin log streaming |
+
+**Authentication:** httpOnly cookies parsed from `client.handshake.headers.cookie` on the server. Clients connect with `withCredentials: true`.
 
 ---
 
