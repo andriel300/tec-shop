@@ -5,9 +5,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { LoggerModule } from 'nestjs-pino';
 import { APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
-import { LoggingInterceptor } from './interceptors/logging.interceptor';
-import { ErrorInterceptor } from './interceptors/error.interceptor';
-import { AllExceptionsFilter } from './filters/rpc-exception.filter';
+import { LoggingInterceptor, ErrorInterceptor, AllExceptionsFilter } from '@tec-shop/interceptor';
 import { LogProducerModule } from '@tec-shop/logger-producer';
 import { NotificationProducerModule } from '@tec-shop/notification-producer';
 

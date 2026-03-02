@@ -3,7 +3,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/seller-service/src",
   "projectType": "application",
-  "tags": ["type:app", "scope:seller"],
+  "tags": ["type:app", "scope:backend", "domain:seller"],
   "targets": {
     "typecheck": {
       "executor": "nx:run-commands",

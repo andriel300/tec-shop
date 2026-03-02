@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { OrderService } from './order.service';
 import { PrismaModule } from '../prisma/prisma.module';
-import { RedisModule } from './redis/redis.module';
+import { RedisModule } from '@tec-shop/redis-client';
 import { EmailModule } from './email/email.module';
 import { UserClientModule } from '../clients/user.client';
 import { SellerClientModule } from '../clients/seller.client';
@@ -18,7 +18,7 @@ import { NotificationProducerModule } from '@tec-shop/notification-producer';
 @Module({
   imports: [
     PrismaModule,
-    RedisModule,
+    RedisModule.forRoot(),
     EmailModule,
     UserClientModule,
     SellerClientModule,

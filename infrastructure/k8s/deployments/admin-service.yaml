@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-service
+  namespace: tec-shop
+  labels:
+    app: admin-service
+    app.kubernetes.io/name: admin-service
+    app.kubernetes.io/part-of: tec-shop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admin-service
+  template:
+    metadata:
+      labels:
+        app: admin-service
+        app.kubernetes.io/name: admin-service
+    spec:
+      containers:
+        - name: admin-service
+          # TODO: Replace with your container registry image path
+          image: your-registry/tec-shop-admin-service:latest
+          ports:
+            - containerPort: 6006
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: tec-shop-config
+            - secretRef:
+                name: tec-shop-secrets
+          env:
+            - name: PORT
+              value: "6006"
+            - name: NODE_ENV
+              value: "production"
+          # TODO: Tune resource limits based on load testing results
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 6006
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 6006
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3

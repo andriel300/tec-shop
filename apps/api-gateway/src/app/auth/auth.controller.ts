@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Inject,
+  Logger,
   Post,
   Get,
   Res,
@@ -39,6 +40,8 @@ interface CookieConfig {
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(
     @Inject('AUTH_SERVICE') private readonly authService: ClientProxy,
     private readonly configService: ConfigService
@@ -293,7 +296,7 @@ export class AuthController {
         this.authService.send('auth-revoke-refresh-token', request.user.userId)
       );
     } catch (error) {
-      console.error('Failed to revoke tokens:', error);
+      this.logger.error('Failed to revoke tokens', error);
       // Continue with logout even if revocation fails
     }
 

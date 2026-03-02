@@ -51,7 +51,11 @@
         "libs/prisma-clients/chatting-client/*",
         "libs/prisma-schemas/logger-schema/*",
         "libs/prisma-clients/logger-client/*",
-        "libs/shared/i18n/*"
+        "libs/shared/i18n/*",
+        "libs/shared/interceptor/*",
+        "libs/shared/kafka-events/*",
+        "libs/shared/service-auth/*",
+        "libs/shared/redis-client/*"
       ]
     },
     {
@@ -117,7 +121,11 @@
         "libs/prisma-clients/chatting-client/*",
         "libs/prisma-schemas/logger-schema/*",
         "libs/prisma-clients/logger-client/*",
-        "libs/shared/i18n/*"
+        "libs/shared/i18n/*",
+        "libs/shared/interceptor/*",
+        "libs/shared/kafka-events/*",
+        "libs/shared/service-auth/*",
+        "libs/shared/redis-client/*"
       ],
       "options": {
         "typecheck": {

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { Prisma } from '@tec-shop/order-client';
 import { OrderPrismaService } from '../prisma/prisma.service';
-import { RedisService } from './redis/redis.service';
+import { RedisService } from '@tec-shop/redis-client';
 import { EmailService } from './email/email.service';
 import { PaymentService } from '../services/payment.service';
 import { KafkaProducerService } from '../services/kafka-producer.service';

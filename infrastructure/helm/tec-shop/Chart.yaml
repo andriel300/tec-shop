@@ -1,0 +1,38 @@
+apiVersion: v2
+name: tec-shop
+description: TecShop e-commerce platform - NestJS microservices on Kubernetes
+type: application
+
+# Chart version - increment on each chart change
+version: 0.1.0
+
+# Application version - matches the Docker image tag
+appVersion: "0.1.0"
+
+keywords:
+  - e-commerce
+  - microservices
+  - nestjs
+
+maintainers:
+  - name: TecShop Team
+    # TODO: Add maintainer email
+
+dependencies:
+  # TODO: Add MongoDB dependency if deploying MongoDB via Helm
+  # - name: mongodb
+  #   version: "14.x.x"
+  #   repository: "https://charts.bitnami.com/bitnami"
+  #   condition: mongodb.enabled
+
+  # TODO: Add Redis dependency if deploying Redis via Helm
+  # - name: redis
+  #   version: "18.x.x"
+  #   repository: "https://charts.bitnami.com/bitnami"
+  #   condition: redis.enabled
+
+  # TODO: Add Kafka dependency if deploying Kafka via Helm
+  # - name: kafka
+  #   version: "26.x.x"
+  #   repository: "https://charts.bitnami.com/bitnami"
+  #   condition: kafka.enabled

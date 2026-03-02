@@ -1,0 +1,7 @@
+{
+  "name": "@tec-shop/input",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/components/input/src",
+  "projectType": "library",
+  "tags": ["type:lib", "scope:shared", "scope:frontend"]
+}

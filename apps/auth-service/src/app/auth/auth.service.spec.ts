@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { AuthPrismaService } from '../../prisma/prisma.service';
-import { RedisService } from '../redis/redis.service';
+import { RedisService } from '@tec-shop/redis-client';
 import { EmailService } from '../email/email.service';
 import { ClientProxy } from '@nestjs/microservices';
 import * as bcrypt from 'bcrypt';

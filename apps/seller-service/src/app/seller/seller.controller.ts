@@ -1,8 +1,8 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { SellerService } from './seller.service';
-import { ServiceAuthUtil } from './service-auth.util';
-import type { SignedRequest } from './service-auth.util';
+import { ServiceAuthUtil } from '@tec-shop/service-auth';
+import type { SignedRequest } from '@tec-shop/service-auth';
 import type {
   CreateSellerProfileDto,
   CreateShopDto,

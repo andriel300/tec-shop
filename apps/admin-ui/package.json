@@ -2,6 +2,9 @@
   "name": "@tec-shop/admin-ui",
   "version": "0.0.1",
   "private": true,
+  "nx": {
+    "tags": ["type:app", "scope:frontend", "domain:admin"]
+  },
   "dependencies": {
     "next": "~15.2.4",
     "react": "19.0.0",

@@ -1,0 +1,75 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tec-shop-ingress
+  namespace: tec-shop
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    # TODO: Enable rate limiting at ingress level
+    # nginx.ingress.kubernetes.io/limit-rps: "100"
+    # TODO: Add CORS annotations if needed
+    # nginx.ingress.kubernetes.io/enable-cors: "true"
+    # TODO: Configure cert-manager for automatic TLS (Let's Encrypt)
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  # TODO: Uncomment and configure TLS after setting up cert-manager
+  # tls:
+  #   - hosts:
+  #       - api.tec-shop.com
+  #       - tec-shop.com
+  #       - seller.tec-shop.com
+  #       - admin.tec-shop.com
+  #     secretName: tec-shop-tls
+  rules:
+    # API Gateway - REST API
+    - host: api.tec-shop.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 80
+
+    # User-facing storefront
+    - host: tec-shop.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                # TODO: Create K8s Service for user-ui (NodePort or ClusterIP)
+                name: user-ui
+                port:
+                  number: 3000
+
+    # Seller dashboard
+    - host: seller.tec-shop.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                # TODO: Create K8s Service for seller-ui (NodePort or ClusterIP)
+                name: seller-ui
+                port:
+                  number: 3000
+
+    # Admin panel
+    - host: admin.tec-shop.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                # TODO: Create K8s Service for admin-ui (NodePort or ClusterIP)
+                name: admin-ui
+                port:
+                  number: 3000

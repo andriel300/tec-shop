@@ -1,0 +1,279 @@
+# Default values for tec-shop Helm chart
+# Override with values.dev.yaml or values.prod.yaml
+
+global:
+  # TODO: Set to your container registry (e.g., ghcr.io/your-org, docker.io/your-org)
+  registry: "your-registry"
+  imageTag: "latest"
+  namespace: "tec-shop"
+  imagePullPolicy: IfNotPresent
+  # TODO: Add imagePullSecrets if using private registry
+  # imagePullSecrets:
+  #   - name: registry-credentials
+
+# ─── Infrastructure Services ──────────────────────────────────────────────────
+
+mongodb:
+  enabled: false
+  # TODO: Configure if deploying MongoDB via Helm dependency
+  # auth:
+  #   rootPassword: ""
+
+redis:
+  enabled: false
+  # TODO: Configure if deploying Redis via Helm dependency
+
+kafka:
+  enabled: false
+  # TODO: Configure if deploying Kafka via Helm dependency
+
+# ─── Application Services ─────────────────────────────────────────────────────
+
+services:
+  api-gateway:
+    enabled: true
+    replicas: 2
+    port: 8080
+    serviceType: LoadBalancer
+    image:
+      name: tec-shop-api-gateway
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "128Mi"
+      limits:
+        cpu: "1000m"
+        memory: "512Mi"
+    autoscaling:
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 70
+
+  auth-service:
+    enabled: true
+    replicas: 2
+    port: 6001
+    serviceType: ClusterIP
+    image:
+      name: tec-shop-auth-service
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "64Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+    autoscaling:
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 70
+
+  user-service:
+    enabled: true
+    replicas: 2
+    port: 6002
+    serviceType: ClusterIP
+    image:
+      name: tec-shop-user-service
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "64Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+    autoscaling:
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 70
+
+  seller-service:
+    enabled: true
+    replicas: 2
+    port: 6003
+    serviceType: ClusterIP
+    image:
+      name: tec-shop-seller-service
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "64Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+    autoscaling:
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 70
+
+  product-service:
+    enabled: true
+    replicas: 2
+    port: 6004
+    serviceType: ClusterIP
+    image:
+      name: tec-shop-product-service
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "750m"
+        memory: "384Mi"
+    autoscaling:
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPUUtilizationPercentage: 70
+
+  order-service:
+    enabled: true
+    replicas: 2
+    port: 6005
+    serviceType: ClusterIP
+    image:
+      name: tec-shop-order-service
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "750m"
+        memory: "384Mi"
+    autoscaling:
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPUUtilizationPercentage: 70
+
+  admin-service:
+    enabled: true
+    replicas: 1
+    port: 6006
+    serviceType: ClusterIP
+    image:
+      name: tec-shop-admin-service
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "64Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+    autoscaling:
+      enabled: false
+      minReplicas: 1
+      maxReplicas: 3
+      targetCPUUtilizationPercentage: 70
+
+  chatting-service:
+    enabled: true
+    replicas: 2
+    port: 6007
+    serviceType: ClusterIP
+    image:
+      name: tec-shop-chatting-service
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "64Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+    autoscaling:
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 70
+
+  logger-service:
+    enabled: true
+    replicas: 1
+    port: 6008
+    serviceType: ClusterIP
+    image:
+      name: tec-shop-logger-service
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "64Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+    autoscaling:
+      enabled: false
+      minReplicas: 1
+      maxReplicas: 3
+      targetCPUUtilizationPercentage: 70
+
+  kafka-service:
+    enabled: true
+    replicas: 2
+    port: 6009
+    serviceType: ClusterIP
+    image:
+      name: tec-shop-kafka-service
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "64Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+    autoscaling:
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 70
+
+  recommendation-service:
+    enabled: true
+    replicas: 2
+    port: 6010
+    serviceType: ClusterIP
+    image:
+      name: tec-shop-recommendation-service
+    resources:
+      requests:
+        cpu: "200m"
+        memory: "256Mi"
+      limits:
+        cpu: "750m"
+        memory: "512Mi"
+    autoscaling:
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPUUtilizationPercentage: 70
+
+# ─── Ingress ──────────────────────────────────────────────────────────────────
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  hosts:
+    api: api.tec-shop.com
+    userUi: tec-shop.com
+    sellerUi: seller.tec-shop.com
+    adminUi: admin.tec-shop.com
+  tls:
+    enabled: false
+    # TODO: Enable TLS and configure cert-manager
+    secretName: tec-shop-tls
+
+# ─── ConfigMap ────────────────────────────────────────────────────────────────
+
+config:
+  nodeEnv: "production"
+  redisHost: "redis"
+  redisPort: "6379"
+  mongoHost: "mongodb"
+  mongoPort: "27017"
+  kafkaBroker: "kafka:9092"
+  corsOrigin: "https://tec-shop.com,https://seller.tec-shop.com,https://admin.tec-shop.com"

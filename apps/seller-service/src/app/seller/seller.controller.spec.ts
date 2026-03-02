@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SellerController } from './seller.controller';
 import { SellerService } from './seller.service';
-import { ServiceAuthUtil } from './service-auth.util';
+import { ServiceAuthUtil } from '@tec-shop/service-auth';
 import { TestUtils } from '../../test/test-utils';
 import { TestDataFactory } from '../../test/factories';
 import type { CreateSellerProfileDto } from '@tec-shop/dto';
 
 // Mock the ServiceAuthUtil
-jest.mock('./service-auth.util');
+jest.mock('@tec-shop/service-auth');
 
 describe('SellerController', () => {
   let controller: SellerController;

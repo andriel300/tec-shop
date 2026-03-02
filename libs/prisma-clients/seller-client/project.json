@@ -12,6 +12,6 @@
       }
     }
   },
-  "tags": ["scope:shared", "type:prisma-client"],
+  "tags": ["type:prisma-client", "scope:backend", "domain:seller"],
   "implicitDependencies": ["@tec-shop/seller-schema"]
 }

@@ -131,6 +131,18 @@
     },
     {
       "path": "./libs/shared/i18n"
+    },
+    {
+      "path": "./libs/shared/interceptor"
+    },
+    {
+      "path": "./libs/shared/kafka-events"
+    },
+    {
+      "path": "./libs/shared/service-auth"
+    },
+    {
+      "path": "./libs/shared/redis-client"
     }
   ]
 }

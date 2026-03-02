@@ -1,4 +1,4 @@
-import { Module, Injectable, Inject } from '@nestjs/common';
+import { Module, Injectable, Inject, Logger } from '@nestjs/common';
 import {
   ClientProxy,
   ClientProxyFactory,
@@ -10,6 +10,8 @@ import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class SellerServiceClient {
+  private readonly logger = new Logger(SellerServiceClient.name);
+
   constructor(@Inject('SELLER_SERVICE') private readonly client: ClientProxy) {}
 
   async getSellerByAuthId(authId: string): Promise<Record<string, unknown> | null> {
@@ -18,7 +20,7 @@ export class SellerServiceClient {
         this.client.send<Record<string, unknown>>('get-seller-by-auth-id', authId)
       );
     } catch (error) {
-      console.error('Error getting seller by auth ID:', error);
+      this.logger.error('Error getting seller by auth ID', error);
       return null;
     }
   }
@@ -31,7 +33,7 @@ export class SellerServiceClient {
         })
       );
     } catch (error) {
-      console.error('Error getting shop:', error);
+      this.logger.error('Error getting shop', error);
       return null;
     }
   }
@@ -48,7 +50,7 @@ export class SellerServiceClient {
         })
       );
     } catch (error) {
-      console.error('Error verifying coupon:', error);
+      this.logger.error('Error verifying coupon', error);
       return null;
     }
   }

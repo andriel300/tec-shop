@@ -1,0 +1,125 @@
+# Development environment overrides
+# Usage: helm upgrade --install tec-shop ./infrastructure/helm/tec-shop -f values.yaml -f values.dev.yaml
+
+global:
+  imageTag: "dev"
+  imagePullPolicy: Always
+
+config:
+  nodeEnv: "development"
+  corsOrigin: "http://localhost:3000,http://localhost:3001,http://localhost:3002"
+
+services:
+  api-gateway:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "64Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+
+  auth-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "32Mi"
+      limits:
+        cpu: "250m"
+        memory: "128Mi"
+
+  user-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "32Mi"
+      limits:
+        cpu: "250m"
+        memory: "128Mi"
+
+  seller-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "32Mi"
+      limits:
+        cpu: "250m"
+        memory: "128Mi"
+
+  product-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "64Mi"
+      limits:
+        cpu: "250m"
+        memory: "192Mi"
+
+  order-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "64Mi"
+      limits:
+        cpu: "250m"
+        memory: "192Mi"
+
+  admin-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "32Mi"
+      limits:
+        cpu: "250m"
+        memory: "128Mi"
+
+  chatting-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "32Mi"
+      limits:
+        cpu: "250m"
+        memory: "128Mi"
+
+  logger-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "32Mi"
+      limits:
+        cpu: "250m"
+        memory: "128Mi"
+
+  kafka-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "32Mi"
+      limits:
+        cpu: "250m"
+        memory: "128Mi"
+
+  recommendation-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+
+ingress:
+  enabled: false
+  # TODO: Enable and configure for local cluster (minikube/kind) if needed

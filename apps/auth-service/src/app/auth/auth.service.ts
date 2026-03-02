@@ -25,8 +25,8 @@ import {
   ChangePasswordDto,
 } from '@tec-shop/dto';
 import { EmailService } from '../email/email.service';
-import { RedisService } from '../redis/redis.service';
-import { ServiceAuthUtil } from './service-auth.util';
+import { RedisService } from '@tec-shop/redis-client';
+import { ServiceAuthUtil } from '@tec-shop/service-auth';
 import { LogProducerService } from '@tec-shop/logger-producer';
 import { NotificationProducerService } from '@tec-shop/notification-producer';
 
@@ -799,7 +799,7 @@ export class AuthService implements OnModuleInit {
         }
       } catch (_error) {
         // If we can't decode, default to normal session
-        console.log('Could not decode token for remember me detection');
+        this.logger.debug('Could not decode token for remember me detection');
       }
     }
 

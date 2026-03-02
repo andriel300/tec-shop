@@ -1,4 +1,4 @@
-import { Module, Injectable, Inject } from '@nestjs/common';
+import { Module, Injectable, Inject, Logger } from '@nestjs/common';
 import {
   ClientProxy,
   ClientProxyFactory,
@@ -10,6 +10,8 @@ import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class UserServiceClient {
+  private readonly logger = new Logger(UserServiceClient.name);
+
   constructor(@Inject('USER_SERVICE') private readonly client: ClientProxy) {}
 
   async getShippingAddress(
@@ -24,7 +26,7 @@ export class UserServiceClient {
         })
       );
     } catch (error) {
-      console.error('Error getting shipping address:', error);
+      this.logger.error('Error getting shipping address', error);
       return null;
     }
   }
@@ -35,7 +37,7 @@ export class UserServiceClient {
         this.client.send<Record<string, unknown>>('get-user-profile', userId)
       );
     } catch (error) {
-      console.error('Error getting user profile:', error);
+      this.logger.error('Error getting user profile', error);
       return null;
     }
   }

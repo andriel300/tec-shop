@@ -34,6 +34,8 @@
       ],
       "@tec-shop/dto": ["libs/shared/dto/src/*"],
       "@tec-shop/i18n": ["libs/shared/i18n/src/index.ts"],
+      "@tec-shop/interceptor": ["libs/shared/interceptor/src/index.ts"],
+      "@tec-shop/kafka-events": ["libs/shared/kafka-events/src/index.ts"],
       "@tec-shop/logger-client": [
         "libs/prisma-clients/logger-client/src/index.ts"
       ],
@@ -53,6 +55,8 @@
       ],
       "@tec-shop/seller-prisma-client": ["node_modules/.prisma/seller-client"],
       "@tec-shop/seller-service/*": ["apps/seller-service/src/*"],
+      "@tec-shop/redis-client": ["libs/shared/redis-client/src/index.ts"],
+      "@tec-shop/service-auth": ["libs/shared/service-auth/src/index.ts"],
       "@tec-shop/shared-validation": ["libs/shared/validation/src/index.ts"],
       "@tec-shop/shared/imagekit": ["libs/shared/imagekit/src/index.ts"],
       "@tec-shop/user-client": ["libs/prisma-clients/user-client/src/index.ts"],

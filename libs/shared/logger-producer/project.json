@@ -3,5 +3,5 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/shared/logger-producer/src",
   "projectType": "library",
-  "tags": ["scope:shared", "type:lib"]
+  "tags": ["type:lib", "scope:shared", "scope:backend"]
 }

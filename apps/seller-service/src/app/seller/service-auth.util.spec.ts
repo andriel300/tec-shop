@@ -1,4 +1,4 @@
-import { ServiceAuthUtil } from './service-auth.util';
+import { ServiceAuthUtil } from '@tec-shop/service-auth';
 import { TestDataFactory } from '../../test/factories';
 
 describe('ServiceAuthUtil', () => {

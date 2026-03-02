@@ -184,21 +184,20 @@ export class BrandController {
   }
 
   /**
-   * Create brand - Hybrid approach
-   * Sellers can create brands on-the-fly during product creation
-   * Admins can also create brands for better organization
+   * Create brand (admin only)
+   * Brands are centrally managed by administrators
    */
   @Post()
-  @ApiOperation({ summary: 'Create a new brand (sellers and admins)' })
+  @ApiOperation({ summary: 'Create a new brand (admin only)' })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SELLER', 'ADMIN')
+  @Roles('ADMIN')
   @ApiResponse({ status: 201, description: 'Brand created successfully.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({ status: 400, description: 'Brand already exists.' })
   @ApiResponse({
     status: 403,
-    description: 'Forbidden - Seller or Admin access required.',
+    description: 'Forbidden - Admin access required.',
   })
   async createBrand(@Body() createBrandDto: Dto.CreateBrandDto) {
     return firstValueFrom(

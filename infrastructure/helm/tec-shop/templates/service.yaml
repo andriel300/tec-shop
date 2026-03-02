@@ -1,0 +1,26 @@
+{{/*
+Generic Service template that iterates over all enabled services.
+*/}}
+{{- range $serviceName, $serviceConfig := .Values.services }}
+{{- if $serviceConfig.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ include "tec-shop.namespace" $ }}
+  labels:
+    {{- include "tec-shop.labels" $ | nindent 4 }}
+    app: {{ $serviceName }}
+    app.kubernetes.io/name: {{ $serviceName }}
+spec:
+  type: {{ $serviceConfig.serviceType }}
+  selector:
+    app: {{ $serviceName }}
+  ports:
+    - name: {{ if eq $serviceName "api-gateway" }}http{{ else }}tcp{{ end }}
+      port: {{ $serviceConfig.port }}
+      targetPort: {{ $serviceConfig.port }}
+      protocol: TCP
+{{- end }}
+{{- end }}
