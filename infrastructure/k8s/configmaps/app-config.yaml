@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tec-shop-config
+  namespace: tec-shop
+  labels:
+    app.kubernetes.io/part-of: tec-shop
+data:
+  NODE_ENV: "production"
+
+  # Service URLs (internal cluster DNS)
+  AUTH_SERVICE_HOST: "auth-service"
+  AUTH_SERVICE_PORT: "6001"
+
+  USER_SERVICE_HOST: "user-service"
+  USER_SERVICE_PORT: "6002"
+
+  SELLER_SERVICE_HOST: "seller-service"
+  SELLER_SERVICE_PORT: "6003"
+
+  PRODUCT_SERVICE_HOST: "product-service"
+  PRODUCT_SERVICE_PORT: "6004"
+
+  ORDER_SERVICE_HOST: "order-service"
+  ORDER_SERVICE_PORT: "6005"
+
+  ADMIN_SERVICE_HOST: "admin-service"
+  ADMIN_SERVICE_PORT: "6006"
+
+  CHATTING_SERVICE_HOST: "chatting-service"
+  CHATTING_SERVICE_PORT: "6007"
+
+  LOGGER_SERVICE_HOST: "logger-service"
+  LOGGER_SERVICE_PORT: "6008"
+
+  KAFKA_SERVICE_HOST: "kafka-service"
+  KAFKA_SERVICE_PORT: "6009"
+
+  RECOMMENDATION_SERVICE_HOST: "recommendation-service"
+  RECOMMENDATION_SERVICE_PORT: "6010"
+
+  # Redis
+  # TODO: Update to Redis Sentinel or Cluster URL for production
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+
+  # MongoDB
+  # TODO: Update to managed MongoDB connection string for production
+  MONGO_HOST: "mongodb"
+  MONGO_PORT: "27017"
+
+  # Kafka Broker
+  # TODO: Update to managed Kafka broker URLs for production
+  KAFKA_BROKER: "kafka:9092"
+
+  # API Gateway
+  API_GATEWAY_PORT: "8080"
+
+  # ImageKit CDN
+  # TODO: Set IMAGEKIT_URL_ENDPOINT and IMAGEKIT_PUBLIC_KEY in secrets
+  IMAGEKIT_URL_ENDPOINT: ""
+
+  # CORS allowed origins
+  # TODO: Update to actual production domain
+  CORS_ORIGIN: "https://tec-shop.com,https://seller.tec-shop.com,https://admin.tec-shop.com"
+
+  # Throttler settings (production)
+  THROTTLE_SHORT_LIMIT: "100"
+  THROTTLE_SHORT_TTL: "60000"
+  THROTTLE_MEDIUM_LIMIT: "20"
+  THROTTLE_MEDIUM_TTL: "900000"
+  THROTTLE_LONG_LIMIT: "200"
+  THROTTLE_LONG_TTL: "60000"

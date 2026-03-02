@@ -3,7 +3,7 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/prisma-clients/analytics-client/src",
   "projectType": "library",
-  "tags": ["type:prisma-client", "scope:analytics"],
+  "tags": ["type:prisma-client", "scope:backend", "domain:analytics"],
   "targets": {
     "generate-types": {
       "executor": "nx:run-commands",

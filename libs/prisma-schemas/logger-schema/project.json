@@ -61,5 +61,5 @@
       }
     }
   },
-  "tags": ["scope:shared", "type:prisma-schema"]
+  "tags": ["type:prisma-schema", "scope:backend", "domain:logger"]
 }

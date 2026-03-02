@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recommendation-service
+  namespace: tec-shop
+  labels:
+    app: recommendation-service
+    app.kubernetes.io/name: recommendation-service
+    app.kubernetes.io/part-of: tec-shop
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: recommendation-service
+  template:
+    metadata:
+      labels:
+        app: recommendation-service
+        app.kubernetes.io/name: recommendation-service
+    spec:
+      containers:
+        - name: recommendation-service
+          # TODO: Replace with your container registry image path
+          image: your-registry/tec-shop-recommendation-service:latest
+          ports:
+            - containerPort: 6010
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: tec-shop-config
+            - secretRef:
+                name: tec-shop-secrets
+          env:
+            - name: PORT
+              value: "6010"
+            - name: NODE_ENV
+              value: "production"
+          # TODO: Tune resource limits based on ML model inference requirements
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "750m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 6010
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 6010
+            initialDelaySeconds: 40
+            periodSeconds: 15
+            failureThreshold: 3

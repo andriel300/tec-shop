@@ -1,0 +1,7 @@
+{
+  "name": "@tec-shop/service-auth",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/service-auth/src",
+  "projectType": "library",
+  "tags": ["type:lib", "scope:shared", "scope:backend"]
+}

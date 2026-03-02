@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { AnalyticsPrismaService } from '../prisma/prisma.service';
-import { RedisService } from '../redis/redis.service';
+import { RedisService } from '@tec-shop/redis-client';
 import { ModelService } from './ml/model.service';
 import {
   ACTION_SCORES,

@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tec-shop
+  labels:
+    name: tec-shop
+    app.kubernetes.io/managed-by: helm
+    environment: production
+    # TODO: Add additional labels for cost allocation or team ownership

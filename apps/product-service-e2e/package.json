@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "nx": {
+    "tags": ["type:e2e", "scope:backend", "domain:product"],
     "implicitDependencies": [
       "@tec-shop/product-service"
     ],

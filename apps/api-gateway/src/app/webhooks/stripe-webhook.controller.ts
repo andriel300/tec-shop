@@ -1,4 +1,4 @@
-import { Controller, Post, Headers, Inject, BadRequestException, Req } from '@nestjs/common';
+import { Controller, Post, Headers, Inject, BadRequestException, Logger, Req } from '@nestjs/common';
 import type { RawBodyRequest } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -9,6 +9,7 @@ import type { Request } from 'express';
 @ApiTags('Webhooks')
 @Controller('webhooks')
 export class StripeWebhookController {
+  private readonly logger = new Logger(StripeWebhookController.name);
   private stripe: Stripe;
 
   constructor(
@@ -34,7 +35,7 @@ export class StripeWebhookController {
     const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
     if (!endpointSecret) {
-      console.warn('⚠️  STRIPE_WEBHOOK_SECRET not configured - webhook processing disabled');
+      this.logger.warn('STRIPE_WEBHOOK_SECRET not configured - webhook processing disabled');
       return { received: false, message: 'Webhook secret not configured' };
     }
 
@@ -60,7 +61,7 @@ export class StripeWebhookController {
         endpointSecret
       );
     } catch (err) {
-      console.error('Webhook signature verification failed:', err);
+      this.logger.error('Webhook signature verification failed', err);
       throw new BadRequestException('Invalid webhook signature');
     }
 
@@ -87,7 +88,7 @@ export class StripeWebhookController {
         return result;
       }
     } catch (error) {
-      console.error('Webhook processing failed:', error);
+      this.logger.error('Webhook processing failed', error);
       throw new BadRequestException('Webhook processing failed');
     }
   }

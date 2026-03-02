@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: tec-shop
+  labels:
+    app: order-service
+    app.kubernetes.io/name: order-service
+    app.kubernetes.io/part-of: tec-shop
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+        app.kubernetes.io/name: order-service
+    spec:
+      containers:
+        - name: order-service
+          # TODO: Replace with your container registry image path
+          image: your-registry/tec-shop-order-service:latest
+          ports:
+            - containerPort: 6005
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: tec-shop-config
+            - secretRef:
+                name: tec-shop-secrets
+          env:
+            - name: PORT
+              value: "6005"
+            - name: NODE_ENV
+              value: "production"
+          # TODO: Tune resource limits based on load testing results
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "750m"
+              memory: "384Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 6005
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 6005
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3

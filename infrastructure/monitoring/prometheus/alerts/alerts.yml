@@ -1,0 +1,133 @@
+groups:
+  # ─── Service Availability ────────────────────────────────────────────────────
+  - name: service_availability
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.job }} has been down for more than 1 minute. Instance: {{ $labels.instance }}"
+          # TODO: Add runbook URL
+          # runbook_url: "https://runbooks.tec-shop.com/service-down"
+
+      - alert: ServiceHighRestartRate
+        # TODO: Replace with actual NestJS restart metric when available
+        expr: increase(process_start_time_seconds[5m]) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Service {{ $labels.job }} is restarting frequently"
+          description: "{{ $labels.job }} has restarted more than 2 times in the last 5 minutes"
+
+  # ─── HTTP Error Rate ─────────────────────────────────────────────────────────
+  - name: http_errors
+    rules:
+      - alert: HighErrorRate
+        # TODO: Replace with actual NestJS HTTP metrics label names from @nestjs/prometheus
+        expr: |
+          sum(rate(http_request_duration_seconds_count{status=~"5.."}[5m])) by (job)
+          /
+          sum(rate(http_request_duration_seconds_count[5m])) by (job)
+          > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High 5xx error rate on {{ $labels.job }}"
+          description: "{{ $labels.job }} has a 5xx error rate above 5% for the last 5 minutes. Current rate: {{ $value | humanizePercentage }}"
+
+      - alert: MediumErrorRate
+        expr: |
+          sum(rate(http_request_duration_seconds_count{status=~"5.."}[5m])) by (job)
+          /
+          sum(rate(http_request_duration_seconds_count[5m])) by (job)
+          > 0.01
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Elevated 5xx error rate on {{ $labels.job }}"
+          description: "{{ $labels.job }} has a 5xx error rate above 1% for the last 10 minutes"
+
+  # ─── HTTP Latency ─────────────────────────────────────────────────────────────
+  - name: http_latency
+    rules:
+      - alert: HighP99Latency
+        # TODO: Replace with actual NestJS histogram metric name
+        expr: |
+          histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, job))
+          > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High P99 latency on {{ $labels.job }}"
+          description: "{{ $labels.job }} P99 latency is above 2 seconds. Current: {{ $value | humanizeDuration }}"
+
+      - alert: HighP50Latency
+        expr: |
+          histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, job))
+          > 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High median latency on {{ $labels.job }}"
+          description: "{{ $labels.job }} P50 latency is above 500ms. Current: {{ $value | humanizeDuration }}"
+
+  # ─── Resource Usage ───────────────────────────────────────────────────────────
+  - name: resource_usage
+    rules:
+      - alert: HighMemoryUsage
+        expr: |
+          process_resident_memory_bytes
+          / (1024 * 1024 * 1024)
+          > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.job }}"
+          description: "{{ $labels.job }} is using more than 800MB of memory"
+
+      - alert: HighCPUUsage
+        # TODO: Adjust threshold based on container resource limits
+        expr: rate(process_cpu_seconds_total[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.job }}"
+          description: "{{ $labels.job }} CPU usage is above 80% for 5 minutes"
+
+  # ─── Database ──────────────────────────────────────────────────────────────────
+  - name: database
+    rules:
+      # TODO: Enable when MongoDB exporter is deployed
+      # - alert: MongoDBDown
+      #   expr: mongodb_up == 0
+      #   for: 1m
+      #   labels:
+      #     severity: critical
+      #   annotations:
+      #     summary: "MongoDB is down"
+
+      # TODO: Enable when Redis exporter is deployed
+      # - alert: RedisDown
+      #   expr: redis_up == 0
+      #   for: 1m
+      #   labels:
+      #     severity: critical
+      #   annotations:
+      #     summary: "Redis is down"
+      - alert: PlaceholderDatabaseAlert
+        expr: vector(0)
+        for: 999h
+        labels:
+          severity: none
+        annotations:
+          summary: "Placeholder - TODO: replace with real database alerts"

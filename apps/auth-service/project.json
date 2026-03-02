@@ -3,7 +3,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/auth-service/src",
   "projectType": "application",
-  "tags": ["type:app", "scope:auth"],
+  "tags": ["type:app", "scope:backend", "domain:auth"],
   "targets": {},
   "implicitDependencies": ["@tec-shop/auth-client"]
 }

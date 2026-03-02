@@ -1,0 +1,148 @@
+# Jaeger all-in-one deployment for development / staging
+# WARNING: all-in-one uses in-memory storage - data is lost on restart
+# TODO: For production, use the Jaeger Operator with a proper backend (Elasticsearch, Cassandra, or Tempo)
+# See: https://www.jaegertracing.io/docs/latest/operator/
+#
+# TODO: Instrument NestJS services with OpenTelemetry:
+#   npm install @opentelemetry/sdk-node @opentelemetry/auto-instrumentations-node
+#   npm install @opentelemetry/exporter-trace-otlp-http
+#   Create src/tracing.ts and import BEFORE NestJS bootstrap
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tracing
+  labels:
+    name: tracing
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger
+  namespace: tracing
+  labels:
+    app: jaeger
+    app.kubernetes.io/name: jaeger
+    app.kubernetes.io/component: all-in-one
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jaeger
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: jaeger
+        app.kubernetes.io/name: jaeger
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "14269"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: jaeger
+          image: jaegertracing/all-in-one:1.52
+          ports:
+            # Jaeger UI
+            - containerPort: 16686
+              name: ui
+              protocol: TCP
+            # OTLP gRPC (OpenTelemetry)
+            - containerPort: 4317
+              name: otlp-grpc
+              protocol: TCP
+            # OTLP HTTP (OpenTelemetry)
+            - containerPort: 4318
+              name: otlp-http
+              protocol: TCP
+            # Jaeger thrift compact (legacy)
+            - containerPort: 6831
+              name: jaeger-thrift
+              protocol: UDP
+            # Admin/health
+            - containerPort: 14269
+              name: admin
+              protocol: TCP
+          env:
+            - name: COLLECTOR_OTLP_ENABLED
+              value: "true"
+            - name: SPAN_STORAGE_TYPE
+              # TODO: Change to "elasticsearch" or "cassandra" for production
+              value: "memory"
+            - name: MEMORY_MAX_TRACES
+              # TODO: Increase or remove for production (use persistent storage)
+              value: "10000"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              # TODO: Increase memory limit for production workloads
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 14269
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 14269
+            initialDelaySeconds: 10
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger
+  namespace: tracing
+  labels:
+    app: jaeger
+spec:
+  type: ClusterIP
+  selector:
+    app: jaeger
+  ports:
+    - name: ui
+      port: 16686
+      targetPort: 16686
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+    - name: jaeger-thrift
+      port: 6831
+      targetPort: 6831
+      protocol: UDP
+    - name: admin
+      port: 14269
+      targetPort: 14269
+---
+# Jaeger UI ingress - expose externally for developers
+# TODO: Restrict access to internal network only in production
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jaeger-ui
+  namespace: tracing
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    # TODO: Add authentication (basic-auth or OAuth2-proxy) before exposing
+spec:
+  rules:
+    - host: jaeger.tec-shop.internal
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: jaeger
+                port:
+                  number: 16686

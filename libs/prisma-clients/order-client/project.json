@@ -3,7 +3,7 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/prisma-clients/order-client/src",
   "projectType": "library",
-  "tags": ["type:prisma-client", "scope:order"],
+  "tags": ["type:prisma-client", "scope:backend", "domain:order"],
   "targets": {
     "generate-types": {
       "executor": "nx:run-commands",

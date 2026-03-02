@@ -3,7 +3,7 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/prisma-clients/logger-client/src",
   "projectType": "library",
-  "tags": ["type:prisma-client", "scope:logger"],
+  "tags": ["type:prisma-client", "scope:backend", "domain:logger"],
   "targets": {
     "generate-types": {
       "executor": "nx:run-commands",

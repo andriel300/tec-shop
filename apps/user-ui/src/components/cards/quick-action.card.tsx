@@ -1,7 +1,13 @@
 'use client';
 import React from 'react';
 
-const QuickActionCard = ({ Icon, title, description }: any) => {
+interface QuickActionCardProps {
+  Icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+}
+
+const QuickActionCard = ({ Icon, title, description }: QuickActionCardProps) => {
   return (
     <div className="bg-white cursor-pointer p-4 rounded-md shadow-sm border border-gray-100 flex items-start gap-4">
       <Icon className="w-6 h-6 text-blue-500 mt-1" />

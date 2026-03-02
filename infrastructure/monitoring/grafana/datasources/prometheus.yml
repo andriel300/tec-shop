@@ -1,0 +1,24 @@
+# Grafana datasource provisioning configuration for Prometheus
+# Place this file at: /etc/grafana/provisioning/datasources/prometheus.yml
+# (or mount as ConfigMap in Kubernetes)
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    # TODO: Update URL to match your Prometheus deployment
+    # - Docker Compose: http://prometheus:9090
+    # - Kubernetes: http://prometheus-server.monitoring.svc.cluster.local:9090
+    url: http://prometheus:9090
+    access: proxy
+    isDefault: true
+    editable: false
+    jsonData:
+      # Scrape interval should match prometheus.yml global.scrape_interval
+      timeInterval: "15s"
+      # TODO: Enable exemplars after adding tracing integration
+      # exemplarTraceIdDestinations:
+      #   - name: traceID
+      #     datasourceUid: jaeger
+    version: 1

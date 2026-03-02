@@ -244,7 +244,15 @@ export default function ProfilePageWrapper() {
   );
 }
 
-const NavItem = ({ label, Icon, active, danger, onClick }: any) => (
+interface NavItemProps {
+  label: string;
+  Icon: React.ComponentType<{ className?: string }>;
+  active?: boolean;
+  danger?: boolean;
+  onClick: () => void;
+}
+
+const NavItem = ({ label, Icon, active, danger, onClick }: NavItemProps) => (
   <button
     onClick={onClick}
     className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition ${

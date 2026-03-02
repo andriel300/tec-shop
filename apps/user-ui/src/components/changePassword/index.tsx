@@ -27,8 +27,9 @@ const ChangePassword = () => {
 
         setMessage('Password changed successfully');
         form.reset();
-      } catch (err: any) {
-        setError(err?.response?.data?.message ?? 'Something went wrong');
+      } catch (err: unknown) {
+        const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+        setError(message ?? 'Something went wrong');
       }
     },
   });

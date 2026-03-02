@@ -1,0 +1,48 @@
+{{/*
+HorizontalPodAutoscaler template for services with autoscaling enabled.
+Requires metrics-server to be installed in the cluster.
+TODO: Install metrics-server: kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+*/}}
+{{- range $serviceName, $serviceConfig := .Values.services }}
+{{- if and $serviceConfig.enabled $serviceConfig.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $serviceName }}-hpa
+  namespace: {{ include "tec-shop.namespace" $ }}
+  labels:
+    {{- include "tec-shop.labels" $ | nindent 4 }}
+    app: {{ $serviceName }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $serviceName }}
+  minReplicas: {{ $serviceConfig.autoscaling.minReplicas }}
+  maxReplicas: {{ $serviceConfig.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $serviceConfig.autoscaling.targetCPUUtilizationPercentage }}
+    # TODO: Add memory-based scaling if needed
+    # - type: Resource
+    #   resource:
+    #     name: memory
+    #     target:
+    #       type: Utilization
+    #       averageUtilization: 80
+    # TODO: Add custom metrics (e.g., request queue depth) for advanced scaling
+  # TODO: Configure scale-down stabilization to prevent flapping
+  # behavior:
+  #   scaleDown:
+  #     stabilizationWindowSeconds: 300
+  #     policies:
+  #       - type: Pods
+  #         value: 1
+  #         periodSeconds: 60
+{{- end }}
+{{- end }}

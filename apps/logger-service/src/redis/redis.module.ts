@@ -1,24 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { RedisModule as SharedRedisModule } from '@tec-shop/redis-client';
 import { RedisService } from './redis.service';
-import Redis from 'ioredis';
 
 @Module({
-  imports: [ConfigModule],
-  providers: [
-    {
-      provide: 'REDIS_CLIENT',
-      useFactory: (configService: ConfigService) => {
-        const redisUrl = configService.get<string>('REDIS_URL');
-        if (!redisUrl) {
-          throw new Error('REDIS_URL environment variable not set');
-        }
-        return new Redis(redisUrl);
-      },
-      inject: [ConfigService],
-    },
-    RedisService,
-  ],
+  imports: [SharedRedisModule.forRoot()],
+  providers: [RedisService],
   exports: [RedisService],
 })
 export class RedisModule {}

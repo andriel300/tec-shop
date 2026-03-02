@@ -1,0 +1,72 @@
+{{/*
+Generic Deployment template that iterates over all enabled services.
+TODO: If services need unique configurations, split into individual templates.
+*/}}
+{{- range $serviceName, $serviceConfig := .Values.services }}
+{{- if $serviceConfig.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $serviceName }}
+  namespace: {{ include "tec-shop.namespace" $ }}
+  labels:
+    {{- include "tec-shop.labels" $ | nindent 4 }}
+    app: {{ $serviceName }}
+    app.kubernetes.io/name: {{ $serviceName }}
+spec:
+  replicas: {{ $serviceConfig.replicas }}
+  selector:
+    matchLabels:
+      app: {{ $serviceName }}
+  template:
+    metadata:
+      labels:
+        app: {{ $serviceName }}
+        app.kubernetes.io/name: {{ $serviceName }}
+        app.kubernetes.io/part-of: {{ include "tec-shop.name" $ }}
+    spec:
+      containers:
+        - name: {{ $serviceName }}
+          image: {{ include "tec-shop.image" (dict "global" $.Values.global "service" $serviceConfig) }}
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ $serviceConfig.port }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: tec-shop-config
+            - secretRef:
+                name: tec-shop-secrets
+          env:
+            - name: PORT
+              value: {{ $serviceConfig.port | quote }}
+            - name: NODE_ENV
+              value: {{ $.Values.config.nodeEnv | quote }}
+          resources:
+            requests:
+              cpu: {{ $serviceConfig.resources.requests.cpu | quote }}
+              memory: {{ $serviceConfig.resources.requests.memory | quote }}
+            limits:
+              cpu: {{ $serviceConfig.resources.limits.cpu | quote }}
+              memory: {{ $serviceConfig.resources.limits.memory | quote }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ $serviceConfig.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+            # TODO: Adjust per-service initialDelaySeconds in values overrides
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ $serviceConfig.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+      # TODO: Add imagePullSecrets if using private registry
+      # imagePullSecrets:
+      #   - name: registry-credentials
+{{- end }}
+{{- end }}

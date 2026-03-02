@@ -7,6 +7,7 @@ import {
   getPaginationRowModel,
   flexRender,
 } from '@tanstack/react-table';
+import type { Row } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -86,7 +87,7 @@ const OrdersTable = () => {
         accessorKey: 'shop.name',
         header: 'Shop',
 
-        cell: ({ row }: any) => (
+        cell: ({ row }: { row: Row<Order> }) => (
           <span className="text-white">
             {row.original.shop?.name ?? 'Unknown Shop'}
           </span>
@@ -96,7 +97,7 @@ const OrdersTable = () => {
         accessorKey: 'user.name',
         header: 'Buyer',
 
-        cell: ({ row }: any) => (
+        cell: ({ row }: { row: Row<Order> }) => (
           <span className="text-white">
             {row.original.user?.name ?? 'Guest'}
           </span>

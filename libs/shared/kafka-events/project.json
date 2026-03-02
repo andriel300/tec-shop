@@ -1,0 +1,7 @@
+{
+  "name": "@tec-shop/kafka-events",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/kafka-events/src",
+  "projectType": "library",
+  "tags": ["type:lib", "scope:shared", "scope:backend"]
+}

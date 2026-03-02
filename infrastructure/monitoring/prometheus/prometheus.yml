@@ -1,0 +1,135 @@
+# Prometheus configuration for TecShop
+# TODO: Install @nestjs/prometheus and prom-client in each service to expose /metrics
+# TODO: Update scrape targets to match actual service discovery (static vs Kubernetes SD)
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+  external_labels:
+    project: tec-shop
+    # TODO: Add environment label (dev/staging/prod)
+    # environment: production
+
+# Load alert rules
+rule_files:
+  - "alerts/alerts.yml"
+  # TODO: Add additional rule files as needed
+
+# Alertmanager configuration
+# TODO: Configure Alertmanager for alert routing (PagerDuty, Slack, email)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#             - alertmanager:9093
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # API Gateway
+  - job_name: "api-gateway"
+    static_configs:
+      - targets: ["api-gateway:8080"]
+    metrics_path: /metrics
+    # TODO: Add Bearer token auth if metrics endpoint is protected
+    # authorization:
+    #   credentials_file: /etc/prometheus/token
+
+  # Auth Service
+  - job_name: "auth-service"
+    static_configs:
+      - targets: ["auth-service:6001"]
+    metrics_path: /metrics
+
+  # User Service
+  - job_name: "user-service"
+    static_configs:
+      - targets: ["user-service:6002"]
+    metrics_path: /metrics
+
+  # Seller Service
+  - job_name: "seller-service"
+    static_configs:
+      - targets: ["seller-service:6003"]
+    metrics_path: /metrics
+
+  # Product Service
+  - job_name: "product-service"
+    static_configs:
+      - targets: ["product-service:6004"]
+    metrics_path: /metrics
+
+  # Order Service
+  - job_name: "order-service"
+    static_configs:
+      - targets: ["order-service:6005"]
+    metrics_path: /metrics
+
+  # Admin Service
+  - job_name: "admin-service"
+    static_configs:
+      - targets: ["admin-service:6006"]
+    metrics_path: /metrics
+
+  # Chatting Service
+  - job_name: "chatting-service"
+    static_configs:
+      - targets: ["chatting-service:6007"]
+    metrics_path: /metrics
+
+  # Logger Service
+  - job_name: "logger-service"
+    static_configs:
+      - targets: ["logger-service:6008"]
+    metrics_path: /metrics
+
+  # Kafka Analytics Service
+  - job_name: "kafka-service"
+    static_configs:
+      - targets: ["kafka-service:6009"]
+    metrics_path: /metrics
+
+  # Recommendation Service
+  - job_name: "recommendation-service"
+    static_configs:
+      - targets: ["recommendation-service:6010"]
+    metrics_path: /metrics
+
+  # Redis Exporter
+  # TODO: Deploy redis_exporter sidecar or standalone
+  # - job_name: "redis"
+  #   static_configs:
+  #     - targets: ["redis-exporter:9121"]
+
+  # MongoDB Exporter
+  # TODO: Deploy mongodb_exporter
+  # - job_name: "mongodb"
+  #   static_configs:
+  #     - targets: ["mongodb-exporter:9216"]
+
+  # Kafka Exporter
+  # TODO: Deploy kafka_exporter
+  # - job_name: "kafka"
+  #   static_configs:
+  #     - targets: ["kafka-exporter:9308"]
+
+  # Kubernetes pod auto-discovery (for K8s deployments)
+  # TODO: Enable when running on Kubernetes
+  # - job_name: "kubernetes-pods"
+  #   kubernetes_sd_configs:
+  #     - role: pod
+  #       namespaces:
+  #         names:
+  #           - tec-shop
+  #   relabel_configs:
+  #     - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+  #       action: keep
+  #       regex: true
+  #     - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+  #       action: replace
+  #       target_label: __metrics_path__
+  #       regex: (.+)

@@ -1,0 +1,432 @@
+version: "3.9"
+
+# TODO: Update image tags and registry URLs before deploying
+
+networks:
+  tec-shop-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+  redis-data:
+  kafka-data:
+  zookeeper-data:
+
+services:
+  # ─── Infrastructure ───────────────────────────────────────────────────────────
+
+  mongodb:
+    image: mongo:7
+    container_name: tec-shop-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-password}
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  redis:
+    image: redis:7-alpine
+    container_name: tec-shop-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: tec-shop-zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: tec-shop-kafka
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ─── Backend Services ─────────────────────────────────────────────────────────
+
+  api-gateway:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/services/api-gateway.Dockerfile
+    container_name: tec-shop-api-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - ../../.env
+    environment:
+      NODE_ENV: development
+      PORT: 8080
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      seller-service:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      admin-service:
+        condition: service_healthy
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  auth-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/services/auth-service.Dockerfile
+    container_name: tec-shop-auth-service
+    restart: unless-stopped
+    env_file:
+      - ../../.env
+    environment:
+      NODE_ENV: development
+      PORT: 6001
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:6001/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  user-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/services/user-service.Dockerfile
+    container_name: tec-shop-user-service
+    restart: unless-stopped
+    env_file:
+      - ../../.env
+    environment:
+      NODE_ENV: development
+      PORT: 6002
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:6002/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  seller-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/services/seller-service.Dockerfile
+    container_name: tec-shop-seller-service
+    restart: unless-stopped
+    env_file:
+      - ../../.env
+    environment:
+      NODE_ENV: development
+      PORT: 6003
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:6003/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  product-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/services/product-service.Dockerfile
+    container_name: tec-shop-product-service
+    restart: unless-stopped
+    env_file:
+      - ../../.env
+    environment:
+      NODE_ENV: development
+      PORT: 6004
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:6004/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  order-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/services/order-service.Dockerfile
+    container_name: tec-shop-order-service
+    restart: unless-stopped
+    env_file:
+      - ../../.env
+    environment:
+      NODE_ENV: development
+      PORT: 6005
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:6005/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  admin-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/services/admin-service.Dockerfile
+    container_name: tec-shop-admin-service
+    restart: unless-stopped
+    env_file:
+      - ../../.env
+    environment:
+      NODE_ENV: development
+      PORT: 6006
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:6006/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  chatting-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/services/chatting-service.Dockerfile
+    container_name: tec-shop-chatting-service
+    restart: unless-stopped
+    env_file:
+      - ../../.env
+    environment:
+      NODE_ENV: development
+      PORT: 6007
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:6007/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  logger-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/services/logger-service.Dockerfile
+    container_name: tec-shop-logger-service
+    restart: unless-stopped
+    env_file:
+      - ../../.env
+    environment:
+      NODE_ENV: development
+      PORT: 6008
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:6008/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  kafka-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/services/kafka-service.Dockerfile
+    container_name: tec-shop-kafka-service
+    restart: unless-stopped
+    env_file:
+      - ../../.env
+    environment:
+      NODE_ENV: development
+      PORT: 6009
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:6009/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  recommendation-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/services/recommendation-service.Dockerfile
+    container_name: tec-shop-recommendation-service
+    restart: unless-stopped
+    env_file:
+      - ../../.env
+    environment:
+      NODE_ENV: development
+      PORT: 6010
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:6010/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ─── Frontend Applications ────────────────────────────────────────────────────
+
+  user-ui:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/services/user-ui.Dockerfile
+    container_name: tec-shop-user-ui
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - ../../.env
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://api-gateway:8080
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - tec-shop-network
+
+  seller-ui:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/services/seller-ui.Dockerfile
+    container_name: tec-shop-seller-ui
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    env_file:
+      - ../../.env
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://api-gateway:8080
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - tec-shop-network
+
+  admin-ui:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/services/admin-ui.Dockerfile
+    container_name: tec-shop-admin-ui
+    restart: unless-stopped
+    ports:
+      - "3002:3000"
+    env_file:
+      - ../../.env
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://api-gateway:8080
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - tec-shop-network

@@ -1,7 +1,12 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 
-const StatCard = ({ title, count, Icon }: any) => {
+interface StatCardProps {
+  title: string;
+  count: string | number;
+  Icon: React.ComponentType<{ className?: string }>;
+}
+
+const StatCard = ({ title, count, Icon }: StatCardProps) => {
   return (
     <div className="bg-white p-5 rounded-md shadow-sm border border-gray-100 flex items-center justify-between">
       <div>

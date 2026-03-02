@@ -7,6 +7,12 @@ import React, { useEffect } from 'react';
 import { Range } from 'react-range';
 import { ChevronDown, X, Tag } from 'lucide-react';
 import ProductCard from '../../../../components/cards/product-card';
+import type { Product } from '../../../../lib/api/products';
+
+interface Category {
+  id: string;
+  name: string;
+}
 
 const MIN = 0;
 const MAX = 1199;
@@ -20,7 +26,7 @@ const Page = () => {
   const [selectedSizes, setSelectedSizes] = React.useState<string[]>([]);
   const [selectedColors, setSelectedColors] = React.useState<string[]>([]);
   const [page, setPage] = React.useState(1);
-  const [products, setProducts] = React.useState<any[]>([]);
+  const [products, setProducts] = React.useState<Product[]>([]);
   const [totalPages, setTotalPages] = React.useState(1);
   const [total, setTotal] = React.useState(0);
   const [tempPriceRange, setTempPriceRange] = React.useState([0, 1199]);
@@ -313,7 +319,7 @@ const Page = () => {
                   ) : categories &&
                     Array.isArray(categories) &&
                     categories.length > 0 ? (
-                    categories.map((category: any) => (
+                    (categories as Category[]).map((category) => (
                       <li
                         key={category.id}
                         className="flex items-center justify-between"
