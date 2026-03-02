@@ -4,6 +4,9 @@
   "include": [],
   "references": [
     {
+      "path": "../../libs/shared/service-auth"
+    },
+    {
       "path": "../../libs/prisma-clients/seller-client"
     },
     {
@@ -11,6 +14,9 @@
     },
     {
       "path": "../../libs/shared/logger-producer"
+    },
+    {
+      "path": "../../libs/shared/interceptor"
     },
     {
       "path": "./tsconfig.app.json"

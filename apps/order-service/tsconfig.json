@@ -10,6 +10,9 @@
       "path": "../../libs/shared/notification-producer"
     },
     {
+      "path": "../../libs/shared/redis-client"
+    },
+    {
       "path": "../../libs/shared/dto"
     },
     {

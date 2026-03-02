@@ -25,6 +25,12 @@
       "path": "../../libs/prisma-clients/auth-client/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/shared/service-auth/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared/redis-client/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/shared/dto/tsconfig.lib.json"
     },
     {
@@ -32,6 +38,9 @@
     },
     {
       "path": "../../libs/shared/logger-producer/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared/interceptor/tsconfig.lib.json"
     }
   ]
 }
