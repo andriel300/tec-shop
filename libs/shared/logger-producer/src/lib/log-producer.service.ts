@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import { Kafka, Producer } from 'kafkajs';
 import type { LogEventDto, LogLevel, LogCategory } from '@tec-shop/dto';
 

@@ -4,6 +4,9 @@
   "include": [],
   "references": [
     {
+      "path": "../../libs/shared/redis-client"
+    },
+    {
       "path": "../../libs/prisma-clients/logger-client"
     },
     {

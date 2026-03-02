@@ -13,6 +13,9 @@
   "exclude": [],
   "references": [
     {
+      "path": "../../libs/shared/redis-client/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/prisma-clients/logger-client/tsconfig.lib.json"
     },
     {

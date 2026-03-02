@@ -10,6 +10,9 @@
       "path": "../../libs/prisma-clients/product-client"
     },
     {
+      "path": "../../libs/shared/redis-client"
+    },
+    {
       "path": "../../libs/prisma-clients/analytics-client"
     },
     {
