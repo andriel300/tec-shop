@@ -1,2 +1,2 @@
-export * from './lib/log-producer.module';
-export * from './lib/log-producer.service';
+export * from './lib/log-producer.module.js';
+export * from './lib/log-producer.service.js';

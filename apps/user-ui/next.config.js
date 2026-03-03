@@ -13,6 +13,10 @@ const nextConfig = {
   // Use this to set Nx-specific options
   // See: https://nx.dev/recipes/next/next-config-setup
   nx: {},
+  webpack: (config) => {
+    config.resolve.extensionAlias = { '.js': ['.ts', '.tsx', '.js'], '.jsx': ['.tsx', '.jsx'] };
+    return config;
+  },
   images: {
     remotePatterns: [
       {

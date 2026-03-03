@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { StripeController } from './stripe.controller';
 import { ClientProxy } from '@nestjs/microservices';
 import { BadRequestException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { of, throwError } from 'rxjs';
 import type { Response } from 'express';
 
@@ -28,6 +29,12 @@ describe('StripeController', () => {
           provide: 'SELLER_SERVICE',
           useValue: {
             send: jest.fn(),
+          },
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn((key: string) => process.env[key]),
           },
         },
       ],

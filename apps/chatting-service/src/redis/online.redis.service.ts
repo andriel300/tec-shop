@@ -1,12 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { RedisService } from './redis.service';
 
 const ONLINE_USER_TTL_SECONDS = 300; // 5 minutes
 
 @Injectable()
 export class OnlineRedisService {
-  private readonly logger = new Logger(OnlineRedisService.name);
-
   constructor(private readonly redis: RedisService) {}
 
   private getOnlineUserKey(userId: string): string {

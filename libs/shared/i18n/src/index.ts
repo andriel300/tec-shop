@@ -1,3 +1,3 @@
-export * from './lib/config.js';
-export * from './lib/navigation.js';
-export * from './lib/messages.js';
+export * from './lib/config';
+export * from './lib/navigation';
+export * from './lib/messages';

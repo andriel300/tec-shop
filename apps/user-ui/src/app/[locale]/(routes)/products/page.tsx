@@ -1,9 +1,11 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../../../lib/api/client';
 import { Link } from '../../../../i18n/navigation';
-import React, { useEffect } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Range } from 'react-range';
 import { ChevronDown, X } from 'lucide-react';
@@ -13,7 +15,7 @@ import type { Product } from '../../../../lib/api/products';
 const MIN = 0;
 const MAX = 1199;
 
-const Page = () => {
+const ProductsPage = () => {
   const searchParams = useSearchParams();
   const [isProductLoading, setIsProductLoading] = React.useState(false);
   const [priceRange, setPriceRange] = React.useState([0, 1199]);
@@ -646,4 +648,10 @@ const Page = () => {
   );
 };
 
-export default Page;
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="w-full bg-[#f5f5f5] pb-10 min-h-screen" />}>
+      <ProductsPage />
+    </Suspense>
+  );
+}

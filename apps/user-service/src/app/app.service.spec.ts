@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppService } from './app.service';
 import { UserPrismaService } from '../prisma/prisma.service';
+import { LogProducerService } from '@tec-shop/logger-producer';
 import { CreateUserProfileDto, UpdateUserDto } from '@tec-shop/dto';
 
 describe('AppService', () => {
@@ -33,6 +34,17 @@ describe('AppService', () => {
               update: jest.fn(),
               create: jest.fn(),
             },
+          },
+        },
+        {
+          provide: LogProducerService,
+          useValue: {
+            emit: jest.fn().mockResolvedValue(undefined),
+            debug: jest.fn().mockResolvedValue(undefined),
+            info: jest.fn().mockResolvedValue(undefined),
+            warn: jest.fn().mockResolvedValue(undefined),
+            error: jest.fn().mockResolvedValue(undefined),
+            fatal: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],

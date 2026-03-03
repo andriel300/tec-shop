@@ -5,10 +5,10 @@ export enum ImageType {
 }
 
 export class Image {
-  id: string;
-  file_id: string;
-  url: string;
-  imageType: ImageType;
-  userProfileId: string;
-  createdAt: Date;
+  id!: string;
+  file_id!: string;
+  url!: string;
+  imageType!: ImageType;
+  userProfileId!: string;
+  createdAt!: Date;
 }

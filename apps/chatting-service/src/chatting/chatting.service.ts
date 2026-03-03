@@ -6,17 +6,17 @@ import { OnlineRedisService } from '../redis/online.redis.service';
 import { RedisService } from '../redis/redis.service';
 import { SellerServiceClient } from '../clients/seller-client.module';
 import { UserServiceClient } from '../clients/user-client.module';
+import { ParticipantType, SenderType } from '@tec-shop/dto';
 import type {
   CreateConversationInternalDto,
   GetConversationsInternalDto,
   GetConversationDto,
   MarkConversationSeenDto,
   GetMessagesInternalDto,
-  ParticipantType,
   ChatMessageEventDto,
 } from '@tec-shop/dto';
 
-interface ConversationResult {
+export interface ConversationResult {
   id: string;
   otherParticipant: {
     id: string;
@@ -36,7 +36,7 @@ interface ConversationResult {
   lastSeenAt?: string;
 }
 
-interface CreateConversationResult {
+export interface CreateConversationResult {
   success: boolean;
   conversation?: ConversationResult;
   error?: string;
@@ -121,11 +121,11 @@ export class ChattingService {
 
       return {
         success: true,
-        conversation: await this.getConversationResponse(
+        conversation: (await this.getConversationResponse(
           existingConversation.id,
           initiatorId,
           initiatorType
-        ),
+        )) ?? undefined,
       };
     }
 
@@ -178,11 +178,11 @@ export class ChattingService {
 
     return {
       success: true,
-      conversation: await this.getConversationResponse(
+      conversation: (await this.getConversationResponse(
         newConversation.id,
         initiatorId,
         initiatorType
-      ),
+      )) ?? undefined,
     };
   }
 
@@ -441,8 +441,8 @@ export class ChattingService {
 
     // Determine other participant type and ID
     const otherType: ParticipantType = otherParticipant.userId
-      ? 'user'
-      : 'seller';
+      ? ParticipantType.USER
+      : ParticipantType.SELLER;
     const otherId =
       otherType === 'user'
         ? otherParticipant.userId!
@@ -520,7 +520,7 @@ export class ChattingService {
     const payload: ChatMessageEventDto = {
       conversationId,
       senderId,
-      senderType: senderType as 'user' | 'seller',
+      senderType: senderType as unknown as SenderType,
       content,
       createdAt: new Date().toISOString(),
     };

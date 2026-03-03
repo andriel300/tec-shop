@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { LoggerPrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
+import type { Prisma } from '@tec-shop/logger-client';
 import type {
   NotificationEventDto,
   NotificationResponseDto,
@@ -31,7 +32,7 @@ export class NotificationCoreService {
         title: dto.title,
         message: dto.message,
         type: dto.type,
-        metadata: dto.metadata ?? undefined,
+        metadata: dto.metadata !== undefined ? (dto.metadata as unknown as Prisma.InputJsonValue) : undefined,
       },
     });
 

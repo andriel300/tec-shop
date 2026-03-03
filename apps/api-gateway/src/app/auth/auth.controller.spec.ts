@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
+import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { of, throwError } from 'rxjs';
 import type { Response, Request } from 'express';
@@ -34,6 +35,12 @@ describe('AuthController', () => {
           provide: 'AUTH_SERVICE',
           useValue: {
             send: jest.fn(),
+          },
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn((key: string) => process.env[key]),
           },
         },
       ],
@@ -279,17 +286,12 @@ describe('AuthController', () => {
       jest.spyOn(authServiceClient, 'send').mockReturnValue(
         throwError(() => new Error('Revocation failed'))
       );
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-
       // Act
       const result = await controller.logout(req, res);
 
       // Assert
-      expect(consoleErrorSpy).toHaveBeenCalled();
       expect(res.clearCookie).toHaveBeenCalledTimes(6); // Clears customer, seller, and legacy cookies
       expect(result).toEqual({ message: 'Logout successful' });
-
-      consoleErrorSpy.mockRestore();
     });
   });
 

@@ -5,20 +5,20 @@ export enum DiscountType {
 }
 
 export class DiscountCode {
-  id: string;
-  sellerId: string;
-  publicName: string;
-  code: string;
-  description: string | null;
-  discountType: DiscountType;
-  discountValue: number;
-  usageLimit: number | null;
-  usageCount: number;
-  maxUsesPerCustomer: number | null;
-  startDate: Date;
-  endDate: Date | null;
-  minimumPurchase: number | null;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  id!: string;
+  sellerId!: string;
+  publicName!: string;
+  code!: string;
+  description!: string | null;
+  discountType!: DiscountType;
+  discountValue!: number;
+  usageLimit!: number | null;
+  usageCount!: number;
+  maxUsesPerCustomer!: number | null;
+  startDate!: Date;
+  endDate!: Date | null;
+  minimumPurchase!: number | null;
+  isActive!: boolean;
+  createdAt!: Date;
+  updatedAt!: Date;
 }

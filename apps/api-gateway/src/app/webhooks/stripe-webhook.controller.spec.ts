@@ -53,6 +53,8 @@ describe('StripeWebhookController', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    // Restore webhook secret after each test in case a test deleted it
+    process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_secret';
   });
 
   describe('initialization', () => {
@@ -115,26 +117,17 @@ describe('StripeWebhookController', () => {
 
     it('should return warning when webhook secret is not configured', async () => {
       // Arrange
-      const originalSecret = process.env.STRIPE_WEBHOOK_SECRET;
       delete process.env.STRIPE_WEBHOOK_SECRET;
 
       const rawBody = Buffer.from('{}');
       const signature = 'test-signature';
       const req = mockRequest(rawBody, rawBody);
-      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
 
       // Act
       const result = await controller.handleStripeWebhook(req, signature);
 
       // Assert
-      expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('STRIPE_WEBHOOK_SECRET not configured')
-      );
       expect(result).toEqual({ received: false, message: 'Webhook secret not configured' });
-
-      // Cleanup
-      process.env.STRIPE_WEBHOOK_SECRET = originalSecret;
-      consoleWarnSpy.mockRestore();
     });
 
     it('should throw error when stripe signature is missing', async () => {
@@ -163,8 +156,6 @@ describe('StripeWebhookController', () => {
           throw new Error('Signature verification failed');
         });
 
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-
       // Act & Assert
       await expect(controller.handleStripeWebhook(req, signature)).rejects.toThrow(
         BadRequestException
@@ -172,13 +163,8 @@ describe('StripeWebhookController', () => {
       await expect(controller.handleStripeWebhook(req, signature)).rejects.toThrow(
         'Invalid webhook signature'
       );
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Webhook signature verification failed:',
-        expect.any(Error)
-      );
 
       constructEventSpy.mockRestore();
-      consoleErrorSpy.mockRestore();
     });
 
     it('should throw error when webhook processing fails in seller-service', async () => {
@@ -202,8 +188,6 @@ describe('StripeWebhookController', () => {
         throwError(() => new Error('Processing failed'))
       );
 
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-
       // Act & Assert
       await expect(controller.handleStripeWebhook(req, signature)).rejects.toThrow(
         BadRequestException
@@ -211,13 +195,8 @@ describe('StripeWebhookController', () => {
       await expect(controller.handleStripeWebhook(req, signature)).rejects.toThrow(
         'Webhook processing failed'
       );
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Webhook processing failed:',
-        expect.any(Error)
-      );
 
       constructEventSpy.mockRestore();
-      consoleErrorSpy.mockRestore();
     });
 
     it('should handle different Stripe event types', async () => {

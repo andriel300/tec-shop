@@ -10,13 +10,13 @@ export enum NotificationType {
 }
 
 export class Notification {
-  id: string;
-  sellerId: string;
-  title: string;
-  message: string;
-  type: NotificationType;
-  isRead: boolean;
-  metadata: Record<string, unknown> | null;
-  createdAt: Date;
-  updatedAt: Date;
+  id!: string;
+  sellerId!: string;
+  title!: string;
+  message!: string;
+  type!: NotificationType;
+  isRead!: boolean;
+  metadata!: Record<string, unknown> | null;
+  createdAt!: Date;
+  updatedAt!: Date;
 }

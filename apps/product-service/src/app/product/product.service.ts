@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
+import { LogCategory } from '@tec-shop/dto';
 import type {
   CreateProductDto,
   UpdateProductDto,
@@ -64,7 +65,7 @@ export class ProductService {
 
       if (!shopExists) {
         this.logger.error(`Shop not found: ${shopId}`);
-        this.logProducer.warn('product-service', 'product', 'Product creation failed - shop not found', {
+        this.logProducer.warn('product-service', LogCategory.PRODUCT, 'Product creation failed - shop not found', {
           sellerId,
           metadata: { action: 'create_product', shopId },
         });
@@ -75,7 +76,7 @@ export class ProductService {
         this.logger.error(
           `Seller ${sellerId} does not own shop ${shopId}`
         );
-        this.logProducer.warn('product-service', 'product', 'Product creation failed - shop ownership verification failed', {
+        this.logProducer.warn('product-service', LogCategory.PRODUCT, 'Product creation failed - shop ownership verification failed', {
           sellerId,
           metadata: { action: 'create_product', shopId },
         });
@@ -256,7 +257,7 @@ export class ProductService {
       });
 
       this.logger.log(`Product created successfully - ID: ${product.id}`);
-      this.logProducer.info('product-service', 'product', 'Product created', {
+      this.logProducer.info('product-service', LogCategory.PRODUCT, 'Product created', {
         sellerId,
         metadata: { action: 'create_product', productId: product.id, shopId },
       });
@@ -528,7 +529,7 @@ export class ProductService {
           });
         }
 
-        this.logProducer.info('product-service', 'product', 'Product updated with variants', {
+        this.logProducer.info('product-service', LogCategory.PRODUCT, 'Product updated with variants', {
           sellerId,
           metadata: { action: 'update_product', productId: id },
         });
@@ -542,7 +543,7 @@ export class ProductService {
       data: updateData,
     });
 
-    this.logProducer.info('product-service', 'product', 'Product updated', {
+    this.logProducer.info('product-service', LogCategory.PRODUCT, 'Product updated', {
       sellerId,
       metadata: { action: 'update_product', productId: id },
     });
@@ -561,7 +562,7 @@ export class ProductService {
       data: { deletedAt: new Date() },
     });
 
-    this.logProducer.info('product-service', 'product', 'Product soft-deleted', {
+    this.logProducer.info('product-service', LogCategory.PRODUCT, 'Product soft-deleted', {
       sellerId,
       metadata: { action: 'delete_product', productId: id },
     });
@@ -605,7 +606,7 @@ export class ProductService {
       },
     });
 
-    this.logProducer.info('product-service', 'product', 'Product restored', {
+    this.logProducer.info('product-service', LogCategory.PRODUCT, 'Product restored', {
       sellerId,
       metadata: { action: 'restore_product', productId: id },
     });
@@ -1094,7 +1095,7 @@ export class ProductService {
       this.logger.log(
         `Rating created/updated successfully - ratingId: ${result.id}`
       );
-      this.logProducer.info('product-service', 'product', 'Product rating created', {
+      this.logProducer.info('product-service', LogCategory.PRODUCT, 'Product rating created', {
         userId,
         metadata: { action: 'create_rating', productId, rating: createRatingDto.rating },
       });
@@ -1193,7 +1194,7 @@ export class ProductService {
       });
 
       this.logger.log(`Rating updated successfully - ratingId: ${result.id}`);
-      this.logProducer.info('product-service', 'product', 'Product rating updated', {
+      this.logProducer.info('product-service', LogCategory.PRODUCT, 'Product rating updated', {
         userId,
         metadata: { action: 'update_rating', ratingId, productId: existingRating.productId, rating: updateRatingDto.rating },
       });
@@ -1259,7 +1260,7 @@ export class ProductService {
       });
 
       this.logger.log(`Rating deleted successfully - ratingId: ${ratingId}`);
-      this.logProducer.info('product-service', 'product', 'Product rating deleted', {
+      this.logProducer.info('product-service', LogCategory.PRODUCT, 'Product rating deleted', {
         userId,
         metadata: { action: 'delete_rating', ratingId, productId: existingRating.productId },
       });
@@ -1404,7 +1405,7 @@ export class ProductService {
     });
 
     this.logger.log(`Seller response added to rating ${ratingId}`);
-    this.logProducer.info('product-service', 'product', 'Seller responded to review', {
+    this.logProducer.info('product-service', LogCategory.PRODUCT, 'Seller responded to review', {
       userId: sellerId,
       metadata: { action: 'seller_response', ratingId, productId: rating.productId },
     });

@@ -12,10 +12,10 @@ import { Server, Socket } from 'socket.io';
 import { Injectable, Logger, UsePipes, ValidationPipe } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { KafkaService } from '../kafka/kafka.service';
+import { ParticipantType, SenderType } from '@tec-shop/dto';
 import type {
   ChatMessageEventDto,
   MarkAsSeenDto,
-  ParticipantType,
 } from '@tec-shop/dto';
 import { MessageRedisService } from '../redis/message.redis.service';
 import { OnlineRedisService } from '../redis/online.redis.service';
@@ -110,7 +110,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
       // Determine user type (seller or user)
       const userType: ParticipantType =
-        payload.userType === 'SELLER' ? 'seller' : 'user';
+        payload.userType === 'SELLER' ? ParticipantType.SELLER : ParticipantType.USER;
 
       // Store user info in map
       socketToUser.set(client.id, {
@@ -251,7 +251,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const payload: ChatMessageEventDto = {
         conversationId,
         senderId: userInfo.userId, // From JWT, not from client
-        senderType: userInfo.userType as 'user' | 'seller',
+        senderType: userInfo.userType as unknown as SenderType,
         content: content || '',
         createdAt: now,
         attachments: attachments?.map((a) => ({ url: a.url, type: a.type })),

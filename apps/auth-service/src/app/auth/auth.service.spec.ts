@@ -4,6 +4,8 @@ import { JwtService } from '@nestjs/jwt';
 import { AuthPrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '@tec-shop/redis-client';
 import { EmailService } from '../email/email.service';
+import { LogProducerService } from '@tec-shop/logger-producer';
+import { NotificationProducerService } from '@tec-shop/notification-producer';
 import { ClientProxy } from '@nestjs/microservices';
 import * as bcrypt from 'bcrypt';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
@@ -65,6 +67,25 @@ describe('AuthService', () => {
           provide: EmailService,
           useValue: {
             sendOtp: jest.fn(),
+          },
+        },
+        {
+          provide: LogProducerService,
+          useValue: {
+            emit: jest.fn().mockResolvedValue(undefined),
+            debug: jest.fn().mockResolvedValue(undefined),
+            info: jest.fn().mockResolvedValue(undefined),
+            warn: jest.fn().mockResolvedValue(undefined),
+            error: jest.fn().mockResolvedValue(undefined),
+            fatal: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: NotificationProducerService,
+          useValue: {
+            notifyCustomer: jest.fn().mockResolvedValue(undefined),
+            notifySeller: jest.fn().mockResolvedValue(undefined),
+            notifyAdmin: jest.fn().mockResolvedValue(undefined),
           },
         },
         {

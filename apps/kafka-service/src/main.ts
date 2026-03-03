@@ -48,7 +48,7 @@ async function bootstrap() {
     }
 
     // Build Kafka client configuration
-    const clientConfig: Record<string, unknown> = {
+    const clientConfig: { clientId: string; brokers: string[]; connectionTimeout: number; requestTimeout: number; ssl?: boolean; sasl?: { mechanism: 'scram-sha-256'; username: string; password: string } } = {
       clientId: 'kafka-service',
       brokers: [kafkaBroker],
       connectionTimeout: 10000,
