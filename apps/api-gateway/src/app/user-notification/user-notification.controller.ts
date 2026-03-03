@@ -7,7 +7,6 @@ import {
   Query,
   UseGuards,
   Req,
-  Logger,
   Patch,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -45,8 +44,6 @@ const USER_TYPE_MAP: Record<string, string> = {
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class UserNotificationController {
-  private readonly logger = new Logger(UserNotificationController.name);
-
   constructor(
     @Inject('LOGGER_SERVICE') private readonly loggerService: ClientProxy
   ) {}

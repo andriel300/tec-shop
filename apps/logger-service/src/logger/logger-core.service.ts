@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { LoggerPrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
+import type { Prisma } from '@tec-shop/logger-client';
 import type {
   LogEventDto,
   LogQueryDto,
@@ -34,7 +35,7 @@ export class LoggerCoreService {
         message: dto.message,
         userId: dto.userId,
         sellerId: dto.sellerId,
-        metadata: dto.metadata ?? undefined,
+        metadata: dto.metadata !== undefined ? (dto.metadata as unknown as Prisma.InputJsonValue) : undefined,
         timestamp,
         traceId: dto.traceId,
         ip: dto.ip,

@@ -1,7 +1,7 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { Kafka, Producer } from 'kafkajs';
 import type { NotificationEventDto, NotificationTargetType } from '@tec-shop/dto';
-import { TemplateEngine } from './template.engine';
+import { TemplateEngine } from './template.engine.js';
 
 const NOTIFICATION_EVENTS_TOPIC = 'notification-events';
 

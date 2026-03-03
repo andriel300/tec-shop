@@ -1,4 +1,4 @@
-import { Module, DynamicModule, Global } from '@nestjs/common';
+import { Module, DynamicModule, Global, Type, ForwardReference } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Kafka } from 'kafkajs';
 import { LogProducerService } from './log-producer.service.js';
@@ -83,8 +83,8 @@ export class LogProducerModule {
     useFactory: (
       ...args: unknown[]
     ) => Promise<LogProducerModuleOptions> | LogProducerModuleOptions;
-    inject?: unknown[];
-    imports?: unknown[];
+    inject?: Array<string | symbol | Type<unknown>>;
+    imports?: Array<DynamicModule | Type<unknown> | Promise<DynamicModule> | ForwardReference<unknown>>;
   }): DynamicModule {
     return {
       module: LogProducerModule,

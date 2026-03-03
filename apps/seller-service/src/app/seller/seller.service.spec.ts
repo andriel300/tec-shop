@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { SellerService } from './seller.service';
 import { SellerPrismaService } from '../../prisma/prisma.service';
+import { LogProducerService } from '@tec-shop/logger-producer';
 import { TestUtils, MockPrismaService, mockPrismaProvider } from '../../test/test-utils';
 import { TestDataFactory } from '../../test/factories';
 
@@ -15,6 +16,17 @@ describe('SellerService', () => {
       providers: [
         SellerService,
         mockPrismaProvider,
+        {
+          provide: LogProducerService,
+          useValue: {
+            emit: jest.fn().mockResolvedValue(undefined),
+            debug: jest.fn().mockResolvedValue(undefined),
+            info: jest.fn().mockResolvedValue(undefined),
+            warn: jest.fn().mockResolvedValue(undefined),
+            error: jest.fn().mockResolvedValue(undefined),
+            fatal: jest.fn().mockResolvedValue(undefined),
+          },
+        },
       ],
     }).compile();
 
@@ -194,7 +206,9 @@ describe('SellerService', () => {
           openingHours: shopData.openingHours,
           website: shopData.website,
           sellerId: seller.id,
-          socialLinks: [],
+          socialLinks: shopData.socialLinks || [],
+          returnPolicy: shopData.returnPolicy,
+          shippingPolicy: shopData.shippingPolicy,
         },
       });
       expect(result).toEqual(expectedShop);
@@ -224,6 +238,7 @@ describe('SellerService', () => {
           address: shopData.address,
           openingHours: shopData.openingHours,
           website: shopData.website,
+          socialLinks: shopData.socialLinks,
         },
       });
       expect(result).toEqual(updatedShop);

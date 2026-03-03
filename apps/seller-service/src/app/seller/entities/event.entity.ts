@@ -7,16 +7,16 @@ export enum EventStatus {
 }
 
 export class Event {
-  id: string;
-  shopId: string;
-  title: string;
-  description: string;
-  bannerImage: string | null;
-  startDate: Date;
-  endDate: Date;
-  status: EventStatus;
-  isActive: boolean;
-  metadata: Record<string, unknown> | null;
-  createdAt: Date;
-  updatedAt: Date;
+  id!: string;
+  shopId!: string;
+  title!: string;
+  description!: string;
+  bannerImage!: string | null;
+  startDate!: Date;
+  endDate!: Date;
+  status!: EventStatus;
+  isActive!: boolean;
+  metadata!: Record<string, unknown> | null;
+  createdAt!: Date;
+  updatedAt!: Date;
 }

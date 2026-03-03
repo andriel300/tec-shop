@@ -1,10 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { RedisService } from './redis.service';
 
 @Injectable()
 export class MessageRedisService {
-  private readonly logger = new Logger(MessageRedisService.name);
-
   constructor(private readonly redis: RedisService) {}
 
   private getUnseenCountKey(userId: string, conversationId: string): string {

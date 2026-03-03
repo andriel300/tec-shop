@@ -22,10 +22,10 @@ import { JwtAuthGuard } from '../../guards/auth';
 import { RolesGuard } from '../../guards/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
 import { ImageKitService } from '@tec-shop/shared/imagekit';
+import { ParticipantType } from '@tec-shop/dto';
 import type {
   CreateConversationDto,
   GetConversationsDto,
-  ParticipantType,
 } from '@tec-shop/dto';
 
 const CHAT_IMAGE_SIZE_LIMIT = 5 * 1024 * 1024; // 5MB
@@ -151,17 +151,17 @@ export class ChatController {
   }
 
   private resolveInitiatorType(userType?: string): ParticipantType {
-    return userType === 'SELLER' ? 'seller' : 'user';
+    return userType === 'SELLER' ? ParticipantType.SELLER : ParticipantType.USER;
   }
 
   private validateConversationParticipants(
     initiatorType: ParticipantType,
     targetType: string
   ): void {
-    if (initiatorType === 'user' && targetType !== 'seller') {
+    if (initiatorType === ParticipantType.USER && targetType !== ParticipantType.SELLER) {
       throw new BadRequestException('Users can only start conversations with sellers');
     }
-    if (initiatorType === 'seller' && targetType !== 'user') {
+    if (initiatorType === ParticipantType.SELLER && targetType !== ParticipantType.USER) {
       throw new BadRequestException('Sellers can only start conversations with users');
     }
   }
@@ -177,7 +177,7 @@ export class ChatController {
   ) {
     const { userId, userType } = req.user;
     const participantType: ParticipantType =
-      userType === 'SELLER' ? 'seller' : 'user';
+      userType === 'SELLER' ? ParticipantType.SELLER : ParticipantType.USER;
 
     return firstValueFrom(
       this.chattingService.send('chatting.getConversations', {
@@ -200,7 +200,7 @@ export class ChatController {
   ) {
     const { userId, userType } = req.user;
     const participantType: ParticipantType =
-      userType === 'SELLER' ? 'seller' : 'user';
+      userType === 'SELLER' ? ParticipantType.SELLER : ParticipantType.USER;
 
     const result = await firstValueFrom(
       this.chattingService.send('chatting.getConversation', {
@@ -230,7 +230,7 @@ export class ChatController {
   ) {
     const { userId, userType } = req.user;
     const participantType: ParticipantType =
-      userType === 'SELLER' ? 'seller' : 'user';
+      userType === 'SELLER' ? ParticipantType.SELLER : ParticipantType.USER;
 
     const result = await firstValueFrom(
       this.chattingService.send('chatting.getMessages', {
@@ -260,7 +260,7 @@ export class ChatController {
   ) {
     const { userId, userType } = req.user;
     const participantType: ParticipantType =
-      userType === 'SELLER' ? 'seller' : 'user';
+      userType === 'SELLER' ? ParticipantType.SELLER : ParticipantType.USER;
 
     const result = await firstValueFrom(
       this.chattingService.send('chatting.markAsSeen', {

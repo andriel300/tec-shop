@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { UserPrismaService } from '../prisma/prisma.service';
+import { LogCategory } from '@tec-shop/dto';
 import type {
   UpdateUserDto,
   CreateUserProfileDto,
@@ -31,7 +32,7 @@ export class AppService {
     });
 
     if (!profile) {
-      this.logProducer.warn('user-service', 'user', 'User profile not found', {
+      this.logProducer.warn('user-service', LogCategory.USER, 'User profile not found', {
         userId,
         metadata: { action: 'get_profile' },
       });
@@ -52,7 +53,7 @@ export class AppService {
       where: { userId: userId },
       data,
     });
-    this.logProducer.info('user-service', 'user', 'User profile updated', {
+    this.logProducer.info('user-service', LogCategory.USER, 'User profile updated', {
       userId,
       metadata: { action: 'update_profile' },
     });
@@ -68,7 +69,7 @@ export class AppService {
         ...(picture && { picture }),
       },
     });
-    this.logProducer.info('user-service', 'user', 'User profile created', {
+    this.logProducer.info('user-service', LogCategory.USER, 'User profile created', {
       userId,
       metadata: { action: 'create_profile' },
     });
@@ -83,7 +84,7 @@ export class AppService {
         followingId,
       },
     });
-    this.logProducer.info('user-service', 'user', 'User followed another user', {
+    this.logProducer.info('user-service', LogCategory.USER, 'User followed another user', {
       userId: followerId,
       metadata: { action: 'follow_user', followingId },
     });
@@ -99,7 +100,7 @@ export class AppService {
         },
       },
     });
-    this.logProducer.info('user-service', 'user', 'User unfollowed another user', {
+    this.logProducer.info('user-service', LogCategory.USER, 'User unfollowed another user', {
       userId: followerId,
       metadata: { action: 'unfollow_user', followingId },
     });
@@ -146,7 +147,7 @@ export class AppService {
         shopId,
       },
     });
-    this.logProducer.info('user-service', 'user', 'User followed a shop', {
+    this.logProducer.info('user-service', LogCategory.USER, 'User followed a shop', {
       userId,
       metadata: { action: 'follow_shop', shopId },
     });
@@ -175,7 +176,7 @@ export class AppService {
         },
       },
     });
-    this.logProducer.info('user-service', 'user', 'User unfollowed a shop', {
+    this.logProducer.info('user-service', LogCategory.USER, 'User unfollowed a shop', {
       userId,
       metadata: { action: 'unfollow_shop', shopId },
     });

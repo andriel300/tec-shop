@@ -11,7 +11,6 @@ import { useAuth } from '../../../../hooks/use-auth';
 import { useOrders } from '../../../../hooks/use-orders';
 import {
   BadgeCheck,
-  Bell,
   CheckCircle,
   Clock,
   Gift,

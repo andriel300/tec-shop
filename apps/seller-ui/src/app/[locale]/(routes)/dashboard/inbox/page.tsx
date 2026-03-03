@@ -14,7 +14,7 @@ import type { Conversation, ChatMessage } from '../../../../../lib/api/chat';
 import { uploadChatImage } from '../../../../../lib/api/chat';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { Suspense, useEffect, useRef, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader2, MessageCircle, Users } from 'lucide-react';
 import ChatInput from '../../../../../components/chats/chat-input';
@@ -168,6 +168,7 @@ const InboxPage = () => {
         leaveConversation(selectedConversationId);
       };
     }
+    return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedConversationId,
@@ -608,4 +609,16 @@ const InboxPage = () => {
   );
 };
 
-export default InboxPage;
+export default function InboxPageWrapper() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-[80vh]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+        </div>
+      }
+    >
+      <InboxPage />
+    </Suspense>
+  );
+}

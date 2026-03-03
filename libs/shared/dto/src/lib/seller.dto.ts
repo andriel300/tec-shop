@@ -427,7 +427,7 @@ export interface EventResponse {
 // Notification DTOs
 // ============================================
 
-export type NotificationType = 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR' | 'ORDER' | 'PRODUCT' | 'SHOP' | 'SYSTEM';
+export type SellerNotificationType = 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR' | 'ORDER' | 'PRODUCT' | 'SHOP' | 'SYSTEM';
 
 export class CreateNotificationDto {
   @IsString()
@@ -444,9 +444,9 @@ export class CreateNotificationDto {
   @MaxLength(1000)
   message!: string;
 
-  @IsEnum(['INFO', 'SUCCESS', 'WARNING', 'ERROR', 'ORDER', 'PRODUCT', 'SHOP', 'SYSTEM'])
+  @IsEnum(['INFO', 'SUCCESS', 'WARNING', 'ERROR', 'ORDER', 'PRODUCT', 'SHOP', 'SYSTEM'] as SellerNotificationType[])
   @IsOptional()
-  type?: NotificationType;
+  type?: SellerNotificationType;
 
   @IsBoolean()
   @IsOptional()
@@ -468,7 +468,7 @@ export interface NotificationResponse {
   sellerId: string;
   title: string;
   message: string;
-  type: NotificationType;
+  type: SellerNotificationType;
   isRead: boolean;
   metadata?: Record<string, unknown> | null;
   createdAt: Date;

@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../../../hooks/use-auth';
 import {
@@ -14,7 +16,7 @@ import { uploadChatImage } from '../../../../lib/api/chat';
 import Image from 'next/image';
 import { useRouter } from '../../../../i18n/navigation';
 import { useSearchParams } from 'next/navigation';
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { Suspense, useEffect, useRef, useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader2, MessageCircle } from 'lucide-react';
 import ChatInput from '../../../../components/chats/chat-input';
@@ -165,6 +167,7 @@ const InboxPage = () => {
         leaveConversation(selectedConversationId);
       };
     }
+    return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedConversationId,
@@ -598,4 +601,18 @@ const InboxPage = () => {
   );
 };
 
-export default InboxPage;
+function InboxPageFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-[80vh]">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary" />
+    </div>
+  );
+}
+
+export default function InboxPageWrapper() {
+  return (
+    <Suspense fallback={<InboxPageFallback />}>
+      <InboxPage />
+    </Suspense>
+  );
+}

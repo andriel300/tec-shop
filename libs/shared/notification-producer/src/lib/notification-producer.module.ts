@@ -1,7 +1,7 @@
 import { Module, DynamicModule, Global } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Kafka } from 'kafkajs';
-import { NotificationProducerService } from './notification-producer.service';
+import { NotificationProducerService } from './notification-producer.service.js';
 
 export interface NotificationProducerModuleOptions {
   clientId?: string;

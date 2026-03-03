@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ChatMessageEventDto } from '@tec-shop/dto';
 import type { NotificationEventDto, NotificationTargetType } from '@tec-shop/dto';
+import type { Prisma } from '@tec-shop/chatting-client';
 import { KafkaService } from '../kafka/kafka.service';
 import { Consumer } from 'kafkajs';
 import { ChatGateway } from './chat.gateway';
@@ -61,7 +62,7 @@ export class ChatMessageConsumer implements OnModuleInit {
         senderType,
         content,
         createdAt: new Date(createdAt),
-        attachments: (attachments ?? []) as unknown[],
+        attachments: (attachments ?? []) as unknown as Prisma.InputJsonValue[],
       },
     });
 

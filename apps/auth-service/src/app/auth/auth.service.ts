@@ -12,7 +12,8 @@ import { randomInt, randomBytes, createHash } from 'crypto';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { AuthPrismaService } from '../../prisma/prisma.service';
-import {
+import { LogCategory } from '@tec-shop/dto';
+import type {
   LoginDto,
   SignupDto,
   VerifyEmailDto,
@@ -77,7 +78,7 @@ export class AuthService implements OnModuleInit {
 
       if (existingUser) {
         this.logger.warn(`Signup failed - email already exists: ${email}`);
-        this.logProducer.warn('auth-service', 'auth', 'Customer signup failed - duplicate email', {
+        this.logProducer.warn('auth-service', LogCategory.AUTH, 'Customer signup failed - duplicate email', {
           metadata: { action: 'signup', reason: 'duplicate_email' },
         });
         throw new ConflictException('User with this email already exists');
@@ -112,7 +113,7 @@ export class AuthService implements OnModuleInit {
       await this.emailService.sendOtp(user.email, otp);
 
       this.logger.log(`Customer signup successful - userId: ${user.id}, email: ${email}`);
-      this.logProducer.info('auth-service', 'auth', 'Customer signup successful', {
+      this.logProducer.info('auth-service', LogCategory.AUTH, 'Customer signup successful', {
         userId: user.id,
         metadata: { action: 'signup', userType: 'CUSTOMER' },
       });
@@ -143,7 +144,7 @@ export class AuthService implements OnModuleInit {
 
       if (existingUser) {
         this.logger.warn(`Seller signup failed - email already exists: ${email}`);
-        this.logProducer.warn('auth-service', 'auth', 'Seller signup failed - duplicate email', {
+        this.logProducer.warn('auth-service', LogCategory.AUTH, 'Seller signup failed - duplicate email', {
           metadata: { action: 'signup', reason: 'duplicate_email', userType: 'SELLER' },
         });
         throw new ConflictException('User with this email already exists');
@@ -185,7 +186,7 @@ export class AuthService implements OnModuleInit {
       await this.emailService.sendOtp(user.email, otp);
 
       this.logger.log(`Seller signup successful - userId: ${user.id}, email: ${email}`);
-      this.logProducer.info('auth-service', 'auth', 'Seller signup successful', {
+      this.logProducer.info('auth-service', LogCategory.AUTH, 'Seller signup successful', {
         userId: user.id,
         metadata: { action: 'signup', userType: 'SELLER' },
       });
@@ -216,7 +217,7 @@ export class AuthService implements OnModuleInit {
 
       if (!user || !user.password || !user.isEmailVerified) {
         this.logger.warn(`Customer login failed - invalid credentials or unverified email: ${credential.email}`);
-        this.logProducer.warn('auth-service', 'security', 'Customer login failed - invalid credentials', {
+        this.logProducer.warn('auth-service', LogCategory.SECURITY, 'Customer login failed - invalid credentials', {
           metadata: { action: 'login', reason: !user ? 'user_not_found' : !user.isEmailVerified ? 'unverified_email' : 'no_password', userType: 'CUSTOMER' },
         });
         throw new UnauthorizedException(genericError);
@@ -230,7 +231,7 @@ export class AuthService implements OnModuleInit {
 
       if (!isPasswordMatching) {
         this.logger.warn(`Customer login failed - password mismatch: ${credential.email}`);
-        this.logProducer.warn('auth-service', 'security', 'Customer login failed - wrong password', {
+        this.logProducer.warn('auth-service', LogCategory.SECURITY, 'Customer login failed - wrong password', {
           userId: user.id,
           metadata: { action: 'login', reason: 'wrong_password', userType: 'CUSTOMER' },
         });
@@ -238,7 +239,7 @@ export class AuthService implements OnModuleInit {
       }
 
       this.logger.log(`Customer login successful - userId: ${user.id}, email: ${credential.email}`);
-      this.logProducer.info('auth-service', 'auth', 'Customer login successful', {
+      this.logProducer.info('auth-service', LogCategory.AUTH, 'Customer login successful', {
         userId: user.id,
         metadata: { action: 'login', userType: 'CUSTOMER' },
       });
@@ -271,7 +272,7 @@ export class AuthService implements OnModuleInit {
 
       if (!user || !user.password || !user.isEmailVerified) {
         this.logger.warn(`Seller login failed - invalid credentials or unverified email: ${credential.email}`);
-        this.logProducer.warn('auth-service', 'security', 'Seller login failed - invalid credentials', {
+        this.logProducer.warn('auth-service', LogCategory.SECURITY, 'Seller login failed - invalid credentials', {
           metadata: { action: 'login', reason: !user ? 'user_not_found' : !user.isEmailVerified ? 'unverified_email' : 'no_password', userType: 'SELLER' },
         });
         throw new UnauthorizedException(genericError);
@@ -285,7 +286,7 @@ export class AuthService implements OnModuleInit {
 
       if (!isPasswordMatching) {
         this.logger.warn(`Seller login failed - password mismatch: ${credential.email}`);
-        this.logProducer.warn('auth-service', 'security', 'Seller login failed - wrong password', {
+        this.logProducer.warn('auth-service', LogCategory.SECURITY, 'Seller login failed - wrong password', {
           userId: user.id,
           metadata: { action: 'login', reason: 'wrong_password', userType: 'SELLER' },
         });
@@ -293,7 +294,7 @@ export class AuthService implements OnModuleInit {
       }
 
       this.logger.log(`Seller login successful - userId: ${user.id}, email: ${credential.email}`);
-      this.logProducer.info('auth-service', 'auth', 'Seller login successful', {
+      this.logProducer.info('auth-service', LogCategory.AUTH, 'Seller login successful', {
         userId: user.id,
         metadata: { action: 'login', userType: 'SELLER' },
       });
@@ -330,7 +331,7 @@ export class AuthService implements OnModuleInit {
 
       if (!user || !user.password || !user.isEmailVerified) {
         this.logger.warn(`Admin login failed - invalid credentials or unverified email: ${credential.email}`);
-        this.logProducer.warn('auth-service', 'security', 'Admin login failed - invalid credentials', {
+        this.logProducer.warn('auth-service', LogCategory.SECURITY, 'Admin login failed - invalid credentials', {
           metadata: { action: 'login', reason: !user ? 'user_not_found' : !user.isEmailVerified ? 'unverified_email' : 'no_password', userType: 'ADMIN' },
         });
         throw new UnauthorizedException(genericError);
@@ -344,7 +345,7 @@ export class AuthService implements OnModuleInit {
 
       if (!isPasswordMatching) {
         this.logger.warn(`Admin login failed - password mismatch: ${credential.email}`);
-        this.logProducer.warn('auth-service', 'security', 'Admin login failed - wrong password', {
+        this.logProducer.warn('auth-service', LogCategory.SECURITY, 'Admin login failed - wrong password', {
           userId: user.id,
           metadata: { action: 'login', reason: 'wrong_password', userType: 'ADMIN' },
         });
@@ -352,7 +353,7 @@ export class AuthService implements OnModuleInit {
       }
 
       this.logger.log(`Admin login successful - userId: ${user.id}, email: ${credential.email}`);
-      this.logProducer.info('auth-service', 'auth', 'Admin login successful', {
+      this.logProducer.info('auth-service', LogCategory.AUTH, 'Admin login successful', {
         userId: user.id,
         metadata: { action: 'login', userType: 'ADMIN' },
       });
@@ -487,7 +488,7 @@ export class AuthService implements OnModuleInit {
         ? await this.generateSellerTokens(user.id, user.email, false)
         : await this.generateTokens(user.id, user.email, false);
 
-      this.logProducer.info('auth-service', 'auth', 'Google OAuth login successful', {
+      this.logProducer.info('auth-service', LogCategory.AUTH, 'Google OAuth login successful', {
         userId: user.id,
         metadata: { action: 'google_login', userType: user.userType },
       });
@@ -556,7 +557,7 @@ export class AuthService implements OnModuleInit {
     await this.redisService.del(`verification-otp:${user.id}`);
     await this.redisService.del(`otp-attempts:${user.id}`);
 
-    this.logProducer.info('auth-service', 'auth', 'Email verified successfully', {
+    this.logProducer.info('auth-service', LogCategory.AUTH, 'Email verified successfully', {
       userId: user.id,
       metadata: { action: 'verify_email', userType: 'CUSTOMER' },
     });
@@ -572,7 +573,7 @@ export class AuthService implements OnModuleInit {
       this.logger.log(`User profile created successfully for user ${user.id}`);
     } catch (error) {
       this.logger.error('Failed to create user profile in user-service:', error);
-      this.logProducer.error('auth-service', 'system', 'Failed to create user profile in user-service', {
+      this.logProducer.error('auth-service', LogCategory.SYSTEM, 'Failed to create user profile in user-service', {
         userId: user.id,
         metadata: { action: 'create_profile', targetService: 'user-service' },
       });
@@ -683,13 +684,13 @@ export class AuthService implements OnModuleInit {
         'Failed to create seller profile in seller-service:',
         error
       );
-      this.logProducer.error('auth-service', 'system', 'Failed to create seller profile in seller-service', {
+      this.logProducer.error('auth-service', LogCategory.SYSTEM, 'Failed to create seller profile in seller-service', {
         userId: user.id,
         metadata: { action: 'create_profile', targetService: 'seller-service' },
       });
     }
 
-    this.logProducer.info('auth-service', 'auth', 'Seller email verified successfully', {
+    this.logProducer.info('auth-service', LogCategory.AUTH, 'Seller email verified successfully', {
       userId: user.id,
       metadata: { action: 'verify_email', userType: 'SELLER' },
     });
@@ -814,7 +815,7 @@ export class AuthService implements OnModuleInit {
       tokens = await this.generateTokens(user.id, user.email, wasRememberMe);
     }
 
-    this.logProducer.info('auth-service', 'auth', 'Token refreshed', {
+    this.logProducer.info('auth-service', LogCategory.AUTH, 'Token refreshed', {
       userId: user.id,
       metadata: { action: 'token_refresh', userType: user.userType },
     });
@@ -1025,7 +1026,7 @@ export class AuthService implements OnModuleInit {
       resetToken.user.email
     );
 
-    this.logProducer.info('auth-service', 'security', 'Password reset successful', {
+    this.logProducer.info('auth-service', LogCategory.SECURITY, 'Password reset successful', {
       userId: resetToken.userId,
       metadata: { action: 'password_reset' },
     });
@@ -1267,7 +1268,7 @@ export class AuthService implements OnModuleInit {
     });
 
     this.logger.log(`Password changed successfully for user: ${userId}`);
-    this.logProducer.info('auth-service', 'security', 'Password changed successfully', {
+    this.logProducer.info('auth-service', LogCategory.SECURITY, 'Password changed successfully', {
       userId,
       metadata: { action: 'change_password' },
     });
