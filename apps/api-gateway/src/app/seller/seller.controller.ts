@@ -37,6 +37,7 @@ import {
 } from '@tec-shop/dto';
 import * as Dto from '@tec-shop/dto';
 import { ImageKitService } from '@tec-shop/shared/imagekit';
+import { CircuitBreakerService } from '../../common/circuit-breaker.service';
 
 // File validation configuration
 const FILE_SIZE_LIMIT = 5 * 1024 * 1024; // 5MB
@@ -60,7 +61,8 @@ export class SellerController {
   constructor(
     @Inject('SELLER_SERVICE') private readonly sellerService: ClientProxy,
     @Inject('PRODUCT_SERVICE') private readonly productService: ClientProxy,
-    private readonly imagekitService: ImageKitService
+    private readonly imagekitService: ImageKitService,
+    private readonly cb: CircuitBreakerService
   ) {}
 
   /**
@@ -98,9 +100,9 @@ export class SellerController {
   })
   @ApiResponse({ status: 404, description: 'Seller profile not found.' })
   async getProfile(@Req() request: { user: { userId: string } }) {
-    return await firstValueFrom(
+    return await this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
       this.sellerService.send('get-seller-profile', request.user.userId)
-    );
+    ));
   }
 
   @Put('profile')
@@ -114,12 +116,12 @@ export class SellerController {
     @Req() request: { user: { userId: string } },
     @Body() updateData: Partial<CreateSellerProfileDto>
   ) {
-    return await firstValueFrom(
+    return await this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
       this.sellerService.send('update-seller-profile', {
         authId: request.user.userId,
         updateData,
       })
-    );
+    ));
   }
 
   @Post('shop/create')
@@ -137,12 +139,12 @@ export class SellerController {
     @Req() request: { user: { userId: string } },
     @Body() shopData: CreateShopDto
   ) {
-    return await firstValueFrom(
+    return await this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
       this.sellerService.send('create-shop', {
         authId: request.user.userId,
         shopData,
       })
-    );
+    ));
   }
 
   @Post('shop')
@@ -156,12 +158,12 @@ export class SellerController {
     @Req() request: { user: { userId: string } },
     @Body() shopData: UpdateShopDto
   ) {
-    return await firstValueFrom(
+    return await this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
       this.sellerService.send('create-or-update-shop', {
         authId: request.user.userId,
         shopData,
       })
-    );
+    ));
   }
 
   @Get('shop')
@@ -172,9 +174,9 @@ export class SellerController {
   })
   @ApiResponse({ status: 404, description: 'Seller profile not found.' })
   async getShop(@Req() request: { user: { userId: string } }) {
-    return await firstValueFrom(
+    return await this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
       this.sellerService.send('get-seller-shop', request.user.userId)
-    );
+    ));
   }
 
   @Get('dashboard')
@@ -185,9 +187,9 @@ export class SellerController {
   })
   @ApiResponse({ status: 404, description: 'Seller profile not found.' })
   async getDashboardData(@Req() request: { user: { userId: string } }) {
-    return await firstValueFrom(
+    return await this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
       this.sellerService.send('get-seller-dashboard', request.user.userId)
-    );
+    ));
   }
 
   @Get('statistics')
@@ -215,9 +217,9 @@ export class SellerController {
       `Fetching statistics for seller authId: ${request.user.userId}`
     );
 
-    return firstValueFrom(
+    return this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
       this.sellerService.send('seller-get-statistics', request.user.userId)
-    );
+    ));
   }
 
   // NOTIFICATION PREFERENCES ENDPOINTS
@@ -233,12 +235,12 @@ export class SellerController {
   async getNotificationPreferences(
     @Req() request: { user: { userId: string } }
   ) {
-    return firstValueFrom(
+    return this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
       this.sellerService.send(
         'get-seller-notification-preferences',
         request.user.userId
       )
-    );
+    ));
   }
 
   @Put('notification-preferences')
@@ -253,12 +255,12 @@ export class SellerController {
     @Req() request: { user: { userId: string } },
     @Body() preferences: Record<string, boolean>
   ) {
-    return firstValueFrom(
+    return this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
       this.sellerService.send('update-seller-notification-preferences', {
         authId: request.user.userId,
         preferences,
       })
-    );
+    ));
   }
 
   // IMAGE UPLOAD ENDPOINT
@@ -364,9 +366,9 @@ export class SellerController {
     this.validateFiles(files);
 
     // Get seller's shop (one seller = one shop)
-    const shop = await firstValueFrom(
+    const shop = await this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
       this.sellerService.send('get-seller-shop', user.userId)
-    );
+    ));
 
     if (!shop || !shop.id) {
       throw new BadRequestException(
@@ -386,14 +388,14 @@ export class SellerController {
     // Extract URLs from upload results
     const imageUrls = uploadResults.map((result) => result.url);
 
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-create-product', {
         sellerId: user.userId,
         shopId: shop.id, // Auto-populated from seller's shop
         productData,
         imageUrls,
       })
-    );
+    ));
   }
 
   @Get('products')
@@ -415,9 +417,9 @@ export class SellerController {
     const user = req.user as { userId: string };
 
     // Get seller's shop (one seller = one shop)
-    const shop = await firstValueFrom(
+    const shop = await this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
       this.sellerService.send('get-seller-shop', user.userId)
-    );
+    ));
 
     if (!shop || !shop.id) {
       throw new BadRequestException(
@@ -429,7 +431,7 @@ export class SellerController {
       `Fetching products for seller: ${user.userId}, shop: ${shop.id}`
     );
 
-    const products = await firstValueFrom(
+    const products = await this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-get-products', {
         sellerId: user.userId,
         shopId: shop.id, // Auto-populated from seller's shop
@@ -440,7 +442,7 @@ export class SellerController {
           search,
         },
       })
-    );
+    ));
 
     this.logger.debug(`Found ${products.length} products`);
 
@@ -467,9 +469,9 @@ export class SellerController {
     const user = req.user as { userId: string };
 
     // Get seller's shop (one seller = one shop)
-    const shop = await firstValueFrom(
+    const shop = await this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
       this.sellerService.send('get-seller-shop', user.userId)
-    );
+    ));
 
     if (!shop || !shop.id) {
       throw new BadRequestException(
@@ -481,7 +483,7 @@ export class SellerController {
       `Fetching deleted products for seller: ${user.userId}, shop: ${shop.id}`
     );
 
-    const products = await firstValueFrom(
+    const products = await this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-get-deleted-products', {
         shopId: shop.id,
         filters: {
@@ -489,7 +491,7 @@ export class SellerController {
           search,
         },
       })
-    );
+    ));
 
     this.logger.debug(`Found ${products.length} deleted products`);
 
@@ -512,12 +514,12 @@ export class SellerController {
   ) {
     const user = req.user as { userId: string };
 
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-get-product', {
         id,
         sellerId: user.userId,
       })
-    );
+    ));
   }
 
   @Put('products/:id')
@@ -544,14 +546,14 @@ export class SellerController {
     // Extract images array from productData (already ImageKit URLs via eager upload)
     const { images, ...cleanProductData } = productData;
 
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-update-product', {
         id,
         sellerId: user.userId,
         productData: cleanProductData,
         imageUrls: images, // Pass images as imageUrls to microservice
       })
-    );
+    ));
   }
 
   @Delete('products/:id')
@@ -570,12 +572,12 @@ export class SellerController {
   ) {
     const user = req.user as { userId: string };
 
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-delete-product', {
         id,
         sellerId: user.userId,
       })
-    );
+    ));
   }
 
   @Post('products/:id/restore')
@@ -595,12 +597,12 @@ export class SellerController {
   ) {
     const user = req.user as { userId: string };
 
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-restore-product', {
         id,
         sellerId: user.userId,
       })
-    );
+    ));
   }
 }
 
@@ -611,7 +613,8 @@ export class PublicShopsController {
 
   constructor(
     @Inject('SELLER_SERVICE') private readonly sellerService: ClientProxy,
-    @Inject('USER_SERVICE') private readonly userService: ClientProxy
+    @Inject('USER_SERVICE') private readonly userService: ClientProxy,
+    private readonly cb: CircuitBreakerService
   ) {}
 
   @Get()
@@ -686,7 +689,7 @@ export class PublicShopsController {
     const limit = limitStr ? parseInt(limitStr, 10) : 12;
     const offset = offsetStr ? parseInt(offsetStr, 10) : 0;
 
-    return firstValueFrom(
+    return this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
       this.sellerService.send('seller-get-filtered-shops', {
         search,
         category,
@@ -695,7 +698,7 @@ export class PublicShopsController {
         limit,
         offset,
       })
-    );
+    ));
   }
 
   @Get(':shopId')
@@ -728,9 +731,9 @@ export class PublicShopsController {
   async getShopById(@Param('shopId') shopId: string) {
     this.logger.log(`Fetching shop details for shopId: ${shopId}`);
 
-    return firstValueFrom(
+    return this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
       this.sellerService.send('seller-get-shop-by-id', { shopId })
-    );
+    ));
   }
 
   // SHOP FOLLOW ENDPOINTS
@@ -761,12 +764,12 @@ export class PublicShopsController {
   ) {
     this.logger.log(`User ${request.user.userId} following shop ${shopId}`);
 
-    return firstValueFrom(
+    return this.cb.fire('USER_SERVICE', () => firstValueFrom(
       this.userService.send('user-follow-shop', {
         userId: request.user.userId,
         shopId,
       })
-    );
+    ));
   }
 
   @Delete(':shopId/follow')
@@ -794,12 +797,12 @@ export class PublicShopsController {
   ) {
     this.logger.log(`User ${request.user.userId} unfollowing shop ${shopId}`);
 
-    return firstValueFrom(
+    return this.cb.fire('USER_SERVICE', () => firstValueFrom(
       this.userService.send('user-unfollow-shop', {
         userId: request.user.userId,
         shopId,
       })
-    );
+    ));
   }
 
   @Get(':shopId/followers/count')
@@ -818,9 +821,9 @@ export class PublicShopsController {
     },
   })
   async getShopFollowersCount(@Param('shopId') shopId: string) {
-    return firstValueFrom(
+    return this.cb.fire('USER_SERVICE', () => firstValueFrom(
       this.userService.send('user-get-shop-followers-count', shopId)
-    );
+    ));
   }
 
   @Get(':shopId/followers/check')
@@ -848,11 +851,11 @@ export class PublicShopsController {
     @Param('shopId') shopId: string,
     @Req() request: { user: { userId: string } }
   ) {
-    return firstValueFrom(
+    return this.cb.fire('USER_SERVICE', () => firstValueFrom(
       this.userService.send('user-check-shop-follow', {
         userId: request.user.userId,
         shopId,
       })
-    );
+    ));
   }
 }

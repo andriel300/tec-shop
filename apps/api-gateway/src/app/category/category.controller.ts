@@ -24,11 +24,15 @@ import { Roles } from '../../decorators/roles.decorator';
 import * as Dto from '@tec-shop/dto';
 
 import { Throttle } from '@nestjs/throttler';
+import { CircuitBreakerService } from '../../common/circuit-breaker.service';
 
 @ApiTags('Categories')
 @Controller('categories')
 export class CategoryController {
-  constructor(@Inject('PRODUCT_SERVICE') private productService: ClientProxy) {}
+  constructor(
+    @Inject('PRODUCT_SERVICE') private productService: ClientProxy,
+    private readonly cb: CircuitBreakerService
+  ) {}
 
   /**
    * Get all categories (public)
@@ -86,13 +90,13 @@ export class CategoryController {
     @Query('onlyActive') onlyActive?: boolean,
     @Query('parentId') parentId?: string
   ) {
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-get-all-categories', {
         includeChildren: includeChildren === true,
         onlyActive: onlyActive !== false, // Default to true
         parentId: parentId || null,
       })
-    );
+    ));
   }
 
   /**
@@ -147,12 +151,12 @@ export class CategoryController {
     },
   })
   async getCategoryTree(@Query('onlyActive') onlyActive?: boolean) {
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send(
         'product-get-category-tree',
         onlyActive !== false
       )
-    );
+    ));
   }
 
   /**
@@ -168,13 +172,13 @@ export class CategoryController {
     @Query('includeChildren') includeChildren?: boolean,
     @Query('includeProducts') includeProducts?: boolean
   ) {
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-get-category', {
         id,
         includeChildren: includeChildren === true,
         includeProducts: includeProducts === true,
       })
-    );
+    ));
   }
 
   /**
@@ -189,12 +193,12 @@ export class CategoryController {
     @Param('slug') slug: string,
     @Query('includeChildren') includeChildren?: boolean
   ) {
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-get-category-by-slug', {
         slug,
         includeChildren: includeChildren === true,
       })
-    );
+    ));
   }
 
   /**
@@ -212,9 +216,9 @@ export class CategoryController {
     description: 'Forbidden - Admin access required.',
   })
   async createCategory(@Body() createCategoryDto: Dto.CreateCategoryDto) {
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-create-category', createCategoryDto)
-    );
+    ));
   }
 
   /**
@@ -235,12 +239,12 @@ export class CategoryController {
     @Param('id') id: string,
     @Body() updateCategoryDto: Dto.UpdateCategoryDto
   ) {
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-update-category', {
         id,
         updateCategoryDto,
       })
-    );
+    ));
   }
 
   /**
@@ -258,8 +262,8 @@ export class CategoryController {
     description: 'Forbidden - Admin access required.',
   })
   async deleteCategory(@Param('id') id: string) {
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-delete-category', id)
-    );
+    ));
   }
 }

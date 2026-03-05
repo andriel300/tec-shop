@@ -35,6 +35,7 @@ import type {
   UpdateHeroSlideDto,
   ReorderHeroSlidesDto,
 } from '@tec-shop/dto';
+import { CircuitBreakerService } from '../../common/circuit-breaker.service';
 
 @ApiTags('Admin')
 @Controller('admin')
@@ -45,7 +46,8 @@ export class AdminController {
   private readonly logger = new Logger(AdminController.name);
 
   constructor(
-    @Inject('ADMIN_SERVICE') private readonly adminService: ClientProxy
+    @Inject('ADMIN_SERVICE') private readonly adminService: ClientProxy,
+    private readonly cb: CircuitBreakerService
   ) {}
 
   // ============ User Management Endpoints ============
@@ -60,9 +62,9 @@ export class AdminController {
   @ApiQuery({ name: 'status', required: false, enum: ['ACTIVE', 'BANNED'] })
   async listUsers(@Query() query: ListUsersDto) {
     this.logger.log(`Listing users with filters: ${JSON.stringify(query)}`);
-    return await firstValueFrom(
+    return await this.cb.fire('ADMIN_SERVICE', () => firstValueFrom(
       this.adminService.send('admin.listUsers', query)
-    );
+    ));
   }
 
   @Get('users/:id')
@@ -71,9 +73,9 @@ export class AdminController {
   @ApiResponse({ status: 404, description: 'User not found' })
   async getUserDetails(@Param('id') userId: string) {
     this.logger.log(`Getting user details: ${userId}`);
-    return await firstValueFrom(
+    return await this.cb.fire('ADMIN_SERVICE', () => firstValueFrom(
       this.adminService.send('admin.getUserDetails', userId)
-    );
+    ));
   }
 
   @Post('users/:id/ban')
@@ -86,9 +88,9 @@ export class AdminController {
     @Body() dto: BanUserDto
   ) {
     this.logger.log(`Banning user: ${userId}`);
-    return await firstValueFrom(
+    return await this.cb.fire('ADMIN_SERVICE', () => firstValueFrom(
       this.adminService.send('admin.banUser', { userId, dto })
-    );
+    ));
   }
 
   @Post('users/:id/unban')
@@ -98,9 +100,9 @@ export class AdminController {
   @ApiResponse({ status: 400, description: 'User is not banned' })
   async unbanUser(@Param('id') userId: string) {
     this.logger.log(`Unbanning user: ${userId}`);
-    return await firstValueFrom(
+    return await this.cb.fire('ADMIN_SERVICE', () => firstValueFrom(
       this.adminService.send('admin.unbanUser', userId)
-    );
+    ));
   }
 
   // ============ Admin Team Management Endpoints ============
@@ -110,9 +112,9 @@ export class AdminController {
   @ApiResponse({ status: 200, description: 'Admins retrieved successfully' })
   async listAdmins() {
     this.logger.log('Listing all admin users');
-    return await firstValueFrom(
+    return await this.cb.fire('ADMIN_SERVICE', () => firstValueFrom(
       this.adminService.send('admin.listAdmins', {})
-    );
+    ));
   }
 
   @Post('admins')
@@ -121,9 +123,9 @@ export class AdminController {
   @ApiResponse({ status: 409, description: 'Email already exists' })
   async createAdmin(@Body() dto: CreateAdminDto) {
     this.logger.log(`Creating new admin: ${dto.email}`);
-    return await firstValueFrom(
+    return await this.cb.fire('ADMIN_SERVICE', () => firstValueFrom(
       this.adminService.send('admin.createAdmin', dto)
-    );
+    ));
   }
 
   @Delete('admins/:id')
@@ -133,9 +135,9 @@ export class AdminController {
   @ApiResponse({ status: 400, description: 'Cannot delete last admin or non-admin user' })
   async deleteAdmin(@Param('id') adminId: string) {
     this.logger.log(`Deleting admin: ${adminId}`);
-    return await firstValueFrom(
+    return await this.cb.fire('ADMIN_SERVICE', () => firstValueFrom(
       this.adminService.send('admin.deleteAdmin', adminId)
-    );
+    ));
   }
 
   // ============ Seller Management Endpoints ============
@@ -149,9 +151,9 @@ export class AdminController {
   @ApiQuery({ name: 'isVerified', required: false, type: Boolean })
   async listSellers(@Query() query: ListSellersDto) {
     this.logger.log(`Listing sellers with filters: ${JSON.stringify(query)}`);
-    return await firstValueFrom(
+    return await this.cb.fire('ADMIN_SERVICE', () => firstValueFrom(
       this.adminService.send('admin.listSellers', query)
-    );
+    ));
   }
 
   @Put('sellers/:id/verification')
@@ -163,9 +165,9 @@ export class AdminController {
     @Body() dto: UpdateSellerVerificationDto
   ) {
     this.logger.log(`Updating seller verification: ${sellerId}`);
-    return await firstValueFrom(
+    return await this.cb.fire('ADMIN_SERVICE', () => firstValueFrom(
       this.adminService.send('admin.updateSellerVerification', { sellerId, dto })
-    );
+    ));
   }
 
   // ============ Order Management Endpoints ============
@@ -181,9 +183,9 @@ export class AdminController {
   @ApiQuery({ name: 'endDate', required: false, type: String })
   async listAllOrders(@Query() query: ListOrdersDto) {
     this.logger.log(`Listing all orders with filters: ${JSON.stringify(query)}`);
-    return await firstValueFrom(
+    return await this.cb.fire('ADMIN_SERVICE', () => firstValueFrom(
       this.adminService.send('admin.listAllOrders', query)
-    );
+    ));
   }
 
   // ============ Statistics Endpoints ============
@@ -193,9 +195,9 @@ export class AdminController {
   @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
   async getStatistics() {
     this.logger.log('Fetching platform statistics');
-    return await firstValueFrom(
+    return await this.cb.fire('ADMIN_SERVICE', () => firstValueFrom(
       this.adminService.send('admin.getStatistics', {})
-    );
+    ));
   }
 
   // ============ Site Layout Endpoints ============
@@ -205,9 +207,9 @@ export class AdminController {
   @ApiResponse({ status: 200, description: 'Layout retrieved successfully' })
   async getLayout() {
     this.logger.log('Fetching site layout');
-    return await firstValueFrom(
+    return await this.cb.fire('ADMIN_SERVICE', () => firstValueFrom(
       this.adminService.send('admin.getLayout', {})
-    );
+    ));
   }
 
   @Put('layout')
@@ -215,9 +217,9 @@ export class AdminController {
   @ApiResponse({ status: 200, description: 'Layout updated successfully' })
   async updateLayout(@Body() dto: UpdateLayoutDto) {
     this.logger.log('Updating site layout');
-    return await firstValueFrom(
+    return await this.cb.fire('ADMIN_SERVICE', () => firstValueFrom(
       this.adminService.send('admin.updateLayout', dto)
-    );
+    ));
   }
 
   // ============ Hero Slide Endpoints ============
@@ -227,9 +229,9 @@ export class AdminController {
   @ApiResponse({ status: 200, description: 'Hero slides reordered successfully' })
   async reorderHeroSlides(@Body() dto: ReorderHeroSlidesDto) {
     this.logger.log('Reordering hero slides');
-    return await firstValueFrom(
+    return await this.cb.fire('ADMIN_SERVICE', () => firstValueFrom(
       this.adminService.send('admin.reorderHeroSlides', dto)
-    );
+    ));
   }
 
   @Post('layout/hero-slides')
@@ -237,9 +239,9 @@ export class AdminController {
   @ApiResponse({ status: 201, description: 'Hero slide created successfully' })
   async createHeroSlide(@Body() dto: CreateHeroSlideDto) {
     this.logger.log(`Creating hero slide: ${dto.title}`);
-    return await firstValueFrom(
+    return await this.cb.fire('ADMIN_SERVICE', () => firstValueFrom(
       this.adminService.send('admin.createHeroSlide', dto)
-    );
+    ));
   }
 
   @Put('layout/hero-slides/:id')
@@ -251,9 +253,9 @@ export class AdminController {
     @Body() dto: UpdateHeroSlideDto
   ) {
     this.logger.log(`Updating hero slide: ${slideId}`);
-    return await firstValueFrom(
+    return await this.cb.fire('ADMIN_SERVICE', () => firstValueFrom(
       this.adminService.send('admin.updateHeroSlide', { slideId, dto })
-    );
+    ));
   }
 
   @Delete('layout/hero-slides/:id')
@@ -262,8 +264,8 @@ export class AdminController {
   @ApiResponse({ status: 404, description: 'Hero slide not found' })
   async deleteHeroSlide(@Param('id') slideId: string) {
     this.logger.log(`Deleting hero slide: ${slideId}`);
-    return await firstValueFrom(
+    return await this.cb.fire('ADMIN_SERVICE', () => firstValueFrom(
       this.adminService.send('admin.deleteHeroSlide', slideId)
-    );
+    ));
   }
 }
