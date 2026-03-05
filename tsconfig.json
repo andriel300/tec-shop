@@ -143,6 +143,9 @@
     },
     {
       "path": "./libs/shared/redis-client"
+    },
+    {
+      "path": "./libs/shared/metrics"
     }
   ]
 }

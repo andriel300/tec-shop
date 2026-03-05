@@ -48,7 +48,14 @@ async function bootstrap() {
     }
 
     // Build Kafka client configuration
-    const clientConfig: { clientId: string; brokers: string[]; connectionTimeout: number; requestTimeout: number; ssl?: boolean; sasl?: { mechanism: 'scram-sha-256'; username: string; password: string } } = {
+    const clientConfig: {
+      clientId: string;
+      brokers: string[];
+      connectionTimeout: number;
+      requestTimeout: number;
+      ssl?: boolean;
+      sasl?: { mechanism: 'scram-sha-256'; username: string; password: string };
+    } = {
       clientId: 'kafka-service',
       brokers: [kafkaBroker],
       connectionTimeout: 10000,
@@ -64,30 +71,28 @@ async function bootstrap() {
       };
     }
 
-    // Create Kafka microservice
-    const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-      AppModule,
-      {
-        transport: Transport.KAFKA,
-        options: {
-          client: clientConfig,
-          consumer: {
-            groupId: 'kafka-service-group',
-            sessionTimeout: 30000,
-            heartbeatInterval: 3000,
-            allowAutoTopicCreation: false,
-          },
-        },
-      }
-    );
+    const app = await NestFactory.create(AppModule, { bufferLogs: true });
 
-    // Start microservice
-    await app.listen();
+    app.connectMicroservice<MicroserviceOptions>({
+      transport: Transport.KAFKA,
+      options: {
+        client: clientConfig,
+        consumer: {
+          groupId: 'kafka-service-group',
+          sessionTimeout: 30000,
+          heartbeatInterval: 3000,
+          allowAutoTopicCreation: false,
+        },
+      },
+    });
+
+    await app.startAllMicroservices();
+    const metricsPort = parseInt(process.env.KAFKA_SERVICE_METRICS_PORT ?? '9009', 10);
+    await app.listen(metricsPort, '0.0.0.0');
+
     logger.log('Kafka microservice connected successfully');
-    logger.log(
-      'Listening to topic: users-event (group: kafka-service-group)'
-    );
-    logger.log('Kafka service is ready to process analytics events');
+    logger.log('Listening to topic: users-event (group: kafka-service-group)');
+    logger.log(`Kafka service ready to process analytics events, metrics on port ${metricsPort}`);
   } catch (error) {
     logger.error(
       'Failed to bootstrap Kafka microservice',

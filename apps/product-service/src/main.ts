@@ -11,22 +11,20 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 async function bootstrap() {
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(PinoLogger));
+
   // Load mTLS certificates
   const certsPath = join(process.cwd(), 'certs');
   const tlsOptions = {
-    key: readFileSync(
-      join(certsPath, 'product-service/product-service-key.pem')
-    ),
-    cert: readFileSync(
-      join(certsPath, 'product-service/product-service-cert.pem')
-    ),
+    key: readFileSync(join(certsPath, 'product-service/product-service-key.pem')),
+    cert: readFileSync(join(certsPath, 'product-service/product-service-cert.pem')),
     ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
     requestCert: true,
     rejectUnauthorized: true,
   };
 
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    AppModule,
+  app.connectMicroservice<MicroserviceOptions>(
     {
       transport: Transport.TCP,
       options: {
@@ -34,25 +32,27 @@ async function bootstrap() {
         port: 6004,
         tlsOptions,
       },
-    }
+    },
+    { inheritAppConfig: true },
   );
 
-  app.useLogger(app.get(PinoLogger));
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // Strip non-whitelisted properties
-      forbidNonWhitelisted: true, // Throw error for non-whitelisted properties
-      transform: true, // Transform payloads to DTO instances
-      disableErrorMessages: process.env.NODE_ENV === 'production', // Hide validation details in production
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      disableErrorMessages: process.env.NODE_ENV === 'production',
       validationError: {
-        target: false, // Don't expose target object
-        value: false, // Don't expose submitted values
+        target: false,
+        value: false,
       },
-    })
+    }),
   );
 
-  await app.listen();
-  Logger.log('🚀 Product-service is running on TCP port 6004 with mTLS');
+  await app.startAllMicroservices();
+  const metricsPort = parseInt(process.env.PRODUCT_METRICS_PORT ?? '9004', 10);
+  await app.listen(metricsPort, '0.0.0.0');
+  Logger.log(`product-service TCP on port 6004 with mTLS, metrics on port ${metricsPort}`);
 }
 
 bootstrap();

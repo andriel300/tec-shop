@@ -11,43 +11,47 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 async function bootstrap() {
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(PinoLogger));
+
   // Load mTLS certificates
   const certsPath = join(process.cwd(), 'certs');
   const tlsOptions = {
     key: readFileSync(join(certsPath, 'seller-service/seller-service-key.pem')),
-    cert: readFileSync(
-      join(certsPath, 'seller-service/seller-service-cert.pem')
-    ),
+    cert: readFileSync(join(certsPath, 'seller-service/seller-service-cert.pem')),
     ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
     requestCert: true,
     rejectUnauthorized: true,
   };
 
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    AppModule,
+  app.connectMicroservice<MicroserviceOptions>(
     {
       transport: Transport.TCP,
       options: {
-        host: process.env.SELLER_SERVICE_HOST || 'localhost',
-        port: parseInt(process.env.SELLER_SERVICE_PORT || '6003', 10),
+        host: process.env.SELLER_SERVICE_HOST ?? 'localhost',
+        port: parseInt(process.env.SELLER_SERVICE_PORT ?? '6003', 10),
         tlsOptions,
       },
-    }
+    },
+    { inheritAppConfig: true },
   );
-  app.useLogger(app.get(PinoLogger));
+
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // Strip non-whitelisted properties
-      forbidNonWhitelisted: true, // Throw error for non-whitelisted properties
-      transform: true, // Transform payloads to DTO instances
-      disableErrorMessages: process.env.NODE_ENV === 'production', // Hide validation details in production
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      disableErrorMessages: process.env.NODE_ENV === 'production',
       validationError: {
-        target: false, // Don't expose target object
-        value: false, // Don't expose submitted values
+        target: false,
+        value: false,
       },
-    })
+    }),
   );
-  await app.listen();
-  Logger.log('🚀 Seller-service is running on TCP port 6003 with mTLS');
+
+  await app.startAllMicroservices();
+  const metricsPort = parseInt(process.env.SELLER_METRICS_PORT ?? '9003', 10);
+  await app.listen(metricsPort, '0.0.0.0');
+  Logger.log(`seller-service TCP on port ${process.env.SELLER_SERVICE_PORT ?? 6003} with mTLS, metrics on port ${metricsPort}`);
 }
 bootstrap();

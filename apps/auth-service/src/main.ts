@@ -11,6 +11,9 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 async function bootstrap() {
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(PinoLogger));
+
   // Load mTLS certificates
   const certsPath = join(process.cwd(), 'certs');
   const tlsOptions = {
@@ -21,8 +24,7 @@ async function bootstrap() {
     rejectUnauthorized: true,
   };
 
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    AppModule,
+  app.connectMicroservice<MicroserviceOptions>(
     {
       transport: Transport.TCP,
       options: {
@@ -30,20 +32,26 @@ async function bootstrap() {
         port: 6001,
         tlsOptions,
       },
-    }
-  );
-  app.useLogger(app.get(PinoLogger));
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,           // Strip non-whitelisted properties
-    forbidNonWhitelisted: true, // Throw error for non-whitelisted properties
-    transform: true,           // Transform payloads to DTO instances
-    disableErrorMessages: process.env.NODE_ENV === 'production', // Hide validation details in production
-    validationError: {
-      target: false,           // Don't expose target object
-      value: false,           // Don't expose submitted values
     },
-  }));
-  await app.listen();
-  Logger.log('🚀 Application auth-service is running on TCP port 6001 with mTLS');
+    { inheritAppConfig: true },
+  );
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      disableErrorMessages: process.env.NODE_ENV === 'production',
+      validationError: {
+        target: false,
+        value: false,
+      },
+    }),
+  );
+
+  await app.startAllMicroservices();
+  const metricsPort = parseInt(process.env.AUTH_METRICS_PORT ?? '9001', 10);
+  await app.listen(metricsPort, '0.0.0.0');
+  Logger.log(`auth-service TCP on port 6001 with mTLS, metrics on port ${metricsPort}`);
 }
 bootstrap();

@@ -11,6 +11,9 @@ import { join } from 'path';
 import { Logger as PinoLogger } from 'nestjs-pino';
 
 async function bootstrap() {
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(PinoLogger));
+
   // Load mTLS certificates
   const certsPath = join(process.cwd(), 'certs');
   const tlsOptions = {
@@ -21,33 +24,34 @@ async function bootstrap() {
     rejectUnauthorized: true,
   };
 
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    AppModule,
+  app.connectMicroservice<MicroserviceOptions>(
     {
       transport: Transport.TCP,
       options: {
-        host: process.env.USER_SERVICE_HOST || 'localhost',
-        port: parseInt(process.env.USER_SERVICE_PORT || '6002', 10),
+        host: process.env.USER_SERVICE_HOST ?? 'localhost',
+        port: parseInt(process.env.USER_SERVICE_PORT ?? '6002', 10),
         tlsOptions,
       },
-    }
+    },
+    { inheritAppConfig: true },
   );
-  app.useLogger(app.get(PinoLogger));
+
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // Strip non-whitelisted properties
-      forbidNonWhitelisted: true, // Throw error for non-whitelisted properties
-      transform: true, // Transform payloads to DTO instances
-      disableErrorMessages: process.env.NODE_ENV === 'production', // Hide validation details in production
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      disableErrorMessages: process.env.NODE_ENV === 'production',
       validationError: {
-        target: false, // Don't expose target object
-        value: false, // Don't expose submitted values
+        target: false,
+        value: false,
       },
-    })
+    }),
   );
-  await app.listen();
-  Logger.log(
-    '🚀 Application user-service is running on TCP port 6002 with mTLS'
-  );
+
+  await app.startAllMicroservices();
+  const metricsPort = parseInt(process.env.USER_METRICS_PORT ?? '9002', 10);
+  await app.listen(metricsPort, '0.0.0.0');
+  Logger.log(`user-service TCP on port ${process.env.USER_SERVICE_PORT ?? 6002} with mTLS, metrics on port ${metricsPort}`);
 }
 bootstrap();

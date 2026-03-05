@@ -5,9 +5,11 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { LoggerModule } from 'nestjs-pino';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LogProducerModule } from '@tec-shop/logger-producer';
+import { MetricsModule } from '@tec-shop/metrics';
 
 @Module({
   imports: [
+    MetricsModule,
     PrismaModule,
     ConfigModule.forRoot({ isGlobal: true }),
     LogProducerModule.forRoot({ clientId: 'user-service' }),

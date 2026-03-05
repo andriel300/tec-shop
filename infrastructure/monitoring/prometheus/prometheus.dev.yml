@@ -1,0 +1,74 @@
+# Prometheus configuration for local development
+# Services run on host via `nx serve`; Prometheus runs in Docker.
+# host.docker.internal resolves to the host machine from within the container.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+  external_labels:
+    project: tec-shop
+    environment: development
+
+rule_files:
+  - "alerts/alerts.yml"
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "api-gateway"
+    static_configs:
+      - targets: ["host.docker.internal:8080"]
+    metrics_path: /metrics
+
+  - job_name: "auth-service"
+    static_configs:
+      - targets: ["host.docker.internal:9001"]
+    metrics_path: /metrics
+
+  - job_name: "user-service"
+    static_configs:
+      - targets: ["host.docker.internal:9002"]
+    metrics_path: /metrics
+
+  - job_name: "seller-service"
+    static_configs:
+      - targets: ["host.docker.internal:9003"]
+    metrics_path: /metrics
+
+  - job_name: "product-service"
+    static_configs:
+      - targets: ["host.docker.internal:9004"]
+    metrics_path: /metrics
+
+  - job_name: "order-service"
+    static_configs:
+      - targets: ["host.docker.internal:9005"]
+    metrics_path: /metrics
+
+  - job_name: "admin-service"
+    static_configs:
+      - targets: ["host.docker.internal:9006"]
+    metrics_path: /metrics
+
+  - job_name: "chatting-service"
+    static_configs:
+      - targets: ["host.docker.internal:6007"]
+    metrics_path: /metrics
+
+  - job_name: "logger-service"
+    static_configs:
+      - targets: ["host.docker.internal:6008"]
+    metrics_path: /metrics
+
+  - job_name: "kafka-service"
+    static_configs:
+      - targets: ["host.docker.internal:9009"]
+    metrics_path: /metrics
+
+  - job_name: "recommendation-service"
+    static_configs:
+      - targets: ["host.docker.internal:9010"]
+    metrics_path: /metrics

@@ -10,6 +10,7 @@ import { DiscountModule } from './discount/discount.module';
 import { EventModule } from './event/event.module';
 import { NotificationModule } from './notification/notification.module';
 import { LogProducerModule } from '@tec-shop/logger-producer';
+import { MetricsModule } from '@tec-shop/metrics';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { LogProducerModule } from '@tec-shop/logger-producer';
         },
       }),
     }),
+    MetricsModule,
     PrismaModule,
     LogProducerModule.forRoot({ clientId: 'seller-service' }),
     SellerModule,

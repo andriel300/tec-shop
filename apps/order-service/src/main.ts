@@ -7,6 +7,9 @@ import { join } from 'path';
 import { Logger as PinoLogger } from 'nestjs-pino';
 
 async function bootstrap() {
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(PinoLogger));
+
   // Load mTLS certificates
   const certsPath = join(process.cwd(), 'certs');
   const tlsOptions = {
@@ -17,19 +20,18 @@ async function bootstrap() {
     rejectUnauthorized: true,
   };
 
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    AppModule,
+  app.connectMicroservice<MicroserviceOptions>(
     {
       transport: Transport.TCP,
       options: {
-        host: process.env.ORDER_SERVICE_HOST || 'localhost',
-        port: parseInt(process.env.ORDER_SERVICE_PORT || '6005', 10),
+        host: process.env.ORDER_SERVICE_HOST ?? 'localhost',
+        port: parseInt(process.env.ORDER_SERVICE_PORT ?? '6005', 10),
         tlsOptions,
       },
-    }
+    },
+    { inheritAppConfig: true },
   );
 
-  app.useLogger(app.get(PinoLogger));
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -40,13 +42,13 @@ async function bootstrap() {
         target: false,
         value: false,
       },
-    })
+    }),
   );
 
-  await app.listen();
-  Logger.log(
-    `🚀 Order Service is running on TCP port ${process.env.ORDER_SERVICE_PORT || 6005} with mTLS`
-  );
+  await app.startAllMicroservices();
+  const metricsPort = parseInt(process.env.ORDER_METRICS_PORT ?? '9005', 10);
+  await app.listen(metricsPort, '0.0.0.0');
+  Logger.log(`order-service TCP on port ${process.env.ORDER_SERVICE_PORT ?? 6005} with mTLS, metrics on port ${metricsPort}`);
 }
 
 bootstrap();
