@@ -7,6 +7,12 @@
       "path": "../../libs/prisma-clients/analytics-client"
     },
     {
+      "path": "../../libs/shared/tracing"
+    },
+    {
+      "path": "../../libs/shared/metrics"
+    },
+    {
       "path": "./tsconfig.app.json"
     }
   ]

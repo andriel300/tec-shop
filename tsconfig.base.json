@@ -36,12 +36,12 @@
       "@tec-shop/i18n": ["libs/shared/i18n/src/index.ts"],
       "@tec-shop/interceptor": ["libs/shared/interceptor/src/index.ts"],
       "@tec-shop/kafka-events": ["libs/shared/kafka-events/src/index.ts"],
-      "@tec-shop/metrics": ["libs/shared/metrics/src/index.ts"],
       "@tec-shop/logger-client": [
         "libs/prisma-clients/logger-client/src/index.ts"
       ],
       "@tec-shop/logger-prisma-client": ["node_modules/.prisma/logger-client"],
       "@tec-shop/logger-producer": ["libs/shared/logger-producer/src/index.ts"],
+      "@tec-shop/metrics": ["libs/shared/metrics/src/index.ts"],
       "@tec-shop/notification-producer": [
         "libs/shared/notification-producer/src/index.ts"
       ],
@@ -60,6 +60,7 @@
       "@tec-shop/service-auth": ["libs/shared/service-auth/src/index.ts"],
       "@tec-shop/shared-validation": ["libs/shared/validation/src/index.ts"],
       "@tec-shop/shared/imagekit": ["libs/shared/imagekit/src/index.ts"],
+      "@tec-shop/tracing": ["libs/shared/tracing/src/index.ts"],
       "@tec-shop/user-client": ["libs/prisma-clients/user-client/src/index.ts"],
       "@tec-shop/user-prisma-client": ["node_modules/.prisma/user-client"],
       "@tec-shop/user-service/*": ["apps/user-service/src/*"],

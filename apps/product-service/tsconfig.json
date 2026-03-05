@@ -7,6 +7,9 @@
       "path": "../../libs/prisma-clients/seller-client"
     },
     {
+      "path": "../../libs/shared/tracing"
+    },
+    {
       "path": "../../libs/prisma-clients/product-client"
     },
     {
@@ -14,6 +17,9 @@
     },
     {
       "path": "../../libs/shared/notification-producer"
+    },
+    {
+      "path": "../../libs/shared/metrics"
     },
     {
       "path": "../../libs/shared/logger-producer"

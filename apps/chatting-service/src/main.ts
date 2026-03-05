@@ -1,3 +1,9 @@
+import { initializeTracing } from '@tec-shop/tracing';
+initializeTracing('chatting-service');
+
+import { initializeSentry } from './instrumentation';
+initializeSentry('chatting-service', process.env.CHATTING_SERVICE_PORT ?? '6007');
+
 import { NestFactory } from '@nestjs/core';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { AppModule } from './app/app.module';

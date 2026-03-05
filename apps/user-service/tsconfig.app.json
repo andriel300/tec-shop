@@ -26,6 +26,12 @@
       "path": "../../libs/prisma-clients/user-client/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/shared/tracing/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared/metrics/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/shared/logger-producer/tsconfig.lib.json"
     },
     {

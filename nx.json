@@ -56,7 +56,8 @@
         "libs/shared/kafka-events/*",
         "libs/shared/service-auth/*",
         "libs/shared/redis-client/*",
-        "libs/shared/metrics/*"
+        "libs/shared/metrics/*",
+        "libs/shared/tracing/*"
       ]
     },
     {
@@ -127,7 +128,8 @@
         "libs/shared/kafka-events/*",
         "libs/shared/service-auth/*",
         "libs/shared/redis-client/*",
-        "libs/shared/metrics/*"
+        "libs/shared/metrics/*",
+        "libs/shared/tracing/*"
       ],
       "options": {
         "typecheck": {

@@ -1,3 +1,9 @@
+import { initializeTracing } from '@tec-shop/tracing';
+initializeTracing('recommendation-service');
+
+import { initializeSentry } from './instrumentation';
+initializeSentry('recommendation-service', process.env.RECOMMENDATION_SERVICE_PORT ?? '6009');
+
 import { NestFactory } from '@nestjs/core';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { AppModule } from './app/app.module';

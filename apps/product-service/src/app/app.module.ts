@@ -12,7 +12,7 @@ import { CategoryModule } from './category/category.module';
 import { BrandModule } from './brand/brand.module';
 import { SellerClientModule } from '../clients/seller.client';
 import { LogProducerModule } from '@tec-shop/logger-producer';
-import { MetricsModule } from '@tec-shop/metrics';
+import { MetricsModule, HealthModule } from '@tec-shop/metrics';
 import { NotificationProducerModule } from '@tec-shop/notification-producer';
 
 @Module({
@@ -46,6 +46,7 @@ import { NotificationProducerModule } from '@tec-shop/notification-producer';
       }),
     }),
     MetricsModule,
+    HealthModule,
     PrismaModule,
     LogProducerModule.forRoot({ clientId: 'product-service' }),
     NotificationProducerModule.forRoot({ clientId: 'product-service-notifications' }),

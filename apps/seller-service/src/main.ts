@@ -1,4 +1,7 @@
-// Initialize Sentry FIRST before any other imports
+import { initializeTracing } from '@tec-shop/tracing';
+initializeTracing('seller-service');
+
+// Initialize Sentry before any other imports
 import { initializeSentry } from './instrumentation';
 initializeSentry('seller-service', 6003);
 

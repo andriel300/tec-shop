@@ -7,10 +7,16 @@
       "path": "../../libs/shared/redis-client"
     },
     {
+      "path": "../../libs/shared/tracing"
+    },
+    {
       "path": "../../libs/prisma-clients/chatting-client"
     },
     {
       "path": "../../libs/shared/dto"
+    },
+    {
+      "path": "../../libs/shared/metrics"
     },
     {
       "path": "./tsconfig.app.json"

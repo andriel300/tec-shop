@@ -11,6 +11,7 @@
 # Kafka UI:  http://localhost:8090
 # Prometheus: http://localhost:9090
 # Grafana:   http://localhost:3030  (admin/admin)
+# Jaeger:    http://localhost:16686
 
 networks:
   tec-shop-infra:
@@ -141,6 +142,19 @@ services:
       - ../monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
       - prometheus
+    networks:
+      - tec-shop-infra
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.52
+    container_name: tec-shop-jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "4317:4317"     # OTLP gRPC
+      - "4318:4318"     # OTLP HTTP
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
     networks:
       - tec-shop-infra
 

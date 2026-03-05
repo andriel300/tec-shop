@@ -6,7 +6,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AdminModule } from './admin/admin.module';
 import { NotificationProducerModule } from '@tec-shop/notification-producer';
-import { MetricsModule } from '@tec-shop/metrics';
+import { MetricsModule, HealthModule } from '@tec-shop/metrics';
 
 @Module({
   imports: [
@@ -38,6 +38,7 @@ import { MetricsModule } from '@tec-shop/metrics';
       }),
     }),
     MetricsModule,
+    HealthModule,
     PrismaModule,
     NotificationProducerModule.forRoot({ clientId: 'admin-service-notifications' }),
     AdminModule,

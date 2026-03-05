@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { MetricsModule } from '@tec-shop/metrics';
+import { MetricsModule, HealthModule } from '@tec-shop/metrics';
 import { LoggerModule } from 'nestjs-pino';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -9,6 +9,7 @@ import { NotificationModule } from '../notification/notification.module';
 @Module({
   imports: [
     MetricsModule,
+    HealthModule,
     LoggerCoreModule,
     NotificationModule,
     ConfigModule.forRoot({ isGlobal: true }),
