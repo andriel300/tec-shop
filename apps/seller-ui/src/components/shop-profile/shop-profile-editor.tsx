@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Link } from '@/i18n/navigation';
+import { Link } from '../../i18n/navigation';
 import {
   MapPin,
   Star,
@@ -70,7 +70,8 @@ const ShopProfileEditor: React.FC = () => {
             Set Up Your Shop
           </h2>
           <p className="text-gray-600 mb-6">
-            You haven&apos;t created a shop yet. Set up your shop to start selling.
+            You haven&apos;t created a shop yet. Set up your shop to start
+            selling.
           </p>
           <Link
             href="/dashboard/settings"
@@ -153,7 +154,9 @@ const ShopProfileEditor: React.FC = () => {
                 <span className="flex items-center gap-1.5">
                   <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
                   <span className="font-semibold text-gray-700">
-                    {statistics?.shop?.rating?.toFixed(1) ?? shop.rating?.toFixed(1) ?? 'N/A'}
+                    {statistics?.shop?.rating?.toFixed(1) ??
+                      shop.rating?.toFixed(1) ??
+                      'N/A'}
                   </span>
                 </span>
               </div>
@@ -169,7 +172,9 @@ const ShopProfileEditor: React.FC = () => {
                 <div className="flex items-center gap-1.5 text-gray-700">
                   <ShoppingBag className="w-4 h-4 text-gray-400" />
                   <span className="font-semibold">
-                    {statistics?.orders?.total?.toLocaleString() ?? shop.totalOrders?.toLocaleString() ?? 0}
+                    {statistics?.orders?.total?.toLocaleString() ??
+                      shop.totalOrders?.toLocaleString() ??
+                      0}
                   </span>
                   <span className="text-gray-500">orders</span>
                 </div>
@@ -187,7 +192,9 @@ const ShopProfileEditor: React.FC = () => {
               </Link>
 
               <Link
-                href={`${process.env.NEXT_PUBLIC_USER_UI_URL || 'http://localhost:3000'}/shops/${shop.id}`}
+                href={`${
+                  process.env.NEXT_PUBLIC_USER_UI_URL || 'http://localhost:3000'
+                }/shops/${shop.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300 transition-all"

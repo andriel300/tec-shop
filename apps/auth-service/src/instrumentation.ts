@@ -15,12 +15,9 @@ export function initializeSentry(serviceName: string, port: string | number) {
     dsn,
     environment: process.env.SENTRY_ENVIRONMENT || 'development',
 
-    // Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
-    // We recommend adjusting this value in production
-    tracesSampleRate: parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || '1.0'),
+    tracesSampleRate: parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || '0.1'),
 
-    // Profiling sample rate - set to 1.0 for development
-    profilesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+    profilesSampleRate: 0.1,
 
     integrations: [
       // Enable profiling
@@ -30,8 +27,7 @@ export function initializeSentry(serviceName: string, port: string | number) {
     // Set release version (optional - can be set from CI/CD)
     release: process.env.SENTRY_RELEASE || undefined,
 
-    // Enable debug mode in development
-    debug: process.env.NODE_ENV === 'development',
+    debug: process.env.SENTRY_DEBUG === 'true',
 
     // Add custom tags to identify which microservice sent the error
     initialScope: {

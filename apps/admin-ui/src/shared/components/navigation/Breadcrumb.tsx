@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
-import { Link } from '@/i18n/navigation';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { Link } from 'apps/admin-ui/src/i18n/navigation';
 
 export interface BreadcrumbItem {
   label: string;

@@ -4,9 +4,9 @@ import React, { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { Link } from '@/i18n/navigation';
+import { Link } from '../../i18n/navigation';
 import { toast } from 'sonner';
-import { useRouter } from '@/i18n/navigation';
+import { useRouter } from '../../i18n/navigation';
 import { loginUser } from '../../lib/api/auth';
 import { getSellerProfile } from '../../lib/api/seller';
 import { useAuth } from '../../hooks/use-auth';
@@ -106,8 +106,7 @@ export function LoginForm() {
         <form.Field
           name="email"
           validators={{
-            onChange: ({ value }) =>
-              !value ? t('emailRequired') : undefined,
+            onChange: ({ value }) => (!value ? t('emailRequired') : undefined),
           }}
         >
           {(field) => (

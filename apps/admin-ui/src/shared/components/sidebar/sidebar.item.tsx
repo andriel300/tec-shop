@@ -1,4 +1,5 @@
-import { Link } from '@/i18n/navigation';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { Link } from 'apps/admin-ui/src/i18n/navigation';
 import React from 'react';
 
 interface Props {

@@ -1,8 +1,9 @@
 import React from 'react';
 import { Ticket, ExternalLink, AlertCircle } from 'lucide-react';
-import { Link } from '@/i18n/navigation';
 import { useDiscounts } from '../../../../hooks/useDiscounts';
 import { Select } from '../core/Select';
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { Link } from 'apps/admin-ui/src/i18n/navigation';
 
 interface DiscountSelectorProps {
   value?: string; // Selected discount code ID

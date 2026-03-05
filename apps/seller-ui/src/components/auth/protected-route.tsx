@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useAuth } from '../../hooks/use-auth';
-import { useRouter } from '@/i18n/navigation';
+import { useRouter } from '../../i18n/navigation';
 import { toast } from 'sonner';
 
 interface ProtectedRouteProps {
@@ -14,7 +14,7 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({
   children,
   redirectTo = '/login',
-  requireAuth = true
+  requireAuth = true,
 }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
@@ -55,3 +55,4 @@ export function ProtectedRoute({
 
   return <>{children}</>;
 }
+
