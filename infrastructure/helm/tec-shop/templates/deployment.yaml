@@ -4,6 +4,7 @@ TODO: If services need unique configurations, split into individual templates.
 */}}
 {{- range $serviceName, $serviceConfig := .Values.services }}
 {{- if $serviceConfig.enabled }}
+{{- $probePort := $serviceConfig.metricsPort | default $serviceConfig.port }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -33,6 +34,11 @@ spec:
           ports:
             - containerPort: {{ $serviceConfig.port }}
               protocol: TCP
+            {{- if and $serviceConfig.metricsPort (ne ($serviceConfig.metricsPort | int) ($serviceConfig.port | int)) }}
+            - containerPort: {{ $serviceConfig.metricsPort }}
+              name: metrics
+              protocol: TCP
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: tec-shop-config
@@ -53,7 +59,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /health
-              port: {{ $serviceConfig.port }}
+              port: {{ $probePort }}
             initialDelaySeconds: 15
             periodSeconds: 10
             failureThreshold: 3
@@ -61,7 +67,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: {{ $serviceConfig.port }}
+              port: {{ $probePort }}
             initialDelaySeconds: 30
             periodSeconds: 15
             failureThreshold: 3

@@ -4,6 +4,9 @@
   "include": [],
   "references": [
     {
+      "path": "../../libs/shared/tracing"
+    },
+    {
       "path": "../../libs/shared/service-auth"
     },
     {
@@ -11,6 +14,9 @@
     },
     {
       "path": "../../libs/shared/dto"
+    },
+    {
+      "path": "../../libs/shared/metrics"
     },
     {
       "path": "../../libs/shared/logger-producer"

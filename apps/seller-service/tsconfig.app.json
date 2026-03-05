@@ -23,6 +23,9 @@
   ],
   "references": [
     {
+      "path": "../../libs/shared/tracing/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/shared/service-auth/tsconfig.lib.json"
     },
     {
@@ -30,6 +33,9 @@
     },
     {
       "path": "../../libs/shared/dto/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared/metrics/tsconfig.lib.json"
     },
     {
       "path": "../../libs/shared/logger-producer/tsconfig.lib.json"

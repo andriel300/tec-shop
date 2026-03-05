@@ -4,10 +4,16 @@
   "include": [],
   "references": [
     {
+      "path": "../../libs/shared/tracing"
+    },
+    {
       "path": "../../libs/shared/logger-producer"
     },
     {
       "path": "../../libs/shared/imagekit"
+    },
+    {
+      "path": "../../libs/shared/metrics"
     },
     {
       "path": "../../libs/shared/dto"

@@ -23,6 +23,12 @@
     },
     {
       "path": "../../libs/prisma-clients/analytics-client/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared/tracing/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared/metrics/tsconfig.lib.json"
     }
   ]
 }

@@ -1,3 +1,9 @@
+import { initializeTracing } from '@tec-shop/tracing';
+initializeTracing('logger-service');
+
+import { initializeSentry } from './instrumentation';
+initializeSentry('logger-service', process.env.LOGGER_SERVICE_PORT ?? '6008');
+
 import { NestFactory } from '@nestjs/core';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { AppModule } from './app/app.module';

@@ -7,6 +7,9 @@
       "path": "../../libs/prisma-clients/auth-client"
     },
     {
+      "path": "../../libs/shared/tracing"
+    },
+    {
       "path": "../../libs/shared/service-auth"
     },
     {
@@ -17,6 +20,9 @@
     },
     {
       "path": "../../libs/shared/notification-producer"
+    },
+    {
+      "path": "../../libs/shared/metrics"
     },
     {
       "path": "../../libs/shared/logger-producer"

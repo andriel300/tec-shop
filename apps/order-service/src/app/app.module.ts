@@ -14,11 +14,12 @@ import { LoggerModule } from 'nestjs-pino';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { NotificationProducerModule } from '@tec-shop/notification-producer';
-import { MetricsModule } from '@tec-shop/metrics';
+import { MetricsModule, HealthModule } from '@tec-shop/metrics';
 
 @Module({
   imports: [
     MetricsModule,
+    HealthModule,
     PrismaModule,
     RedisModule.forRoot(),
     EmailModule,

@@ -3,7 +3,10 @@
  * This is only a minimal backend to get started.
  */
 
-// Initialize Sentry FIRST before any other imports
+import { initializeTracing } from '@tec-shop/tracing';
+initializeTracing('api-gateway');
+
+// Initialize Sentry before any other imports
 import { initializeSentry } from './instrumentation';
 initializeSentry();
 

@@ -137,7 +137,7 @@ services:
     networks:
       - tec-shop-network
     healthcheck:
-      test: ['CMD-SHELL', 'curl -f http://localhost:6001/health || exit 1']
+      test: ['CMD-SHELL', 'curl -f http://localhost:9001/health || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -160,7 +160,7 @@ services:
     networks:
       - tec-shop-network
     healthcheck:
-      test: ['CMD-SHELL', 'curl -f http://localhost:6002/health || exit 1']
+      test: ['CMD-SHELL', 'curl -f http://localhost:9002/health || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -183,7 +183,7 @@ services:
     networks:
       - tec-shop-network
     healthcheck:
-      test: ['CMD-SHELL', 'curl -f http://localhost:6003/health || exit 1']
+      test: ['CMD-SHELL', 'curl -f http://localhost:9003/health || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -206,7 +206,7 @@ services:
     networks:
       - tec-shop-network
     healthcheck:
-      test: ['CMD-SHELL', 'curl -f http://localhost:6004/health || exit 1']
+      test: ['CMD-SHELL', 'curl -f http://localhost:9004/health || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -231,7 +231,7 @@ services:
     networks:
       - tec-shop-network
     healthcheck:
-      test: ['CMD-SHELL', 'curl -f http://localhost:6005/health || exit 1']
+      test: ['CMD-SHELL', 'curl -f http://localhost:9005/health || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -254,7 +254,7 @@ services:
     networks:
       - tec-shop-network
     healthcheck:
-      test: ['CMD-SHELL', 'curl -f http://localhost:6006/health || exit 1']
+      test: ['CMD-SHELL', 'curl -f http://localhost:9006/health || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -324,7 +324,7 @@ services:
     networks:
       - tec-shop-network
     healthcheck:
-      test: ['CMD-SHELL', 'curl -f http://localhost:6009/health || exit 1']
+      test: ['CMD-SHELL', 'curl -f http://localhost:9009/health || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -349,7 +349,7 @@ services:
     networks:
       - tec-shop-network
     healthcheck:
-      test: ['CMD-SHELL', 'curl -f http://localhost:6010/health || exit 1']
+      test: ['CMD-SHELL', 'curl -f http://localhost:9010/health || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5

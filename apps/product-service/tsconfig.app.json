@@ -26,6 +26,9 @@
       "path": "../../libs/prisma-clients/seller-client/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/shared/tracing/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/prisma-clients/product-client/tsconfig.lib.json"
     },
     {
@@ -33,6 +36,9 @@
     },
     {
       "path": "../../libs/shared/notification-producer/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared/metrics/tsconfig.lib.json"
     },
     {
       "path": "../../libs/shared/logger-producer/tsconfig.lib.json"

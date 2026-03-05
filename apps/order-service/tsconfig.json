@@ -4,7 +4,13 @@
   "include": [],
   "references": [
     {
+      "path": "../../libs/shared/tracing"
+    },
+    {
       "path": "../../libs/prisma-clients/order-client"
+    },
+    {
+      "path": "../../libs/shared/metrics"
     },
     {
       "path": "../../libs/shared/notification-producer"

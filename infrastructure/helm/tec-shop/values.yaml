@@ -34,6 +34,7 @@ services:
     enabled: true
     replicas: 2
     port: 8080
+    metricsPort: 8080
     serviceType: LoadBalancer
     image:
       name: tec-shop-api-gateway
@@ -54,6 +55,7 @@ services:
     enabled: true
     replicas: 2
     port: 6001
+    metricsPort: 9001
     serviceType: ClusterIP
     image:
       name: tec-shop-auth-service
@@ -74,6 +76,7 @@ services:
     enabled: true
     replicas: 2
     port: 6002
+    metricsPort: 9002
     serviceType: ClusterIP
     image:
       name: tec-shop-user-service
@@ -94,6 +97,7 @@ services:
     enabled: true
     replicas: 2
     port: 6003
+    metricsPort: 9003
     serviceType: ClusterIP
     image:
       name: tec-shop-seller-service
@@ -114,6 +118,7 @@ services:
     enabled: true
     replicas: 2
     port: 6004
+    metricsPort: 9004
     serviceType: ClusterIP
     image:
       name: tec-shop-product-service
@@ -134,6 +139,7 @@ services:
     enabled: true
     replicas: 2
     port: 6005
+    metricsPort: 9005
     serviceType: ClusterIP
     image:
       name: tec-shop-order-service
@@ -154,6 +160,7 @@ services:
     enabled: true
     replicas: 1
     port: 6006
+    metricsPort: 9006
     serviceType: ClusterIP
     image:
       name: tec-shop-admin-service
@@ -174,6 +181,7 @@ services:
     enabled: true
     replicas: 2
     port: 6007
+    metricsPort: 6007
     serviceType: ClusterIP
     image:
       name: tec-shop-chatting-service
@@ -194,6 +202,7 @@ services:
     enabled: true
     replicas: 1
     port: 6008
+    metricsPort: 6008
     serviceType: ClusterIP
     image:
       name: tec-shop-logger-service
@@ -214,6 +223,7 @@ services:
     enabled: true
     replicas: 2
     port: 6009
+    metricsPort: 9009
     serviceType: ClusterIP
     image:
       name: tec-shop-kafka-service
@@ -234,6 +244,7 @@ services:
     enabled: true
     replicas: 2
     port: 6010
+    metricsPort: 9010
     serviceType: ClusterIP
     image:
       name: tec-shop-recommendation-service

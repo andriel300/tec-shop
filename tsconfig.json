@@ -146,6 +146,9 @@
     },
     {
       "path": "./libs/shared/metrics"
+    },
+    {
+      "path": "./libs/shared/tracing"
     }
   ]
 }
