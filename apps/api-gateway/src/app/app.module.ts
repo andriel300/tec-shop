@@ -25,6 +25,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ImageKitModule } from '@tec-shop/shared/imagekit';
 import { LogProducerModule } from '@tec-shop/logger-producer';
 import { UserNotificationModule } from './user-notification/user-notification.module';
+import { CircuitBreakerModule } from '../common/circuit-breaker.module';
 
 @Module({
   imports: [
@@ -99,6 +100,7 @@ import { UserNotificationModule } from './user-notification/user-notification.mo
     LoggerGrafanaModule,
     RecommendationModule,
     UserNotificationModule,
+    CircuitBreakerModule,
   ],
   controllers: [AppController],
   providers: [

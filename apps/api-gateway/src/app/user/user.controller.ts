@@ -24,13 +24,15 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { CircuitBreakerService } from '../../common/circuit-breaker.service';
 
 @ApiTags('User')
 @ApiBearerAuth()
 @Controller('user')
 export class UserController {
   constructor(
-    @Inject('USER_SERVICE') private readonly userClient: ClientProxy
+    @Inject('USER_SERVICE') private readonly userClient: ClientProxy,
+    private readonly cb: CircuitBreakerService
   ) {}
   @UseGuards(JwtAuthGuard)
   @Get()
@@ -39,8 +41,7 @@ export class UserController {
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async getUserProfile(@Req() req: { user: { userId: string } }) {
     const userId = req.user.userId;
-    const user$ = this.userClient.send('get-user-profile', userId);
-    return firstValueFrom(user$);
+    return this.cb.fire('USER_SERVICE', () => firstValueFrom(this.userClient.send('get-user-profile', userId)));
   }
 
   @UseGuards(JwtAuthGuard)
@@ -53,8 +54,7 @@ export class UserController {
       userId: req.user.userId,
       data: body,
     };
-    const user$ = this.userClient.send('update-user-profile', payload);
-    return firstValueFrom(user$);
+    return this.cb.fire('USER_SERVICE', () => firstValueFrom(this.userClient.send('update-user-profile', payload)));
   }
 
   // Shipping Address Endpoints
@@ -72,8 +72,7 @@ export class UserController {
       userId: req.user.userId,
       data: body,
     };
-    const address$ = this.userClient.send('create-shipping-address', payload);
-    return firstValueFrom(address$);
+    return this.cb.fire('USER_SERVICE', () => firstValueFrom(this.userClient.send('create-shipping-address', payload)));
   }
 
   @UseGuards(JwtAuthGuard)
@@ -82,11 +81,10 @@ export class UserController {
   @ApiResponse({ status: 200, description: 'List of shipping addresses.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async getShippingAddresses(@Req() req: { user: { userId: string } }) {
-    const addresses$ = this.userClient.send(
+    return this.cb.fire('USER_SERVICE', () => firstValueFrom(this.userClient.send(
       'get-shipping-addresses',
       req.user.userId
-    );
-    return firstValueFrom(addresses$);
+    )));
   }
 
   @UseGuards(JwtAuthGuard)
@@ -103,8 +101,7 @@ export class UserController {
       userId: req.user.userId,
       addressId,
     };
-    const address$ = this.userClient.send('get-shipping-address', payload);
-    return firstValueFrom(address$);
+    return this.cb.fire('USER_SERVICE', () => firstValueFrom(this.userClient.send('get-shipping-address', payload)));
   }
 
   @UseGuards(JwtAuthGuard)
@@ -123,8 +120,7 @@ export class UserController {
       addressId,
       data: body,
     };
-    const address$ = this.userClient.send('update-shipping-address', payload);
-    return firstValueFrom(address$);
+    return this.cb.fire('USER_SERVICE', () => firstValueFrom(this.userClient.send('update-shipping-address', payload)));
   }
 
   @UseGuards(JwtAuthGuard)
@@ -141,8 +137,7 @@ export class UserController {
       userId: req.user.userId,
       addressId,
     };
-    const address$ = this.userClient.send('delete-shipping-address', payload);
-    return firstValueFrom(address$);
+    return this.cb.fire('USER_SERVICE', () => firstValueFrom(this.userClient.send('delete-shipping-address', payload)));
   }
 
   @UseGuards(JwtAuthGuard)
@@ -159,11 +154,10 @@ export class UserController {
       userId: req.user.userId,
       addressId,
     };
-    const address$ = this.userClient.send(
+    return this.cb.fire('USER_SERVICE', () => firstValueFrom(this.userClient.send(
       'set-default-shipping-address',
       payload
-    );
-    return firstValueFrom(address$);
+    )));
   }
 
   @UseGuards(JwtAuthGuard)
@@ -181,7 +175,6 @@ export class UserController {
       userId: req.user.userId,
       addressId,
     };
-    const address$ = this.userClient.send('copy-shipping-address', payload);
-    return firstValueFrom(address$);
+    return this.cb.fire('USER_SERVICE', () => firstValueFrom(this.userClient.send('copy-shipping-address', payload)));
   }
 }

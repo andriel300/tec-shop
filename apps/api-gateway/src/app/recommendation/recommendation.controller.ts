@@ -15,6 +15,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam } from '@nestjs/
 import { JwtAuthGuard } from '../../guards/auth';
 import { RolesGuard } from '../../guards/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
+import { CircuitBreakerService } from '../../common/circuit-breaker.service';
 
 interface AuthenticatedRequest {
   user: {
@@ -49,6 +50,7 @@ export class RecommendationController {
     private readonly recommendationService: ClientProxy,
     @Inject('PRODUCT_SERVICE')
     private readonly productService: ClientProxy,
+    private readonly cb: CircuitBreakerService,
   ) {}
 
   @Get()
@@ -65,12 +67,12 @@ export class RecommendationController {
 
     const parsedLimit = limit ? parseInt(limit, 10) : undefined;
 
-    const results = await firstValueFrom(
+    const results = await this.cb.fire('RECOMMENDATION_SERVICE', () => firstValueFrom(
       this.recommendationService.send<RecommendationResult[]>('recommendation.getForUser', {
         userId,
         limit: parsedLimit,
       })
-    );
+    ));
 
     return this.enrichWithProducts(results);
   }
@@ -83,11 +85,11 @@ export class RecommendationController {
     const parsedLimit = limit ? parseInt(limit, 10) : 10;
     this.logger.log(`Getting popular products (limit: ${parsedLimit})`);
 
-    const results = await firstValueFrom(
+    const results = await this.cb.fire('RECOMMENDATION_SERVICE', () => firstValueFrom(
       this.recommendationService.send<RecommendationResult[]>('recommendation.getPopular', {
         limit: parsedLimit,
       })
-    );
+    ));
 
     return this.enrichWithProducts(results);
   }
@@ -104,12 +106,12 @@ export class RecommendationController {
     const parsedLimit = limit ? parseInt(limit, 10) : 10;
     this.logger.log(`Getting similar products for ${productId}`);
 
-    const results = await firstValueFrom(
+    const results = await this.cb.fire('RECOMMENDATION_SERVICE', () => firstValueFrom(
       this.recommendationService.send<RecommendationResult[]>('recommendation.getSimilar', {
         productId,
         limit: parsedLimit,
       })
-    );
+    ));
 
     return this.enrichWithProducts(results);
   }
@@ -121,9 +123,9 @@ export class RecommendationController {
   @ApiResponse({ status: 200, description: 'Training completed' })
   async trainModel() {
     this.logger.log('Triggering recommendation model training');
-    return firstValueFrom(
+    return this.cb.fire('RECOMMENDATION_SERVICE', () => firstValueFrom(
       this.recommendationService.send('recommendation.train', {})
-    );
+    ));
   }
 
   /**
@@ -139,9 +141,9 @@ export class RecommendationController {
     const productIds = results.map((r) => r.productId);
     const scoreMap = new Map(results.map((r) => [r.productId, r.score]));
 
-    const products = await firstValueFrom(
+    const products = await this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send<ProductFromService[]>('product-get-by-ids', { ids: productIds })
-    );
+    ));
 
     // Merge score into each product and maintain sort order by score
     const enriched: EnrichedProduct[] = products.map((product) => ({

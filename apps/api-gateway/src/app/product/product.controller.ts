@@ -31,6 +31,7 @@ import { RolesGuard } from '../../guards/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
 import * as Dto from '@tec-shop/dto';
 import { ImageKitService } from '@tec-shop/shared/imagekit';
+import { CircuitBreakerService } from '../../common/circuit-breaker.service';
 
 // File validation configuration
 const FILE_SIZE_LIMIT = 5 * 1024 * 1024; // 5MB
@@ -47,7 +48,8 @@ export class ProductController {
     @Inject('PRODUCT_SERVICE') private readonly productService: ClientProxy,
     @Inject('ORDER_SERVICE') private readonly orderService: ClientProxy,
     @Inject('USER_SERVICE') private readonly userService: ClientProxy,
-    private readonly imagekitService: ImageKitService
+    private readonly imagekitService: ImageKitService,
+    private readonly cb: CircuitBreakerService
   ) {}
 
   /**
@@ -121,13 +123,13 @@ export class ProductController {
     // Extract URLs from upload results
     const imageUrls = uploadResults.map((result) => result.url);
 
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-create-product', {
         sellerId: user.userId,
         productData,
         imageUrls,
       })
-    );
+    ));
   }
 
   @Get()
@@ -148,7 +150,7 @@ export class ProductController {
     @Query('isFeatured') isFeatured?: boolean,
     @Query('search') search?: string
   ) {
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-get-products', {
         shopId,
         filters: {
@@ -158,7 +160,7 @@ export class ProductController {
           search,
         },
       })
-    );
+    ));
   }
 
   @Get(':id')
@@ -183,12 +185,12 @@ export class ProductController {
       userType?: 'CUSTOMER' | 'SELLER' | 'ADMIN';
     };
 
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-get-product', {
         id,
         sellerId: user.userId,
       })
-    );
+    ));
   }
 
   @Put(':id')
@@ -254,14 +256,14 @@ export class ProductController {
       imageUrls = uploadResults.map((result) => result.url);
     }
 
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-update-product', {
         id,
         sellerId: user.userId,
         productData,
         imageUrls,
       })
-    );
+    ));
   }
 
   @Delete(':id')
@@ -286,12 +288,12 @@ export class ProductController {
       userType?: 'CUSTOMER' | 'SELLER' | 'ADMIN';
     };
 
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-delete-product', {
         id,
         sellerId: user.userId,
       })
-    );
+    ));
   }
 
   // ============================================
@@ -346,9 +348,9 @@ export class ProductController {
 
     // Verify purchase: user must have at least one DELIVERED order containing this product
     try {
-      const orders = await firstValueFrom(
+      const orders = await this.cb.fire('ORDER_SERVICE', () => firstValueFrom(
         this.orderService.send('get-user-orders', user.userId)
-      ) as Array<{ status: string; items: Array<{ productId: string }> }>;
+      )) as Array<{ status: string; items: Array<{ productId: string }> }>;
 
       const hasDeliveredOrder = orders.some(
         (order) =>
@@ -400,9 +402,9 @@ export class ProductController {
     let reviewerName: string | undefined;
     let reviewerAvatar: string | undefined;
     try {
-      const profile = await firstValueFrom(
+      const profile = await this.cb.fire('USER_SERVICE', () => firstValueFrom(
         this.userService.send('get-user-profile', user.userId)
-      ) as { name?: string; avatar?: string } | null;
+      )) as { name?: string; avatar?: string } | null;
       if (profile) {
         reviewerName = profile.name || user.username;
         reviewerAvatar = profile.avatar;
@@ -411,7 +413,7 @@ export class ProductController {
       reviewerName = user.username;
     }
 
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-create-rating', {
         productId,
         userId: user.userId,
@@ -424,7 +426,7 @@ export class ProductController {
           reviewerAvatar,
         },
       })
-    );
+    ));
   }
 
   @Put('ratings/:ratingId')
@@ -458,13 +460,13 @@ export class ProductController {
       userType?: 'CUSTOMER' | 'SELLER' | 'ADMIN';
     };
 
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-update-rating', {
         ratingId,
         userId: user.userId,
         rating: ratingDto,
       })
-    );
+    ));
   }
 
   @Delete('ratings/:ratingId')
@@ -493,12 +495,12 @@ export class ProductController {
       userType?: 'CUSTOMER' | 'SELLER' | 'ADMIN';
     };
 
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-delete-rating', {
         ratingId,
         userId: user.userId,
       })
-    );
+    ));
   }
 
   @Get(':productId/ratings/me')
@@ -527,12 +529,12 @@ export class ProductController {
       userType?: 'CUSTOMER' | 'SELLER' | 'ADMIN';
     };
 
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-get-user-rating', {
         productId,
         userId: user.userId,
       })
-    );
+    ));
   }
 
   @Post('ratings/:ratingId/reply')
@@ -560,12 +562,12 @@ export class ProductController {
       userType?: 'CUSTOMER' | 'SELLER' | 'ADMIN';
     };
 
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-add-seller-response', {
         ratingId,
         sellerId: user.userId,
         response: body.response,
       })
-    );
+    ));
   }
 }

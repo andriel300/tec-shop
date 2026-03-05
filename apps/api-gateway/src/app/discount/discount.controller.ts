@@ -24,13 +24,17 @@ import { JwtAuthGuard } from '../../guards/auth';
 import { RolesGuard } from '../../guards/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
 import * as Dto from '@tec-shop/dto';
+import { CircuitBreakerService } from '../../common/circuit-breaker.service';
 
 @ApiTags('Discounts')
 @Controller('seller/discounts')
 export class DiscountController {
   private readonly logger = new Logger(DiscountController.name);
 
-  constructor(@Inject('SELLER_SERVICE') private sellerService: ClientProxy) {}
+  constructor(
+    @Inject('SELLER_SERVICE') private sellerService: ClientProxy,
+    private readonly cb: CircuitBreakerService
+  ) {}
 
   /**
    * Create a new discount code (SELLER only)
@@ -66,9 +70,9 @@ export class DiscountController {
     this.logger.debug('Full discount data:', discountData);
 
     try {
-      const result = await firstValueFrom(
+      const result = await this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
         this.sellerService.send('seller-create-discount', discountData)
-      );
+      ));
       this.logger.log('Seller service response:', result);
       return result;
     } catch (error) {
@@ -128,11 +132,11 @@ export class DiscountController {
   async getAllDiscounts(@Req() req: Record<string, unknown>) {
     const user = req.user as { userId: string };
 
-    return firstValueFrom(
+    return this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
       this.sellerService.send('seller-get-all-discounts', {
         sellerId: user.userId,
       })
-    );
+    ));
   }
 
   /**
@@ -188,12 +192,12 @@ export class DiscountController {
   async getDiscountById(@Param('id') id: string, @Req() req: Record<string, unknown>) {
     const user = req.user as { userId: string };
 
-    return firstValueFrom(
+    return this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
       this.sellerService.send('seller-get-discount', {
         id,
         sellerId: user.userId,
       })
-    );
+    ));
   }
 
   /**
@@ -256,13 +260,13 @@ export class DiscountController {
   ) {
     const user = req.user as { userId: string };
 
-    return firstValueFrom(
+    return this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
       this.sellerService.send('seller-update-discount', {
         id,
         updateDiscountDto,
         sellerId: user.userId,
       })
-    );
+    ));
   }
 
   /**
@@ -310,11 +314,11 @@ export class DiscountController {
   async deleteDiscount(@Param('id') id: string, @Req() req: Record<string, unknown>) {
     const user = req.user as { userId: string };
 
-    return firstValueFrom(
+    return this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
       this.sellerService.send('seller-delete-discount', {
         id,
         sellerId: user.userId,
       })
-    );
+    ));
   }
 }

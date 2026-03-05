@@ -1,4 +1,4 @@
-import { Module, Injectable, Inject } from '@nestjs/common';
+import { Module, Injectable, Inject, Logger } from '@nestjs/common';
 import {
   ClientProxy,
   ClientProxyFactory,
@@ -14,6 +14,8 @@ import { firstValueFrom } from 'rxjs';
  */
 @Injectable()
 export class SellerServiceClient {
+  private readonly logger = new Logger(SellerServiceClient.name);
+
   constructor(@Inject('SELLER_SERVICE') private readonly client: ClientProxy) {}
 
   /**
@@ -27,7 +29,7 @@ export class SellerServiceClient {
         this.client.send<boolean>('seller-verify-shop', { shopId })
       );
     } catch (error) {
-      console.error('Error verifying shop:', error);
+      this.logger.error('Error verifying shop', error);
       return false;
     }
   }
@@ -45,7 +47,7 @@ export class SellerServiceClient {
         })
       );
     } catch (error) {
-      console.error('Error getting shop:', error);
+      this.logger.error('Error getting shop', error);
       return null;
     }
   }
@@ -68,7 +70,7 @@ export class SellerServiceClient {
         })
       );
     } catch (error) {
-      console.error('Error verifying shop ownership:', error);
+      this.logger.error('Error verifying shop ownership', error);
       return false;
     }
   }

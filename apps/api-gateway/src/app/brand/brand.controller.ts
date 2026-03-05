@@ -24,11 +24,15 @@ import { Roles } from '../../decorators/roles.decorator';
 import * as Dto from '@tec-shop/dto';
 
 import { Throttle } from '@nestjs/throttler';
+import { CircuitBreakerService } from '../../common/circuit-breaker.service';
 
 @ApiTags('Brands')
 @Controller('brands')
 export class BrandController {
-  constructor(@Inject('PRODUCT_SERVICE') private productService: ClientProxy) {}
+  constructor(
+    @Inject('PRODUCT_SERVICE') private productService: ClientProxy,
+    private readonly cb: CircuitBreakerService
+  ) {}
 
   /**
    * Get all brands (public)
@@ -83,14 +87,14 @@ export class BrandController {
     @Query('limit') limit?: number,
     @Query('offset') offset?: number
   ) {
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-get-all-brands', {
         onlyActive: onlyActive !== false, // Default to true
         search,
         limit: limit ? parseInt(String(limit), 10) : undefined,
         offset: offset ? parseInt(String(offset), 10) : undefined,
       })
-    );
+    ));
   }
 
   /**
@@ -135,12 +139,12 @@ export class BrandController {
     },
   })
   async getPopularBrands(@Query('limit') limit?: number) {
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send(
         'product-get-popular-brands',
         limit ? parseInt(String(limit), 10) : 10
       )
-    );
+    ));
   }
 
   /**
@@ -155,12 +159,12 @@ export class BrandController {
     @Param('id') id: string,
     @Query('includeProducts') includeProducts?: boolean
   ) {
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-get-brand', {
         id,
         includeProducts: includeProducts === true,
       })
-    );
+    ));
   }
 
   /**
@@ -175,12 +179,12 @@ export class BrandController {
     @Param('slug') slug: string,
     @Query('includeProducts') includeProducts?: boolean
   ) {
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-get-brand-by-slug', {
         slug,
         includeProducts: includeProducts === true,
       })
-    );
+    ));
   }
 
   /**
@@ -200,9 +204,9 @@ export class BrandController {
     description: 'Forbidden - Admin access required.',
   })
   async createBrand(@Body() createBrandDto: Dto.CreateBrandDto) {
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-create-brand', createBrandDto)
-    );
+    ));
   }
 
   /**
@@ -223,12 +227,12 @@ export class BrandController {
     @Param('id') id: string,
     @Body() updateBrandDto: Dto.UpdateBrandDto
   ) {
-    return firstValueFrom(
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-update-brand', {
         id,
         updateBrandDto,
       })
-    );
+    ));
   }
 
   /**
@@ -246,6 +250,6 @@ export class BrandController {
     description: 'Forbidden - Admin access required.',
   })
   async deleteBrand(@Param('id') id: string) {
-    return firstValueFrom(this.productService.send('product-delete-brand', id));
+    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(this.productService.send('product-delete-brand', id)));
   }
 }

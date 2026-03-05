@@ -23,6 +23,7 @@ import {
   ApiTags,
   ApiQuery,
 } from '@nestjs/swagger';
+import { CircuitBreakerService } from '../../common/circuit-breaker.service';
 
 @ApiTags('Orders')
 @ApiBearerAuth()
@@ -30,7 +31,8 @@ import {
 export class OrderController {
   constructor(
     @Inject('ORDER_SERVICE') private readonly orderClient: ClientProxy,
-    @Inject('SELLER_SERVICE') private readonly sellerClient: ClientProxy
+    @Inject('SELLER_SERVICE') private readonly sellerClient: ClientProxy,
+    private readonly cb: CircuitBreakerService
   ) {}
 
   @Put('verify-coupon-code')
@@ -67,11 +69,10 @@ export class OrderController {
       cartItems,
     };
 
-    const result$ = this.sellerClient.send(
+    return this.cb.fire('SELLER_SERVICE', () => firstValueFrom(this.sellerClient.send(
       'seller-verify-coupon-code',
       payload
-    );
-    return firstValueFrom(result$);
+    )));
   }
 
   @UseGuards(JwtAuthGuard)
@@ -98,8 +99,7 @@ export class OrderController {
       userId: req.user.userId,
       data: body,
     };
-    const session$ = this.orderClient.send('create-checkout-session', payload);
-    return firstValueFrom(session$);
+    return this.cb.fire('ORDER_SERVICE', () => firstValueFrom(this.orderClient.send('create-checkout-session', payload)));
   }
 
   @UseGuards(JwtAuthGuard)
@@ -111,8 +111,7 @@ export class OrderController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async getUserOrders(@Req() req: { user: { userId: string } }) {
-    const orders$ = this.orderClient.send('get-user-orders', req.user.userId);
-    return firstValueFrom(orders$);
+    return this.cb.fire('ORDER_SERVICE', () => firstValueFrom(this.orderClient.send('get-user-orders', req.user.userId)));
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -138,8 +137,7 @@ export class OrderController {
       ...query,
       sellerId: req.user.userId,
     };
-    const orders$ = this.orderClient.send('get-seller-orders', payload);
-    return firstValueFrom(orders$);
+    return this.cb.fire('ORDER_SERVICE', () => firstValueFrom(this.orderClient.send('get-seller-orders', payload)));
   }
 
   @UseGuards(JwtAuthGuard)
@@ -159,8 +157,7 @@ export class OrderController {
       userId: req.user.userId,
       orderNumber,
     };
-    const order$ = this.orderClient.send('get-order-by-number', payload);
-    return firstValueFrom(order$);
+    return this.cb.fire('ORDER_SERVICE', () => firstValueFrom(this.orderClient.send('get-order-by-number', payload)));
   }
 
   @Get('success/:sessionId')
@@ -180,11 +177,10 @@ export class OrderController {
     description: 'Payment not completed.',
   })
   async handleSuccessfulPayment(@Param('sessionId') sessionId: string) {
-    const order$ = this.orderClient.send(
+    return this.cb.fire('ORDER_SERVICE', () => firstValueFrom(this.orderClient.send(
       'handle-successful-payment',
       sessionId
-    );
-    return firstValueFrom(order$);
+    )));
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -206,8 +202,7 @@ export class OrderController {
       sellerId: req.user.userId,
       orderId,
     };
-    const order$ = this.orderClient.send('get-seller-order-details', payload);
-    return firstValueFrom(order$);
+    return this.cb.fire('ORDER_SERVICE', () => firstValueFrom(this.orderClient.send('get-seller-order-details', payload)));
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -232,8 +227,7 @@ export class OrderController {
       status: body.status,
       trackingNumber: body.trackingNumber,
     };
-    const order$ = this.orderClient.send('update-delivery-status', payload);
-    return firstValueFrom(order$);
+    return this.cb.fire('ORDER_SERVICE', () => firstValueFrom(this.orderClient.send('update-delivery-status', payload)));
   }
 
   @UseGuards(JwtAuthGuard)
@@ -253,7 +247,6 @@ export class OrderController {
       userId: req.user.userId,
       orderId,
     };
-    const order$ = this.orderClient.send('get-order-by-id', payload);
-    return firstValueFrom(order$);
+    return this.cb.fire('ORDER_SERVICE', () => firstValueFrom(this.orderClient.send('get-order-by-id', payload)));
   }
 }

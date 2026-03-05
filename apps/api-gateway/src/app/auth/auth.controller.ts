@@ -25,6 +25,7 @@ import type {
   ChangePasswordDto,
 } from '@tec-shop/dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { CircuitBreakerService } from '../../common/circuit-breaker.service';
 import { Throttle } from '@nestjs/throttler';
 import type { Response, Request, CookieOptions } from 'express';
 import { JwtAuthGuard, GoogleAuthGuard } from '../../guards/auth';
@@ -44,7 +45,8 @@ export class AuthController {
 
   constructor(
     @Inject('AUTH_SERVICE') private readonly authService: ClientProxy,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    private readonly cb: CircuitBreakerService
   ) {}
 
   /**
@@ -105,9 +107,9 @@ export class AuthController {
     description: 'User with this email already exists.',
   })
   async signup(@Body() signupDto: SignupDto) {
-    return await firstValueFrom(
+    return await this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
       this.authService.send('auth-signup', signupDto)
-    );
+    ));
   }
 
   @Post('verify-email')
@@ -116,9 +118,9 @@ export class AuthController {
   @ApiResponse({ status: 201, description: 'Email successfully verified.' })
   @ApiResponse({ status: 401, description: 'Invalid or expired OTP.' })
   async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto) {
-    return await firstValueFrom(
+    return await this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
       this.authService.send('auth-verify-email', verifyEmailDto)
-    );
+    ));
   }
 
   @Post('login')
@@ -134,9 +136,9 @@ export class AuthController {
     @Body() body: LoginDto,
     @Res({ passthrough: true }) response: Response
   ) {
-    const result = await firstValueFrom(
+    const result = await this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
       this.authService.send('auth-login', body)
-    );
+    ));
 
     // Get cookie configurations with proper isolation and security
     const accessCookie = this.getCookieConfig(
@@ -213,12 +215,12 @@ export class AuthController {
       request.cookies?.[`${prefix}${userType}_access_token`] ||
       request.cookies?.access_token;
 
-    const result = await firstValueFrom(
+    const result = await this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
       this.authService.send('auth-refresh-token', {
         refreshToken,
         currentAccessToken,
       })
-    );
+    ));
 
     // Get cookie configurations with proper isolation
     const accessCookie = this.getCookieConfig(
@@ -283,18 +285,18 @@ export class AuthController {
 
       // Revoke the current access token (Security Hardened)
       if (accessToken) {
-        await firstValueFrom(
+        await this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
           this.authService.send('auth-revoke-token', {
             token: accessToken,
             reason: 'logout',
           })
-        );
+        ));
       }
 
       // Revoke the refresh token in the database
-      await firstValueFrom(
+      await this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
         this.authService.send('auth-revoke-refresh-token', request.user.userId)
-      );
+      ));
     } catch (error) {
       this.logger.error('Failed to revoke tokens', error);
       // Continue with logout even if revocation fails
@@ -362,12 +364,12 @@ export class AuthController {
     @Req() request: Request & { user: { userId: string } },
     @Body() changePasswordDto: ChangePasswordDto
   ) {
-    const result = await firstValueFrom(
+    const result = await this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
       this.authService.send('auth-change-password', {
         userId: request.user.userId,
         changePasswordDto,
       })
-    );
+    ));
     return result;
   }
 
@@ -380,9 +382,9 @@ export class AuthController {
   })
   @ApiResponse({ status: 400, description: 'Invalid email format.' })
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
-    return await firstValueFrom(
+    return await this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
       this.authService.send('auth-forgot-password', forgotPasswordDto)
-    );
+    ));
   }
 
   @Post('validate-reset-token')
@@ -396,9 +398,9 @@ export class AuthController {
   async validateResetToken(
     @Body() validateResetTokenDto: ValidateResetTokenDto
   ) {
-    return await firstValueFrom(
+    return await this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
       this.authService.send('auth-validate-reset-token', validateResetTokenDto)
-    );
+    ));
   }
 
   @Post('reset-password')
@@ -411,9 +413,9 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Invalid or expired reset token.' })
   @ApiResponse({ status: 400, description: 'Invalid password format.' })
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
-    return await firstValueFrom(
+    return await this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
       this.authService.send('auth-reset-password', resetPasswordDto)
-    );
+    ));
   }
 
   // Seller Authentication Endpoints
@@ -430,9 +432,9 @@ export class AuthController {
     description: 'Seller with this email already exists.',
   })
   async sellerSignup(@Body() sellerSignupDto: SellerSignupDto) {
-    return await firstValueFrom(
+    return await this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
       this.authService.send('seller-auth-signup', sellerSignupDto)
-    );
+    ));
   }
 
   @Post('seller/verify-email')
@@ -444,9 +446,9 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: 'Invalid or expired OTP.' })
   async verifySellerEmail(@Body() verifyEmailDto: VerifyEmailDto) {
-    return await firstValueFrom(
+    return await this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
       this.authService.send('seller-auth-verify-email', verifyEmailDto)
-    );
+    ));
   }
 
   @Post('seller/login')
@@ -462,9 +464,9 @@ export class AuthController {
     @Body() body: LoginDto,
     @Res({ passthrough: true }) response: Response
   ) {
-    const result = await firstValueFrom(
+    const result = await this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
       this.authService.send('seller-auth-login', body)
-    );
+    ));
 
     // Get cookie configurations with proper isolation and security
     const accessCookie = this.getCookieConfig(
@@ -511,9 +513,9 @@ export class AuthController {
     @Body() body: LoginDto,
     @Res({ passthrough: true }) response: Response
   ) {
-    const result = await firstValueFrom(
+    const result = await this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
       this.authService.send('admin-auth-login', body)
-    );
+    ));
 
     // Get cookie configurations with proper isolation and security
     const accessCookie = this.getCookieConfig(
@@ -586,9 +588,9 @@ export class AuthController {
     };
 
     // Send to auth-service to handle user creation/login
-    const result = await firstValueFrom(
+    const result = await this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
       this.authService.send('auth-google-login', googleAuthDto)
-    );
+    ));
 
     // Determine userType from result (defaults to customer)
     const userType: UserType = 'customer';

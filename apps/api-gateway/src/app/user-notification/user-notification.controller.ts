@@ -25,6 +25,7 @@ import type {
   NotificationResponseDto,
   NotificationType,
 } from '@tec-shop/dto';
+import { CircuitBreakerService } from '../../common/circuit-breaker.service';
 
 interface AuthenticatedUser {
   userId: string;
@@ -45,7 +46,8 @@ const USER_TYPE_MAP: Record<string, string> = {
 @ApiBearerAuth()
 export class UserNotificationController {
   constructor(
-    @Inject('LOGGER_SERVICE') private readonly loggerService: ClientProxy
+    @Inject('LOGGER_SERVICE') private readonly loggerService: ClientProxy,
+    private readonly cb: CircuitBreakerService
   ) {}
 
   private getTargetInfo(req: Request): { targetType: string; targetId: string } {
@@ -71,13 +73,13 @@ export class UserNotificationController {
   ): Promise<NotificationListResponseDto> {
     const { targetType, targetId } = this.getTargetInfo(req);
 
-    return firstValueFrom(
+    return this.cb.fire('LOGGER_SERVICE', () => firstValueFrom(
       this.loggerService.send('notification-get-list', {
         targetType,
         targetId,
         query: { page, limit, isRead, type },
       })
-    );
+    ));
   }
 
   @Get('unread')
@@ -88,12 +90,12 @@ export class UserNotificationController {
   ): Promise<{ count: number }> {
     const { targetType, targetId } = this.getTargetInfo(req);
 
-    return firstValueFrom(
+    return this.cb.fire('LOGGER_SERVICE', () => firstValueFrom(
       this.loggerService.send('notification-get-unread-count', {
         targetType,
         targetId,
       })
-    );
+    ));
   }
 
   @Patch(':id/read')
@@ -105,13 +107,13 @@ export class UserNotificationController {
   ): Promise<NotificationResponseDto> {
     const { targetType, targetId } = this.getTargetInfo(req);
 
-    return firstValueFrom(
+    return this.cb.fire('LOGGER_SERVICE', () => firstValueFrom(
       this.loggerService.send('notification-mark-as-read', {
         targetType,
         targetId,
         notificationId,
       })
-    );
+    ));
   }
 
   @Patch('read-all')
@@ -125,12 +127,12 @@ export class UserNotificationController {
   ): Promise<{ message: string; count: number }> {
     const { targetType, targetId } = this.getTargetInfo(req);
 
-    return firstValueFrom(
+    return this.cb.fire('LOGGER_SERVICE', () => firstValueFrom(
       this.loggerService.send('notification-mark-all-read', {
         targetType,
         targetId,
       })
-    );
+    ));
   }
 
   @Delete(':id')
@@ -142,12 +144,12 @@ export class UserNotificationController {
   ): Promise<{ message: string }> {
     const { targetType, targetId } = this.getTargetInfo(req);
 
-    return firstValueFrom(
+    return this.cb.fire('LOGGER_SERVICE', () => firstValueFrom(
       this.loggerService.send('notification-delete', {
         targetType,
         targetId,
         notificationId,
       })
-    );
+    ));
   }
 }
