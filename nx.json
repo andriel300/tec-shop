@@ -55,7 +55,8 @@
         "libs/shared/interceptor/*",
         "libs/shared/kafka-events/*",
         "libs/shared/service-auth/*",
-        "libs/shared/redis-client/*"
+        "libs/shared/redis-client/*",
+        "libs/shared/metrics/*"
       ]
     },
     {
@@ -125,7 +126,8 @@
         "libs/shared/interceptor/*",
         "libs/shared/kafka-events/*",
         "libs/shared/service-auth/*",
-        "libs/shared/redis-client/*"
+        "libs/shared/redis-client/*",
+        "libs/shared/metrics/*"
       ],
       "options": {
         "typecheck": {

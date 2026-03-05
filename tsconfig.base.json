@@ -36,6 +36,7 @@
       "@tec-shop/i18n": ["libs/shared/i18n/src/index.ts"],
       "@tec-shop/interceptor": ["libs/shared/interceptor/src/index.ts"],
       "@tec-shop/kafka-events": ["libs/shared/kafka-events/src/index.ts"],
+      "@tec-shop/metrics": ["libs/shared/metrics/src/index.ts"],
       "@tec-shop/logger-client": [
         "libs/prisma-clients/logger-client/src/index.ts"
       ],

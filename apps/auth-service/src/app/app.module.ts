@@ -7,6 +7,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
 import { LoggingInterceptor, ErrorInterceptor, AllExceptionsFilter } from '@tec-shop/interceptor';
 import { LogProducerModule } from '@tec-shop/logger-producer';
+import { MetricsModule } from '@tec-shop/metrics';
 import { NotificationProducerModule } from '@tec-shop/notification-producer';
 
 @Module({
@@ -38,6 +39,7 @@ import { NotificationProducerModule } from '@tec-shop/notification-producer';
         },
       }),
     }),
+    MetricsModule,
     AuthModule,
     LogProducerModule.forRoot({ clientId: 'auth-service' }),
     NotificationProducerModule.forRoot({ clientId: 'auth-service-notifications' }),

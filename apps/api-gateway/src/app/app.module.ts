@@ -21,7 +21,8 @@ import { LoggerGrafanaModule } from './logger/logger.module';
 import { RecommendationModule } from './recommendation/recommendation.module';
 import { ChatModule } from './chat/chat.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { MetricsModule, HttpMetricsInterceptor } from '@tec-shop/metrics';
 import { ImageKitModule } from '@tec-shop/shared/imagekit';
 import { LogProducerModule } from '@tec-shop/logger-producer';
 import { UserNotificationModule } from './user-notification/user-notification.module';
@@ -101,6 +102,7 @@ import { CircuitBreakerModule } from '../common/circuit-breaker.module';
     RecommendationModule,
     UserNotificationModule,
     CircuitBreakerModule,
+    MetricsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -108,6 +110,10 @@ import { CircuitBreakerModule } from '../common/circuit-breaker.module';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: HttpMetricsInterceptor,
     },
   ],
 })

@@ -1,4 +1,4 @@
-version: "3.9"
+version: '3.9'
 
 # TODO: Update image tags and registry URLs before deploying
 
@@ -7,7 +7,6 @@ networks:
     driver: bridge
 
 volumes:
-  mongo-data:
   redis-data:
   kafka-data:
   zookeeper-data:
@@ -15,38 +14,18 @@ volumes:
 services:
   # ─── Infrastructure ───────────────────────────────────────────────────────────
 
-  mongodb:
-    image: mongo:7
-    container_name: tec-shop-mongodb
-    restart: unless-stopped
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-admin}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-password}
-    volumes:
-      - mongo-data:/data/db
-    networks:
-      - tec-shop-network
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-
   redis:
     image: redis:7-alpine
     container_name: tec-shop-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis-data:/data
     networks:
       - tec-shop-network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -63,7 +42,7 @@ services:
     networks:
       - tec-shop-network
     healthcheck:
-      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok"]
+      test: ['CMD-SHELL', 'echo ruok | nc localhost 2181 | grep imok']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -73,13 +52,13 @@ services:
     container_name: tec-shop-kafka
     restart: unless-stopped
     ports:
-      - "9092:9092"
+      - '9092:9092'
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
     volumes:
       - kafka-data:/var/lib/kafka/data
     depends_on:
@@ -88,7 +67,11 @@ services:
     networks:
       - tec-shop-network
     healthcheck:
-      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092"]
+      test:
+        [
+          'CMD-SHELL',
+          'kafka-broker-api-versions --bootstrap-server localhost:9092',
+        ]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -103,7 +86,7 @@ services:
     container_name: tec-shop-api-gateway
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - '8080:8080'
     env_file:
       - ../../.env
     environment:
@@ -129,7 +112,7 @@ services:
     networks:
       - tec-shop-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      test: ['CMD-SHELL', 'curl -f http://localhost:8080/health || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -154,7 +137,7 @@ services:
     networks:
       - tec-shop-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:6001/health || exit 1"]
+      test: ['CMD-SHELL', 'curl -f http://localhost:6001/health || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -177,7 +160,7 @@ services:
     networks:
       - tec-shop-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:6002/health || exit 1"]
+      test: ['CMD-SHELL', 'curl -f http://localhost:6002/health || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -200,7 +183,7 @@ services:
     networks:
       - tec-shop-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:6003/health || exit 1"]
+      test: ['CMD-SHELL', 'curl -f http://localhost:6003/health || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -223,7 +206,7 @@ services:
     networks:
       - tec-shop-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:6004/health || exit 1"]
+      test: ['CMD-SHELL', 'curl -f http://localhost:6004/health || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -248,7 +231,7 @@ services:
     networks:
       - tec-shop-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:6005/health || exit 1"]
+      test: ['CMD-SHELL', 'curl -f http://localhost:6005/health || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -271,7 +254,7 @@ services:
     networks:
       - tec-shop-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:6006/health || exit 1"]
+      test: ['CMD-SHELL', 'curl -f http://localhost:6006/health || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -296,7 +279,7 @@ services:
     networks:
       - tec-shop-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:6007/health || exit 1"]
+      test: ['CMD-SHELL', 'curl -f http://localhost:6007/health || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -316,7 +299,7 @@ services:
     networks:
       - tec-shop-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:6008/health || exit 1"]
+      test: ['CMD-SHELL', 'curl -f http://localhost:6008/health || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -341,7 +324,7 @@ services:
     networks:
       - tec-shop-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:6009/health || exit 1"]
+      test: ['CMD-SHELL', 'curl -f http://localhost:6009/health || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -366,7 +349,7 @@ services:
     networks:
       - tec-shop-network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:6010/health || exit 1"]
+      test: ['CMD-SHELL', 'curl -f http://localhost:6010/health || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -381,7 +364,7 @@ services:
     container_name: tec-shop-user-ui
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - '3000:3000'
     env_file:
       - ../../.env
     environment:
@@ -400,7 +383,7 @@ services:
     container_name: tec-shop-seller-ui
     restart: unless-stopped
     ports:
-      - "3001:3000"
+      - '3001:3000'
     env_file:
       - ../../.env
     environment:
@@ -419,7 +402,7 @@ services:
     container_name: tec-shop-admin-ui
     restart: unless-stopped
     ports:
-      - "3002:3000"
+      - '3002:3000'
     env_file:
       - ../../.env
     environment:

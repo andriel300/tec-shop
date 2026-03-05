@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { MetricsModule } from '@tec-shop/metrics';
 import { ConfigModule } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 import { PrismaModule } from '../prisma/prisma.module';
@@ -7,6 +8,8 @@ import { KafkaController } from './kafka.controller';
 
 @Module({
   imports: [
+    MetricsModule,
+
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
