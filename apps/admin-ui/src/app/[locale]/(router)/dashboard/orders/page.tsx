@@ -33,6 +33,8 @@ interface Order {
   finalAmount: number;
   items: OrderItem[];
   createdAt: string;
+  shop?: { name: string };
+  user?: { name: string };
 }
 
 interface OrderItem {

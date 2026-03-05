@@ -3,11 +3,11 @@
 import React, { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import useSidebar from '../../hooks/useSidebar';
-import { usePathname, useRouter } from '@/i18n/navigation';
+import { usePathname, useRouter } from '../../i18n/navigation';
 import useSeller from '../../hooks/useSeller';
 import Box from '../box';
 import { Sidebar } from './sidebar.styles';
-import { Link } from '@/i18n/navigation';
+import { Link } from '../../i18n/navigation';
 import { Logo } from '../../assets/svgs/logo';
 import SidebarItems from './sidebar.item';
 import Home from '../../assets/svgs/icons/home-icon';
@@ -92,7 +92,9 @@ const SidebarBarWrapper = () => {
                     {tCommon('loading')}
                   </div>
                 ) : isError ? (
-                  <div className="text-xl font-medium text-red-400">{tCommon('error')}</div>
+                  <div className="text-xl font-medium text-red-400">
+                    {tCommon('error')}
+                  </div>
                 ) : (
                   <h3 className="text-xl font-medium text-[#ecedee]">
                     {displayName}

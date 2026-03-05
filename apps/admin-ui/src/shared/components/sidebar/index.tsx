@@ -3,11 +3,9 @@
 import useSidebar from '../../../hooks/useSidebar';
 import { useTranslations } from 'next-intl';
 import React, { useEffect } from 'react';
-import { usePathname } from '@/i18n/navigation';
 import useAdmin from '../../../hooks/useAdmin';
 import Box from '../box';
 import { Sidebar } from './sidebar.styles';
-import { Link } from '@/i18n/navigation';
 import { Logo } from '../../../assets/svgs/logo';
 import SidebarItem from './sidebar.item';
 import Home from '../../../assets/svgs/icons/home-icon';
@@ -26,6 +24,7 @@ import {
 import { Payment } from '../../../assets/svgs/icons/payment-icon';
 import { NotificationBell } from '../notification-bell';
 import LanguageSwitcher from '../language-switcher';
+import { Link, usePathname } from 'apps/admin-ui/src/i18n/navigation';
 
 const SidebarWrapper = () => {
   const t = useTranslations('Sidebar');

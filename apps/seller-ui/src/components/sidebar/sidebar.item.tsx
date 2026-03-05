@@ -1,4 +1,4 @@
-import { Link } from '@/i18n/navigation';
+import { Link } from '../../i18n/navigation';
 import React from 'react';
 
 interface Props {
@@ -10,7 +10,14 @@ interface Props {
   onClick?: () => void; // Optional click handler for actions
 }
 
-const SidebarItems = ({ icon, title, isActive, href, badge, onClick }: Props) => {
+const SidebarItems = ({
+  icon,
+  title,
+  isActive,
+  href,
+  badge,
+  onClick,
+}: Props) => {
   const content = (
     <div
       className={`flex gap-2 w-full min-h-12 h-full items-center px-[13px] rounded-lg cursor-pointer transition hover:bg-[#2b2f31] ${

@@ -9,8 +9,6 @@ import {
   X,
   MessageSquare,
 } from 'lucide-react';
-import { Link } from '@/i18n/navigation';
-import { useRouter } from '@/i18n/navigation';
 import {
   useNotificationsV2,
   useMarkAsReadV2,
@@ -24,6 +22,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../hooks/use-auth';
 import { createPortal } from 'react-dom';
 import type { NotificationEntry } from '../lib/api/notifications-v2';
+import { Link, useRouter } from '../i18n/navigation';
 
 const typeColors: Record<string, string> = {
   INFO: 'bg-blue-500',
@@ -108,7 +107,9 @@ function NotificationToast({
           <MessageSquare size={14} className="text-blue-400" />
         ) : (
           <div
-            className={`w-2 h-2 rounded-full ${typeColors[notification.type] || 'bg-gray-500'}`}
+            className={`w-2 h-2 rounded-full ${
+              typeColors[notification.type] || 'bg-gray-500'
+            }`}
           />
         )}
       </div>
