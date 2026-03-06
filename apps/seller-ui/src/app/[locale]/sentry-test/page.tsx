@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState } from 'react';
 import * as Sentry from '@sentry/nextjs';
 

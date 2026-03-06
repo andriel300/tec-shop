@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { of, throwError } from 'rxjs';
 import type { Response, Request } from 'express';
+import { CircuitBreakerService } from '../../common/circuit-breaker.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -41,6 +42,12 @@ describe('AuthController', () => {
           provide: ConfigService,
           useValue: {
             get: jest.fn((key: string) => process.env[key]),
+          },
+        },
+        {
+          provide: CircuitBreakerService,
+          useValue: {
+            fire: jest.fn((_, fn: () => Promise<unknown>) => fn()),
           },
         },
       ],
