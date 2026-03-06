@@ -31,6 +31,9 @@
       "path": "../../libs/shared/metrics/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/shared/interceptor/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/shared/notification-producer/tsconfig.lib.json"
     },
     {

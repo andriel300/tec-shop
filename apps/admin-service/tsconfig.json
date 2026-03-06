@@ -22,6 +22,9 @@
       "path": "../../libs/shared/metrics"
     },
     {
+      "path": "../../libs/shared/interceptor"
+    },
+    {
       "path": "../../libs/shared/notification-producer"
     },
     {

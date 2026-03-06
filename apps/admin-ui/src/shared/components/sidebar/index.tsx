@@ -54,22 +54,22 @@ const SidebarWrapper = () => {
     >
       <Sidebar.Header>
         <Box>
-          <div className="flex items-center justify-between">
-            <Link href={'/'} className="flex justify-center text-center gap-2">
+          <div className="flex items-center justify-between mb-2">
+            <Link href={'/'} className="flex items-center gap-2 min-w-0">
               <Logo />
-              <Box>
-                <h3 className="text-xl font-medium text-[#ecedee]">
+              <Box className="min-w-0">
+                <h3 className="text-xl font-medium text-[#ecedee] truncate">
                   {admin?.name}
                 </h3>
-                <h5 className="font-medium pl-2 text-xs text-[#ecedeecf] whitespace-none">
+                <h5 className="font-medium text-xs text-[#ecedeecf] truncate">
                   {admin?.email}
                 </h5>
               </Box>
             </Link>
-            <div className="flex items-center gap-2">
-              <LanguageSwitcher />
-              <NotificationBell />
-            </div>
+            <NotificationBell />
+          </div>
+          <div className="flex justify-end">
+            <LanguageSwitcher />
           </div>
         </Box>
       </Sidebar.Header>

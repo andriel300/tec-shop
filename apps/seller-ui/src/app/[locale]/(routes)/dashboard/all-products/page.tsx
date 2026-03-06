@@ -199,23 +199,31 @@ const ProductsPage = () => {
                           onMouseLeave={() => setHoveredImage(null)}
                           onMouseMove={handleMouseMove}
                         >
-                          <IKImage
-                            urlEndpoint={imagekitConfig.urlEndpoint}
-                            path={getImageKitPath(product.images[0])}
-                            alt={product.name}
-                            width={48}
-                            height={48}
-                            transformation={[
-                              {
-                                width: '48',
-                                height: '48',
-                                crop: 'at_max',
-                                quality: 80,
-                              },
-                            ]}
-                            loading="lazy"
-                            className="object-cover w-full h-full"
-                          />
+                          {imagekitConfig.urlEndpoint ? (
+                            <IKImage
+                              urlEndpoint={imagekitConfig.urlEndpoint}
+                              path={getImageKitPath(product.images[0])}
+                              alt={product.name}
+                              width={48}
+                              height={48}
+                              transformation={[
+                                {
+                                  width: '48',
+                                  height: '48',
+                                  crop: 'at_max',
+                                  quality: 80,
+                                },
+                              ]}
+                              loading="lazy"
+                              className="object-cover w-full h-full"
+                            />
+                          ) : (
+                            <img
+                              src={product.images[0]}
+                              alt={product.name}
+                              className="object-cover w-full h-full"
+                            />
+                          )}
                         </div>
                       ) : (
                         <div className="w-12 h-12 rounded bg-gray-700 flex items-center justify-center">
@@ -332,24 +340,32 @@ const ProductsPage = () => {
               {/* Top shine effect */}
               <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-white/10 to-transparent pointer-events-none z-10" />
 
-              <IKImage
-                urlEndpoint={imagekitConfig.urlEndpoint}
-                path={getImageKitPath(hoveredImage)}
-                alt="Product preview"
-                width={256}
-                height={256}
-                transformation={[
-                  {
-                    width: '256',
-                    height: '256',
-                    crop: 'at_max',
-                    quality: 90,
-                    focus: 'auto',
-                  },
-                ]}
-                loading="eager"
-                className="object-cover w-full h-full"
-              />
+              {imagekitConfig.urlEndpoint ? (
+                <IKImage
+                  urlEndpoint={imagekitConfig.urlEndpoint}
+                  path={getImageKitPath(hoveredImage)}
+                  alt="Product preview"
+                  width={256}
+                  height={256}
+                  transformation={[
+                    {
+                      width: '256',
+                      height: '256',
+                      crop: 'at_max',
+                      quality: 90,
+                      focus: 'auto',
+                    },
+                  ]}
+                  loading="eager"
+                  className="object-cover w-full h-full"
+                />
+              ) : (
+                <img
+                  src={hoveredImage ?? ''}
+                  alt="Product preview"
+                  className="object-cover w-full h-full"
+                />
+              )}
             </div>
           </div>
         </div>

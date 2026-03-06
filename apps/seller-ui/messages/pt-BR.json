@@ -30,6 +30,7 @@
     "emailAddress": "Endereco de Email",
     "enterEmail": "Digite seu Email",
     "password": "Senha",
+    "passwordLabel": "Senha",
     "enterPassword": "Digite sua senha",
     "rememberMe": "Lembrar-me",
     "forgotPassword": "Esqueceu a Senha?",

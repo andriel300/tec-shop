@@ -350,7 +350,7 @@ const ImagePlaceHolder = ({
               alt={`Product ${index}`}
               className="absolute inset-0 w-full h-full object-cover"
             />
-          ) : (
+          ) : imagekitConfig.urlEndpoint ? (
             /* Use IKImage only for basic ImageKit URLs without transformations */
             <IKImage
               urlEndpoint={imagekitConfig.urlEndpoint}
@@ -369,6 +369,12 @@ const ImagePlaceHolder = ({
                 })
               }]}
               loading="eager"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <img
+              src={imagePreview}
+              alt={`Product ${index}`}
               className="absolute inset-0 w-full h-full object-cover"
             />
           )}

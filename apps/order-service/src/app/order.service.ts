@@ -747,51 +747,46 @@ export class OrderService {
   }
 
   async getOrderDetailsForSeller(
-    sellerId: string,
+    sellerId: string | null,
     orderId: string
   ): Promise<Record<string, unknown>> {
+    const isAdmin = !sellerId;
+
     const order = await this.prisma.order.findFirst({
       where: {
         id: orderId,
-        items: {
-          some: { sellerId },
-        },
+        ...(isAdmin ? {} : { items: { some: { sellerId: sellerId! } } }),
       },
       include: {
-        items: {
-          where: { sellerId },
-        },
-        payouts: {
-          where: { sellerId },
-        },
+        items: isAdmin ? true : { where: { sellerId: sellerId! } },
+        payouts: isAdmin ? true : { where: { sellerId: sellerId! } },
       },
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found or you do not have access to this order');
+      throw new NotFoundException('Order not found');
     }
 
     return order;
   }
 
   async updateDeliveryStatus(
-    sellerId: string,
+    sellerId: string | null,
     orderId: string,
     status: OrderStatus,
     trackingNumber?: string
   ): Promise<Record<string, unknown>> {
-    // Verify seller has access to this order
+    const isAdmin = !sellerId;
+
     const order = await this.prisma.order.findFirst({
       where: {
         id: orderId,
-        items: {
-          some: { sellerId },
-        },
+        ...(isAdmin ? {} : { items: { some: { sellerId: sellerId! } } }),
       },
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found or you do not have access to this order');
+      throw new NotFoundException('Order not found');
     }
 
     // Update order status
@@ -806,7 +801,7 @@ export class OrderService {
       },
     });
 
-    this.logger.log(`Order ${orderId} status updated to ${status} by seller ${sellerId}`);
+    this.logger.log(`Order ${orderId} status updated to ${status} by ${sellerId ? `seller ${sellerId}` : 'admin'}`);
 
     // Send review prompt notification when order is delivered
     if (status === OrderStatus.DELIVERED) {

@@ -197,6 +197,8 @@ export class SellerService {
           ...(shopData.shippingPolicy !== undefined && {
             shippingPolicy: shopData.shippingPolicy,
           }),
+          ...(shopData.banner !== undefined && { banner: shopData.banner }),
+          ...(shopData.logo !== undefined && { logo: shopData.logo }),
         },
       });
       this.logProducer.info('seller-service', 'seller', 'Shop updated', {

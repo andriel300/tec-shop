@@ -40,6 +40,8 @@ Table Shop {
   socialLinks Json[] [not null]
   returnPolicy String
   shippingPolicy String
+  banner String
+  logo String
   rating Float [not null, default: 0]
   totalOrders Int [not null, default: 0]
   isActive Boolean [not null, default: true]

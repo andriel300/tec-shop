@@ -24,6 +24,7 @@
     "emailRequired": "Email e obrigatorio",
     "invalidEmail": "Formato de email invalido",
     "passwordRequired": "Senha e obrigatoria",
-    "login": "Entrar"
+    "login": "Entrar",
+    "signingIn": "Entrando..."
   }
 }

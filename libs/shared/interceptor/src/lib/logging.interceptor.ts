@@ -45,6 +45,17 @@ export class LoggingInterceptor implements NestInterceptor {
         url: string;
       }>();
       const { method, url } = request;
+
+      const isInfraRequest =
+        url === '/metrics' ||
+        url === '/api/metrics' ||
+        url.startsWith('/health') ||
+        url.startsWith('/api/health');
+
+      if (isInfraRequest) {
+        return next.handle();
+      }
+
       this.logger.log(`[HTTP] ${method} ${url}`);
 
       return next.handle().pipe(
