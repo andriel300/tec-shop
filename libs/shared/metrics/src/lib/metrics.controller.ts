@@ -1,4 +1,4 @@
-import { Controller, Get, Header, Res } from '@nestjs/common';
+import { Controller, Get, Res } from '@nestjs/common';
 import { register } from 'prom-client';
 import type { Response } from 'express';
 

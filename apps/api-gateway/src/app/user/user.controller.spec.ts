@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserController } from './user.controller';
 import { ClientProxy } from '@nestjs/microservices';
 import { of, throwError } from 'rxjs';
+import { CircuitBreakerService } from '../../common/circuit-breaker.service';
 
 describe('UserController', () => {
   let controller: UserController;
@@ -19,6 +20,12 @@ describe('UserController', () => {
           provide: 'USER_SERVICE',
           useValue: {
             send: jest.fn(),
+          },
+        },
+        {
+          provide: CircuitBreakerService,
+          useValue: {
+            fire: jest.fn((_, fn: () => Promise<unknown>) => fn()),
           },
         },
       ],

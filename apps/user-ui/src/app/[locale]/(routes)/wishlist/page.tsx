@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useAuth } from '../../../../hooks/use-auth';
 import useDeviceTracking from '../../../../hooks/use-device-tracking';
 import useLocationTracking from '../../../../hooks/use-location-tracking';

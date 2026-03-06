@@ -3,6 +3,7 @@ import { SellerController } from './seller.controller';
 import { ClientProxy } from '@nestjs/microservices';
 import { of, throwError } from 'rxjs';
 import { ImageKitService } from '@tec-shop/shared/imagekit';
+import { CircuitBreakerService } from '../../common/circuit-breaker.service';
 
 describe('SellerController', () => {
   let controller: SellerController;
@@ -34,6 +35,12 @@ describe('SellerController', () => {
             uploadFile: jest.fn(),
             deleteFile: jest.fn(),
             getUrlEndpoint: jest.fn().mockReturnValue('https://ik.imagekit.io/test'),
+          },
+        },
+        {
+          provide: CircuitBreakerService,
+          useValue: {
+            fire: jest.fn((_, fn: () => Promise<unknown>) => fn()),
           },
         },
       ],

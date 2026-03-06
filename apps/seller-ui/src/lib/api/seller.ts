@@ -44,6 +44,8 @@ export interface UpdateShopData {
   socialLinks?: SocialLink[];
   returnPolicy?: string;
   shippingPolicy?: string;
+  banner?: string;
+  logo?: string;
 }
 
 export interface CreateSellerProfileData {
@@ -65,6 +67,8 @@ export interface ShopResponse {
   socialLinks?: SocialLink[];
   returnPolicy?: string;
   shippingPolicy?: string;
+  banner?: string;
+  logo?: string;
   rating: number;
   totalOrders: number;
   isActive: boolean;
