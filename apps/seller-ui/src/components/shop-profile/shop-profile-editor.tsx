@@ -35,17 +35,11 @@ const ShopProfileEditor: React.FC = () => {
   });
 
   const handleBannerChange = async (url: string) => {
-    // For now, we'll store this locally or in the shop update
-    // The backend would need to support banner field
-    console.log('Banner changed:', url);
-    // TODO: Add banner field to shop schema if not exists
+    await updateShopMutation.mutateAsync({ banner: url });
   };
 
   const handleLogoChange = async (url: string) => {
-    // For now, we'll store this locally or in the shop update
-    // The backend would need to support logo field
-    console.log('Logo changed:', url);
-    // TODO: Add logo field to shop schema if not exists
+    await updateShopMutation.mutateAsync({ logo: url });
   };
 
   const handleProfileSave = async (data: UpdateShopData) => {
@@ -90,7 +84,7 @@ const ShopProfileEditor: React.FC = () => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         {/* Editable Banner */}
         <EditableBanner
-          bannerUrl={undefined} // TODO: Add shop.banner when available
+          bannerUrl={shop.banner ?? undefined}
           onBannerChange={handleBannerChange}
         />
 
@@ -99,7 +93,7 @@ const ShopProfileEditor: React.FC = () => {
           {/* Editable Logo */}
           <div className="relative flex justify-center md:justify-start -mt-16 mb-4">
             <EditableLogo
-              logoUrl={undefined} // TODO: Add shop.logo when available
+              logoUrl={shop.logo ?? undefined}
               businessName={shop.businessName}
               onLogoChange={handleLogoChange}
             />

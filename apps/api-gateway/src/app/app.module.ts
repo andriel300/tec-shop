@@ -68,6 +68,17 @@ import { CircuitBreakerModule } from '../common/circuit-breaker.module';
         pinoHttp: {
           level:
             config.get<string>('NODE_ENV') !== 'production' ? 'debug' : 'info',
+          autoLogging: {
+            ignore: (req) => {
+              const url = req.url ?? '';
+              return url === '/api/metrics' || url.startsWith('/api/health');
+            },
+          },
+          redact: {
+            paths: ['req.headers.authorization', 'req.headers.cookie'],
+            censor: '[REDACTED]',
+          },
+          customProps: () => ({ service: 'api-gateway' }),
           transport:
             config.get<string>('NODE_ENV') !== 'production'
               ? {
@@ -76,7 +87,7 @@ import { CircuitBreakerModule } from '../common/circuit-breaker.module';
                     colorize: true,
                     levelFirst: true,
                     translateTime: 'SYS:standard',
-                    ignore: 'pid,hostname',
+                    ignore: 'pid,hostname,req.headers,res.headers',
                   },
                 }
               : undefined,

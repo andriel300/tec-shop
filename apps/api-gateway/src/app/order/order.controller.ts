@@ -184,29 +184,29 @@ export class OrderController {
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SELLER')
+  @Roles('SELLER', 'ADMIN')
   @Get('seller/:id')
-  @ApiOperation({ summary: 'Get order details for seller' })
+  @ApiOperation({ summary: 'Get order details for seller or admin' })
   @ApiResponse({
     status: 200,
     description: 'Order details with seller items and payouts.',
   })
   @ApiResponse({ status: 404, description: 'Order not found.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
-  @ApiResponse({ status: 403, description: 'Forbidden - User is not a seller.' })
+  @ApiResponse({ status: 403, description: 'Forbidden.' })
   async getSellerOrderDetails(
-    @Req() req: { user: { userId: string } },
+    @Req() req: { user: { userId: string; role?: string } },
     @Param('id') orderId: string
   ) {
     const payload = {
-      sellerId: req.user.userId,
+      sellerId: req.user.role === 'ADMIN' ? null : req.user.userId,
       orderId,
     };
     return this.cb.fire('ORDER_SERVICE', () => firstValueFrom(this.orderClient.send('get-seller-order-details', payload)));
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('SELLER')
+  @Roles('SELLER', 'ADMIN')
   @Post('seller/:id/status')
   @ApiOperation({ summary: 'Update order delivery status' })
   @ApiResponse({
@@ -217,12 +217,12 @@ export class OrderController {
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({ status: 403, description: 'Forbidden - User is not a seller.' })
   async updateDeliveryStatus(
-    @Req() req: { user: { userId: string } },
+    @Req() req: { user: { userId: string; role?: string } },
     @Param('id') orderId: string,
     @Body() body: { status: string; trackingNumber?: string }
   ) {
     const payload = {
-      sellerId: req.user.userId,
+      sellerId: req.user.role === 'ADMIN' ? null : req.user.userId,
       orderId,
       status: body.status,
       trackingNumber: body.trackingNumber,

@@ -26,6 +26,17 @@ import { MetricsModule, HealthModule } from '@tec-shop/metrics';
         pinoHttp: {
           level:
             config.get<string>('NODE_ENV') !== 'production' ? 'debug' : 'info',
+          autoLogging: {
+            ignore: (req) => {
+              const url = req.url ?? '';
+              return url === '/metrics' || url.startsWith('/health');
+            },
+          },
+          redact: {
+            paths: ['req.headers.authorization', 'req.headers.cookie'],
+            censor: '[REDACTED]',
+          },
+          customProps: () => ({ service: 'seller-service' }),
           transport:
             config.get<string>('NODE_ENV') !== 'production'
               ? {
@@ -34,7 +45,7 @@ import { MetricsModule, HealthModule } from '@tec-shop/metrics';
                     colorize: true,
                     levelFirst: true,
                     translateTime: 'SYS:standard',
-                    ignore: 'pid,hostname',
+                    ignore: 'pid,hostname,req.headers,res.headers',
                   },
                 }
               : undefined,

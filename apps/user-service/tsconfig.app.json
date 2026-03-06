@@ -35,6 +35,9 @@
       "path": "../../libs/shared/logger-producer/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/shared/interceptor/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/shared/dto/tsconfig.lib.json"
     }
   ]

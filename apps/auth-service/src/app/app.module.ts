@@ -24,6 +24,17 @@ import { NotificationProducerModule } from '@tec-shop/notification-producer';
         pinoHttp: {
           level:
             config.get<string>('NODE_ENV') !== 'production' ? 'debug' : 'info',
+          autoLogging: {
+            ignore: (req) => {
+              const url = req.url ?? '';
+              return url === '/metrics' || url.startsWith('/health');
+            },
+          },
+          redact: {
+            paths: ['req.headers.authorization', 'req.headers.cookie'],
+            censor: '[REDACTED]',
+          },
+          customProps: () => ({ service: 'auth-service' }),
           transport:
             config.get<string>('NODE_ENV') !== 'production'
               ? {
@@ -32,7 +43,7 @@ import { NotificationProducerModule } from '@tec-shop/notification-producer';
                     colorize: true,
                     levelFirst: true,
                     translateTime: 'SYS:standard',
-                    ignore: 'pid,hostname',
+                    ignore: 'pid,hostname,req.headers,res.headers',
                   },
                 }
               : undefined,

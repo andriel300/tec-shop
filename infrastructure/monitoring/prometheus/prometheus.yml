@@ -30,73 +30,62 @@ scrape_configs:
     static_configs:
       - targets: ["localhost:9090"]
 
-  # API Gateway
+  # API Gateway — metrics served under /api prefix
   - job_name: "api-gateway"
     static_configs:
       - targets: ["api-gateway:8080"]
-    metrics_path: /metrics
-    # TODO: Add Bearer token auth if metrics endpoint is protected
-    # authorization:
-    #   credentials_file: /etc/prometheus/token
+    metrics_path: /api/metrics
 
-  # Auth Service
+  # TCP microservices expose HTTP metrics on separate ports (9001-9010)
   - job_name: "auth-service"
     static_configs:
-      - targets: ["auth-service:6001"]
+      - targets: ["auth-service:9001"]
     metrics_path: /metrics
 
-  # User Service
   - job_name: "user-service"
     static_configs:
-      - targets: ["user-service:6002"]
+      - targets: ["user-service:9002"]
     metrics_path: /metrics
 
-  # Seller Service
   - job_name: "seller-service"
     static_configs:
-      - targets: ["seller-service:6003"]
+      - targets: ["seller-service:9003"]
     metrics_path: /metrics
 
-  # Product Service
   - job_name: "product-service"
     static_configs:
-      - targets: ["product-service:6004"]
+      - targets: ["product-service:9004"]
     metrics_path: /metrics
 
-  # Order Service
   - job_name: "order-service"
     static_configs:
-      - targets: ["order-service:6005"]
+      - targets: ["order-service:9005"]
     metrics_path: /metrics
 
-  # Admin Service
   - job_name: "admin-service"
     static_configs:
-      - targets: ["admin-service:6006"]
+      - targets: ["admin-service:9006"]
     metrics_path: /metrics
 
-  # Chatting Service
+  # chatting-service and logger-service use their primary port for HTTP
   - job_name: "chatting-service"
     static_configs:
       - targets: ["chatting-service:6007"]
     metrics_path: /metrics
 
-  # Logger Service
   - job_name: "logger-service"
     static_configs:
       - targets: ["logger-service:6008"]
     metrics_path: /metrics
 
-  # Kafka Analytics Service
   - job_name: "kafka-service"
     static_configs:
-      - targets: ["kafka-service:6009"]
+      - targets: ["kafka-service:9009"]
     metrics_path: /metrics
 
-  # Recommendation Service
   - job_name: "recommendation-service"
     static_configs:
-      - targets: ["recommendation-service:6010"]
+      - targets: ["recommendation-service:9010"]
     metrics_path: /metrics
 
   # Redis Exporter

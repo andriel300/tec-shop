@@ -62,6 +62,8 @@ model Shop {
   socialLinks    Json[]
   returnPolicy   String?
   shippingPolicy String?
+  banner         String? // URL to shop banner image
+  logo           String? // URL to shop logo image
 
   // Shop metrics
   rating      Float   @default(0)

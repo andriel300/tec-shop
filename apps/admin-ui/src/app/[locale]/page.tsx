@@ -8,6 +8,7 @@ import { Input } from '@tec-shop/input';
 import type { AxiosError } from 'axios';
 import apiClient from '../../lib/api/client';
 import { useRouter } from '../../i18n/navigation';
+import { toast } from 'sonner';
 
 type FormData = {
   email: string;
@@ -37,6 +38,7 @@ const Page = () => {
       if (data?.user) {
         sessionStorage.setItem('admin', JSON.stringify(data.user));
       }
+      toast.success(`Welcome back, ${data?.user?.name ?? 'Admin'}!`);
       router.push('/dashboard');
     },
     onError: (error: AxiosError) => {
@@ -44,6 +46,7 @@ const Page = () => {
         (error.response?.data as { message: string })?.message ??
         'Invalid Credentials!';
       setServerError(errorMessage);
+      toast.error(errorMessage);
     },
   });
 
@@ -137,7 +140,10 @@ const Page = () => {
             className="w-full mt-5 text-xl flex justify-center font-semibold font-heading cursor-pointer bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
           >
             {loginMutation.isPending ? (
-              <div className="w-6 h-6 border-2 border-gray-100 border-t-transparent rounded-full animate-spin" />
+              <span className="flex items-center gap-2">
+                <div className="w-5 h-5 border-2 border-gray-100 border-t-transparent rounded-full animate-spin" />
+                {t('signingIn')}
+              </span>
             ) : (
               <>{t('login')}</>
             )}

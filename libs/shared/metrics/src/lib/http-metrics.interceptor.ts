@@ -16,6 +16,18 @@ export class HttpMetricsInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = context.switchToHttp().getRequest<Request & { route?: { path: string } }>();
     const res = context.switchToHttp().getResponse<Response>();
+
+    const url = req.url ?? '';
+    const isInfraRequest =
+      url === '/metrics' ||
+      url === '/api/metrics' ||
+      url.startsWith('/health') ||
+      url.startsWith('/api/health');
+
+    if (isInfraRequest) {
+      return next.handle();
+    }
+
     const end = httpRequestDuration.startTimer();
     return next.handle().pipe(
       tap(() =>

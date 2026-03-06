@@ -36,23 +36,30 @@ import { KafkaController } from './kafka.controller';
     // Logging
     LoggerModule.forRoot({
       pinoHttp: {
+        level: process.env.LOG_LEVEL || 'info',
+        autoLogging: {
+          ignore: (req) => {
+            const url = req.url ?? '';
+            return url === '/metrics' || url.startsWith('/health');
+          },
+        },
+        customProps: () => ({ service: 'kafka-service' }),
+        serializers: {
+          req: () => undefined,
+          res: () => undefined,
+        },
         transport:
           process.env.NODE_ENV !== 'production'
             ? {
                 target: 'pino-pretty',
                 options: {
                   colorize: true,
+                  levelFirst: true,
                   translateTime: 'SYS:standard',
                   ignore: 'pid,hostname',
-                  singleLine: true,
                 },
               }
             : undefined,
-        level: process.env.LOG_LEVEL || 'info',
-        serializers: {
-          req: () => undefined,
-          res: () => undefined,
-        },
       },
     }),
 

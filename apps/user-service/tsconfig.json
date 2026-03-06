@@ -16,6 +16,9 @@
       "path": "../../libs/shared/logger-producer"
     },
     {
+      "path": "../../libs/shared/interceptor"
+    },
+    {
       "path": "../../libs/shared/dto"
     },
     {

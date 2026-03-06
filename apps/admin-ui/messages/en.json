@@ -24,6 +24,7 @@
     "emailRequired": "Email is required",
     "invalidEmail": "Invalid email format",
     "passwordRequired": "Password is required",
-    "login": "Login"
+    "login": "Login",
+    "signingIn": "Signing in..."
   }
 }

@@ -13,6 +13,7 @@ import useDeviceTracking from '../../hooks/use-device-tracking';
 import useStore from '../../store';
 import { useShop } from '../../hooks/use-shops';
 import { Link } from '../../i18n/navigation';
+import { toast } from 'sonner';
 
 interface ProductCardProps {
   product: Product;
@@ -53,15 +54,16 @@ const ProductCard = ({ product }: ProductCardProps) => {
         location ?? undefined,
         deviceInfo
       );
+      toast.success('Removed from wishlist', { description: product.name });
     } else {
       // Get sellerId from shop data (required for order processing)
       // Use authId instead of MongoDB _id for cross-service consistency
       const sellerId = shop?.seller?.authId || '';
 
       if (!sellerId) {
-        console.error(
-          'Cannot add to wishlist: sellerId not available from shop data'
-        );
+        toast.error('Could not add to wishlist', {
+          description: 'Shop information is not available yet. Please try again.',
+        });
         return;
       }
 
@@ -81,6 +83,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
         location ?? undefined,
         deviceInfo
       );
+      toast.success('Added to wishlist', { description: product.name });
     }
   };
 
@@ -101,15 +104,16 @@ const ProductCard = ({ product }: ProductCardProps) => {
         location ?? undefined,
         deviceInfo
       );
+      toast.success('Removed from cart', { description: product.name });
     } else {
       // Get sellerId from shop data (required for order processing)
       // Use authId instead of MongoDB _id for cross-service consistency
       const sellerId = shop?.seller?.authId || '';
 
       if (!sellerId) {
-        console.error(
-          'Cannot add to cart: sellerId not available from shop data'
-        );
+        toast.error('Could not add to cart', {
+          description: 'Shop information is not available yet. Please try again.',
+        });
         return;
       }
 
@@ -129,6 +133,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
         location ?? undefined,
         deviceInfo
       );
+      toast.success('Added to cart', { description: product.name });
     }
   };
 

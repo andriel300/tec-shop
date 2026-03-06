@@ -131,6 +131,16 @@ export class UpdateShopDto {
   website?: string;
 
   @IsOptional()
+  @IsUrl()
+  @MaxLength(500)
+  banner?: string;
+
+  @IsOptional()
+  @IsUrl()
+  @MaxLength(500)
+  logo?: string;
+
+  @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 

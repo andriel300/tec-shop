@@ -30,6 +30,7 @@
     "emailAddress": "Email Address",
     "enterEmail": "Enter your Email",
     "password": "Password",
+    "passwordLabel": "Password",
     "enterPassword": "Enter your password",
     "rememberMe": "Remember me",
     "forgotPassword": "Forgot your password?",

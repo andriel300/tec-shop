@@ -29,6 +29,9 @@
     },
     {
       "path": "../../libs/shared/metrics/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared/interceptor/tsconfig.lib.json"
     }
   ]
 }

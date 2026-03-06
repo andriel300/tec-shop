@@ -2,7 +2,7 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { OrderService } from './order.service';
 import { WebhookService } from '../services/webhook.service';
-import { CreateCheckoutSessionDto, GetSellerOrdersDto } from '@tec-shop/dto';
+import { CreateCheckoutSessionDto, GetSellerOrdersDto, OrderStatus } from '@tec-shop/dto';
 
 @Controller()
 export class AppController {
@@ -59,10 +59,10 @@ export class AppController {
 
   @MessagePattern('get-seller-order-details')
   async getSellerOrderDetails(
-    @Payload() payload: { sellerId: string; orderId: string }
+    @Payload() payload: { sellerId: string | null; orderId: string }
   ) {
     return this.orderService.getOrderDetailsForSeller(
-      payload.sellerId,
+      payload.sellerId ?? null,
       payload.orderId
     );
   }
@@ -71,16 +71,16 @@ export class AppController {
   async updateDeliveryStatus(
     @Payload()
     payload: {
-      sellerId: string;
+      sellerId: string | null;
       orderId: string;
       status: string;
       trackingNumber?: string;
     }
   ) {
     return this.orderService.updateDeliveryStatus(
-      payload.sellerId,
+      payload.sellerId ?? null,
       payload.orderId,
-      payload.status as any,
+      payload.status as OrderStatus,
       payload.trackingNumber
     );
   }
