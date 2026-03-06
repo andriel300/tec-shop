@@ -96,5 +96,10 @@ export const logoutUser = async (): Promise<ApiResponse> => {
   return response.data;
 };
 
+export const upgradeToSeller = async (data: { phoneNumber: string; country: string }): Promise<ApiResponse> => {
+  const response = await apiClient.post('/auth/seller/upgrade', data);
+  return response.data;
+};
+
 // Export API_BASE_URL for backward compatibility
 export { API_BASE_URL } from './client';

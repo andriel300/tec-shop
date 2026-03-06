@@ -153,6 +153,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 isEmailVerified: true,
                 name: response.data.user.name || userProfile.name,
                 createdAt: response.data.user.createdAt,
+                userType: response.data.userType,
               };
 
               console.log('[AuthContext] Setting authenticated state');
@@ -179,6 +180,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 isEmailVerified: true,
                 name: response.data.user.name || '',
                 createdAt: response.data.user.createdAt,
+                userType: response.data.userType,
               };
 
               setAuthState({

@@ -278,6 +278,29 @@ export class GoogleAuthDto {
   userType?: 'CUSTOMER' | 'SELLER';
 }
 
+export class UpgradeToSellerDto {
+  @ApiProperty({
+    example: '+12345678901',
+    description: 'Phone number with country code'
+  })
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^\+\d{1,4}\d{7,15}$/, {
+    message: 'Phone number must be in international format (+country code + number)'
+  })
+  phoneNumber!: string;
+
+  @ApiProperty({
+    example: 'US',
+    description: 'Country code (ISO 3166-1 alpha-2)'
+  })
+  @IsString()
+  @Matches(/^[A-Z]{2}$/, {
+    message: 'Country must be a valid 2-letter country code'
+  })
+  country!: string;
+}
+
 export class ChangePasswordDto {
   @ApiProperty({
     example: 'OldPassword123!',

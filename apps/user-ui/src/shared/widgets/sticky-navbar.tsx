@@ -240,15 +240,28 @@ const StickyNavbar = () => {
         {/* Navigation Links */}
 
         <div className="flex items-center">
-          {navItems.map((i: NavItemsTypes, index: number) => (
-            <Link
-              className="px-3 font-heading font-medium text-md hover:text-brand-primary transition-colors"
-              href={i.href}
-              key={index}
-            >
-              {t(i.translationKey as Parameters<typeof t>[0])}
-            </Link>
-          ))}
+          {navItems.map((i: NavItemsTypes, index: number) => {
+            if (i.translationKey === 'becomeASeller' && user?.userType === 'seller') {
+              return (
+                <Link
+                  key={index}
+                  className="px-3 font-heading font-medium text-md hover:text-brand-primary transition-colors"
+                  href={`${process.env.NEXT_PUBLIC_SELLER_SERVER_URI}/dashboard`}
+                >
+                  {t('sellerDashboard')}
+                </Link>
+              );
+            }
+            return (
+              <Link
+                className="px-3 font-heading font-medium text-md hover:text-brand-primary transition-colors"
+                href={i.href}
+                key={index}
+              >
+                {t(i.translationKey as Parameters<typeof t>[0])}
+              </Link>
+            );
+          })}
         </div>
 
         <div>

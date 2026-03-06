@@ -23,6 +23,7 @@ import type {
   SellerSignupDto,
   GoogleAuthDto,
   ChangePasswordDto,
+  UpgradeToSellerDto,
 } from '@tec-shop/dto';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CircuitBreakerService } from '../../common/circuit-breaker.service';
@@ -546,6 +547,40 @@ export class AuthController {
       message: 'Admin login successful',
       userType: 'admin',
     };
+  }
+
+  @Post('seller/upgrade')
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ medium: { limit: 3, ttl: 900000 } }) // 3 upgrade attempts per 15 minutes
+  @ApiOperation({ summary: 'Upgrade a customer account to seller' })
+  @ApiResponse({ status: 201, description: 'Account upgraded to seller successfully.' })
+  @ApiResponse({ status: 400, description: 'Account is not a customer or invalid data.' })
+  @ApiResponse({ status: 401, description: 'Not authenticated.' })
+  async upgradeToSeller(
+    @Req() request: Request & { user: { userId: string } },
+    @Body() upgradeDto: UpgradeToSellerDto,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const result = await this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
+      this.authService.send('auth-upgrade-to-seller', {
+        userId: request.user.userId,
+        upgradeDto,
+      })
+    ));
+
+    // Clear customer cookies
+    const customerAccessCookie = this.getCookieConfig('customer', 'access', false);
+    const customerRefreshCookie = this.getCookieConfig('customer', 'refresh', false);
+    response.clearCookie(customerAccessCookie.name, customerAccessCookie.options);
+    response.clearCookie(customerRefreshCookie.name, customerRefreshCookie.options);
+
+    // Set seller cookies
+    const sellerAccessCookie = this.getCookieConfig('seller', 'access', false);
+    const sellerRefreshCookie = this.getCookieConfig('seller', 'refresh', false);
+    response.cookie(sellerAccessCookie.name, result.access_token, sellerAccessCookie.options);
+    response.cookie(sellerRefreshCookie.name, result.refresh_token, sellerRefreshCookie.options);
+
+    return { message: 'Account upgraded to seller', userType: 'seller' };
   }
 
   @Get('google')
