@@ -6,6 +6,7 @@ export interface User {
   isEmailVerified: boolean;
   name?: string; // Name from UserProfile
   createdAt?: string; // ISO date string from auth service
+  userType?: string; // 'customer', 'seller', or 'admin' — from refresh response
 }
 
 export interface UserProfile {

@@ -12,6 +12,7 @@ import {
   SellerSignupDto,
   GoogleAuthDto,
   ChangePasswordDto,
+  UpgradeToSellerDto,
 } from '@tec-shop/dto';
 import { AuthService } from './auth.service';
 
@@ -135,5 +136,12 @@ export class AuthController {
       payload.userId,
       payload.changePasswordDto
     );
+  }
+
+  @MessagePattern('auth-upgrade-to-seller')
+  async upgradeToSeller(
+    @Payload() payload: { userId: string; upgradeDto: UpgradeToSellerDto }
+  ) {
+    return this.authService.upgradeToSeller(payload.userId, payload.upgradeDto);
   }
 }

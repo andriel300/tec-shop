@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Inject,
   Injectable,
@@ -24,6 +25,7 @@ import type {
   SellerSignupDto,
   GoogleAuthDto,
   ChangePasswordDto,
+  UpgradeToSellerDto,
 } from '@tec-shop/dto';
 import { EmailService } from '../email/email.service';
 import { RedisService } from '@tec-shop/redis-client';
@@ -1275,6 +1277,83 @@ export class AuthService implements OnModuleInit {
 
     return {
       message: 'Password changed successfully. Please log in again with your new password.',
+    };
+  }
+
+  async upgradeToSeller(userId: string, dto: UpgradeToSellerDto) {
+    this.logger.log(`Upgrade to seller attempt - userId: ${userId}`);
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    if (user.userType !== 'CUSTOMER') {
+      throw new BadRequestException('Only CUSTOMER accounts can be upgraded to SELLER');
+    }
+
+    // Fetch user's name from user-service
+    let userName = '';
+    try {
+      const userProfile = await firstValueFrom(
+        this.userClient.send('get-user-profile', userId)
+      );
+      userName = userProfile?.name || '';
+    } catch (err) {
+      this.logger.warn(`Could not fetch user profile name for upgrade - userId: ${userId}`, err);
+    }
+
+    // Create seller profile in seller-service via HMAC-signed request
+    const profileData = {
+      authId: userId,
+      name: userName,
+      email: user.email,
+      phoneNumber: dto.phoneNumber,
+      country: dto.country,
+    };
+
+    if (!process.env.SERVICE_MASTER_SECRET) {
+      throw new Error('SERVICE_MASTER_SECRET environment variable is not configured');
+    }
+
+    const serviceSecret = ServiceAuthUtil.deriveServiceSecret(
+      process.env.SERVICE_MASTER_SECRET,
+      'auth-service'
+    );
+
+    const signedRequest = ServiceAuthUtil.signRequest(
+      profileData,
+      'auth-service',
+      serviceSecret
+    );
+
+    await firstValueFrom(
+      this.sellerClient.send('create-seller-profile-signed', signedRequest)
+    );
+
+    // Upgrade userType in auth DB
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { userType: 'SELLER' },
+    });
+
+    // Revoke existing refresh token
+    await this.revokeRefreshToken(userId);
+
+    // Generate new seller tokens
+    const tokens = await this.generateSellerTokens(userId, user.email, false);
+
+    this.logger.log(`Account upgraded to seller - userId: ${userId}`);
+    this.logProducer.info('auth-service', LogCategory.AUTH, 'Account upgraded to seller', {
+      userId,
+      metadata: { action: 'upgrade_to_seller' },
+    });
+
+    return {
+      ...tokens,
+      userId,
+      email: user.email,
     };
   }
 }
