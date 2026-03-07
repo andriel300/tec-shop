@@ -8,7 +8,7 @@ import { LogProducerService } from '@tec-shop/logger-producer';
 import { NotificationProducerService } from '@tec-shop/notification-producer';
 import { ClientProxy } from '@nestjs/microservices';
 import * as bcrypt from 'bcrypt';
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
 import { LoginDto, SignupDto, VerifyEmailDto } from '@tec-shop/dto';
 import { of } from 'rxjs';
 
@@ -161,12 +161,13 @@ describe('AuthService', () => {
       });
     });
 
-    it('should throw ConflictException if user already exists', async () => {
+    it('should return success message silently if user already exists (prevents email enumeration)', async () => {
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
 
-      await expect(service.signup(signupDto)).rejects.toThrow(
-        ConflictException
-      );
+      const result = await service.signup(signupDto);
+      expect(result).toEqual({
+        message: 'Signup successful. Please check your email to verify your account.',
+      });
     });
   });
 
