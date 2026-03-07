@@ -232,7 +232,7 @@ describe('AuthController', () => {
       const res = mockResponse();
 
       // Act
-      const result = await controller.refreshToken(req, res);
+      const result = await controller.refreshToken({}, req, res);
 
       // Assert
       expect(authServiceClient.send).toHaveBeenCalledWith('auth-refresh-token', {
@@ -259,7 +259,7 @@ describe('AuthController', () => {
       const res = mockResponse();
 
       // Act & Assert
-      await expect(controller.refreshToken(req, res)).rejects.toThrow('No refresh token found. Please log in again.');
+      await expect(controller.refreshToken({}, req, res)).rejects.toThrow('No refresh token found. Please log in again.');
     });
   });
 

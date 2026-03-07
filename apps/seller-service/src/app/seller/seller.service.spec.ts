@@ -123,7 +123,23 @@ describe('SellerService', () => {
       // Assert
       expect(prisma.seller.findUnique).toHaveBeenCalledWith({
         where: { authId },
-        include: { shop: true },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phoneNumber: true,
+          country: true,
+          isVerified: true,
+          stripeOnboardingStatus: true,
+          stripeDetailsSubmitted: true,
+          stripePayoutsEnabled: true,
+          stripeChargesEnabled: true,
+          stripeLastUpdated: true,
+          notificationPreferences: true,
+          createdAt: true,
+          updatedAt: true,
+          shop: true,
+        },
       });
       expect(result).toEqual(expectedSeller);
     });
@@ -161,7 +177,23 @@ describe('SellerService', () => {
       expect(prisma.seller.update).toHaveBeenCalledWith({
         where: { authId },
         data: updateData,
-        include: { shop: true },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phoneNumber: true,
+          country: true,
+          isVerified: true,
+          stripeOnboardingStatus: true,
+          stripeDetailsSubmitted: true,
+          stripePayoutsEnabled: true,
+          stripeChargesEnabled: true,
+          stripeLastUpdated: true,
+          notificationPreferences: true,
+          createdAt: true,
+          updatedAt: true,
+          shop: true,
+        },
       });
       expect(result).toEqual(updatedSeller);
     });
