@@ -85,7 +85,7 @@ export class ProductController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SELLER')
-  @UseInterceptors(FilesInterceptor('images', 4))
+  @UseInterceptors(FilesInterceptor('images', 4, { limits: { fileSize: FILE_SIZE_LIMIT } }))
   @ApiResponse({ status: 201, description: 'Product created successfully.' })
   @ApiResponse({
     status: 400,
@@ -150,8 +150,10 @@ export class ProductController {
     @Query('isFeatured') isFeatured?: boolean,
     @Query('search') search?: string
   ) {
+    const user = req.user as { userId: string };
     return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-get-products', {
+        sellerId: user.userId,
         shopId,
         filters: {
           category,
@@ -201,7 +203,7 @@ export class ProductController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SELLER')
-  @UseInterceptors(FilesInterceptor('images', 4))
+  @UseInterceptors(FilesInterceptor('images', 4, { limits: { fileSize: FILE_SIZE_LIMIT } }))
   @ApiResponse({ status: 200, description: 'Product updated successfully.' })
   @ApiResponse({ status: 404, description: 'Product not found.' })
   @ApiResponse({
@@ -309,7 +311,7 @@ export class ProductController {
   @ApiConsumes('multipart/form-data')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(FilesInterceptor('images', REVIEW_MAX_IMAGES))
+  @UseInterceptors(FilesInterceptor('images', REVIEW_MAX_IMAGES, { limits: { fileSize: FILE_SIZE_LIMIT } }))
   @Throttle({ short: { limit: 20, ttl: 60000 } })
   @ApiResponse({
     status: 201,
@@ -341,6 +343,14 @@ export class ProductController {
     const rating = typeof body.rating === 'string' ? parseInt(body.rating as string, 10) : body.rating as number;
     const title = body.title as string | undefined;
     const content = body.content as string | undefined;
+
+    if (title && title.length > 100) {
+      throw new BadRequestException('Review title must not exceed 100 characters');
+    }
+
+    if (content && content.length > 2000) {
+      throw new BadRequestException('Review content must not exceed 2000 characters');
+    }
 
     if (!rating || rating < 1 || rating > 5) {
       throw new BadRequestException('Rating must be between 1 and 5');

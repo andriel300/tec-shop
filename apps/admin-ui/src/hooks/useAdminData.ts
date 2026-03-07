@@ -142,7 +142,8 @@ export function useDeleteAdmin() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (adminId: string) => adminApi.deleteAdmin(adminId),
+    mutationFn: ({ adminId, confirmPassword }: { adminId: string; confirmPassword: string }) =>
+      adminApi.deleteAdmin(adminId, confirmPassword),
     onSuccess: () => {
       toast.success('Admin deleted successfully');
       queryClient.invalidateQueries({ queryKey: adminKeys.admins.list() });

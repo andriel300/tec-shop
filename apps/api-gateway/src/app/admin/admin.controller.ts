@@ -8,9 +8,11 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UseGuards,
   Logger,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import {
@@ -129,14 +131,23 @@ export class AdminController {
   }
 
   @Delete('admins/:id')
-  @ApiOperation({ summary: 'Delete an admin user (Admin only)' })
+  @ApiOperation({ summary: 'Delete an admin user (Admin only) — requires your current password to confirm' })
   @ApiResponse({ status: 200, description: 'Admin deleted successfully' })
   @ApiResponse({ status: 404, description: 'Admin not found' })
   @ApiResponse({ status: 400, description: 'Cannot delete last admin or non-admin user' })
-  async deleteAdmin(@Param('id') adminId: string) {
+  @ApiResponse({ status: 401, description: 'Password confirmation incorrect' })
+  async deleteAdmin(
+    @Param('id') adminId: string,
+    @Body() body: { confirmPassword: string },
+    @Req() req: Request & { user: { userId: string } }
+  ) {
     this.logger.log(`Deleting admin: ${adminId}`);
     return await this.cb.fire('ADMIN_SERVICE', () => firstValueFrom(
-      this.adminService.send('admin.deleteAdmin', adminId)
+      this.adminService.send('admin.deleteAdmin', {
+        adminId,
+        confirmPassword: body.confirmPassword,
+        requestingAdminId: req.user.userId,
+      })
     ));
   }
 

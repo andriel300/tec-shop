@@ -151,7 +151,7 @@ export const useChatSocket = ({
     });
 
     socket.on('connected', (data) => {
-      console.log('WebSocket connected:', data);
+      process.env.NODE_ENV === 'development' && console.log('WebSocket connected:', data);
     });
 
     socket.on('connect_error', (error) => {
@@ -191,15 +191,15 @@ export const useChatSocket = ({
     });
 
     socket.on('joined_conversation', (data) => {
-      console.log('Joined conversation:', data.conversationId);
+      process.env.NODE_ENV === 'development' && console.log('Joined conversation:', data.conversationId);
     });
 
     socket.on('left_conversation', (data) => {
-      console.log('Left conversation:', data.conversationId);
+      process.env.NODE_ENV === 'development' && console.log('Left conversation:', data.conversationId);
     });
 
     socket.on('message_sent', (data) => {
-      console.log('Message queued:', data);
+      process.env.NODE_ENV === 'development' && console.log('Message queued:', data);
     });
   }, [fetchToken, getWsUrl, queryClient]);
 

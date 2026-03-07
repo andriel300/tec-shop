@@ -14,6 +14,86 @@ import {
 } from '../../../../../hooks/useAdminData';
 import type { AdminResponse } from '../../../../../lib/api/admin';
 
+// Modal Component for Confirming Admin Deletion
+const DeleteAdminModal = ({
+  isOpen,
+  adminName,
+  onClose,
+  onConfirm,
+  isLoading,
+}: {
+  isOpen: boolean;
+  adminName: string;
+  onClose: () => void;
+  onConfirm: (confirmPassword: string) => void;
+  isLoading: boolean;
+}) => {
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!password) {
+      setError('Your password is required to confirm this action');
+      return;
+    }
+    onConfirm(password);
+  };
+
+  const handleClose = () => {
+    setPassword('');
+    setError('');
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full">
+        <h3 className="text-white text-xl font-semibold mb-2">Delete Admin Account</h3>
+        <p className="text-slate-400 text-sm mb-4">
+          You are about to permanently delete <strong className="text-white">{adminName}</strong>.
+          This action cannot be undone. Enter your password to confirm.
+        </p>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-slate-300 text-sm block mb-2">Your Password *</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setError(''); }}
+              className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600"
+              placeholder="Enter your current password"
+              autoFocus
+            />
+            {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
+          </div>
+
+          <div className="flex gap-3 mt-6">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded p-3 font-medium disabled:opacity-50"
+            >
+              {isLoading ? 'Deleting...' : 'Delete Admin'}
+            </button>
+            <button
+              type="button"
+              onClick={handleClose}
+              disabled={isLoading}
+              className="flex-1 bg-slate-700 hover:bg-slate-600 text-white rounded p-3 font-medium disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 // Modal Component for Adding New Admin
 const AddAdminModal = ({
   isOpen,
@@ -203,6 +283,11 @@ const AddAdminModal = ({
 
 const TeamManagementPage = () => {
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [deleteModal, setDeleteModal] = useState<{ open: boolean; adminId: string; adminName: string }>({
+    open: false,
+    adminId: '',
+    adminName: '',
+  });
 
   // API hooks
   const { data: admins, isLoading, error } = useAdmins();
@@ -222,15 +307,21 @@ const TeamManagementPage = () => {
     });
   };
 
-  // Handle delete admin
+  // Handle delete admin — open password-confirmation modal
   const handleDeleteAdmin = (adminId: string, adminName: string) => {
-    if (
-      confirm(
-        `Are you sure you want to delete admin "${adminName}"? This action cannot be undone.`
-      )
-    ) {
-      deleteAdminMutation.mutate(adminId);
-    }
+    setDeleteModal({ open: true, adminId, adminName });
+  };
+
+  // Confirm deletion with password
+  const handleConfirmDelete = (confirmPassword: string) => {
+    deleteAdminMutation.mutate(
+      { adminId: deleteModal.adminId, confirmPassword },
+      {
+        onSuccess: () => {
+          setDeleteModal({ open: false, adminId: '', adminName: '' });
+        },
+      }
+    );
   };
 
   // Table columns
@@ -427,6 +518,15 @@ const TeamManagementPage = () => {
         onClose={() => setAddModalOpen(false)}
         onSubmit={handleCreateAdmin}
         isLoading={createAdminMutation.isPending}
+      />
+
+      {/* Delete Admin Confirmation Modal */}
+      <DeleteAdminModal
+        isOpen={deleteModal.open}
+        adminName={deleteModal.adminName}
+        onClose={() => setDeleteModal({ open: false, adminId: '', adminName: '' })}
+        onConfirm={handleConfirmDelete}
+        isLoading={deleteAdminMutation.isPending}
       />
     </div>
   );

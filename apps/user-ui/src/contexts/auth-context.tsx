@@ -31,6 +31,8 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
+const isDev = process.env.NODE_ENV === 'development';
+
 export function AuthProvider({ children }: AuthProviderProps) {
   const [authState, setAuthState] = useState<AuthState>({
     isAuthenticated: false,
@@ -42,68 +44,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Initialize auth state from sessionStorage or check authentication via API
   useEffect(() => {
     const initializeAuth = async () => {
-      console.log('[AuthContext] Starting initialization...');
+      isDev && console.log('[AuthContext] Starting initialization...');
       try {
         // First, try to load from sessionStorage (client-side only)
         if (typeof window === 'undefined') {
-          console.log('[AuthContext] Server-side, skipping initialization');
+          isDev && console.log('[AuthContext] Server-side, skipping initialization');
           setAuthState((prev) => ({ ...prev, isLoading: false }));
           return;
         }
 
-        // Check for Google OAuth redirect with user data in URL
+        // Check for Google OAuth redirect — tokens are in httpOnly cookies, no user data in URL
         const urlParams = new URLSearchParams(window.location.search);
         const authSuccess = urlParams.get('auth');
-        const userDataParam = urlParams.get('user');
 
-        if (authSuccess === 'success' && userDataParam) {
-          console.log('[AuthContext] Google OAuth success detected');
-          try {
-            const userData = JSON.parse(decodeURIComponent(userDataParam));
-            const user: User = {
-              id: userData.id,
-              email: userData.email,
-              isEmailVerified: true,
-              name: userData.name,
-              createdAt: userData.createdAt,
-            };
-
-            // Fetch user profile
-            const { getCurrentUser } = await import('../lib/api/user');
-            const userProfile = await getCurrentUser();
-
-            // Update state
-            setAuthState({
-              isAuthenticated: true,
-              isLoading: false,
-              user,
-              userProfile,
-            });
-
-            // Save to sessionStorage
-            sessionStorage.setItem('user', JSON.stringify(user));
-            sessionStorage.setItem('userProfile', JSON.stringify(userProfile));
-
-            // Clean up URL
-            window.history.replaceState({}, document.title, window.location.pathname);
-            console.log('[AuthContext] Google OAuth login completed');
-            return;
-          } catch (error) {
-            console.error('[AuthContext] Failed to process Google OAuth data:', error);
-            // Continue with normal flow
-          }
+        if (authSuccess === 'success') {
+          isDev && console.log('[AuthContext] Google OAuth success detected');
+          // Clean up URL immediately before any async work
+          window.history.replaceState({}, document.title, window.location.pathname);
+          // Fall through to the refresh flow below — cookies are already set
         }
 
         const userData = sessionStorage.getItem('user');
         const profileData = sessionStorage.getItem('userProfile');
 
-        console.log('[AuthContext] SessionStorage check - user:', !!userData, 'profile:', !!profileData);
+        isDev && console.log('[AuthContext] SessionStorage check - user:', !!userData, 'profile:', !!profileData);
 
         if (userData) {
           const user = JSON.parse(userData);
           const userProfile = profileData ? JSON.parse(profileData) : null;
 
-          console.log('[AuthContext] Loading from sessionStorage:', {
+          isDev && console.log('[AuthContext] Loading from sessionStorage:', {
             userId: user.id,
             userName: user.name,
             hasProfile: !!userProfile
@@ -124,25 +94,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // 2. User just logged in via Google OAuth and was redirected here
         // Note: We cannot check document.cookie for auth cookies because they're httpOnly
         // and set with path=/api. The browser will automatically send them with API requests.
-        console.log('[AuthContext] No sessionStorage, attempting token refresh...');
+        isDev && console.log('[AuthContext] No sessionStorage, attempting token refresh...');
         try {
           const { apiClient } = await import('../lib/api/client');
           const { getCurrentUser } = await import('../lib/api/user');
 
           // Try to refresh the token - this will validate the session
           // If successful, new tokens will be set in cookies
-          const response = await apiClient.post('/auth/refresh', {}, {
+          const response = await apiClient.post('/auth/refresh', { userType: 'customer' }, {
             skipAuthRefresh: true,
           } as Record<string, unknown>);
 
-          console.log('[AuthContext] Token refresh response:', !!response.data);
+          isDev && console.log('[AuthContext] Token refresh response:', !!response.data);
 
           if (response.data?.user) {
             // Session is valid, fetch the full user profile
-            console.log('[AuthContext] Fetching user profile...');
+            isDev && console.log('[AuthContext] Fetching user profile...');
             try {
               const userProfile = await getCurrentUser();
-              console.log('[AuthContext] User profile fetched:', {
+              isDev && console.log('[AuthContext] User profile fetched:', {
                 userId: userProfile.userId,
                 name: userProfile.name
               });
@@ -156,7 +126,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 userType: response.data.userType,
               };
 
-              console.log('[AuthContext] Setting authenticated state');
+              isDev && console.log('[AuthContext] Setting authenticated state');
               setAuthState({
                 isAuthenticated: true,
                 isLoading: false,
@@ -168,7 +138,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
               if (typeof window !== 'undefined') {
                 sessionStorage.setItem('user', JSON.stringify(user));
                 sessionStorage.setItem('userProfile', JSON.stringify(userProfile));
-                console.log('[AuthContext] User data saved to sessionStorage');
+                isDev && console.log('[AuthContext] User data saved to sessionStorage');
               }
             } catch (profileError) {
               console.error('[AuthContext] Failed to fetch user profile after token refresh:', profileError);
@@ -197,7 +167,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
         } catch (refreshError) {
           // Refresh failed - user is not authenticated
-          console.log('[AuthContext] Token refresh failed:', refreshError instanceof Error ? refreshError.message : 'Unknown error');
+          isDev && console.log('[AuthContext] Token refresh failed:', refreshError instanceof Error ? refreshError.message : 'Unknown error');
           setAuthState((prev) => ({
             ...prev,
             isAuthenticated: false,

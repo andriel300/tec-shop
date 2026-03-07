@@ -270,7 +270,7 @@ export class SellerController {
   @ApiConsumes('multipart/form-data')
   @UseGuards(RolesGuard)
   @Roles('SELLER')
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FileInterceptor('image', { limits: { fileSize: FILE_SIZE_LIMIT } }))
   @ApiResponse({
     status: 201,
     description: 'Image uploaded successfully.',
@@ -339,7 +339,7 @@ export class SellerController {
   @ApiConsumes('multipart/form-data')
   @UseGuards(RolesGuard)
   @Roles('SELLER')
-  @UseInterceptors(FilesInterceptor('images', 4))
+  @UseInterceptors(FilesInterceptor('images', 4, { limits: { fileSize: FILE_SIZE_LIMIT } }))
   @ApiResponse({ status: 201, description: 'Product created successfully.' })
   @ApiResponse({
     status: 400,

@@ -111,7 +111,14 @@ export class AppService {
     return this.prisma.follow.findMany({
       where: { followingId: userId },
       include: {
-        follower: true,
+        follower: {
+          select: {
+            id: true,
+            name: true,
+            picture: true,
+            // userId excluded — internal cross-service auth reference
+          },
+        },
       },
     });
   }
@@ -120,7 +127,14 @@ export class AppService {
     return this.prisma.follow.findMany({
       where: { followerId: userId },
       include: {
-        following: true,
+        following: {
+          select: {
+            id: true,
+            name: true,
+            picture: true,
+            // userId excluded — internal cross-service auth reference
+          },
+        },
       },
     });
   }

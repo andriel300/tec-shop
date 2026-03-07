@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsEmail,
   IsString,
@@ -299,6 +299,14 @@ export class UpgradeToSellerDto {
     message: 'Country must be a valid 2-letter country code'
   })
   country!: string;
+
+  @ApiPropertyOptional({
+    example: 'MyCurrentPassword123!',
+    description: 'Current account password — required for password-based accounts, omit for Google OAuth accounts',
+  })
+  @IsOptional()
+  @IsString()
+  currentPassword?: string;
 }
 
 export class ChangePasswordDto {

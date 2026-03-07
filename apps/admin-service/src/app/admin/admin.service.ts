@@ -297,9 +297,35 @@ export class AdminService {
 
   /**
    * Delete an admin user
+   * Requires the requesting admin to supply their current password as confirmation.
    */
-  async deleteAdmin(adminId: string) {
-    this.logger.log(`Deleting admin: ${adminId}`);
+  async deleteAdmin(adminId: string, confirmPassword: string, requestingAdminId: string) {
+    this.logger.log(`Deleting admin: ${adminId}, requested by: ${requestingAdminId}`);
+
+    if (!confirmPassword) {
+      throw new BadRequestException('Password confirmation is required to delete an admin account');
+    }
+
+    // Verify the requesting admin's identity by checking their password
+    const requestingAdmin = await this.authPrisma.user.findUnique({
+      where: { id: requestingAdminId },
+    });
+
+    if (!requestingAdmin || requestingAdmin.userType !== 'ADMIN') {
+      throw new BadRequestException('Requesting admin not found');
+    }
+
+    if (!requestingAdmin.password) {
+      throw new BadRequestException('Admin account has no password set — cannot confirm identity');
+    }
+
+    const isPasswordValid = await bcrypt.compare(confirmPassword, requestingAdmin.password);
+    if (!isPasswordValid) {
+      this.logger.warn(
+        `Delete admin rejected - wrong password from requesting admin: ${requestingAdminId}`
+      );
+      throw new BadRequestException('Password confirmation is incorrect');
+    }
 
     const admin = await this.authPrisma.user.findUnique({
       where: { id: adminId },
@@ -365,7 +391,19 @@ export class AdminService {
         where,
         skip,
         take: limit,
-        include: {
+        select: {
+          id: true,
+          authId: true,
+          name: true,
+          email: true,
+          phoneNumber: true,
+          country: true,
+          isVerified: true,
+          stripeOnboardingStatus: true,
+          stripePayoutsEnabled: true,
+          createdAt: true,
+          updatedAt: true,
+          // stripeAccountId, stripeOnboardingUrl, stripeRequirements, notificationPreferences excluded
           shop: {
             select: {
               id: true,
@@ -434,7 +472,19 @@ export class AdminService {
     const updatedSeller = await this.sellerPrisma.seller.update({
       where: { id: sellerId },
       data: { isVerified: dto.isVerified },
-      include: { shop: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        isVerified: true,
+        shop: {
+          select: {
+            id: true,
+            businessName: true,
+            isActive: true,
+          },
+        },
+      },
     });
 
     this.logger.log(`Seller ${sellerId} verification updated successfully`);

@@ -101,6 +101,7 @@ export class ProductController {
     @Payload()
     payload: {
       shopId: string;
+      sellerId?: string;
       filters?: {
         category?: string;
         isActive?: boolean;
@@ -117,7 +118,8 @@ export class ProductController {
 
     const products = await this.productService.findAll(
       payload.shopId,
-      payload.filters
+      payload.filters,
+      payload.sellerId
     );
 
     this.logger.log(

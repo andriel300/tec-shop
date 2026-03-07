@@ -1,5 +1,6 @@
 import { Controller, Post, Body, HttpCode, HttpStatus, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { KafkaProducerService } from '../../services/kafka-producer.service';
 import { TrackEventDto } from '@tec-shop/dto';
 
@@ -11,6 +12,7 @@ export class AnalyticsController {
   constructor(private readonly kafkaProducer: KafkaProducerService) {}
 
   @Post('track')
+  @Throttle({ short: { limit: 30, ttl: 60000 } }) // 30 events/min per IP
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({ summary: 'Track user analytics event' })
   @ApiResponse({
@@ -51,6 +53,7 @@ export class AnalyticsController {
   }
 
   @Post('track/batch')
+  @Throttle({ short: { limit: 5, ttl: 60000 } }) // 5 batch calls/min per IP
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({ summary: 'Track multiple analytics events in batch' })
   @ApiResponse({

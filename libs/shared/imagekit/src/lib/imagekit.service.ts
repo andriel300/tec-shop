@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ImageKit } from '@imagekit/nodejs';
+import { randomBytes } from 'crypto';
 
 interface UploadResult {
   url: string;
@@ -56,7 +57,7 @@ export class ImageKitService {
     try {
       // Generate unique filename
       const timestamp = Date.now();
-      const randomSuffix = Math.round(Math.random() * 1e9);
+      const randomSuffix = randomBytes(6).toString('hex');
       const extension = fileName.split('.').pop();
       const nameWithoutExt = fileName.replace(`.${extension}`, '');
       const uniqueFileName = `${nameWithoutExt}-${timestamp}-${randomSuffix}.${extension}`;
