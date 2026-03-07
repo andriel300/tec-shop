@@ -124,7 +124,7 @@ export function useLoggerSocket(
     });
 
     socket.on('connected', (data: { adminId: string }) => {
-      console.log('Logger socket connected as admin:', data.adminId);
+      process.env.NODE_ENV === 'development' && console.log('Logger socket connected as admin:', data.adminId);
     });
 
     socket.on('subscribed', (data: { recentLogs?: LogEntry[] }) => {

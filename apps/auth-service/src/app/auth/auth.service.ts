@@ -79,11 +79,14 @@ export class AuthService implements OnModuleInit {
       });
 
       if (existingUser) {
-        this.logger.warn(`Signup failed - email already exists: ${email}`);
-        this.logProducer.warn('auth-service', LogCategory.AUTH, 'Customer signup failed - duplicate email', {
+        // Do not reveal that the account exists — return the same success message to prevent enumeration
+        this.logger.warn(`Signup attempt for already-registered email (silent): ${email}`);
+        this.logProducer.warn('auth-service', LogCategory.AUTH, 'Customer signup skipped - duplicate email (not disclosed)', {
           metadata: { action: 'signup', reason: 'duplicate_email' },
         });
-        throw new ConflictException('User with this email already exists');
+        return {
+          message: 'Signup successful. Please check your email to verify your account.',
+        };
       }
 
       this.logger.debug('Hashing password');
@@ -145,11 +148,14 @@ export class AuthService implements OnModuleInit {
       });
 
       if (existingUser) {
-        this.logger.warn(`Seller signup failed - email already exists: ${email}`);
-        this.logProducer.warn('auth-service', LogCategory.AUTH, 'Seller signup failed - duplicate email', {
+        // Do not reveal that the account exists — return the same success message to prevent enumeration
+        this.logger.warn(`Seller signup attempt for already-registered email (silent): ${email}`);
+        this.logProducer.warn('auth-service', LogCategory.AUTH, 'Seller signup skipped - duplicate email (not disclosed)', {
           metadata: { action: 'signup', reason: 'duplicate_email', userType: 'SELLER' },
         });
-        throw new ConflictException('User with this email already exists');
+        return {
+          message: 'Seller signup successful. Please check your email to verify your account.',
+        };
       }
 
       this.logger.debug('Hashing seller password');
@@ -1293,6 +1299,24 @@ export class AuthService implements OnModuleInit {
       throw new BadRequestException('Only CUSTOMER accounts can be upgraded to SELLER');
     }
 
+    // Re-authenticate: password-based accounts must supply their current password
+    if (user.password) {
+      if (!dto.currentPassword) {
+        throw new BadRequestException(
+          'Current password is required to upgrade account. Please provide your current password.'
+        );
+      }
+      const isPasswordValid = await bcrypt.compare(dto.currentPassword, user.password);
+      if (!isPasswordValid) {
+        this.logger.warn(`Upgrade to seller failed - invalid password for user: ${userId}`);
+        this.logProducer.warn('auth-service', LogCategory.SECURITY, 'Upgrade to seller rejected - wrong password', {
+          userId,
+          metadata: { action: 'upgrade_to_seller' },
+        });
+        throw new UnauthorizedException('Current password is incorrect');
+      }
+    }
+
     // Fetch user's name from user-service
     let userName = '';
     try {
@@ -1349,6 +1373,9 @@ export class AuthService implements OnModuleInit {
       userId,
       metadata: { action: 'upgrade_to_seller' },
     });
+
+    // Notify the user so they can react if the upgrade was not initiated by them
+    await this.emailService.sendAccountUpgradeNotification(user.email);
 
     return {
       ...tokens,

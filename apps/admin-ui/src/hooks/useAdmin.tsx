@@ -11,16 +11,11 @@ interface AdminUser {
 }
 
 // Validate admin session using refresh endpoint
+// Always calls the server — sessionStorage is never used to skip JWT validation.
+// React Query's staleTime (5 min) handles within-tab request deduplication.
 const fetchAdmin = async (): Promise<AdminUser | null> => {
-  // First check sessionStorage for cached admin data
-  const cachedAdmin = sessionStorage.getItem('admin');
-  if (cachedAdmin) {
-    return JSON.parse(cachedAdmin);
-  }
-
-  // Try to refresh the session - this validates if admin is logged in
   try {
-    const response = await apiClient.post('/auth/refresh', null, {
+    const response = await apiClient.post('/auth/refresh', { userType: 'admin' }, {
       skipAuthRefresh: true,
     } as Record<string, unknown>);
     if (response.data?.userType === 'admin' && response.data?.user) {
@@ -30,6 +25,7 @@ const fetchAdmin = async (): Promise<AdminUser | null> => {
     }
     return null;
   } catch {
+    sessionStorage.removeItem('admin');
     return null;
   }
 };

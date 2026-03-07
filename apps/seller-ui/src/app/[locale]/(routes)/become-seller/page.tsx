@@ -29,6 +29,7 @@ function BecomeSellerPageContent() {
   const [activeStep, setActiveStep] = useState(1);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [country, setCountry] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [countryError, setCountryError] = useState('');
 
@@ -54,7 +55,7 @@ function BecomeSellerPageContent() {
   const { data: refreshData, isLoading: isCheckingAuth, isError: isAuthError } = useQuery({
     queryKey: ['become-seller-auth-check'],
     queryFn: async () => {
-      const response = await apiClient.post('/auth/refresh', {}, {
+      const response = await apiClient.post('/auth/refresh', { userType: 'seller' }, {
         skipAuthRefresh: true,
       } as Record<string, unknown>);
       return response.data as { userType: string; user: Record<string, unknown> };
@@ -121,7 +122,7 @@ function BecomeSellerPageContent() {
 
     if (!valid) return;
 
-    doUpgrade({ phoneNumber, country });
+    doUpgrade({ phoneNumber, country, currentPassword: currentPassword || undefined });
   };
 
   // Show loading while checking auth
@@ -255,6 +256,22 @@ function BecomeSellerPageContent() {
                     {countryError && (
                       <p className="mt-1 text-xs text-red-600">{countryError}</p>
                     )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-1">
+                      Current Password
+                    </label>
+                    <input
+                      type="password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className="w-full border border-ui-border rounded-md px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                      placeholder="Enter your account password"
+                    />
+                    <p className="mt-1 text-xs text-text-secondary">
+                      Leave empty if you signed up with Google.
+                    </p>
                   </div>
 
                   <Button

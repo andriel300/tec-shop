@@ -284,11 +284,19 @@ export class ProductService {
       isActive?: boolean;
       isFeatured?: boolean;
       search?: string;
-    }
+    },
+    sellerId?: string
   ) {
     this.logger.debug(
       `findAll called with shopId: ${shopId}, filters: ${JSON.stringify(filters)}`
     );
+
+    if (sellerId) {
+      const isOwner = await this.sellerClient.verifyShopOwnership(sellerId, shopId);
+      if (!isOwner) {
+        throw new ForbiddenException('You do not have access to this shop');
+      }
+    }
 
     const products = await this.prisma.product.findMany({
       where: {
@@ -630,6 +638,9 @@ export class ProductService {
         },
         brand: {
           select: { id: true, name: true, slug: true },
+        },
+        variants: {
+          select: { id: true, price: true, salePrice: true, stock: true, isActive: true },
         },
       },
     });

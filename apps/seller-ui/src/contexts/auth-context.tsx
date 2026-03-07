@@ -67,7 +67,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
           // Try to refresh the token - this will validate the session
           // If successful, new tokens will be set in cookies
-          const response = await apiClient.post('/auth/refresh', {}, {
+          const response = await apiClient.post('/auth/refresh', { userType: 'seller' }, {
             skipAuthRefresh: true, // Prevent interceptor from recursively trying to refresh
           } as Record<string, unknown>);
 

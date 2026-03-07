@@ -8,6 +8,7 @@ import { RedisModule } from '@tec-shop/redis-client';
 import { EmailModule } from './email/email.module';
 import { UserClientModule } from '../clients/user.client';
 import { SellerClientModule } from '../clients/seller.client';
+import { ProductClientModule } from '../clients/product.client';
 import { PaymentService } from '../services/payment.service';
 import { KafkaProducerService } from '../services/kafka-producer.service';
 import { WebhookService } from '../services/webhook.service';
@@ -27,6 +28,7 @@ import { MetricsModule, HealthModule } from '@tec-shop/metrics';
     EmailModule,
     UserClientModule,
     SellerClientModule,
+    ProductClientModule,
     NotificationProducerModule.forRoot({ clientId: 'order-service-notifications' }),
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),

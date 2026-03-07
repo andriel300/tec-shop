@@ -12,6 +12,7 @@ import { PaymentService } from '../services/payment.service';
 import { KafkaProducerService } from '../services/kafka-producer.service';
 import { UserServiceClient } from '../clients/user.client';
 import { SellerServiceClient } from '../clients/seller.client';
+import { ProductServiceClient } from '../clients/product.client';
 import { NotificationProducerService } from '@tec-shop/notification-producer';
 import {
   CartItemDto,
@@ -34,6 +35,7 @@ export class OrderService {
     private readonly kafkaProducer: KafkaProducerService,
     private readonly userClient: UserServiceClient,
     private readonly sellerClient: SellerServiceClient,
+    private readonly productClient: ProductServiceClient,
     private readonly notificationProducer: NotificationProducerService
   ) {}
 
@@ -56,8 +58,49 @@ export class OrderService {
       throw new NotFoundException('Shipping address not found');
     }
 
-    // Calculate amounts
-    const subtotalAmount = data.items.reduce(
+    // Fetch authoritative prices from product-service (never trust client-supplied unitPrice)
+    const productIds = [...new Set(data.items.map((item) => item.productId))];
+    const products = await this.productClient.getProductsByIds(productIds);
+
+    if (products.length === 0) {
+      throw new BadRequestException('Could not verify product prices. Please try again.');
+    }
+
+    const productMap = new Map(
+      products.map((p) => [p['id'] as string, p])
+    );
+
+    const resolvedItems = data.items.map((item) => {
+      const product = productMap.get(item.productId);
+      if (!product) {
+        throw new BadRequestException(`Product ${item.productId} not found or unavailable`);
+      }
+
+      let authoritativePrice: number;
+
+      if (item.variantId) {
+        const variants = product['variants'] as Array<{
+          id: string;
+          price: number;
+          salePrice: number | null;
+          isActive: boolean;
+        }>;
+        const variant = variants?.find((v) => v.id === item.variantId && v.isActive);
+        if (!variant) {
+          throw new BadRequestException(`Product variant ${item.variantId} not found or unavailable`);
+        }
+        authoritativePrice = Math.round((variant.salePrice ?? variant.price) * 100);
+      } else {
+        const price = product['price'] as number;
+        const salePrice = product['salePrice'] as number | null;
+        authoritativePrice = Math.round((salePrice ?? price) * 100);
+      }
+
+      return { ...item, unitPrice: authoritativePrice };
+    });
+
+    // Calculate amounts using server-fetched prices
+    const subtotalAmount = resolvedItems.reduce(
       (total, item) => total + item.unitPrice * item.quantity,
       0
     );
@@ -68,7 +111,7 @@ export class OrderService {
     if (data.couponCode) {
       const couponValidation = await this.verifyCoupon(
         data.couponCode,
-        data.items
+        resolvedItems
       );
       if (couponValidation.isValid) {
         discountAmount = couponValidation.discountAmount;
@@ -88,7 +131,7 @@ export class OrderService {
     // Create Stripe checkout session
     const session = await this.paymentService.createCheckoutSession({
       userId,
-      items: data.items,
+      items: resolvedItems,
       shippingAddress,
       subtotalAmount,
       discountAmount,
@@ -102,7 +145,7 @@ export class OrderService {
     await this.storePaymentSession({
       sessionId: session.sessionId,
       userId,
-      cartData: data.items,
+      cartData: resolvedItems,
       shippingAddressId: data.shippingAddressId,
       shippingAddress,
       subtotalAmount,

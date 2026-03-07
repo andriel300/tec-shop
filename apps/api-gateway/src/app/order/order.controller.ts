@@ -36,6 +36,7 @@ export class OrderController {
   ) {}
 
   @Put('verify-coupon-code')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Verify coupon/discount code for cart items' })
   @ApiResponse({
     status: 200,

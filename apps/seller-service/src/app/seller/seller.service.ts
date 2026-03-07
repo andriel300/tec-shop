@@ -88,8 +88,26 @@ export class SellerService {
   async getProfile(authId: string) {
     const seller = await this.prisma.seller.findUnique({
       where: { authId },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phoneNumber: true,
+        country: true,
+        isVerified: true,
+        stripeOnboardingStatus: true,
+        stripeDetailsSubmitted: true,
+        stripePayoutsEnabled: true,
+        stripeChargesEnabled: true,
+        stripeLastUpdated: true,
+        notificationPreferences: true,
+        createdAt: true,
+        updatedAt: true,
         shop: true,
+        // authId excluded — redundant (same as JWT sub)
+        // stripeAccountId excluded — internal Stripe reference
+        // stripeOnboardingUrl excluded — time-limited URL, use POST /stripe/onboard
+        // stripeRequirements excluded — raw Stripe JSON, not needed for profile view
       },
     });
 
@@ -115,7 +133,21 @@ export class SellerService {
     const updatedSeller = await this.prisma.seller.update({
       where: { authId },
       data: updateData,
-      include: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phoneNumber: true,
+        country: true,
+        isVerified: true,
+        stripeOnboardingStatus: true,
+        stripeDetailsSubmitted: true,
+        stripePayoutsEnabled: true,
+        stripeChargesEnabled: true,
+        stripeLastUpdated: true,
+        notificationPreferences: true,
+        createdAt: true,
+        updatedAt: true,
         shop: true,
       },
     });
@@ -359,7 +391,16 @@ export class SellerService {
     const shop = await this.prisma.shop.findUnique({
       where: { id: shopId },
       include: {
-        seller: true,
+        seller: {
+          select: {
+            id: true,
+            name: true,
+            country: true,
+            isVerified: true,
+            // authId, email, phoneNumber, stripeAccountId and all Stripe fields
+            // are intentionally excluded — this is a public endpoint
+          },
+        },
       },
     });
 

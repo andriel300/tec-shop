@@ -197,9 +197,12 @@ export const createAdmin = async (
 };
 
 export const deleteAdmin = async (
-  adminId: string
+  adminId: string,
+  confirmPassword: string
 ): Promise<{ message: string }> => {
-  const response = await apiClient.delete(`/admin/admins/${adminId}`);
+  const response = await apiClient.delete(`/admin/admins/${adminId}`, {
+    data: { confirmPassword },
+  });
   return response.data;
 };
 

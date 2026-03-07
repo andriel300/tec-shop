@@ -103,10 +103,6 @@ export class AuthController {
     description: 'User registration initiated. Check email for OTP.',
   })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
-  @ApiResponse({
-    status: 409,
-    description: 'User with this email already exists.',
-  })
   async signup(@Body() signupDto: SignupDto) {
     return await this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
       this.authService.send('auth-signup', signupDto)
@@ -174,7 +170,6 @@ export class AuthController {
   }
 
   @Post('refresh')
-  @Throttle({ medium: { limit: 10, ttl: 900000 } }) // 10 refresh attempts per 15 minutes
   @ApiOperation({ summary: 'Refresh access token using refresh token' })
   @ApiResponse({
     status: 201,
@@ -182,30 +177,31 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: 'Authentication failed.' })
   async refreshToken(
+    @Body() body: { userType?: UserType },
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response
   ) {
     const isProduction = this.configService.get('NODE_ENV') === 'production';
     const prefix = isProduction ? '__Host-' : '';
 
-    // Try to extract refresh token from customer, seller, or admin cookies
-    const customerRefreshToken =
-      request.cookies?.[`${prefix}customer_refresh_token`];
-    const sellerRefreshToken =
-      request.cookies?.[`${prefix}seller_refresh_token`];
-    const adminRefreshToken =
-      request.cookies?.[`${prefix}admin_refresh_token`];
+    // If the caller specifies userType, use only that cookie to avoid
+    // cross-app token conflicts when multiple apps share localhost cookies.
+    let refreshToken: string | undefined;
+    let userType: UserType;
 
-    // Also try old cookie name for backward compatibility during migration
-    const legacyRefreshToken = request.cookies?.refresh_token;
+    if (body?.userType && ['customer', 'seller', 'admin'].includes(body.userType)) {
+      userType = body.userType;
+      refreshToken = request.cookies?.[`${prefix}${userType}_refresh_token`];
+    } else {
+      // Fallback: guess by priority (backward compat / legacy cookie)
+      const customerRefreshToken = request.cookies?.[`${prefix}customer_refresh_token`];
+      const sellerRefreshToken   = request.cookies?.[`${prefix}seller_refresh_token`];
+      const adminRefreshToken    = request.cookies?.[`${prefix}admin_refresh_token`];
+      const legacyRefreshToken   = request.cookies?.refresh_token;
 
-    const refreshToken =
-      customerRefreshToken || sellerRefreshToken || adminRefreshToken || legacyRefreshToken;
-    const userType: UserType = customerRefreshToken
-      ? 'customer'
-      : sellerRefreshToken
-      ? 'seller'
-      : 'admin';
+      refreshToken = customerRefreshToken || sellerRefreshToken || adminRefreshToken || legacyRefreshToken;
+      userType = customerRefreshToken ? 'customer' : sellerRefreshToken ? 'seller' : 'admin';
+    }
 
     if (!refreshToken) {
       throw new UnauthorizedException('No refresh token found. Please log in again.');
@@ -428,10 +424,6 @@ export class AuthController {
     description: 'Seller registration initiated. Check email for OTP.',
   })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
-  @ApiResponse({
-    status: 409,
-    description: 'Seller with this email already exists.',
-  })
   async sellerSignup(@Body() sellerSignupDto: SellerSignupDto) {
     return await this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
       this.authService.send('seller-auth-signup', sellerSignupDto)
@@ -585,6 +577,7 @@ export class AuthController {
 
   @Get('google')
   @UseGuards(GoogleAuthGuard)
+  @Throttle({ medium: { limit: 10, ttl: 900000 } }) // 10 OAuth initiations per 15 minutes
   @ApiOperation({ summary: 'Initiate Google OAuth flow' })
   @ApiResponse({
     status: 302,
@@ -596,6 +589,7 @@ export class AuthController {
 
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
+  @Throttle({ medium: { limit: 10, ttl: 900000 } }) // 10 OAuth callbacks per 15 minutes
   @ApiOperation({ summary: 'Google OAuth callback handler' })
   @ApiResponse({
     status: 302,
@@ -654,16 +648,10 @@ export class AuthController {
       refreshCookie.options
     );
 
-    // Encode user data to pass to frontend via URL parameter
-    const userData = encodeURIComponent(JSON.stringify({
-      id: result.userId,
-      email: result.email,
-      name: result.name,
-      createdAt: result.createdAt,
-    }));
-
-    // Redirect to frontend home page with user data
+    // Redirect to frontend — tokens are already in httpOnly cookies above.
+    // Do NOT pass user data in the URL (browser history, server logs, Referer header leakage).
+    // The frontend will call /auth/refresh to retrieve user identity from the session cookie.
     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
-    response.redirect(`${frontendUrl}?auth=success&user=${userData}`);
+    response.redirect(`${frontendUrl}?auth=success`);
   }
 }

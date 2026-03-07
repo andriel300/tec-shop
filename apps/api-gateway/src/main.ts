@@ -28,6 +28,8 @@ async function bootstrap() {
   });
   app.useLogger(app.get(PinoLogger));
 
+  const isProduction = process.env.NODE_ENV === 'production';
+
   // Configure cookie parser for secure authentication
   app.use(cookieParser());
 
@@ -35,13 +37,13 @@ async function bootstrap() {
   // Stripe signature verification requires the raw unparsed body
   app.use('/api/webhooks/stripe', raw({ type: 'application/json' }));
 
+  const corsOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
+    : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'];
+
   app.enableCors({
-    origin: [
-      'http://localhost:3000', // user-ui
-      'http://localhost:3001', // seller-ui
-      'http://localhost:3002', // admin-ui
-    ],
-    credentials: true, // Allow cookies to be sent with cross-origin requests
+    origin: corsOrigins,
+    credentials: true,
   });
 
   // Enhanced security headers with Content Security Policy
@@ -120,6 +122,7 @@ async function bootstrap() {
     })
   );
 
+  if (!isProduction) {
   const config = new DocumentBuilder()
     .setTitle('TecShop API Gateway')
     .setDescription(
@@ -223,6 +226,7 @@ For issues or questions, please contact our development team.
       tryItOutEnabled: true,
     },
   });
+  }
 
   const port = process.env.PORT || 8080;
   await app.listen(port);

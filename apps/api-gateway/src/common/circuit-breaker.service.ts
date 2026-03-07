@@ -44,8 +44,10 @@ export class CircuitBreakerService {
       return (await breaker.fire(fn as () => Promise<unknown>)) as T;
     } catch (error) {
       if (breaker.opened) {
+        // Log the internal service name but do not expose it to the client
+        this.logger.warn(`Circuit open for ${serviceName} — returning 503 to client`);
         throw new ServiceUnavailableException(
-          `${serviceName} is temporarily unavailable. Please try again later.`,
+          'Service temporarily unavailable. Please try again later.',
         );
       }
       throw error;

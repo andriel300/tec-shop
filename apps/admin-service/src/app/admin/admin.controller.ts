@@ -53,8 +53,14 @@ export class AdminController {
   }
 
   @MessagePattern('admin.deleteAdmin')
-  deleteAdmin(@Payload() adminId: string) {
-    return this.adminService.deleteAdmin(adminId);
+  deleteAdmin(
+    @Payload() payload: { adminId: string; confirmPassword: string; requestingAdminId: string }
+  ) {
+    return this.adminService.deleteAdmin(
+      payload.adminId,
+      payload.confirmPassword,
+      payload.requestingAdminId
+    );
   }
 
   // ============ Seller Management Message Patterns ============

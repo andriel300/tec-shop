@@ -48,6 +48,9 @@ test-output
 # local env files
 .env*.local
 .env
+.env.test
+.env.e2e
+.env.admin
 
 # Prisma generated client files
 /generated/prisma

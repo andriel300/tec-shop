@@ -102,6 +102,20 @@ export class EmailService {
     });
   }
 
+  async sendAccountUpgradeNotification(to: string): Promise<void> {
+    await this.mailerService.sendMail({
+      to,
+      subject: 'Your Tec-Shop Account Has Been Upgraded to Seller',
+      html: `
+        <div style="font-family: sans-serif; text-align: center; padding: 20px;">
+          <h2>Account Upgraded to Seller</h2>
+          <p>Your Tec-Shop account has been successfully upgraded to a Seller account.</p>
+          <p>If you did not initiate this change, please contact our support team immediately and change your password.</p>
+        </div>
+      `,
+    });
+  }
+
   async sendPasswordChangedNotification(to: string): Promise<void> {
     await this.mailerService.sendMail({
       to,

@@ -21,6 +21,7 @@ import { firstValueFrom } from 'rxjs';
 import { JwtAuthGuard } from '../../guards/auth';
 import { RolesGuard } from '../../guards/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
+import { Throttle } from '@nestjs/throttler';
 import { ImageKitService } from '@tec-shop/shared/imagekit';
 import { ParticipantType } from '@tec-shop/dto';
 import type {
@@ -80,6 +81,7 @@ export class ChatController {
    */
   @Get('ws-token')
   @UseGuards(JwtAuthGuard)
+  @Throttle({ short: { limit: 20, ttl: 60000 } }) // 20 token issuances per minute per IP
   getWebSocketToken(@Req() req: AuthenticatedRequest) {
     const { userId, username, userType } = req.user;
 
@@ -295,7 +297,8 @@ export class ChatController {
   @Post('upload-image')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('CUSTOMER', 'SELLER')
-  @UseInterceptors(FileInterceptor('image'))
+  @Throttle({ short: { limit: 10, ttl: 60000 } }) // 10 uploads per minute per IP
+  @UseInterceptors(FileInterceptor('image', { limits: { fileSize: CHAT_IMAGE_SIZE_LIMIT } }))
   async uploadChatImage(@UploadedFile() file: Express.Multer.File) {
     this.validateChatImage(file);
 
