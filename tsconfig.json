@@ -149,6 +149,9 @@
     },
     {
       "path": "./libs/shared/tracing"
+    },
+    {
+      "path": "./libs/shared/next-logger"
     }
   ]
 }

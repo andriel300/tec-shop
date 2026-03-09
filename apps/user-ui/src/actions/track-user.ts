@@ -1,5 +1,9 @@
 'use server';
 
+import { createLogger } from '@tec-shop/next-logger';
+
+const logger = createLogger('user-ui:analytics');
+
 /**
  * Send analytics event to the API Gateway
  * The API Gateway will produce the event to Kafka/Redpanda
@@ -40,7 +44,7 @@ export async function sendKafkaEvent(eventData: {
     return await response.json();
   } catch (error) {
     // Log error but don't throw - analytics failures shouldn't break user experience
-    console.error('Failed to send analytics event:', error);
+    logger.error({ err: error }, 'Failed to send analytics event');
     return { success: false };
   }
 }

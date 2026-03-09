@@ -1,5 +1,8 @@
 import axios from 'axios';
 import { extractSafeErrorMessage } from '../utils/error-handler';
+import { createLogger } from '@tec-shop/next-logger';
+
+const logger = createLogger('seller-ui:api-client');
 
 // Use relative URL in production for security (prevents CSRF and reduces attack surface)
 export const API_BASE_URL =
@@ -82,23 +85,14 @@ apiClient.interceptors.response.use(
     // Use the sophisticated error handler for secure message extraction
     const safeMessage = extractSafeErrorMessage(error);
 
-    // In development, log the actual error for debugging
-    if (process.env.NODE_ENV === 'development') {
-      console.error('API Error:', error.response?.data || error.message);
-      console.error('Full error details:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message,
-      });
-
-      // Log validation errors if present
-      if (error.response?.data?.message && Array.isArray(error.response.data.message)) {
-        console.error('Backend validation errors:');
-        error.response.data.message.forEach((msg: string, idx: number) => {
-          console.error(`  ${idx + 1}. ${msg}`);
-        });
-      }
-    }
+    logger.error({
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+      validationErrors: Array.isArray(error.response?.data?.message)
+        ? error.response.data.message
+        : undefined,
+    }, 'API Error');
 
     return Promise.reject(new Error(safeMessage));
   }

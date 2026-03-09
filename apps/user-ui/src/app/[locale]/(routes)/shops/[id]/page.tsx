@@ -4,6 +4,9 @@ import {
   getShopById,
   getShopFollowersCount,
 } from '../../../../../lib/api/shops';
+import { createLogger } from '@tec-shop/next-logger';
+
+const logger = createLogger('user-ui:shops');
 
 async function fetchShopDetails(id: string) {
   try {
@@ -13,7 +16,7 @@ async function fetchShopDetails(id: string) {
     ]);
     return { shop, followersCount: followersData.count };
   } catch (error) {
-    console.error('Failed to fetch shop details:', error);
+    logger.error({ err: error, shopId: id }, 'Failed to fetch shop details');
     return { shop: null, followersCount: 0 };
   }
 }
