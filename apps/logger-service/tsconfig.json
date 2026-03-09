@@ -4,21 +4,6 @@
   "include": [],
   "references": [
     {
-      "path": "../../libs/shared/redis-client"
-    },
-    {
-      "path": "../../libs/shared/tracing"
-    },
-    {
-      "path": "../../libs/prisma-clients/logger-client"
-    },
-    {
-      "path": "../../libs/shared/dto"
-    },
-    {
-      "path": "../../libs/shared/metrics"
-    },
-    {
       "path": "./tsconfig.app.json"
     }
   ]

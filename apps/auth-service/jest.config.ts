@@ -22,7 +22,7 @@ const swcJestConfig = {
   swcrc: false,
 };
 
-export default {
+module.exports = {
   displayName: '@tec-shop/auth-service',
   preset: '../../jest.preset.js',
   testEnvironment: 'node',

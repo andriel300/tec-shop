@@ -22,7 +22,7 @@ const swcJestConfig = {
   swcrc: false,
 };
 
-export default {
+module.exports = {
   displayName: '@tec-shop/seller-service',
   preset: '../../jest.preset.js',
   testEnvironment: 'node',
@@ -53,10 +53,7 @@ export default {
   },
 
   // Test patterns
-  testMatch: [
-    '<rootDir>/src/**/*.spec.ts',
-    '<rootDir>/src/**/*.test.ts',
-  ],
+  testMatch: ['<rootDir>/src/**/*.spec.ts', '<rootDir>/src/**/*.test.ts'],
   testPathIgnorePatterns: [
     '<rootDir>/src/test/e2e/',
     '<rootDir>/node_modules/',
@@ -67,7 +64,8 @@ export default {
 
   // Module name mapping for absolute imports
   moduleNameMapper: {
-    '^@tec-shop/seller-client$': '<rootDir>/../../libs/prisma-clients/seller-client/src/index.ts',
+    '^@tec-shop/seller-client$':
+      '<rootDir>/../../libs/prisma-clients/seller-client/src/index.ts',
     '^@tec-shop/dto$': '<rootDir>/../../libs/shared/dto/src/index.ts',
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@test/(.*)$': '<rootDir>/src/test/$1',

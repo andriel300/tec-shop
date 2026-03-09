@@ -1,4 +1,4 @@
-export default {
+module.exports = {
   displayName: '@tec-shop/api-gateway-e2e',
   preset: '../../jest.preset.js',
   globalSetup: '<rootDir>/src/support/global-setup.ts',

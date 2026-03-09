@@ -12,9 +12,9 @@ async function fetchProductDetails(slug: string) {
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const { slug } = await Promise.resolve(params);
+  const { slug } = await params;
 
   const product = await fetchProductDetails(slug);
 
@@ -38,8 +38,8 @@ export async function generateMetadata({
   };
 }
 
-const Page = async ({ params }: { params: { slug: string } }) => {
-  const { slug } = await Promise.resolve(params);
+const Page = async ({ params }: { params: Promise<{ slug: string }> }) => {
+  const { slug } = await params;
 
   const productDetails = await fetchProductDetails(slug);
   return <ProductDetails product={productDetails} />;

@@ -23,7 +23,7 @@ const swcJestConfig = {
   swcrc: false,
 };
 
-export default {
+module.exports = {
   displayName: '@tec-shop/product-service',
   preset: '../../jest.preset.js',
   testEnvironment: 'node',

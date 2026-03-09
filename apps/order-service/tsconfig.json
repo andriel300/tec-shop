@@ -4,27 +4,6 @@
   "include": [],
   "references": [
     {
-      "path": "../../libs/shared/tracing"
-    },
-    {
-      "path": "../../libs/prisma-clients/order-client"
-    },
-    {
-      "path": "../../libs/shared/metrics"
-    },
-    {
-      "path": "../../libs/shared/notification-producer"
-    },
-    {
-      "path": "../../libs/shared/redis-client"
-    },
-    {
-      "path": "../../libs/shared/interceptor"
-    },
-    {
-      "path": "../../libs/shared/dto"
-    },
-    {
       "path": "./tsconfig.app.json"
     }
   ]

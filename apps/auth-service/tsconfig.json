@@ -4,33 +4,6 @@
   "include": [],
   "references": [
     {
-      "path": "../../libs/prisma-clients/auth-client"
-    },
-    {
-      "path": "../../libs/shared/tracing"
-    },
-    {
-      "path": "../../libs/shared/service-auth"
-    },
-    {
-      "path": "../../libs/shared/redis-client"
-    },
-    {
-      "path": "../../libs/shared/dto"
-    },
-    {
-      "path": "../../libs/shared/notification-producer"
-    },
-    {
-      "path": "../../libs/shared/metrics"
-    },
-    {
-      "path": "../../libs/shared/logger-producer"
-    },
-    {
-      "path": "../../libs/shared/interceptor"
-    },
-    {
       "path": "./tsconfig.app.json"
     },
     {

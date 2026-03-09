@@ -4,27 +4,6 @@
   "include": [],
   "references": [
     {
-      "path": "../../libs/prisma-clients/auth-client"
-    },
-    {
-      "path": "../../libs/prisma-clients/product-client"
-    },
-    {
-      "path": "../../libs/shared/redis-client"
-    },
-    {
-      "path": "../../libs/prisma-clients/analytics-client"
-    },
-    {
-      "path": "../../libs/shared/tracing"
-    },
-    {
-      "path": "../../libs/shared/metrics"
-    },
-    {
-      "path": "../../libs/shared/interceptor"
-    },
-    {
       "path": "./tsconfig.app.json"
     }
   ]

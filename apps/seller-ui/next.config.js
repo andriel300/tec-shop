@@ -5,6 +5,12 @@ const { composePlugins, withNx } = require('@nx/next');
 const { withSentryConfig } = require('@sentry/nextjs');
 const createNextIntlPlugin = require('next-intl/plugin');
 
+// When Nx processes this file from the workspace root (project graph, migrations),
+// relative paths resolve against the wrong CWD. Temporarily chdir to __dirname so
+// next-intl's existence check passes, then restore CWD before this module returns.
+const _savedCwd = process.cwd();
+process.chdir(__dirname);
+
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 /**
@@ -99,3 +105,5 @@ module.exports = withSentryConfig(withNextIntl(composedConfig), {
   // https://vercel.com/docs/cron-jobs
   automaticVercelMonitors: true,
 });
+
+process.chdir(_savedCwd);

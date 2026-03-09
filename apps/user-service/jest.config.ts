@@ -22,7 +22,7 @@ const swcJestConfig = {
   swcrc: false,
 };
 
-export default {
+module.exports = {
   displayName: '@tec-shop/user-service',
   preset: '../../jest.preset.js',
   testEnvironment: 'node',
@@ -33,6 +33,7 @@ export default {
   coverageDirectory: '../../coverage/apps/user-service',
   moduleNameMapper: {
     '^@tec-shop/dto$': '<rootDir>/../../libs/shared/dto/src/index.ts',
-    '^@tec-shop/user-client$': '<rootDir>/../../libs/prisma-clients/user-client/src/index.ts',
+    '^@tec-shop/user-client$':
+      '<rootDir>/../../libs/prisma-clients/user-client/src/index.ts',
   },
 };

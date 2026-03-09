@@ -1,32 +1,50 @@
-import pino from 'pino';
+// Type-only import — erased at runtime; prevents pino from being bundled in client builds
+import type pinoDefault from 'pino';
 
 export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 
-const isServer = typeof window === 'undefined';
-const isDev = process.env.NODE_ENV !== 'production';
+// Guard against edge runtime or restricted prerender contexts where process may be unavailable
+const isDev = (() => {
+  try {
+    if (typeof process === 'undefined') return false;
+    // Disable pino-pretty during Next.js static generation (avoids worker_thread spawning)
+    if (process.env?.NEXT_PHASE === 'phase-production-build') return false;
+    return process.env?.NODE_ENV !== 'production';
+  } catch {
+    return false;
+  }
+})();
 
 /**
  * Server-side logger using pino with pretty printing in development.
- * Never instantiated in the browser — guarded by isServer checks.
+ * Uses require() so pino is never included in client-side bundles via webpack
+ * dead-code elimination on the typeof window === 'undefined' guard in createLogger.
  */
-function createServerLogger(name: string) {
-  return pino({
-    name,
-    level: isDev ? 'debug' : 'info',
-    ...(isDev
-      ? {
-          transport: {
-            target: 'pino-pretty',
-            options: {
-              colorize: true,
-              levelFirst: true,
-              translateTime: 'SYS:standard',
-              ignore: 'pid,hostname',
+function createServerLogger(name: string): AppLogger {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const pino = require('pino') as typeof pinoDefault;
+    return pino({
+      name,
+      level: isDev ? 'debug' : 'info',
+      ...(isDev
+        ? {
+            transport: {
+              target: 'pino-pretty',
+              options: {
+                colorize: true,
+                levelFirst: true,
+                translateTime: 'SYS:standard',
+                ignore: 'pid,hostname',
+              },
             },
-          },
-        }
-      : {}),
-  });
+          }
+        : {}),
+    }) as unknown as AppLogger;
+  } catch {
+    // Fallback if pino is unavailable (edge runtime, restricted prerender)
+    return createBrowserLogger(name);
+  }
 }
 
 /**
@@ -69,8 +87,11 @@ export type AppLogger = ReturnType<typeof createBrowserLogger>;
  *   logger.warn('Item out of stock');
  */
 export function createLogger(name: string): AppLogger {
-  if (isServer) {
-    return createServerLogger(name) as unknown as AppLogger;
+  // Inline typeof check gives webpack better dead code elimination:
+  // in client bundles, this branch is statically false so createServerLogger
+  // (and its require('pino')) is dropped entirely from the bundle.
+  if (typeof window === 'undefined') {
+    return createServerLogger(name);
   }
   return createBrowserLogger(name);
 }
