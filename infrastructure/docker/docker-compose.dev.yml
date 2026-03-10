@@ -224,8 +224,6 @@ services:
       NODE_ENV: development
       PORT: 6005
     depends_on:
-      mongodb:
-        condition: service_healthy
       kafka:
         condition: service_healthy
     networks:
