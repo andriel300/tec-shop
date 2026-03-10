@@ -22,6 +22,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Heart,
+  Home,
   MapPin,
   MessageSquareText,
   Package,
@@ -336,6 +337,32 @@ const ProductDetails = ({ product }: { product: Product }) => {
 
   return (
     <div className="w-full bg-[#f5f5f5] py-5">
+      {/* Breadcrumb */}
+      <nav className="w-[90%] lg:w-[80%] mx-auto mb-4 flex items-center gap-1.5 text-sm text-gray-500 flex-wrap">
+        <Link href="/" className="flex items-center hover:text-brand-primary transition-colors">
+          <Home size={14} />
+        </Link>
+        <ChevronRight size={14} className="text-gray-400 flex-shrink-0" />
+        <Link href="/all-products" className="hover:text-brand-primary transition-colors">
+          All Products
+        </Link>
+        {product.category && (
+          <>
+            <ChevronRight size={14} className="text-gray-400 flex-shrink-0" />
+            <Link
+              href={`/all-products?categoryId=${product.categoryId}`}
+              className="hover:text-brand-primary transition-colors"
+            >
+              {product.category.name}
+            </Link>
+          </>
+        )}
+        <ChevronRight size={14} className="text-gray-400 flex-shrink-0" />
+        <span className="text-gray-800 font-medium truncate max-w-[200px]" title={product.name}>
+          {product.name}
+        </span>
+      </nav>
+
       <div className="bg-white w-[90%] lg:w-[80%] mx-auto pt-6 grid grid-cols-1 lg:grid-cols-[28%_44%_28%] gap-6 overflow-hidden">
         {/* left column - product images */}
         <div className="p-4">
