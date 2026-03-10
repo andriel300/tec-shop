@@ -131,3 +131,53 @@ groups:
           severity: none
         annotations:
           summary: "Placeholder - TODO: replace with real database alerts"
+
+  # ─── Kafka Consumer Lag ───────────────────────────────────────────────────────
+  # Requires kafka_exporter (danielqsj/kafka-exporter) scraping on port 9308.
+  - name: kafka_consumer_lag
+    rules:
+      - alert: KafkaConsumerLagHigh
+        expr: |
+          kafka_consumergroup_lag{topic!~".*\\.DLQ"} > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Kafka consumer lag high on {{ $labels.topic }}"
+          description: >
+            Consumer group {{ $labels.consumergroup }} on topic {{ $labels.topic }}
+            (partition {{ $labels.partition }}) has lag {{ $value }} for >5 minutes.
+
+      - alert: KafkaConsumerLagCritical
+        expr: |
+          kafka_consumergroup_lag{topic!~".*\\.DLQ"} > 10000
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Kafka consumer lag critical on {{ $labels.topic }}"
+          description: >
+            Consumer group {{ $labels.consumergroup }} on topic {{ $labels.topic }}
+            has lag {{ $value }}. Immediate action required.
+
+      - alert: KafkaDlqHasMessages
+        expr: kafka_topic_partitions_offset_sum{topic=~".*\\.DLQ"} > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "DLQ {{ $labels.topic }} has unprocessed messages"
+          description: "Dead-letter queue {{ $labels.topic }} is non-empty — investigate failed consumers."
+
+      - alert: KafkaConsumerGroupStalled
+        expr: |
+          rate(kafka_consumergroup_lag[10m]) == 0
+          and kafka_consumergroup_lag > 100
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Consumer group {{ $labels.consumergroup }} has stopped consuming"
+          description: >
+            Consumer group {{ $labels.consumergroup }} has not reduced lag on
+            topic {{ $labels.topic }} for 10 minutes — consumer may be crashed.

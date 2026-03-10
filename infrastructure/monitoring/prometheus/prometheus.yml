@@ -67,7 +67,7 @@ scrape_configs:
       - targets: ["admin-service:9006"]
     metrics_path: /metrics
 
-  # chatting-service and logger-service use their primary port for HTTP
+  # chatting-service, logger-service, and notification-service use their primary port for HTTP
   - job_name: "chatting-service"
     static_configs:
       - targets: ["chatting-service:6007"]
@@ -78,6 +78,11 @@ scrape_configs:
       - targets: ["logger-service:6008"]
     metrics_path: /metrics
 
+  - job_name: "notification-service"
+    static_configs:
+      - targets: ["notification-service:6012"]
+    metrics_path: /metrics
+
   - job_name: "kafka-service"
     static_configs:
       - targets: ["kafka-service:9009"]
@@ -86,6 +91,12 @@ scrape_configs:
   - job_name: "recommendation-service"
     static_configs:
       - targets: ["recommendation-service:9010"]
+    metrics_path: /metrics
+
+  # Kafka Exporter (danielqsj/kafka-exporter) — enables consumer lag metrics
+  - job_name: "kafka-exporter"
+    static_configs:
+      - targets: ["kafka-exporter:9308"]
     metrics_path: /metrics
 
   # Redis Exporter
