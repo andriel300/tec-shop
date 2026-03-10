@@ -1,0 +1,31 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "types": ["node"],
+    "rootDir": "src",
+    "tsBuildInfoFile": "dist/tsconfig.app.tsbuildinfo",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "target": "es2021"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": [],
+  "references": [
+    {
+      "path": "../../libs/shared/redis-client/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared/tracing/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared/dto/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/prisma-clients/notification-client/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared/metrics/tsconfig.lib.json"
+    }
+  ]
+}

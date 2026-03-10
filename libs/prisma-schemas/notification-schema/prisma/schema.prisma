@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../../node_modules/.prisma/notification-client"
+}
+
+generator dbml {
+  provider   = "prisma-dbml-generator"
+  output     = "../../../../dbml"
+  outputName = "notification-schema.dbml"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("NOTIFICATION_SERVICE_DB_URL")
+}
+
+model Notification {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  targetType String
+  targetId   String
+  templateId String
+  title      String
+  message    String
+  type       String
+  isRead     Boolean  @default(false)
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([targetType, targetId, createdAt(sort: Desc)])
+  @@index([targetType, targetId, isRead])
+}

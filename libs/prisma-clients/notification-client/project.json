@@ -1,0 +1,17 @@
+{
+  "name": "@tec-shop/notification-client",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/prisma-clients/notification-client/src",
+  "projectType": "library",
+  "tags": ["type:prisma-client", "scope:backend", "domain:notification"],
+  "targets": {
+    "generate-types": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma generate --schema=../../prisma-schemas/notification-schema/prisma/schema.prisma",
+        "cwd": "libs/prisma-clients/notification-client"
+      }
+    }
+  },
+  "implicitDependencies": ["@tec-shop/notification-schema"]
+}

@@ -3,13 +3,16 @@ import {
   SubscribeMessage,
   MessageBody,
   WebSocketServer,
+  OnGatewayInit,
   OnGatewayConnection,
   OnGatewayDisconnect,
   ConnectedSocket,
   WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Injectable, Logger, UsePipes, ValidationPipe } from '@nestjs/common';
+import { createAdapter } from '@socket.io/redis-adapter';
+import { Injectable, Logger, UsePipes, ValidationPipe, Inject } from '@nestjs/common';
+import type { Redis } from 'ioredis';
 import { JwtService } from '@nestjs/jwt';
 import type { NotificationResponseDto } from '@tec-shop/dto';
 import { NotificationCoreService } from './notification-core.service';
@@ -41,10 +44,8 @@ const COOKIE_NAMES = [
   'customer_access_token',
 ];
 
-const socketToUser = new Map<string, ConnectedUserInfo>();
-
 @Injectable()
-@WebSocketGateway(6012, {
+@WebSocketGateway({
   cors: {
     origin: (
       origin: string,
@@ -68,17 +69,26 @@ const socketToUser = new Map<string, ConnectedUserInfo>();
 })
 @UsePipes(new ValidationPipe())
 export class NotificationGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   @WebSocketServer()
   server!: Server;
 
   private readonly logger = new Logger(NotificationGateway.name);
+  private readonly socketToUser = new Map<string, ConnectedUserInfo>();
 
   constructor(
     private readonly jwtService: JwtService,
-    private readonly notificationCore: NotificationCoreService
+    private readonly notificationCore: NotificationCoreService,
+    @Inject('REDIS_CLIENT') private readonly redisClient: Redis
   ) {}
+
+  afterInit(server: Server) {
+    const pubClient = this.redisClient.duplicate();
+    const subClient = this.redisClient.duplicate();
+    server.adapter(createAdapter(pubClient, subClient));
+    this.logger.log('Socket.IO Redis adapter initialized');
+  }
 
   private extractTokenFromCookies(cookieHeader: string): string | null {
     const isProduction = process.env.NODE_ENV === 'production';
@@ -134,7 +144,7 @@ export class NotificationGateway
         await client.join('admin:all');
       }
 
-      socketToUser.set(client.id, {
+      this.socketToUser.set(client.id, {
         userId: payload.sub,
         userType: targetType,
         room,
@@ -163,9 +173,9 @@ export class NotificationGateway
   }
 
   handleDisconnect(client: Socket) {
-    const userInfo = socketToUser.get(client.id);
+    const userInfo = this.socketToUser.get(client.id);
     if (userInfo) {
-      socketToUser.delete(client.id);
+      this.socketToUser.delete(client.id);
       this.logger.log(
         `Notification WS disconnected: ${userInfo.room} (${client.id})`
       );
@@ -190,7 +200,7 @@ export class NotificationGateway
     @MessageBody() data: { notificationId: string },
     @ConnectedSocket() client: Socket
   ) {
-    const userInfo = socketToUser.get(client.id);
+    const userInfo = this.socketToUser.get(client.id);
     if (!userInfo) {
       throw new WsException('Not authenticated');
     }
@@ -217,7 +227,7 @@ export class NotificationGateway
 
   @SubscribeMessage('mark_all_read')
   async handleMarkAllRead(@ConnectedSocket() client: Socket) {
-    const userInfo = socketToUser.get(client.id);
+    const userInfo = this.socketToUser.get(client.id);
     if (!userInfo) {
       throw new WsException('Not authenticated');
     }

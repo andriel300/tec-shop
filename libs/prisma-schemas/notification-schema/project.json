@@ -1,0 +1,44 @@
+{
+  "name": "@tec-shop/notification-schema",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/prisma-schemas/notification-schema",
+  "projectType": "library",
+  "targets": {
+    "generate-types": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma generate --schema=prisma/schema.prisma",
+        "cwd": "libs/prisma-schemas/notification-schema"
+      }
+    },
+    "db-push": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma db push --schema=prisma/schema.prisma",
+        "cwd": "libs/prisma-schemas/notification-schema"
+      }
+    },
+    "studio": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma studio --schema=prisma/schema.prisma",
+        "cwd": "libs/prisma-schemas/notification-schema"
+      }
+    },
+    "validate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma validate --schema=prisma/schema.prisma",
+        "cwd": "libs/prisma-schemas/notification-schema"
+      }
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma format --schema=prisma/schema.prisma",
+        "cwd": "libs/prisma-schemas/notification-schema"
+      }
+    }
+  },
+  "tags": ["type:prisma-schema", "scope:backend", "domain:notification"]
+}

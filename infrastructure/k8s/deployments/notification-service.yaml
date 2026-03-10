@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: tec-shop
+  labels:
+    app: notification-service
+    app.kubernetes.io/name: notification-service
+    app.kubernetes.io/part-of: tec-shop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+        app.kubernetes.io/name: notification-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "6012"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: notification-service
+          image: your-registry/tec-shop-notification-service:latest
+          ports:
+            - containerPort: 6012
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: tec-shop-config
+            - secretRef:
+                name: tec-shop-secrets
+          env:
+            - name: PORT
+              value: "6012"
+            - name: NODE_ENV
+              value: "production"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 6012
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 6012
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3

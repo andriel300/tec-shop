@@ -152,6 +152,15 @@
     },
     {
       "path": "./libs/shared/next-logger"
+    },
+    {
+      "path": "./libs/prisma-schemas/notification-schema"
+    },
+    {
+      "path": "./libs/prisma-clients/notification-client"
+    },
+    {
+      "path": "./apps/notification-service"
     }
   ]
 }

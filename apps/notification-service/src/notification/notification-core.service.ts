@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { LoggerPrismaService } from '../prisma/prisma.service';
+import { NotificationPrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
-import type { Prisma } from '@tec-shop/logger-client';
+import type { Prisma } from '@tec-shop/notification-client';
 import type {
   NotificationEventDto,
   NotificationResponseDto,
@@ -9,7 +9,7 @@ import type {
   NotificationQueryDto,
 } from '@tec-shop/dto';
 
-const UNREAD_COUNT_KEY_PREFIX = 'notification:unread:';
+const UNREAD_COUNT_KEY_PREFIX = 'unread:';
 const UNREAD_COUNT_TTL = 300;
 
 @Injectable()
@@ -17,7 +17,7 @@ export class NotificationCoreService {
   private readonly logger = new Logger(NotificationCoreService.name);
 
   constructor(
-    private readonly prisma: LoggerPrismaService,
+    private readonly prisma: NotificationPrismaService,
     private readonly redis: RedisService
   ) {}
 
@@ -47,19 +47,12 @@ export class NotificationCoreService {
     query: NotificationQueryDto
   ): Promise<NotificationListResponseDto> {
     const page =
-      typeof query.page === 'string'
-        ? parseInt(query.page, 10)
-        : (query.page ?? 1);
+      typeof query.page === 'string' ? parseInt(query.page, 10) : (query.page ?? 1);
     const limit =
-      typeof query.limit === 'string'
-        ? parseInt(query.limit, 10)
-        : (query.limit ?? 20);
+      typeof query.limit === 'string' ? parseInt(query.limit, 10) : (query.limit ?? 20);
     const skip = (page - 1) * limit;
 
-    const where: Record<string, unknown> = {
-      targetType,
-      targetId,
-    };
+    const where: Record<string, unknown> = { targetType, targetId };
 
     if (query.isRead !== undefined) {
       where.isRead = query.isRead === 'true';
@@ -166,9 +159,7 @@ export class NotificationCoreService {
       throw new NotFoundException('Notification not found');
     }
 
-    await this.prisma.notification.delete({
-      where: { id: notificationId },
-    });
+    await this.prisma.notification.delete({ where: { id: notificationId } });
 
     if (!notification.isRead) {
       await this.invalidateUnreadCountCache(targetType, targetId);
@@ -181,7 +172,7 @@ export class NotificationCoreService {
   ): Promise<void> {
     try {
       const cacheKey = `${UNREAD_COUNT_KEY_PREFIX}${targetType}:${targetId}`;
-      await this.redis.set(cacheKey, '', 1);
+      await this.redis.del(cacheKey);
     } catch (_error) {
       // Cache invalidation failure is not critical
     }

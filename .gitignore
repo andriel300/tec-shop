@@ -67,3 +67,9 @@ out
 .vscode
 # Sentry Config File
 .env.sentry-build-plugin
+
+.nx/polygraph
+
+
+# Build artifacts
+tsconfig.tsbuildinfo

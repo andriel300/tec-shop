@@ -2,16 +2,14 @@ import { Module } from '@nestjs/common';
 import { MetricsModule, HealthModule } from '@tec-shop/metrics';
 import { LoggerModule } from 'nestjs-pino';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ScheduleModule } from '@nestjs/schedule';
-import { LoggerCoreModule } from '../logger/logger.module';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
     MetricsModule,
     HealthModule,
-    LoggerCoreModule,
+    NotificationModule,
     ConfigModule.forRoot({ isGlobal: true }),
-    ScheduleModule.forRoot(),
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -29,7 +27,7 @@ import { LoggerCoreModule } from '../logger/logger.module';
             paths: ['req.headers.authorization', 'req.headers.cookie'],
             censor: '[REDACTED]',
           },
-          customProps: () => ({ service: 'logger-service' }),
+          customProps: () => ({ service: 'notification-service' }),
           transport:
             config.get<string>('NODE_ENV') !== 'production'
               ? {
