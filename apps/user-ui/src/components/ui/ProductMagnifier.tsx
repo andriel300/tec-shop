@@ -31,9 +31,11 @@ interface ProductMagnifierProps {
   enlargedImageContainerDimensions?: ContainerDimensions;
   enlargedImagePosition?: 'right' | 'left' | 'over' | 'top' | 'bottom';
   enlargedImageStyle?: React.CSSProperties;
+  imageStyle?: React.CSSProperties;
   lensStyle?: React.CSSProperties;
   lensSize?: number;
   className?: string;
+  enabled?: boolean;
 }
 
 export default function ProductMagnifier({
@@ -42,9 +44,11 @@ export default function ProductMagnifier({
   enlargedImageContainerDimensions = { width: 500, height: 500 },
   enlargedImagePosition = 'right',
   enlargedImageStyle = {},
+  imageStyle = {},
   lensStyle = {},
   lensSize = 120,
   className = '',
+  enabled = true,
 }: ProductMagnifierProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isHovering, setIsHovering] = useState(false);
@@ -260,9 +264,9 @@ export default function ProductMagnifier({
   return (
     <div
       className={`relative inline-block ${className}`}
-      onMouseMove={onMouseMove}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
+      onMouseMove={enabled ? onMouseMove : undefined}
+      onMouseEnter={enabled ? () => setIsHovering(true) : undefined}
+      onMouseLeave={enabled ? () => setIsHovering(false) : undefined}
       ref={containerRef}
     >
       {/* Small Image */}
@@ -271,29 +275,35 @@ export default function ProductMagnifier({
         alt={smallImage.alt || 'Product image'}
         style={{
           width: smallImage.isFluidWidth ? '100%' : 'auto',
+          height: '100%',
+          maxHeight: '100%',
+          objectFit: 'contain',
           display: 'block',
-          cursor: 'crosshair',
+          cursor: enabled ? 'crosshair' : 'default',
+          ...imageStyle,
         }}
       />
 
-      {/* Lens Overlay */}
-      {isHovering && <div style={lensStyleMerged} aria-hidden="true" />}
+      {/* Lens Overlay — only when zoom is active */}
+      {enabled && isHovering && <div style={lensStyleMerged} aria-hidden="true" />}
 
-      {/* Enlarged Image Container */}
-      <div style={enlargedContainerStyle} aria-hidden="true">
-        <img
-          src={largeImage.src}
-          alt={smallImage.alt || 'Product image (zoomed)'}
-          style={{
-            position: 'absolute',
-            pointerEvents: 'none',
-            display: 'block',
-            ...zoomedStyles,
-            ...enlargedImageStyle,
-          }}
-          draggable={false}
-        />
-      </div>
+      {/* Enlarged Image Container — only when zoom is active */}
+      {enabled && (
+        <div style={enlargedContainerStyle} aria-hidden="true">
+          <img
+            src={largeImage.src}
+            alt={smallImage.alt || 'Product image (zoomed)'}
+            style={{
+              position: 'absolute',
+              pointerEvents: 'none',
+              display: 'block',
+              ...zoomedStyles,
+              ...enlargedImageStyle,
+            }}
+            draggable={false}
+          />
+        </div>
+      )}
     </div>
   );
 }
