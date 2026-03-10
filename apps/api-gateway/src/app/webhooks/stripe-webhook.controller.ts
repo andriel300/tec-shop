@@ -1,7 +1,6 @@
 import { Controller, Post, Headers, Inject, BadRequestException, Logger, Req } from '@nestjs/common';
 import type { RawBodyRequest } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
 import { ApiTags, ApiExcludeEndpoint } from '@nestjs/swagger';
 import Stripe from 'stripe';
 import type { Request } from 'express';
@@ -65,31 +64,22 @@ export class StripeWebhookController {
       throw new BadRequestException('Invalid webhook signature');
     }
 
-    try {
-      // Route webhook events based on type
-      const orderEvents = [
-        'checkout.session.completed',
-        'checkout.session.expired',
-        'payment_intent.succeeded',
-        'payment_intent.payment_failed',
-      ];
+    const orderEvents = [
+      'checkout.session.completed',
+      'checkout.session.expired',
+      'payment_intent.succeeded',
+      'payment_intent.payment_failed',
+    ];
 
-      if (orderEvents.includes(event.type)) {
-        // Forward to order-service with verified event
-        const result = await firstValueFrom(
-          this.orderService.send('handle-stripe-webhook', event)
-        );
-        return result;
-      } else {
-        // Forward to seller-service for Connect events
-        const result = await firstValueFrom(
-          this.sellerService.send('stripe-webhook', event)
-        );
-        return result;
-      }
-    } catch (error) {
-      this.logger.error('Webhook processing failed', error);
-      throw new BadRequestException('Webhook processing failed');
+    // Fire-and-forget: return 200 to Stripe immediately so it does not
+    // retry on slow downstream processing. Order/seller service must handle
+    // idempotency (existing stripeSessionId unique guard covers this).
+    if (orderEvents.includes(event.type)) {
+      this.orderService.emit('handle-stripe-webhook', event);
+    } else {
+      this.sellerService.emit('stripe-webhook', event);
     }
+
+    return { received: true };
   }
 }
