@@ -1,6 +1,9 @@
 'use client';
 
+import { createLogger } from '@tec-shop/next-logger';
 import React, { Suspense, useEffect, useState } from 'react';
+
+const logger = createLogger('user-ui:payment-success');
 import { CheckCircle, Truck, Loader2, XCircle } from 'lucide-react';
 import { useRouter } from '../../../../i18n/navigation';
 import { useSearchParams } from 'next/navigation';
@@ -48,7 +51,7 @@ const PaymentSuccessPage = () => {
           origin: { x: 0.5, y: 0.5 },
         });
       } catch (err) {
-        console.error('Error processing payment:', err);
+        logger.error('Error processing payment:', { error: err });
         setError('Failed to create order. Please contact support.');
       } finally {
         setLoading(false);

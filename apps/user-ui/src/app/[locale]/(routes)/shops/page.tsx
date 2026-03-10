@@ -1,6 +1,9 @@
 'use client';
 
+import { createLogger } from '@tec-shop/next-logger';
 import { apiClient } from '../../../../lib/api/client';
+
+const logger = createLogger('user-ui:shops');
 import { Link } from '../../../../i18n/navigation';
 import React, { useEffect } from 'react';
 import { ChevronDown, X, Store, Search, Star } from 'lucide-react';
@@ -89,7 +92,7 @@ const Page = () => {
       setTotal(totalCount);
       setTotalPages(Math.ceil(totalCount / limit));
     } catch (error) {
-      console.error('Error fetching filtered shops:', error);
+      logger.error('Error fetching filtered shops:', { error });
       setShops([]);
       setTotalPages(1);
     } finally {

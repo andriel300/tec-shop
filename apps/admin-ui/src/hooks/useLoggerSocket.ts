@@ -1,6 +1,9 @@
 'use client';
 
+import { createLogger } from '@tec-shop/next-logger';
 import { useEffect, useRef, useState, useCallback } from 'react';
+
+const logger = createLogger('admin-ui:logger-socket');
 import { io, Socket } from 'socket.io-client';
 import type { LogEntry, LogLevel, LogCategory } from '../lib/api/logs';
 
@@ -124,7 +127,7 @@ export function useLoggerSocket(
     });
 
     socket.on('connected', (data: { adminId: string }) => {
-      process.env.NODE_ENV === 'development' && console.log('Logger socket connected as admin:', data.adminId);
+      logger.debug('Logger socket connected as admin:', { adminId: data.adminId });
     });
 
     socket.on('subscribed', (data: { recentLogs?: LogEntry[] }) => {
@@ -144,7 +147,7 @@ export function useLoggerSocket(
     });
 
     socket.on('connect_error', (error) => {
-      console.error('Logger socket connection error:', error.message);
+      logger.error('Logger socket connection error:', { error: error.message });
       onErrorRef.current?.(error.message);
     });
 

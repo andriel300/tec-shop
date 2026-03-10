@@ -1,7 +1,10 @@
 /* eslint-disable @nx/enforce-module-boundaries */
 'use client';
 
+import { createLogger } from '@tec-shop/next-logger';
 import React, { useState } from 'react';
+
+const logger = createLogger('seller-ui:events');
 import { useEvents, useDeleteEvent } from '../../../../../hooks/useEvents';
 import type { EventResponse } from '../../../../../lib/api/events';
 import { useRouter } from 'apps/seller-ui/src/i18n/navigation';
@@ -28,7 +31,7 @@ const EventsPage = () => {
       try {
         await deleteEventMutation.mutateAsync(eventId);
       } catch (err) {
-        console.error('Failed to delete event:', err);
+        logger.error('Failed to delete event:', { error: err });
       }
     }
   };

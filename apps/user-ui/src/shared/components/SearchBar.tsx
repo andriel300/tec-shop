@@ -1,6 +1,9 @@
 'use client';
 
+import { createLogger } from '@tec-shop/next-logger';
 import React, { useEffect, useRef, useState } from 'react';
+
+const logger = createLogger('user-ui:search-bar');
 import { Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from '../../i18n/navigation';
@@ -69,7 +72,7 @@ const SearchBar = () => {
         setShow(true);
       } catch (err: unknown) {
         if (err instanceof Error && err.name !== 'CanceledError') {
-          console.error(err);
+          logger.error('Search error', { error: err });
         }
       } finally {
         setIsSearching(false);

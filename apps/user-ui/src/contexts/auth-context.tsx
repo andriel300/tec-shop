@@ -2,6 +2,9 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, UserProfile } from '../lib/api/user';
+import { createLogger } from '@tec-shop/next-logger';
+
+const logger = createLogger('user-ui:auth');
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -31,8 +34,6 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
-const isDev = process.env.NODE_ENV === 'development';
-
 export function AuthProvider({ children }: AuthProviderProps) {
   const [authState, setAuthState] = useState<AuthState>({
     isAuthenticated: false,
@@ -44,11 +45,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Initialize auth state from sessionStorage or check authentication via API
   useEffect(() => {
     const initializeAuth = async () => {
-      isDev && console.log('[AuthContext] Starting initialization...');
+      logger.debug('Starting initialization...');
       try {
         // First, try to load from sessionStorage (client-side only)
         if (typeof window === 'undefined') {
-          isDev && console.log('[AuthContext] Server-side, skipping initialization');
+          logger.debug('Server-side, skipping initialization');
           setAuthState((prev) => ({ ...prev, isLoading: false }));
           return;
         }
@@ -58,7 +59,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const authSuccess = urlParams.get('auth');
 
         if (authSuccess === 'success') {
-          isDev && console.log('[AuthContext] Google OAuth success detected');
+          logger.debug('Google OAuth success detected');
           // Clean up URL immediately before any async work
           window.history.replaceState({}, document.title, window.location.pathname);
           // Fall through to the refresh flow below — cookies are already set
@@ -67,16 +68,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const userData = sessionStorage.getItem('user');
         const profileData = sessionStorage.getItem('userProfile');
 
-        isDev && console.log('[AuthContext] SessionStorage check - user:', !!userData, 'profile:', !!profileData);
+        logger.debug('SessionStorage check', { hasUser: !!userData, hasProfile: !!profileData });
 
         if (userData) {
           const user = JSON.parse(userData);
           const userProfile = profileData ? JSON.parse(profileData) : null;
 
-          isDev && console.log('[AuthContext] Loading from sessionStorage:', {
+          logger.debug('Loading from sessionStorage', {
             userId: user.id,
             userName: user.name,
-            hasProfile: !!userProfile
+            hasProfile: !!userProfile,
           });
 
           setAuthState({
@@ -94,7 +95,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // 2. User just logged in via Google OAuth and was redirected here
         // Note: We cannot check document.cookie for auth cookies because they're httpOnly
         // and set with path=/api. The browser will automatically send them with API requests.
-        isDev && console.log('[AuthContext] No sessionStorage, attempting token refresh...');
+        logger.debug('No sessionStorage, attempting token refresh...');
         try {
           const { apiClient } = await import('../lib/api/client');
           const { getCurrentUser } = await import('../lib/api/user');
@@ -105,16 +106,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
             skipAuthRefresh: true,
           } as Record<string, unknown>);
 
-          isDev && console.log('[AuthContext] Token refresh response:', !!response.data);
+          logger.debug('Token refresh response', { hasData: !!response.data });
 
           if (response.data?.user) {
             // Session is valid, fetch the full user profile
-            isDev && console.log('[AuthContext] Fetching user profile...');
+            logger.debug('Fetching user profile...');
             try {
               const userProfile = await getCurrentUser();
-              isDev && console.log('[AuthContext] User profile fetched:', {
+              logger.debug('User profile fetched', {
                 userId: userProfile.userId,
-                name: userProfile.name
+                name: userProfile.name,
               });
 
               const user: User = {
@@ -126,7 +127,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 userType: response.data.userType,
               };
 
-              isDev && console.log('[AuthContext] Setting authenticated state');
+              logger.debug('Setting authenticated state');
               setAuthState({
                 isAuthenticated: true,
                 isLoading: false,
@@ -138,10 +139,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
               if (typeof window !== 'undefined') {
                 sessionStorage.setItem('user', JSON.stringify(user));
                 sessionStorage.setItem('userProfile', JSON.stringify(userProfile));
-                isDev && console.log('[AuthContext] User data saved to sessionStorage');
+                logger.debug('User data saved to sessionStorage');
               }
             } catch (profileError) {
-              console.error('[AuthContext] Failed to fetch user profile after token refresh:', profileError);
+              logger.error('Failed to fetch user profile after token refresh', { error: profileError });
 
               // Fallback to minimal user from refresh response if profile fetch fails
               const minimalUser: User = {
@@ -167,7 +168,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }
         } catch (refreshError) {
           // Refresh failed - user is not authenticated
-          isDev && console.log('[AuthContext] Token refresh failed:', refreshError instanceof Error ? refreshError.message : 'Unknown error');
+          logger.debug('Token refresh failed', { error: refreshError instanceof Error ? refreshError.message : 'Unknown error' });
           setAuthState((prev) => ({
             ...prev,
             isAuthenticated: false,
@@ -175,7 +176,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }));
         }
       } catch (error) {
-        console.error('[AuthContext] Error initializing auth state:', error);
+        logger.error('Error initializing auth state', { error });
         // Clear corrupted data
         if (typeof window !== 'undefined') {
           sessionStorage.removeItem('user');
@@ -210,7 +211,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { logoutUser } = await import('../lib/api/auth');
       await logoutUser();
     } catch (error) {
-      console.error('Logout API call failed:', error);
+      logger.error('Logout API call failed', { error });
       // Continue with logout even if API call fails
     }
 

@@ -1,6 +1,9 @@
 'use client';
 
+import { createLogger } from '@tec-shop/next-logger';
 import { useState, useEffect, useRef } from 'react';
+
+const logger = createLogger('admin-ui:image-placeholder');
 import { Image as IKImage } from '@imagekit/next';
 import type { Transformation } from '@imagekit/javascript';
 import { Upload, X, Image as ImageIcon, Loader2, Wand2 } from 'lucide-react';
@@ -176,7 +179,7 @@ const ImagePlaceHolder = ({
       toast.error('Upload failed', {
         description: errorMessage,
       });
-      console.error('Error uploading image:', error);
+      logger.error('Error uploading image:', { error });
 
       // Clear preview on error
       if (imagePreview && imagePreview.startsWith('blob:')) {
@@ -325,7 +328,7 @@ const ImagePlaceHolder = ({
         toast.info('Enhancement cleared - Original image restored');
       }
     } catch (error) {
-      console.error('Error applying enhancement:', error);
+      logger.error('Error applying enhancement:', { error });
       toast.error('Failed to apply enhancement', {
         description: 'Please try again or choose a different enhancement',
       });

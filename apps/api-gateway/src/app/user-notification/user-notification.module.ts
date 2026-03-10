@@ -9,7 +9,7 @@ import { UserNotificationController } from './user-notification.controller';
   imports: [
     ClientsModule.registerAsync([
       {
-        name: 'LOGGER_SERVICE',
+        name: 'NOTIFICATION_SERVICE',
         imports: [ConfigModule],
         inject: [ConfigService],
         useFactory: (configService: ConfigService) => {
@@ -37,9 +37,9 @@ import { UserNotificationController } from './user-notification.controller';
             };
           } = {
             host:
-              configService.get<string>('LOGGER_SERVICE_HOST') || 'localhost',
+              configService.get<string>('NOTIFICATION_SERVICE_HOST') || 'localhost',
             port: parseInt(
-              configService.get<string>('LOGGER_SERVICE_TCP_PORT') || '6011',
+              configService.get<string>('NOTIFICATION_SERVICE_TCP_PORT') || '6014',
               10
             ),
           };

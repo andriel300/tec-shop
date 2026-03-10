@@ -1,6 +1,9 @@
 'use client';
 
+import { createLogger } from '@tec-shop/next-logger';
 import { useEffect, useRef, useState } from 'react';
+
+const logger = createLogger('seller-ui:notification-socket');
 import { io, Socket } from 'socket.io-client';
 import type { NotificationEntry } from '../lib/api/notifications-v2';
 
@@ -68,7 +71,7 @@ export function useNotificationSocket(
     });
 
     socket.on('connect_error', (error) => {
-      console.error('Notification socket error:', error.message);
+      logger.error('Notification socket error:', { error: error.message });
     });
 
     return () => {

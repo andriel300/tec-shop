@@ -1,6 +1,9 @@
 'use client';
 
+import { createLogger } from '@tec-shop/next-logger';
 import apiClient from '../../../../../lib/api/client';
+
+const logger = createLogger('user-ui:order-detail');
 import {
   Loader2,
   PackageX,
@@ -94,7 +97,7 @@ const Page = () => {
         // API returns order directly, not wrapped in { order: ... }
         setOrder(res.data);
       } catch (err) {
-        console.error('Error fetching order:', err);
+        logger.error('Error fetching order:', { error: err });
         setError('Failed to load order details');
       } finally {
         setLoading(false);

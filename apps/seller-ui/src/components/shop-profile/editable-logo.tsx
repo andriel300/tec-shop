@@ -1,9 +1,12 @@
 'use client';
 
+import { createLogger } from '@tec-shop/next-logger';
 import React, { useRef, useState } from 'react';
 import Image from 'next/image';
 import { Camera, Loader2 } from 'lucide-react';
 import { uploadImage } from '../../lib/api/upload';
+
+const logger = createLogger('seller-ui:editable-logo');
 
 interface EditableLogoProps {
   logoUrl?: string;
@@ -44,7 +47,7 @@ const EditableLogo: React.FC<EditableLogoProps> = ({
       const result = await uploadImage(file, 'shop-logos');
       onLogoChange(result.url);
     } catch (error) {
-      console.error('Failed to upload logo:', error);
+      logger.error('Failed to upload logo:', { error });
       alert('Failed to upload logo. Please try again.');
     } finally {
       setIsUploading(false);

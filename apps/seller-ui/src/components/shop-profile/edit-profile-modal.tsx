@@ -1,6 +1,9 @@
 'use client';
 
+import { createLogger } from '@tec-shop/next-logger';
 import React, { useState } from 'react';
+
+const logger = createLogger('seller-ui:edit-profile-modal');
 import { X, Loader2 } from 'lucide-react';
 import type { UpdateShopData } from '../../lib/api/seller';
 
@@ -53,7 +56,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       await onSave(formData);
       onClose();
     } catch (err) {
-      console.error('Failed to save profile:', err);
+      logger.error('Failed to save profile:', { error: err });
       setError('Failed to save changes. Please try again.');
     } finally {
       setIsSaving(false);

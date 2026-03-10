@@ -1,5 +1,8 @@
 'use client';
+import { createLogger } from '@tec-shop/next-logger';
 import { AlignLeft, ChevronDown, ChevronRight, HeartIcon } from 'lucide-react';
+
+const logger = createLogger('user-ui:sticky-navbar');
 import { Link } from '../../i18n/navigation';
 import { useTranslations } from 'next-intl';
 import React, { useEffect, useRef, useState } from 'react';
@@ -286,9 +289,7 @@ const StickyNavbar = () => {
                       referrerPolicy="no-referrer"
                       crossOrigin="anonymous"
                       onError={() => {
-                        console.warn(
-                          'Failed to load profile image in sticky header, falling back to icon'
-                        );
+                        logger.warn('Failed to load profile image in sticky header, falling back to icon');
                         setImageError(true);
                       }}
                     />

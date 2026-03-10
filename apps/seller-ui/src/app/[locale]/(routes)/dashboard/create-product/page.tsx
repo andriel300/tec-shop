@@ -1,7 +1,10 @@
 'use client';
 
+import { createLogger } from '@tec-shop/next-logger';
 import { useForm } from '@tanstack/react-form';
 import React, { useState } from 'react';
+
+const logger = createLogger('seller-ui:create-product');
 import { Package, DollarSign, Tag, Boxes } from 'lucide-react';
 import { createProduct } from '../../../../../lib/api/products';
 import { Alert } from '../../../../../components/ui/core/Alert';
@@ -122,9 +125,9 @@ const Page = () => {
           status: value.status as 'draft' | 'published' | 'scheduled',
         };
 
-        console.log('Submitting product:', productData);
+        logger.debug('Submitting product:', { data: productData });
         const createdProduct = await createProduct(productData);
-        console.log('Product created successfully:', createdProduct);
+        logger.info('Product created successfully:');
 
         setSubmitSuccess(true);
 
@@ -134,7 +137,7 @@ const Page = () => {
           router.push('/dashboard/all-products');
         }, 2000);
       } catch (error) {
-        console.error('Failed to create product:', error);
+        logger.error('Failed to create product:', { error });
         setSubmitError(
           error instanceof Error
             ? error.message

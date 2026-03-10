@@ -1,6 +1,9 @@
 'use client';
 
+import { createLogger } from '@tec-shop/next-logger';
 import CartIcon from '../../../assets/svgs/cart-icon';
+
+const logger = createLogger('user-ui:product-details');
 import ProductCard from '../../../components/cards/product-card';
 import ReviewForm from '../../../components/reviews/review-form';
 import ReviewList from '../../../components/reviews/review-list';
@@ -312,7 +315,7 @@ const ProductDetails = ({ product }: { product: Product }) => {
     }
 
     if (!shop?.seller?.authId) {
-      console.error('Cannot start chat: seller information not available');
+      logger.error('Cannot start chat: seller information not available');
       return;
     }
 
@@ -327,7 +330,7 @@ const ProductDetails = ({ product }: { product: Product }) => {
       });
       router.push(`/inbox?conversationId=${conversation.id}`);
     } catch (error) {
-      console.error('Failed to create conversation:', error);
+      logger.error('Failed to create conversation:', { error });
     }
   };
 
@@ -438,9 +441,7 @@ const ProductDetails = ({ product }: { product: Product }) => {
                     const sellerId = shop?.seller?.authId || '';
 
                     if (!sellerId) {
-                      console.error(
-                        'Cannot add to wishlist: sellerId not available from shop data'
-                      );
+                      logger.error('Cannot add to wishlist: sellerId not available from shop data');
                       return;
                     }
 
@@ -673,9 +674,7 @@ const ProductDetails = ({ product }: { product: Product }) => {
                   const sellerId = shop?.seller?.authId || '';
 
                   if (!sellerId) {
-                    console.error(
-                      'Cannot add to cart: sellerId not available from shop data'
-                    );
+                    logger.error('Cannot add to cart: sellerId not available from shop data');
                     return;
                   }
 

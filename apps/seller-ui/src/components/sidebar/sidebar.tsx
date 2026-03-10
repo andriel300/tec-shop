@@ -1,6 +1,9 @@
 'use client';
 
+import { createLogger } from '@tec-shop/next-logger';
 import React, { useEffect } from 'react';
+
+const logger = createLogger('seller-ui:sidebar');
 import { useTranslations } from 'next-intl';
 import useSidebar from '../../hooks/useSidebar';
 import { usePathname, useRouter } from '../../i18n/navigation';
@@ -63,7 +66,7 @@ const SidebarBarWrapper = () => {
       toast.success(tCommon('loggedOut'));
       router.push('/login');
     } catch (error) {
-      console.error('Logout error:', error);
+      logger.error('Logout error:', { error });
       toast.error(tCommon('logoutFailed'));
     }
   };

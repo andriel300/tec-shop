@@ -54,6 +54,9 @@
     },
     {
       "path": "../../libs/shared/components/input"
+    },
+    {
+      "path": "../../libs/shared/next-logger"
     }
   ]
 }

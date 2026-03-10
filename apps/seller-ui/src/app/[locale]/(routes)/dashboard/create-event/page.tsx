@@ -1,7 +1,10 @@
 /* eslint-disable @nx/enforce-module-boundaries */
 'use client';
 
+import { createLogger } from '@tec-shop/next-logger';
 import React, { useState } from 'react';
+
+const logger = createLogger('seller-ui:create-event');
 import { useCreateEvent } from '../../../../../hooks/useEvents';
 import { useRouter } from 'apps/seller-ui/src/i18n/navigation';
 
@@ -107,7 +110,7 @@ const CreateEventPage = () => {
 
       router.push('/dashboard/events');
     } catch (error) {
-      console.error('Failed to create event:', error);
+      logger.error('Failed to create event:', { error });
       setErrors({
         submit:
           error instanceof Error

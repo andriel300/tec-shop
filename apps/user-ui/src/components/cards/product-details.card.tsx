@@ -1,6 +1,9 @@
 'use client';
 
+import { createLogger } from '@tec-shop/next-logger';
 import Image from 'next/image';
+
+const logger = createLogger('user-ui:product-details-card');
 import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import StarRating from '../ui/star-rating';
@@ -202,9 +205,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
       const sellerId = shop?.seller?.authId || '';
 
       if (!sellerId) {
-        console.error(
-          'Cannot add to cart: sellerId not available from shop data'
-        );
+        logger.error('Cannot add to cart: sellerId not available from shop data');
         return;
       }
 
@@ -240,7 +241,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
     }
 
     if (!shop?.seller?.authId) {
-      console.error('Cannot start chat: seller information not available');
+      logger.error('Cannot start chat: seller information not available');
       return;
     }
 
@@ -255,7 +256,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
       });
       router.push(`/inbox?conversationId=${conversation.id}`);
     } catch (error) {
-      console.error('Failed to create conversation:', error);
+      logger.error('Failed to create conversation:', { error });
     }
   };
 
@@ -281,9 +282,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
       const sellerId = shop?.seller?.authId || '';
 
       if (!sellerId) {
-        console.error(
-          'Cannot add to wishlist: sellerId not available from shop data'
-        );
+        logger.error('Cannot add to wishlist: sellerId not available from shop data');
         return;
       }
 

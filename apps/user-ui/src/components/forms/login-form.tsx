@@ -1,6 +1,9 @@
 'use client';
 
+import { createLogger } from '@tec-shop/next-logger';
 import React, { useState } from 'react';
+
+const logger = createLogger('user-ui:login-form');
 import { useForm } from '@tanstack/react-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '../../i18n/navigation';
@@ -42,14 +45,14 @@ export function LoginForm() {
         toast.success(`Welcome back, ${userProfile.name}!`);
         router.push('/'); // Redirect to dashboard or home
       } catch (error) {
-        console.error('Failed to fetch user profile:', error);
+        logger.error('Failed to fetch user profile:', { error });
         // Login was successful but profile fetch failed - still allow login
         toast.success('Login successful!');
         router.push('/');
       }
     },
     onError: (error: Error | { message: string } | string) => {
-      console.error('Login error:', error); // Add debugging
+      logger.error('Login error:', { error });
 
       let message = 'An unknown error occurred.';
       if (error instanceof Error) {

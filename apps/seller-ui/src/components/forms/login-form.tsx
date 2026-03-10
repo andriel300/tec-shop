@@ -1,6 +1,9 @@
 'use client';
 
+import { createLogger } from '@tec-shop/next-logger';
 import React, { useState } from 'react';
+
+const logger = createLogger('seller-ui:login-form');
 import { useForm } from '@tanstack/react-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
@@ -44,14 +47,14 @@ export function LoginForm() {
         toast.success(t('loginTitle') + ', ' + sellerProfile.name + '!');
         router.push('/dashboard'); // Redirect to dashboard
       } catch (error) {
-        console.error('Failed to fetch seller profile:', error);
+        logger.error('Failed to fetch seller profile:', { error });
         // Login was successful but profile fetch failed - still allow login
         toast.success(t('loginTitle') + '!');
         router.push('/dashboard');
       }
     },
     onError: (error: Error | { message: string } | string) => {
-      console.error('Login error:', error); // Add debugging
+      logger.error('Login error:', { error });
 
       let message = 'An unknown error occurred.';
       if (error instanceof Error) {

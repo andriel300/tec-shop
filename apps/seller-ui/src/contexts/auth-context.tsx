@@ -1,6 +1,9 @@
 'use client';
 
+import { createLogger } from '@tec-shop/next-logger';
 import React, { createContext, useContext, useEffect, useState } from 'react';
+
+const logger = createLogger('seller-ui:auth-context');
 import { User, UserProfile } from '../lib/api/user';
 
 interface AuthState {
@@ -107,7 +110,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           }));
         }
       } catch (error) {
-        console.error('Error initializing auth state:', error);
+        logger.error('Error initializing auth state:', { error });
         // Clear corrupted data
         sessionStorage.removeItem('user');
         sessionStorage.removeItem('userProfile');
@@ -139,7 +142,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { logoutUser } = await import('../lib/api/auth');
       await logoutUser();
     } catch (error) {
-      console.error('Logout API call failed:', error);
+      logger.error('Logout API call failed:', { error });
       // Continue with logout even if API call fails
     }
 

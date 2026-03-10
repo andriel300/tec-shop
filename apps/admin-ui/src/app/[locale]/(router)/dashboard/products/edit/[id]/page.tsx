@@ -1,7 +1,10 @@
 'use client';
 
+import { createLogger } from '@tec-shop/next-logger';
 import { useForm } from '@tanstack/react-form';
 import React, { useState, useEffect } from 'react';
+
+const logger = createLogger('admin-ui:edit-product');
 import { useParams } from 'next/navigation';
 import { Package, DollarSign, Tag, Boxes } from 'lucide-react';
 import {
@@ -141,7 +144,7 @@ const Page = () => {
           },
         });
       } catch (error) {
-        console.error('Failed to update product:', error);
+        logger.error('Failed to update product:', { error });
         setSubmitError(
           error instanceof Error
             ? error.message

@@ -1,4 +1,7 @@
+import { createLogger } from '@tec-shop/next-logger';
 import { useEffect, useRef, useState, useCallback } from 'react';
+
+const logger = createLogger('user-ui:chat-socket');
 import { useQueryClient } from '@tanstack/react-query';
 import { io, Socket } from 'socket.io-client';
 import type { ChatMessage } from '../lib/api/chat';
@@ -96,7 +99,7 @@ export const useChatSocket = ({
       tokenExpiryRef.current = Date.now() + expiresIn * 1000;
       return token;
     } catch (error) {
-      console.error('Failed to fetch WebSocket token:', error);
+      logger.error('Failed to fetch WebSocket token:', { error });
       setConnectionError('Failed to authenticate');
       return null;
     }
@@ -151,18 +154,18 @@ export const useChatSocket = ({
     });
 
     socket.on('connected', (data) => {
-      process.env.NODE_ENV === 'development' && console.log('WebSocket connected:', data);
+      logger.debug('WebSocket connected:', { data });
     });
 
     socket.on('connect_error', (error) => {
-      console.error('WebSocket connection error:', error);
+      logger.error('WebSocket connection error:', { error });
       isConnectingRef.current = false;
       setIsConnecting(false);
       setConnectionError('Connection failed');
     });
 
     socket.on('error', (error) => {
-      console.error('WebSocket error:', error);
+      logger.error('WebSocket error:', { error });
       onErrorRef.current?.(error);
       if (error.message === 'Invalid or expired token') {
         // Clear token and try to reconnect
@@ -191,15 +194,15 @@ export const useChatSocket = ({
     });
 
     socket.on('joined_conversation', (data) => {
-      process.env.NODE_ENV === 'development' && console.log('Joined conversation:', data.conversationId);
+      logger.debug('Joined conversation:', { conversationId: data.conversationId });
     });
 
     socket.on('left_conversation', (data) => {
-      process.env.NODE_ENV === 'development' && console.log('Left conversation:', data.conversationId);
+      logger.debug('Left conversation:', { conversationId: data.conversationId });
     });
 
     socket.on('message_sent', (data) => {
-      process.env.NODE_ENV === 'development' && console.log('Message queued:', data);
+      logger.debug('Message queued:', { data });
     });
   }, [fetchToken, getWsUrl, queryClient]);
 

@@ -2,7 +2,10 @@
 
 export const dynamic = 'force-dynamic';
 
+import { createLogger } from '@tec-shop/next-logger';
 import { Input } from '../../../../components/ui/core/Input';
+
+const logger = createLogger('user-ui:cart');
 import { useAuth } from '../../../../hooks/use-auth';
 import useDeviceTracking from '../../../../hooks/use-device-tracking';
 import useLocationTracking from '../../../../hooks/use-location-tracking';
@@ -121,7 +124,7 @@ const CartPage = () => {
       }
     } catch (error) {
       toast.error('Something went wrong. Please try again.');
-      console.error('Error creating checkout session:', error);
+      logger.error('Error creating checkout session:', { error });
     } finally {
       setLoading(false);
     }

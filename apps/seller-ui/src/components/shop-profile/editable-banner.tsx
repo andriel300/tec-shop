@@ -1,9 +1,12 @@
 'use client';
 
+import { createLogger } from '@tec-shop/next-logger';
 import React, { useRef, useState } from 'react';
 import Image from 'next/image';
 import { Camera, Loader2 } from 'lucide-react';
 import { uploadImage } from '../../lib/api/upload';
+
+const logger = createLogger('seller-ui:editable-banner');
 
 interface EditableBannerProps {
   bannerUrl?: string;
@@ -42,7 +45,7 @@ const EditableBanner: React.FC<EditableBannerProps> = ({
       const result = await uploadImage(file, 'shop-banners');
       onBannerChange(result.url);
     } catch (error) {
-      console.error('Failed to upload banner:', error);
+      logger.error('Failed to upload banner:', { error });
       alert('Failed to upload banner. Please try again.');
     } finally {
       setIsUploading(false);

@@ -1,6 +1,9 @@
 'use client';
 
+import { createLogger } from '@tec-shop/next-logger';
 import { useEffect, useState } from 'react';
+
+const logger = createLogger('user-ui:location-tracking');
 
 const LOCATION_STORAGE_KEY = 'user_location';
 const LOCATION_EXPIRY_DAYS = 20;
@@ -24,7 +27,7 @@ const getStoredLocation = () => {
 
     return isExpired ? null : parsedData;
   } catch (error) {
-    console.error('Error parsing stored location:', error);
+    logger.error('Error parsing stored location:', { error });
     return null;
   }
 };

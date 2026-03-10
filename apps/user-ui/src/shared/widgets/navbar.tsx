@@ -1,6 +1,9 @@
 'use client';
 
+import { createLogger } from '@tec-shop/next-logger';
 import { Link } from '../../i18n/navigation';
+
+const logger = createLogger('user-ui:navbar');
 import { useTranslations } from 'next-intl';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/use-auth';
@@ -86,9 +89,7 @@ const Navbar = () => {
                     referrerPolicy="no-referrer"
                     crossOrigin="anonymous"
                     onError={() => {
-                      console.warn(
-                        'Failed to load profile image, falling back to icon'
-                      );
+                      logger.warn('Failed to load profile image, falling back to icon');
                       setImageError(true);
                     }}
                   />

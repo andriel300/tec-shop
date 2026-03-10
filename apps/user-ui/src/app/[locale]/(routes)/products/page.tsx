@@ -2,7 +2,10 @@
 
 export const dynamic = 'force-dynamic';
 
+import { createLogger } from '@tec-shop/next-logger';
 import { useQuery } from '@tanstack/react-query';
+
+const logger = createLogger('user-ui:products');
 import { apiClient } from '../../../../lib/api/client';
 import { Link } from '../../../../i18n/navigation';
 import React, { Suspense, useEffect } from 'react';
@@ -136,7 +139,7 @@ const ProductsPage = () => {
       setTotal(totalCount);
       setTotalPages(Math.ceil(totalCount / limit));
     } catch (error) {
-      console.error('Error fetching filtered products:', error);
+      logger.error('Error fetching filtered products:', { error });
       setProducts([]);
       setTotalPages(1);
     } finally {
