@@ -69,6 +69,15 @@ Table SellerPayout {
   updatedAt DateTime [not null]
 }
 
+Table OutboxEvent {
+  id String [pk]
+  aggregateId String [not null]
+  eventType String [not null]
+  payload Json [not null]
+  processedAt DateTime
+  createdAt DateTime [default: `now()`, not null]
+}
+
 Table PaymentSession {
   id String [pk]
   sessionId String [unique, not null]

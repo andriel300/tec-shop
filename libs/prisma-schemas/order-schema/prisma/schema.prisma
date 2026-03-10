@@ -10,8 +10,9 @@ generator dbml {
 }
 
 datasource db {
-  provider = "mongodb"
-  url      = env("ORDER_SERVICE_DB_URL")
+  provider  = "postgresql"
+  url       = env("ORDER_SERVICE_DB_URL")
+  directUrl = env("ORDER_SERVICE_DIRECT_URL")
 }
 
 enum OrderStatus {
@@ -37,14 +38,14 @@ enum PayoutStatus {
 }
 
 model Order {
-  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  id          String      @id @default(uuid())
   orderNumber String      @unique // e.g., "ORD-20240101-ABC123"
 
   // User information
-  userId      String      @db.ObjectId // References auth-service User.id
+  userId      String      // References auth-service User.id
 
   // Shipping information
-  shippingAddressId String  @db.ObjectId // References user-service ShippingAddress.id
+  shippingAddressId String  // References user-service ShippingAddress.id
   shippingAddress   Json    // Snapshot of shipping address at time of order
 
   // Payment information
@@ -87,24 +88,24 @@ model Order {
 }
 
 model OrderItem {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String   @id @default(uuid())
 
   // Order reference
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId   String   @db.ObjectId
+  orderId   String
 
   // Seller information
-  sellerId  String   @db.ObjectId // References seller-service Seller.id
-  shopId    String   @db.ObjectId // References seller-service Shop.id
+  sellerId  String   // References seller-service Seller.id
+  shopId    String   // References seller-service Shop.id
   shopName  String   // Snapshot for display
 
   // Product information
-  productId String   @db.ObjectId // References product-service Product.id
+  productId   String   // References product-service Product.id
   productName String
   productSlug String
   productImage String?
-  variantId String?  @db.ObjectId // If applicable
-  sku       String?
+  variantId   String?  // If applicable
+  sku         String?
 
   // Pricing (in cents)
   unitPrice Int      // Price per item at time of purchase
@@ -124,15 +125,15 @@ model OrderItem {
 }
 
 model SellerPayout {
-  id        String       @id @default(auto()) @map("_id") @db.ObjectId
+  id        String       @id @default(uuid())
 
   // Order reference
   order     Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId   String       @db.ObjectId
+  orderId   String
 
   // Seller information
-  sellerId  String       @db.ObjectId // References seller-service Seller.id
-  shopId    String       @db.ObjectId // References seller-service Shop.id
+  sellerId  String       // References seller-service Seller.id
+  shopId    String       // References seller-service Shop.id
   stripeAccountId String // Seller's Stripe Connect account
 
   // Payout amounts (in cents)
@@ -161,20 +162,32 @@ model SellerPayout {
   @@index([stripeAccountId])
 }
 
+model OutboxEvent {
+  id          String    @id @default(uuid())
+  aggregateId String    // orderId
+  eventType   String    // "order.created"
+  payload     Json
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([processedAt])
+  @@index([createdAt])
+}
+
 model PaymentSession {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  id            String   @id @default(uuid())
 
   // Session identification
   sessionId     String   @unique // Stripe checkout session ID
 
   // User information
-  userId        String   @db.ObjectId // References auth-service User.id
+  userId        String   // References auth-service User.id
 
   // Cart snapshot
   cartData      Json     // Snapshot of cart items at session creation
 
   // Address snapshot
-  shippingAddressId String @db.ObjectId
+  shippingAddressId String
   shippingAddress   Json   // Snapshot of shipping address
 
   // Amounts (in cents)

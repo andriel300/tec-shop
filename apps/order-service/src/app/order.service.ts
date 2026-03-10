@@ -1,9 +1,11 @@
+import { randomBytes } from 'crypto';
 import {
   Injectable,
   Logger,
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { Prisma } from '@tec-shop/order-client';
 import { OrderPrismaService } from '../prisma/prisma.service';
 import { RedisService } from '@tec-shop/redis-client';
@@ -253,21 +255,16 @@ export class OrderService {
   ): Promise<Record<string, unknown>> {
     this.logger.log(`Processing successful payment for session: ${sessionId}`);
 
-    // Get payment session from Redis or DB
     const sessionData = await this.getPaymentSession(sessionId);
     if (!sessionData) {
       throw new NotFoundException('Payment session not found');
     }
 
-    // Get Stripe session to verify payment
-    const stripeSession = await this.paymentService.getCheckoutSession(
-      sessionId
-    );
+    const stripeSession = await this.paymentService.getCheckoutSession(sessionId);
     if (stripeSession.payment_status !== 'paid') {
       throw new BadRequestException('Payment not completed');
     }
 
-    // Check if order already exists for this session
     const existingOrder = await this.prisma.order.findUnique({
       where: { stripeSessionId: sessionId },
     });
@@ -277,83 +274,129 @@ export class OrderService {
       return existingOrder;
     }
 
-    // Generate order number
-    const orderNumber = await this.generateOrderNumber();
-
-    // Create order with items
     const cartData = sessionData.cartData as unknown as CartItemDto[];
     const shippingAddress = sessionData.shippingAddress as unknown as Prisma.InputJsonValue;
+    const sellerGroups = this.groupItemsBySeller(cartData);
 
-    const order = await this.prisma.order.create({
-      data: {
-        orderNumber,
-        userId: sessionData.userId as string,
-        shippingAddressId: sessionData.shippingAddressId as string,
-        shippingAddress,
-        stripeSessionId: sessionId,
-        stripePaymentId: stripeSession.payment_intent as string,
-        paymentMethod: 'card',
-        subtotalAmount: sessionData.subtotalAmount as number,
-        discountAmount: sessionData.discountAmount as number,
-        shippingCost: sessionData.shippingCost as number,
-        platformFee: sessionData.platformFee as number,
-        finalAmount: sessionData.finalAmount as number,
-        couponCode: sessionData.couponCode as string | undefined,
-        status: OrderStatus.PAID,
-        paymentStatus: PaymentStatus.COMPLETED,
-        items: {
-          create: cartData.map((item: CartItemDto) => {
-            const { platformFee, sellerPayout } =
-              this.paymentService.calculateSellerPayout(
-                item.unitPrice * item.quantity
-              );
+    // Pre-fetch seller Stripe accounts before the transaction (network calls
+    // must not run inside a DB transaction)
+    const sellerAccountMap = await this.fetchSellerAccounts(sellerGroups);
 
-            return {
-              sellerId: item.sellerId,
-              shopId: item.shopId,
-              shopName: '', // Will be fetched
-              productId: item.productId,
-              productName: item.productName,
-              productSlug: item.productSlug,
-              productImage: item.productImage,
-              variantId: item.variantId,
-              sku: item.sku,
-              unitPrice: item.unitPrice,
-              quantity: item.quantity,
-              subtotal: item.unitPrice * item.quantity,
-              sellerPayout,
-              platformFee,
-            };
-          }),
+    // Atomically create the Order, its OrderItems, and all SellerPayout records.
+    // Requires MongoDB replica set (Atlas or self-hosted RS) for multi-document transactions.
+    const order = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.order.create({
+        data: {
+          orderNumber: this.generateOrderNumber(),
+          userId: sessionData.userId as string,
+          shippingAddressId: sessionData.shippingAddressId as string,
+          shippingAddress,
+          stripeSessionId: sessionId,
+          stripePaymentId: stripeSession.payment_intent as string,
+          paymentMethod: 'card',
+          subtotalAmount: sessionData.subtotalAmount as number,
+          discountAmount: sessionData.discountAmount as number,
+          shippingCost: sessionData.shippingCost as number,
+          platformFee: sessionData.platformFee as number,
+          finalAmount: sessionData.finalAmount as number,
+          couponCode: sessionData.couponCode as string | undefined,
+          status: OrderStatus.PAID,
+          paymentStatus: PaymentStatus.COMPLETED,
+          items: {
+            create: cartData.map((item: CartItemDto) => {
+              const { platformFee, sellerPayout } =
+                this.paymentService.calculateSellerPayout(item.unitPrice * item.quantity);
+              return {
+                sellerId: item.sellerId,
+                shopId: item.shopId,
+                shopName: '',
+                productId: item.productId,
+                productName: item.productName,
+                productSlug: item.productSlug,
+                productImage: item.productImage,
+                variantId: item.variantId,
+                sku: item.sku,
+                unitPrice: item.unitPrice,
+                quantity: item.quantity,
+                subtotal: item.unitPrice * item.quantity,
+                sellerPayout,
+                platformFee,
+              };
+            }),
+          },
         },
-      },
-      include: {
-        items: true,
-      },
+        include: { items: true },
+      });
+
+      for (const [sellerId, items] of Object.entries(sellerGroups)) {
+        const account = sellerAccountMap.get(sellerId);
+        if (!account) {
+          this.logger.error(`Seller ${sellerId} has no Stripe account — skipping payout record`);
+          continue;
+        }
+        const totalAmount = items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
+        const { platformFee, sellerPayout } = this.paymentService.calculateSellerPayout(totalAmount);
+        await tx.sellerPayout.create({
+          data: {
+            orderId: created.id,
+            sellerId,
+            shopId: items[0].shopId,
+            stripeAccountId: account,
+            totalAmount,
+            platformFee,
+            payoutAmount: sellerPayout,
+            status: 'PENDING',
+          },
+        });
+      }
+
+      // Write outbox event atomically with the order — ensures side-effects
+      // are never lost even if the process crashes before they run.
+      await tx.outboxEvent.create({
+        data: {
+          aggregateId: created.id,
+          eventType: 'order.created',
+          payload: {
+            orderId: created.id,
+            userId: sessionData.userId,
+            cartData: cartData as unknown as Prisma.InputJsonValue,
+          },
+        },
+      });
+
+      return created;
     });
 
-    // Process seller payouts
-    await this.processSellerPayouts(order.id, cartData);
+    void this.cleanupPaymentSession(sessionId);
 
-    // Send order confirmation email
-    await this.sendOrderConfirmationEmail(order.id);
-
-    // Send seller notifications
-    await this.sendSellerNotifications(order.id);
-
-    // Track purchase in analytics
-    await this.trackPurchaseEvent(
-      order.id,
-      sessionData.userId as string,
-      cartData
-    );
-
-    // Clean up session data
-    await this.cleanupPaymentSession(sessionId);
-
-    this.logger.log(`Order created successfully: ${orderNumber}`);
-
+    this.logger.log(`Order created: ${(order as Record<string, unknown>).orderNumber as string}`);
     return order;
+  }
+
+  @Cron(CronExpression.EVERY_10_SECONDS)
+  async processOutbox(): Promise<void> {
+    const events = await this.prisma.outboxEvent.findMany({
+      where: { processedAt: null },
+      take: 50,
+      orderBy: { createdAt: 'asc' },
+    });
+
+    for (const event of events) {
+      try {
+        if (event.eventType === 'order.created') {
+          const payload = event.payload as { orderId: string; userId: string; cartData: CartItemDto[] };
+          await this.sendOrderConfirmationEmail(payload.orderId);
+          await this.sendSellerNotifications(payload.orderId);
+          await this.trackPurchaseEvent(payload.orderId, payload.userId, payload.cartData);
+        }
+        await this.prisma.outboxEvent.update({
+          where: { id: event.id },
+          data: { processedAt: new Date() },
+        });
+      } catch (error) {
+        this.logger.error(`Outbox processing failed for event ${event.id}`, error);
+      }
+    }
   }
 
   private async getPaymentSession(
@@ -391,115 +434,81 @@ export class OrderService {
     };
   }
 
-  private async generateOrderNumber(): Promise<string> {
+  private generateOrderNumber(): string {
     const timestamp = Date.now().toString(36).toUpperCase();
-    const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const random = randomBytes(3).toString('hex').toUpperCase();
     return `ORD-${timestamp}-${random}`;
   }
 
-  private async processSellerPayouts(
-    orderId: string,
-    items: CartItemDto[]
-  ): Promise<void> {
-    // Group items by seller
-    const sellerGroups = items.reduce((acc, item) => {
-      if (!acc[item.sellerId]) {
-        acc[item.sellerId] = [];
-      }
+  private groupItemsBySeller(items: CartItemDto[]): Record<string, CartItemDto[]> {
+    return items.reduce((acc, item) => {
+      if (!acc[item.sellerId]) acc[item.sellerId] = [];
       acc[item.sellerId].push(item);
       return acc;
     }, {} as Record<string, CartItemDto[]>);
+  }
 
-    // Create payout records for each seller
-    for (const [sellerId, sellerItems] of Object.entries(sellerGroups)) {
-      const totalAmount = sellerItems.reduce(
-        (sum, item) => sum + item.unitPrice * item.quantity,
-        0
-      );
-
-      const { platformFee, sellerPayout } =
-        this.paymentService.calculateSellerPayout(totalAmount);
-
-      // Get seller's Stripe account
+  private async fetchSellerAccounts(
+    sellerGroups: Record<string, CartItemDto[]>
+  ): Promise<Map<string, string>> {
+    const accountMap = new Map<string, string>();
+    for (const sellerId of Object.keys(sellerGroups)) {
       const seller = await this.sellerClient.getSellerByAuthId(sellerId);
-      if (!seller || !seller.stripeAccountId) {
-        this.logger.error(
-          `Seller ${sellerId} has no Stripe account configured`
-        );
-        continue;
+      if (seller && seller.stripeAccountId) {
+        accountMap.set(sellerId, seller.stripeAccountId as string);
+      } else {
+        this.logger.error(`Seller ${sellerId} has no Stripe account configured`);
       }
+    }
+    return accountMap;
+  }
 
-      // Create payout record
-      await this.prisma.sellerPayout.create({
+  private async executePayoutTransfer(payout: {
+    id: string;
+    sellerId: string;
+    stripeAccountId: string;
+    payoutAmount: number;
+    orderId: string;
+  }): Promise<void> {
+    try {
+      const transferId = await this.paymentService.createSellerPayout(
+        payout.stripeAccountId,
+        payout.payoutAmount,
+        payout.orderId
+      );
+      await this.prisma.sellerPayout.update({
+        where: { id: payout.id },
+        data: { stripeTransferId: transferId, status: 'COMPLETED', processedAt: new Date() },
+      });
+      this.logger.log(`Payout completed for seller ${payout.sellerId}: ${transferId}`);
+    } catch (error) {
+      this.logger.error(`Failed to process payout for seller ${payout.sellerId}`, error);
+      await this.prisma.sellerPayout.update({
+        where: { id: payout.id },
         data: {
-          orderId,
-          sellerId,
-          shopId: sellerItems[0].shopId,
-          stripeAccountId: seller.stripeAccountId as string,
-          totalAmount,
-          platformFee,
-          payoutAmount: sellerPayout,
-          status: 'PENDING',
+          status: 'FAILED',
+          errorMessage: error instanceof Error ? error.message : 'Unknown error',
+          retryCount: { increment: 1 },
         },
       });
     }
-
-    // Process payouts asynchronously
-    this.processPayoutsAsync(orderId);
   }
 
-  private async processPayoutsAsync(orderId: string): Promise<void> {
-    // This runs in the background
-    setImmediate(async () => {
-      try {
-        const payouts = await this.prisma.sellerPayout.findMany({
-          where: { orderId, status: 'PENDING' },
-        });
-
-        for (const payout of payouts) {
-          try {
-            const transferId = await this.paymentService.createSellerPayout(
-              payout.stripeAccountId,
-              payout.payoutAmount,
-              orderId
-            );
-
-            await this.prisma.sellerPayout.update({
-              where: { id: payout.id },
-              data: {
-                stripeTransferId: transferId,
-                status: 'COMPLETED',
-                processedAt: new Date(),
-              },
-            });
-
-            this.logger.log(
-              `Payout completed for seller ${payout.sellerId}: ${transferId}`
-            );
-          } catch (error) {
-            this.logger.error(
-              `Failed to process payout for seller ${payout.sellerId}`,
-              error
-            );
-
-            await this.prisma.sellerPayout.update({
-              where: { id: payout.id },
-              data: {
-                status: 'FAILED',
-                errorMessage:
-                  error instanceof Error ? error.message : 'Unknown error',
-                retryCount: { increment: 1 },
-              },
-            });
-          }
-        }
-      } catch (error) {
-        this.logger.error(
-          `Error processing payouts for order ${orderId}`,
-          error
-        );
-      }
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async retryPendingPayouts(): Promise<void> {
+    const payouts = await this.prisma.sellerPayout.findMany({
+      where: {
+        status: { in: ['PENDING', 'FAILED'] },
+        retryCount: { lt: 3 },
+      },
     });
+
+    if (payouts.length === 0) return;
+
+    this.logger.log(`Retrying ${payouts.length} pending/failed payout(s)`);
+    for (const payout of payouts) {
+      await this.executePayoutTransfer(payout);
+    }
   }
 
   private async sendOrderConfirmationEmail(orderId: string): Promise<void> {
@@ -701,7 +710,7 @@ export class OrderService {
 
     this.logger.log(`Fetching orders for sellerId: ${sellerId}`);
 
-    const where: any = {
+    const where: Prisma.OrderWhereInput = {
       items: {
         some: {
           sellerId,

@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
@@ -68,24 +69,36 @@ export class PaymentService {
         this.configService.get<string>('FRONTEND_URL') ||
         'http://localhost:3000';
 
-      const session = await this.stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: lineItems,
-        mode: 'payment',
-        success_url: `${frontendUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${frontendUrl}/cart?cancelled=true`,
-        customer_email: undefined, // We'll get this from user profile
-        metadata: {
-          userId: data.userId,
-          subtotalAmount: data.subtotalAmount.toString(),
-          discountAmount: data.discountAmount.toString(),
-          shippingCost: data.shippingCost.toString(),
-          platformFee: data.platformFee.toString(),
-          finalAmount: data.finalAmount.toString(),
-          couponCode: data.couponCode || '',
+      const idempotencyKey = createHash('sha256')
+        .update(
+          `${data.userId}:${data.items
+            .map((i) => `${i.productId}:${i.variantId ?? ''}:${i.quantity}`)
+            .sort()
+            .join(',')}`
+        )
+        .digest('hex');
+
+      const session = await this.stripe.checkout.sessions.create(
+        {
+          payment_method_types: ['card'],
+          line_items: lineItems,
+          mode: 'payment',
+          success_url: `${frontendUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${frontendUrl}/cart?cancelled=true`,
+          customer_email: undefined,
+          metadata: {
+            userId: data.userId,
+            subtotalAmount: data.subtotalAmount.toString(),
+            discountAmount: data.discountAmount.toString(),
+            shippingCost: data.shippingCost.toString(),
+            platformFee: data.platformFee.toString(),
+            finalAmount: data.finalAmount.toString(),
+            couponCode: data.couponCode || '',
+          },
+          expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
         },
-        expires_at: Math.floor(Date.now() / 1000) + 30 * 60, // 30 minutes
-      });
+        { idempotencyKey }
+      );
 
       if (!session.url) {
         throw new Error('Stripe session created but URL is missing');
