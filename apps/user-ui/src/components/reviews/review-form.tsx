@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import { toast } from 'sonner';
 import { useRouter } from '../../i18n/navigation';
 import { Link } from '../../i18n/navigation';
 import Image from 'next/image';
@@ -84,6 +85,9 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ productId }) => {
     createMutation.mutate(formData, {
       onSuccess: () => {
         setIsExpanded(false);
+        toast.success(isEditing ? 'Review updated' : 'Review submitted', {
+          description: isEditing ? 'Your review has been updated.' : 'Thank you for your feedback!',
+        });
       },
     });
   };

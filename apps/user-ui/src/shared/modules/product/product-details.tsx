@@ -1,6 +1,7 @@
 'use client';
 
 import { createLogger } from '@tec-shop/next-logger';
+import { toast } from 'sonner';
 import CartIcon from '../../../assets/svgs/cart-icon';
 
 const logger = createLogger('user-ui:product-details');
@@ -463,12 +464,14 @@ const ProductDetails = ({ product }: { product: Product }) => {
                       location ?? undefined,
                       deviceInfo
                     );
+                    toast.success('Removed from wishlist', { description: product.name });
                   } else {
                     // Get sellerId from shopInfo (required for order processing)
                     const sellerId = shop?.seller?.authId || '';
 
                     if (!sellerId) {
                       logger.error('Cannot add to wishlist: sellerId not available from shop data');
+                      toast.error('Could not add to wishlist', { description: 'Shop information is not yet loaded.' });
                       return;
                     }
 
@@ -490,6 +493,7 @@ const ProductDetails = ({ product }: { product: Product }) => {
                       location ?? undefined,
                       deviceInfo
                     );
+                    toast.success('Added to wishlist', { description: product.name });
                   }
                 }}
               />
@@ -702,6 +706,7 @@ const ProductDetails = ({ product }: { product: Product }) => {
 
                   if (!sellerId) {
                     logger.error('Cannot add to cart: sellerId not available from shop data');
+                    toast.error('Could not add to cart', { description: 'Shop information is not yet loaded.' });
                     return;
                   }
 
@@ -725,6 +730,7 @@ const ProductDetails = ({ product }: { product: Product }) => {
                     location ?? undefined,
                     deviceInfo
                   );
+                  toast.success('Added to cart', { description: product.name });
                 }}
               >
                 <CartIcon className="w-7 h-7" />
