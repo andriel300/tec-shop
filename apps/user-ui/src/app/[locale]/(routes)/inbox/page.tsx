@@ -18,7 +18,8 @@ import { useRouter } from '../../../../i18n/navigation';
 import { useSearchParams } from 'next/navigation';
 import React, { Suspense, useEffect, useRef, useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { ArrowLeft, Loader2, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Loader2, MessageCircle, ChevronRight, Home } from 'lucide-react';
+import { Link } from '../../../../i18n/navigation';
 import ChatInput from '../../../../components/chats/chat-input';
 
 const DEFAULT_AVATAR =
@@ -258,6 +259,19 @@ const InboxPage = () => {
   return (
     <div className="w-full">
       <div className="md:w-[90%] lg:w-[80%] mx-auto pt-5 px-4">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-1.5 text-sm text-gray-500 mb-4">
+          <Link href="/" className="flex items-center hover:text-brand-primary transition-colors">
+            <Home size={14} />
+          </Link>
+          <ChevronRight size={14} className="text-gray-400" />
+          <Link href="/profile" className="hover:text-brand-primary transition-colors">
+            Profile
+          </Link>
+          <ChevronRight size={14} className="text-gray-400" />
+          <span className="text-gray-800 font-medium">Inbox</span>
+        </nav>
+
         <div className="flex h-[80vh] shadow-lg rounded-lg overflow-hidden border border-gray-200">
           {/* Conversations List */}
           <div
