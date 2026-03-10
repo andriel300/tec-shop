@@ -89,7 +89,7 @@ const SearchBar = () => {
     e.preventDefault();
     if (!query.trim()) return;
 
-    router.push(`/products?search=${encodeURIComponent(query)}`);
+    router.push(`/all-products?search=${encodeURIComponent(query)}`);
     setShow(false);
     setQuery('');
   };

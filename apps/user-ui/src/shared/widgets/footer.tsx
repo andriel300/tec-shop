@@ -169,7 +169,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  href="/products"
+                  href="/all-products"
                   className="text-sm hover:text-brand-primary transition-colors"
                 >
                   Products

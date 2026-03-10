@@ -53,7 +53,7 @@ const SearchDropdown = ({
           {results.products.map((product) => (
             <Link
               key={product.id}
-              href={`/product/${product.slug}`}
+              href={`/productview/${product.slug}`}
               onClick={() => {
                 close();
                 clear();

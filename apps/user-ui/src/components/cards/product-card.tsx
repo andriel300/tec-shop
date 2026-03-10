@@ -139,7 +139,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
   return (
     <>
-      <Link href={`/product/${product.slug || product.id}`}>
+      <Link href={`/productview/${product.slug || product.id}`}>
         <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden h-full flex flex-col">
           <div className="relative w-full h-[200px] bg-gray-100">
             {/* Image */}

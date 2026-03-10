@@ -107,7 +107,7 @@ const OrdersSection = () => {
           Start shopping and your orders will appear here.
         </p>
         <Link
-          href="/products"
+          href="/all-products"
           className="inline-block bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition"
         >
           Browse Products
@@ -164,7 +164,7 @@ const OrdersSection = () => {
                 )}
                 <div className="flex-1">
                   <Link
-                    href={`/product/${item.productSlug || item.productId}`}
+                    href={`/productview/${item.productSlug || item.productId}`}
                     className="text-sm font-medium text-gray-800 hover:text-blue-600 hover:underline"
                   >
                     {item.productName}

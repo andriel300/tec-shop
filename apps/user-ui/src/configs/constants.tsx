@@ -4,7 +4,7 @@ export const navItems: NavItemsTypes[] = [
     href: '/',
     translationKey: 'home',
   },
-  { title: 'Products', href: '/products', translationKey: 'products' },
+  { title: 'Products', href: '/all-products', translationKey: 'products' },
   { title: 'Shops', href: '/shops', translationKey: 'shops' },
   { title: 'Offers', href: '/offers', translationKey: 'offers' },
   {

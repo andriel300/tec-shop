@@ -162,7 +162,7 @@ const StickyNavbar = () => {
                             onMouseEnter={() => handleCategoryMouseEnter(category.id)}
                           >
                             <Link
-                              href={`/products?categoryId=${category.id}`}
+                              href={`/all-products?categoryId=${category.id}`}
                               className={`flex items-center justify-between px-4 py-3 transition-colors ${
                                 hoveredCategory === category.id
                                   ? 'bg-ui-muted'
@@ -219,7 +219,7 @@ const StickyNavbar = () => {
                           ?.children?.map((subcategory) => (
                             <Link
                               key={subcategory.id}
-                              href={`/products?categoryId=${subcategory.id}`}
+                              href={`/all-products?categoryId=${subcategory.id}`}
                               className="block px-4 py-3 hover:bg-ui-muted transition-colors"
                               onClick={() => setShow(false)}
                             >

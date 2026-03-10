@@ -95,7 +95,7 @@ const WishListPage = () => {
                         className="rounded"
                       />
                       <Link
-                        href={`/product/${item.slug || item.id}`}
+                        href={`/productview/${item.slug || item.id}`}
                         className="hover:text-brand-primary hover:underline transition-colors"
                       >
                         {item.title}
