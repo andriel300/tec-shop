@@ -78,6 +78,15 @@ export function extractSafeErrorMessage(error: ApiError): string {
     if (backendMessage.includes('already exists')) {
       return 'This email is already registered. Please use a different email or try logging in.';
     }
+
+    if (
+      backendMessage.includes('only review products') ||
+      backendMessage.includes('delivered') ||
+      backendMessage.includes('verify purchase') ||
+      backendMessage.includes('purchased this product')
+    ) {
+      return backendMessage;
+    }
   }
 
   // Use safe message based on status code

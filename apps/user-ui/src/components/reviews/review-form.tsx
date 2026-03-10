@@ -2,8 +2,9 @@
 
 import React, { useState, useRef } from 'react';
 import { useRouter } from '../../i18n/navigation';
+import { Link } from '../../i18n/navigation';
 import Image from 'next/image';
-import { ChevronDown, ChevronUp, ImagePlus, X, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, ImagePlus, X, Loader2, ShoppingBag } from 'lucide-react';
 import StarRating from '../ui/star-rating';
 import { useAuth } from '../../contexts/auth-context';
 import { useUserRating, useCreateOrUpdateRating } from '../../hooks/use-ratings';
@@ -88,6 +89,13 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ productId }) => {
   };
 
   const isEditing = !!existingRating;
+
+  const errorMessage = createMutation.error?.message ?? '';
+  const isNotPurchasedError =
+    errorMessage.includes('only review products') ||
+    errorMessage.includes('delivered') ||
+    errorMessage.includes('verify purchase') ||
+    errorMessage.includes('purchased this product');
 
   return (
     <div className="border border-gray-200 rounded-lg">
@@ -212,9 +220,30 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ productId }) => {
 
           {/* Error message */}
           {createMutation.isError && (
-            <p className="text-sm text-red-600">
-              {createMutation.error?.message || 'Failed to submit review. Please try again.'}
-            </p>
+            isNotPurchasedError ? (
+              <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <ShoppingBag className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-amber-800">
+                    Purchase required to review
+                  </p>
+                  <p className="text-xs text-amber-700 mt-0.5">
+                    Only customers who received a delivered order can leave a review.
+                  </p>
+                  <Link
+                    href="/all-products"
+                    className="inline-flex items-center gap-1.5 mt-2 text-xs font-medium text-amber-800 underline underline-offset-2 hover:text-amber-900 transition-colors"
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                    Browse products to buy
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-red-600">
+                {errorMessage || 'Failed to submit review. Please try again.'}
+              </p>
+            )
           )}
 
           {/* Success message */}
