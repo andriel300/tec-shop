@@ -5,11 +5,14 @@ import {
   WebSocketServer,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  OnGatewayInit,
   ConnectedSocket,
   WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Injectable, Logger, UsePipes, ValidationPipe } from '@nestjs/common';
+import { createAdapter } from '@socket.io/redis-adapter';
+import { Injectable, Logger, UsePipes, ValidationPipe, Inject } from '@nestjs/common';
+import type { Redis } from 'ioredis';
 import { JwtService } from '@nestjs/jwt';
 import { KafkaService } from '../kafka/kafka.service';
 import { ParticipantType, SenderType } from '@tec-shop/dto';
@@ -45,9 +48,6 @@ interface TypingPayload {
   isTyping: boolean;
 }
 
-// Map socket ID to user info
-const socketToUser = new Map<string, SocketUserInfo>();
-
 @Injectable()
 @WebSocketGateway({
   cors: {
@@ -69,18 +69,27 @@ const socketToUser = new Map<string, SocketUserInfo>();
   },
 })
 @UsePipes(new ValidationPipe())
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
 
   private readonly logger = new Logger(ChatGateway.name);
+  private readonly socketToUser = new Map<string, SocketUserInfo>();
 
   constructor(
     private readonly kafkaService: KafkaService,
     private readonly messageRedisService: MessageRedisService,
     private readonly onlineRedisService: OnlineRedisService,
-    private readonly jwtService: JwtService
+    private readonly jwtService: JwtService,
+    @Inject('REDIS_CLIENT') private readonly redisClient: Redis
   ) {}
+
+  afterInit(server: Server) {
+    const pubClient = this.redisClient.duplicate();
+    const subClient = this.redisClient.duplicate();
+    server.adapter(createAdapter(pubClient, subClient));
+    this.logger.log('Socket.IO Redis adapter initialized');
+  }
 
   /**
    * Handle new WebSocket connections with JWT authentication
@@ -113,7 +122,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         payload.userType === 'SELLER' ? ParticipantType.SELLER : ParticipantType.USER;
 
       // Store user info in map
-      socketToUser.set(client.id, {
+      this.socketToUser.set(client.id, {
         userId: payload.userId,
         userType,
       });
@@ -141,9 +150,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * Handle WebSocket disconnections
    */
   async handleDisconnect(client: Socket) {
-    const userInfo = socketToUser.get(client.id);
+    const userInfo = this.socketToUser.get(client.id);
     if (userInfo) {
-      socketToUser.delete(client.id);
+      this.socketToUser.delete(client.id);
       await this.onlineRedisService.setUserOffline(userInfo.userId);
       this.logger.log(
         `Client disconnected: ${userInfo.userId} (${userInfo.userType})`
@@ -181,7 +190,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() conversationId: string,
     @ConnectedSocket() client: Socket
   ) {
-    const userInfo = socketToUser.get(client.id);
+    const userInfo = this.socketToUser.get(client.id);
     if (!userInfo) {
       throw new WsException('Not authenticated');
     }
@@ -201,7 +210,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() conversationId: string,
     @ConnectedSocket() client: Socket
   ) {
-    const userInfo = socketToUser.get(client.id);
+    const userInfo = this.socketToUser.get(client.id);
     if (!userInfo) {
       throw new WsException('Not authenticated');
     }
@@ -218,7 +227,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
    */
   @SubscribeMessage('heartbeat')
   async handleHeartbeat(@ConnectedSocket() client: Socket) {
-    const userInfo = socketToUser.get(client.id);
+    const userInfo = this.socketToUser.get(client.id);
     if (userInfo) {
       await this.onlineRedisService.refreshUserOnline(userInfo.userId);
     }
@@ -232,7 +241,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: SendMessagePayload
   ) {
-    const userInfo = socketToUser.get(client.id);
+    const userInfo = this.socketToUser.get(client.id);
     if (!userInfo) {
       throw new WsException('Not authenticated');
     }
@@ -288,7 +297,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: MarkAsSeenDto
   ) {
-    const userInfo = socketToUser.get(client.id);
+    const userInfo = this.socketToUser.get(client.id);
     if (!userInfo) {
       throw new WsException('Not authenticated');
     }
@@ -323,7 +332,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: TypingPayload
   ) {
-    const userInfo = socketToUser.get(client.id);
+    const userInfo = this.socketToUser.get(client.id);
     if (!userInfo) {
       throw new WsException('Not authenticated');
     }
@@ -347,7 +356,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() userId: string
   ) {
-    const userInfo = socketToUser.get(client.id);
+    const userInfo = this.socketToUser.get(client.id);
     if (!userInfo) {
       throw new WsException('Not authenticated');
     }
