@@ -209,7 +209,7 @@
     "changelog": {
       "projectChangelogs": {
         "renderOptions": {
-          "authors": true,
+          "watchDepsNamesdasauthors": true,
           "applyUsernameToAuthors": true,
           "commitReferences": true,
           "versionTitleDate": true

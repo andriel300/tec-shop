@@ -5,15 +5,17 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci --only=production
+COPY package.json pnpm-lock.yaml .npmrc ./
+RUN corepack enable
+RUN pnpm install --frozen-lockfile --prod
 
 # ─── Stage 2: Builder ────────────────────────────────────────────────────────
 FROM node:22-alpine AS builder
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml .npmrc ./
+RUN corepack enable
+RUN pnpm install --frozen-lockfile
 
 COPY . .
 RUN npx nx build product-service --prod

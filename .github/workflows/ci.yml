@@ -26,13 +26,16 @@ jobs:
       # Temporarily disabled distributed execution to avoid hanging issues with Prisma dependencies
       # - run: npx nx start-ci-run --distribute-on="1 linux-medium-js" --stop-agents-after="build"
 
-      # Cache node_modules
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: 'pnpm'
 
-      - run: npm ci --legacy-peer-deps
+      - run: pnpm install --frozen-lockfile
       - uses: nrwl/nx-set-shas@v4.3.3
 
       # Generate Prisma clients before running tests/builds
@@ -48,6 +51,7 @@ jobs:
           npx nx run @tec-shop/analytics-schema:generate-types
           npx nx run @tec-shop/chatting-schema:generate-types
           npx nx run @tec-shop/logger-schema:generate-types
+          npx nx run @tec-shop/notification-schema:generate-types
 
       # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
       # - run: npx nx-cloud record -- echo Hello World

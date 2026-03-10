@@ -3,6 +3,7 @@ const { join } = require('path');
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
 module.exports = {
+  ignoreWarnings: [/Failed to parse source map/],
   output: {
     path: join(__dirname, 'dist'),
     ...(process.env.NODE_ENV !== 'production' && {

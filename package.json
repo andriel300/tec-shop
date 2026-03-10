@@ -2,6 +2,7 @@
   "name": "@tec-shop/source",
   "version": "0.0.0",
   "license": "MIT",
+  "packageManager": "pnpm@10.32.0",
   "scripts": {
     "infra:up": "docker compose -f infrastructure/docker/docker-compose.infra.yml up -d",
     "infra:down": "docker compose -f infrastructure/docker/docker-compose.infra.yml down",
@@ -12,11 +13,6 @@
     "admin-ui": "PORT=3002 npx nx dev admin-ui",
     "prisma:generate": "npx nx run @tec-shop/auth-schema:generate-types && npx nx run @tec-shop/user-schema:generate-types && npx nx run @tec-shop/seller-schema:generate-types && npx nx run @tec-shop/product-schema:generate-types && npx nx run @tec-shop/analytics-schema:generate-types && npx nx run @tec-shop/order-schema:generate-types && npx nx run @tec-shop/chatting-schema:generate-types && npx nx run @tec-shop/logger-schema:generate-types && npx nx run @tec-shop/notification-schema:generate-types",
     "prisma:db-push": "npx nx run-many --target=db-push --projects=@tec-shop/auth-schema,@tec-shop/user-schema,@tec-shop/seller-schema,@tec-shop/product-schema,@tec-shop/analytics-schema,@tec-shop/order-schema,@tec-shop/chatting-schema,@tec-shop/logger-schema,@tec-shop/notification-schema",
-    "prisma:studio:auth": "npx nx run @tec-shop/auth-schema:studio",
-    "prisma:studio:user": "npx nx run @tec-shop/user-schema:studio",
-    "prisma:studio:seller": "npx nx run @tec-shop/seller-schema:studio",
-    "prisma:studio:product": "npx nx run @tec-shop/product-schema:studio",
-    "prisma:studio:analytics": "npx nx run @tec-shop/analytics-schema:studio",
     "prisma:studio:all": "npx nx run-many --target=studio --projects=@tec-shop/auth-schema,@tec-shop/user-schema,@tec-shop/seller-schema,@tec-shop/product-schema,@tec-shop/analytics-schema --parallel=5",
     "prisma:format": "npx nx run-many --target=format --projects=@tec-shop/auth-schema,@tec-shop/user-schema,@tec-shop/seller-schema,@tec-shop/product-schema,@tec-shop/analytics-schema,@tec-shop/order-schema",
     "seed:brands": "npx tsx apps/product-service/src/scripts/seed-brands.ts",
@@ -24,7 +20,6 @@
     "seed:products": "npx tsx apps/product-service/src/scripts/seed-products.ts",
     "seed:admin": "npx tsx apps/admin-service/src/scripts/seed-admin.ts",
     "seed:recommendations": "npx tsx apps/recommendation-service/src/scripts/seed-recommendation-data.ts",
-    "get-shop-id": "npx tsx apps/product-service/src/scripts/get-shop-id.ts",
     "test": "npx nx run-many --target=test --all",
     "lint": "npx nx run-many --target=lint --all",
     "build": "npx nx run-many --target=build --all",
@@ -206,29 +201,15 @@
     "verdaccio": "^6.0.5",
     "webpack-cli": "^5.1.4"
   },
-  "workspaces": [
-    "apps/*",
-    "common",
-    "libs/*",
-    "libs/shared/*",
-    "shared",
-    "shared/*",
-    "prisma-schemas/*",
-    "prisma-clients/*",
-    "libs/prisma-schemas/product-schema",
-    "libs/prisma-clients/product-client",
-    "libs/prisma-clients/analytics-client",
-    "libs/prisma-schemas/analytics-schema",
-    "libs/prisma-schemas/order-schema",
-    "libs/prisma-clients/order-client",
-    "libs/shared/components/*",
-    "libs/prisma-schemas/chatting-schema",
-    "libs/prisma-clients/chatting-client",
-    "libs/prisma-schemas/logger-schema",
-    "libs/prisma-clients/logger-client",
-    "libs/prisma-schemas/notification-schema",
-    "libs/prisma-clients/notification-client"
-  ],
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@tensorflow/tfjs-node",
+      "@swc/core",
+      "bcrypt",
+      "canvas",
+      "esbuild"
+    ]
+  },
   "nx": {
     "includedScripts": [],
     "targets": {
