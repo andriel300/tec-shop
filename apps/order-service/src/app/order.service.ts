@@ -388,6 +388,7 @@ export class OrderService {
           await this.sendOrderConfirmationEmail(payload.orderId);
           await this.sendSellerNotifications(payload.orderId);
           await this.trackPurchaseEvent(payload.orderId, payload.userId, payload.cartData);
+          await this.sendOrderPaidNotification(payload.orderId, payload.userId);
         }
         await this.prisma.outboxEvent.update({
           where: { id: event.id },
@@ -649,6 +650,23 @@ export class OrderService {
     }
   }
 
+  private async sendOrderPaidNotification(orderId: string, userId: string): Promise<void> {
+    try {
+      const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+      if (!order) return;
+      await this.notificationProducer.notifyCustomer(
+        userId,
+        'order.paid',
+        { orderNumber: order.orderNumber },
+        { orderId }
+      );
+    } catch (error) {
+      this.logger.warn(
+        `Failed to send order paid notification for order ${orderId}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
   private async trackPurchaseEvent(
     orderId: string,
     userId: string,
@@ -855,28 +873,45 @@ export class OrderService {
 
     this.logger.log(`Order ${orderId} status updated to ${status} by ${sellerId ? `seller ${sellerId}` : 'admin'}`);
 
-    // Send review prompt notification when order is delivered
-    if (status === OrderStatus.DELIVERED) {
-      try {
+    // Send customer notification for each order status transition
+    try {
+      const orderNumber = (updatedOrder as Record<string, unknown>).orderNumber as string;
+
+      if (status === OrderStatus.SHIPPED) {
+        await this.notificationProducer.notifyCustomer(
+          order.userId,
+          'order.shipped',
+          { orderNumber, trackingNumber: trackingNumber || 'N/A' },
+          { orderId }
+        );
+      } else if (status === OrderStatus.DELIVERED) {
         const items = updatedOrder.items as Array<{ productName: string }>;
-        const productNames = items
-          .map((item) => item.productName)
-          .join(', ');
+        const productNames = items.map((item) => item.productName).join(', ');
 
         await this.notificationProducer.notifyCustomer(
           order.userId,
-          'order.delivered_review',
-          {
-            orderNumber: (updatedOrder as Record<string, unknown>).orderNumber as string,
-            productNames,
-          },
+          'order.delivered',
+          { orderNumber },
           { orderId }
         );
-      } catch (notifError) {
-        this.logger.warn(
-          `Failed to send delivery review notification: ${notifError instanceof Error ? notifError.message : 'Unknown error'}`
+        await this.notificationProducer.notifyCustomer(
+          order.userId,
+          'order.delivered_review',
+          { orderNumber, productNames },
+          { orderId }
+        );
+      } else if (status === OrderStatus.CANCELLED) {
+        await this.notificationProducer.notifyCustomer(
+          order.userId,
+          'order.cancelled',
+          { orderNumber },
+          { orderId }
         );
       }
+    } catch (notifError) {
+      this.logger.warn(
+        `Failed to send order status notification for order ${orderId}: ${notifError instanceof Error ? notifError.message : 'Unknown error'}`
+      );
     }
 
     return updatedOrder;

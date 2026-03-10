@@ -1,7 +1,21 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Bell, Check, CheckCheck, Trash2, X, MessageSquare } from 'lucide-react';
+import {
+  Bell,
+  Check,
+  CheckCheck,
+  Trash2,
+  X,
+  MessageSquare,
+  CreditCard,
+  Truck,
+  PackageCheck,
+  Package,
+  XCircle,
+  Star,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Link } from '../../i18n/navigation';
 import { useRouter } from '../../i18n/navigation';
 import {
@@ -56,13 +70,54 @@ function timeAgo(dateStr: string): string {
 }
 
 function getNotificationLink(notification: NotificationEntry): string | null {
-  if (notification.templateId === 'chat.new_message') {
-    const conversationId = notification.metadata?.conversationId as
-      | string
-      | undefined;
+  const { templateId, metadata } = notification;
+
+  if (templateId === 'chat.new_message') {
+    const conversationId = metadata?.conversationId as string | undefined;
     if (conversationId) return `/inbox?conversationId=${conversationId}`;
   }
+
+  if (templateId?.startsWith('order.')) {
+    const orderId = metadata?.orderId as string | undefined;
+    if (orderId) return `/orders/${orderId}`;
+  }
+
   return null;
+}
+
+function getNotificationActionText(templateId: string | undefined): string | null {
+  if (!templateId) return null;
+  if (templateId === 'chat.new_message') return 'Open conversation';
+  if (templateId.startsWith('order.')) return 'View order';
+  return null;
+}
+
+interface TemplateIconConfig {
+  Icon: LucideIcon;
+  bg: string;
+  color: string;
+}
+
+function getTemplateIconConfig(templateId: string | undefined): TemplateIconConfig | null {
+  switch (templateId) {
+    case 'order.paid':
+      return { Icon: CreditCard, bg: 'bg-green-100', color: 'text-green-600' };
+    case 'order.shipped':
+      return { Icon: Truck, bg: 'bg-teal-100', color: 'text-teal-600' };
+    case 'order.delivered':
+    case 'order.delivered_review':
+      return { Icon: PackageCheck, bg: 'bg-teal-100', color: 'text-teal-600' };
+    case 'order.placed':
+      return { Icon: Package, bg: 'bg-purple-100', color: 'text-purple-600' };
+    case 'order.cancelled':
+      return { Icon: XCircle, bg: 'bg-red-100', color: 'text-red-500' };
+    case 'chat.new_message':
+      return { Icon: MessageSquare, bg: 'bg-blue-100', color: 'text-blue-600' };
+    case 'product.new_rating':
+      return { Icon: Star, bg: 'bg-yellow-100', color: 'text-yellow-500' };
+    default:
+      return null;
+  }
 }
 
 function NotificationToast({
@@ -76,6 +131,8 @@ function NotificationToast({
 }) {
   const router = useRouter();
   const borderColor = typeBorders[notification.type] || 'border-l-gray-500';
+  const iconConfig = getTemplateIconConfig(notification.templateId);
+  const actionText = getNotificationActionText(notification.templateId);
 
   const handleBodyClick = () => {
     if (link) {
@@ -86,17 +143,15 @@ function NotificationToast({
 
   return (
     <div
-      className={`flex items-start gap-3 bg-white border border-gray-200 border-l-4 ${borderColor} rounded-lg shadow-lg p-3.5 w-[360px] max-w-[calc(100vw-32px)]`}
+      className={`flex items-start gap-3 bg-white border border-gray-200 border-l-4 ${borderColor} rounded-[10px] shadow-[0_4px_8px_rgba(15,23,36,0.08)] p-3.5 w-[360px] max-w-[calc(100vw-32px)]`}
     >
       <div
         className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-          notification.templateId === 'chat.new_message'
-            ? 'bg-blue-100'
-            : 'bg-gray-100'
+          iconConfig ? iconConfig.bg : 'bg-gray-100'
         }`}
       >
-        {notification.templateId === 'chat.new_message' ? (
-          <MessageSquare size={14} className="text-blue-600" />
+        {iconConfig ? (
+          <iconConfig.Icon size={14} className={iconConfig.color} />
         ) : (
           <div
             className={`w-2 h-2 rounded-full ${typeColors[notification.type] || 'bg-gray-500'}`}
@@ -114,9 +169,9 @@ function NotificationToast({
         <p className="text-xs text-gray-600 mt-0.5 line-clamp-2 leading-relaxed">
           {notification.message}
         </p>
-        {link && (
+        {link && actionText && (
           <p className="text-xs text-blue-600 mt-1.5 font-medium flex items-center gap-1">
-            <span>Open conversation</span>
+            <span>{actionText}</span>
             <span className="text-[10px]">&#8594;</span>
           </p>
         )}
@@ -236,13 +291,22 @@ export function NotificationBell() {
             ) : (
               data.notifications.map((notification) => {
                 const link = getNotificationLink(notification);
+                const iconConfig = getTemplateIconConfig(notification.templateId);
                 const rowContent = (
                   <div className="flex items-start gap-3">
                     <div
-                      className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
-                        typeColors[notification.type] || 'bg-gray-500'
+                      className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                        iconConfig ? iconConfig.bg : 'bg-gray-100'
                       }`}
-                    />
+                    >
+                      {iconConfig ? (
+                        <iconConfig.Icon size={13} className={iconConfig.color} />
+                      ) : (
+                        <div
+                          className={`w-2 h-2 rounded-full ${typeColors[notification.type] || 'bg-gray-500'}`}
+                        />
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-text-primary font-medium truncate">
                         {notification.title}
@@ -250,7 +314,7 @@ export function NotificationBell() {
                       <p className="text-xs text-text-secondary mt-0.5 line-clamp-2">
                         {notification.message}
                       </p>
-                      <p className="text-xs text-text-tertiary mt-1">
+                      <p className="text-xs text-text-muted mt-1">
                         {timeAgo(notification.createdAt)}
                       </p>
                     </div>
