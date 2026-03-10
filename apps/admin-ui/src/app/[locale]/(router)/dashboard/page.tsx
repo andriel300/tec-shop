@@ -1,7 +1,9 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import React from 'react';
-import dynamic from 'next/dynamic';
+import nextDynamic from 'next/dynamic';
 import {
   useReactTable,
   getCoreRowModel,
@@ -22,7 +24,7 @@ import {
 } from '../../../../hooks/useAdminData';
 
 // Dynamic imports for chart components to avoid SSR issues
-const SaleChart = dynamic(
+const SaleChart = nextDynamic(
   () => import('../../../../shared/components/charts/sale-chart'),
   {
     ssr: false,
@@ -32,7 +34,7 @@ const SaleChart = dynamic(
   }
 );
 
-const GeographicalMap = dynamic(
+const GeographicalMap = nextDynamic(
   () => import('../../../../shared/components/charts/geographicalMap'),
   {
     ssr: false,

@@ -1,18 +1,11 @@
 //@ts-check
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const path = require('path');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { composePlugins, withNx } = require('@nx/next');
 const createNextIntlPlugin = require('next-intl/plugin');
 
-// When Nx processes this file from the workspace root (project graph, migrations),
-// relative paths resolve against the wrong CWD. Temporarily chdir to __dirname so
-// next-intl's existence check passes, then restore CWD before this module returns.
-const _savedCwd = process.cwd();
-process.chdir(__dirname);
-
-const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
+const i18nRequestPath = path.relative(process.cwd(), path.join(__dirname, 'src/i18n/request.ts'));
+const withNextIntl = createNextIntlPlugin(i18nRequestPath.startsWith('.') ? i18nRequestPath : `./${i18nRequestPath}`);
 
 /**
  * @type {import('@nx/next/plugins/with-nx').WithNxOptions}
@@ -21,6 +14,7 @@ const nextConfig = {
   // Use this to set Nx-specific options
   // See: https://nx.dev/recipes/next/next-config-setup
   nx: {},
+  serverExternalPackages: ['pino', 'pino-pretty', 'thread-stream'],
   webpack: (config) => {
     config.resolve.extensionAlias = { '.js': ['.ts', '.tsx', '.js'], '.jsx': ['.tsx', '.jsx'] };
     config.resolve.alias = {
@@ -37,5 +31,3 @@ const plugins = [
 ];
 
 module.exports = withNextIntl(composePlugins(...plugins)(nextConfig));
-
-process.chdir(_savedCwd);

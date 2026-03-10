@@ -1,8 +1,5 @@
 import axios from 'axios';
 import { extractSafeErrorMessage } from '../utils/error-handler';
-import { createLogger } from '@tec-shop/next-logger';
-
-const logger = createLogger('user-ui:api-client');
 
 // Use relative URL in production for security (prevents CSRF and reduces attack surface)
 export const API_BASE_URL =
@@ -85,7 +82,12 @@ apiClient.interceptors.response.use(
     // Use the sophisticated error handler for secure message extraction
     const safeMessage = extractSafeErrorMessage(error);
 
-    logger.error({ status: error.response?.status, data: error.response?.data, message: error.message }, 'API Error');
+    if (typeof window === 'undefined') {
+      console.error('[user-ui:api-client] API Error', {
+        status: error.response?.status,
+        message: error.message,
+      });
+    }
 
     return Promise.reject(new Error(safeMessage));
   }

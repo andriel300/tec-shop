@@ -1,25 +1,19 @@
 //@ts-check
 
 const path = require('path');
-const { composePlugins, withNx } = require('@nx/next');
+const { withNx } = require('@nx/next');
 const { withSentryConfig } = require('@sentry/nextjs');
 const createNextIntlPlugin = require('next-intl/plugin');
 
-// When Nx processes this file from the workspace root (project graph, migrations),
-// relative paths resolve against the wrong CWD. Temporarily chdir to __dirname so
-// next-intl's existence check passes, then restore CWD before this module returns.
-const _savedCwd = process.cwd();
-process.chdir(__dirname);
-
-const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
+const i18nRequestPath = path.relative(process.cwd(), path.join(__dirname, 'src/i18n/request.ts'));
+const withNextIntl = createNextIntlPlugin(i18nRequestPath.startsWith('.') ? i18nRequestPath : `./${i18nRequestPath}`);
 
 /**
  * @type {import('@nx/next/plugins/with-nx').WithNxOptions}
  **/
 const nextConfig = {
-  // Use this to set Nx-specific options
-  // See: https://nx.dev/recipes/next/next-config-setup
   nx: {},
+  serverExternalPackages: ['pino', 'pino-pretty', 'thread-stream'],
   webpack: (config) => {
     config.resolve.extensionAlias = { '.js': ['.ts', '.tsx', '.js'], '.jsx': ['.tsx', '.jsx'] };
     return config;
@@ -30,7 +24,7 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'lh3.googleusercontent.com',
         port: '',
-        pathname: '/**', // Allow all Google image paths
+        pathname: '/**',
       },
       {
         protocol: 'https',
@@ -54,48 +48,36 @@ const nextConfig = {
   },
 };
 
-const plugins = [
-  // Add more Next.js plugins to this list if needed.
-  withNx,
-];
+// Following Sentry's recommended pattern for Nx monorepos:
+// https://docs.sentry.io/platforms/javascript/guides/nextjs/troubleshooting/#using-the-sentry-next-sdk-in-a-nx-monorepo-using-nxnext
+module.exports = async (phase, context) => {
+  // Apply next-intl plugin synchronously
+  let updatedConfig = withNextIntl(nextConfig);
 
-const composedConfig = {
-  ...composePlugins(...plugins)(nextConfig),
-  images: nextConfig.images,
+  // Apply withNx asynchronously (required for proper Nx + Sentry integration)
+  updatedConfig = await withNx(updatedConfig)(phase, context);
+
+  // Preserve these options after withNx may override them
+  updatedConfig.images = nextConfig.images;
+  updatedConfig.serverExternalPackages = ['pino', 'pino-pretty', 'thread-stream'];
+
+  return updatedConfig;
 };
 
-// Injected content via Sentry wizard below
-
-module.exports = withSentryConfig(withNextIntl(composedConfig), {
-  // For all available options, see:
-  // https://www.npmjs.com/package/@sentry/webpack-plugin#options
-
+// withSentryConfig must be applied last, wrapping the async function
+module.exports = withSentryConfig(module.exports, {
   org: 'andriel',
   project: 'tecshop-user-ui',
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
 
-  // For all available options, see:
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
-
-  // Upload a larger set of source maps for prettier stack traces (increases build time)
+  // Upload a larger set of source maps for prettier stack traces
   widenClientFileUpload: true,
-
-  // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
-  // This can increase your server load as well as your hosting bill.
-  // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
-  // side errors will fail.
-  // tunnelRoute: "/monitoring",
 
   // Automatically tree-shake Sentry logger statements to reduce bundle size
   disableLogger: true,
 
-  // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
-  // See the following for more information:
-  // https://docs.sentry.io/product/crons/
-  // https://vercel.com/docs/cron-jobs
+  // Enables automatic instrumentation of Vercel Cron Monitors.
   automaticVercelMonitors: true,
 });
-
-process.chdir(_savedCwd);

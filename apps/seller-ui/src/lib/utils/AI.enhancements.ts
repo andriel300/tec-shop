@@ -1,6 +1,19 @@
-export const enhancements = [
-  { label: 'Remove BG', effect: 'e-bgremove' },
-  { label: 'Drop Shadow', effect: 'e-dropshadow' },
-  { label: 'Retouch', effect: 'e-retouch' },
-  { label: 'Upscale', effect: 'e-upscale' },
+export type EnhancementEffect =
+  | 'aiRemoveBackground'
+  | 'aiDropShadow'
+  | 'aiRetouch'
+  | 'aiUpscale';
+
+export const enhancements: { label: string; effect: EnhancementEffect }[] = [
+  { label: 'Remove BG', effect: 'aiRemoveBackground' },
+  { label: 'Drop Shadow', effect: 'aiDropShadow' },
+  { label: 'Retouch', effect: 'aiRetouch' },
+  { label: 'Upscale', effect: 'aiUpscale' },
 ];
+
+export const effectToUrlParam: Record<EnhancementEffect, string> = {
+  aiRemoveBackground: 'bgremove',
+  aiDropShadow: 'dropshadow',
+  aiRetouch: 'retouch',
+  aiUpscale: 'upscale',
+};

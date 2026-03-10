@@ -1,12 +1,30 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { IKImage } from 'imagekitio-next';
+import { Image as IKImage } from '@imagekit/next';
 import { Upload, X, Image as ImageIcon, Loader2, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { imagekitConfig, getImageKitPath } from '../../lib/imagekit-config';
-import { enhancements } from '../../lib/utils/AI.enhancements';
+import {
+  enhancements,
+  effectToUrlParam,
+  type EnhancementEffect,
+} from '../../lib/utils/AI.enhancements';
+import type { Transformation } from '@imagekit/javascript';
 import { uploadImage } from '../../lib/api/upload';
+
+const enhancementTransformation = (
+  effect: EnhancementEffect | null
+): Partial<Transformation> => {
+  if (!effect) return {};
+  const map: Record<EnhancementEffect, Partial<Transformation>> = {
+    aiRemoveBackground: { aiRemoveBackground: true },
+    aiDropShadow: { aiDropShadow: true },
+    aiRetouch: { aiRetouch: true },
+    aiUpscale: { aiUpscale: true },
+  };
+  return map[effect];
+};
 
 const ImagePlaceHolder = ({
   size,
@@ -31,8 +49,10 @@ const ImagePlaceHolder = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [showEnhancementModal, setShowEnhancementModal] = useState(false);
-  const [selectedEnhancement, setSelectedEnhancement] = useState<string | null>(null);
-  const [tempEnhancement, setTempEnhancement] = useState<string | null>(null);
+  const [selectedEnhancement, setSelectedEnhancement] =
+    useState<EnhancementEffect | null>(null);
+  const [tempEnhancement, setTempEnhancement] =
+    useState<EnhancementEffect | null>(null);
   const [isApplyingEnhancement, setIsApplyingEnhancement] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +73,10 @@ const ImagePlaceHolder = ({
   // Close modal when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(event.target as Node)
+      ) {
         setShowEnhancementModal(false);
         setTempEnhancement(selectedEnhancement);
       }
@@ -133,12 +156,18 @@ const ImagePlaceHolder = ({
       let errorMessage = 'Failed to upload image. Please try again.';
 
       if (error instanceof Error) {
-        if (error.message.includes('413') || error.message.includes('too large')) {
-          errorMessage = 'Image file is too large. Please compress it to under 3MB.';
+        if (
+          error.message.includes('413') ||
+          error.message.includes('too large')
+        ) {
+          errorMessage =
+            'Image file is too large. Please compress it to under 3MB.';
         } else if (error.message.includes('timeout')) {
-          errorMessage = 'Upload timed out. Please check your connection and try again.';
+          errorMessage =
+            'Upload timed out. Please check your connection and try again.';
         } else if (error.message.includes('network')) {
-          errorMessage = 'Network error. Please check your internet connection.';
+          errorMessage =
+            'Network error. Please check your internet connection.';
         } else {
           errorMessage = error.message;
         }
@@ -220,7 +249,7 @@ const ImagePlaceHolder = ({
   };
 
   // Enhancement modal handlers
-  const handleSelectEnhancement = (effect: string) => {
+  const handleSelectEnhancement = (effect: EnhancementEffect) => {
     // Toggle: if same effect is clicked, deselect it
     setTempEnhancement((prev) => (prev === effect ? null : effect));
   };
@@ -237,21 +266,26 @@ const ImagePlaceHolder = ({
     try {
       setSelectedEnhancement(tempEnhancement);
 
-      if (tempEnhancement && imagePreview && !imagePreview.startsWith('blob:')) {
+      if (
+        tempEnhancement &&
+        imagePreview &&
+        !imagePreview.startsWith('blob:')
+      ) {
         // Build enhanced URL with ImageKit transformation
         const imagePath = getImageKitPath(imagePreview.split('?')[0]); // Strip existing params
-        const enhancementParam = tempEnhancement.replace('e-', '');
+        const urlParam = effectToUrlParam[tempEnhancement];
 
         // Ensure proper URL construction with exactly one slash between endpoint and path
         const endpoint = imagekitConfig.urlEndpoint.replace(/\/$/, ''); // Remove trailing slash
         const path = imagePath.startsWith('/') ? imagePath : `/${imagePath}`; // Ensure leading slash
-        const enhancedUrl = `${endpoint}${path}?tr=e-${enhancementParam}`;
+        const enhancedUrl = `${endpoint}${path}?tr=e-${urlParam}`;
 
         // Preload the enhanced image to ensure it's ready before closing modal
         await new Promise<void>((resolve, reject) => {
-          const img = new Image();
+          const img = new window.Image();
           img.onload = () => resolve();
-          img.onerror = () => reject(new Error('Failed to load enhanced image'));
+          img.onerror = () =>
+            reject(new Error('Failed to load enhanced image'));
           img.src = enhancedUrl;
         });
 
@@ -263,11 +297,17 @@ const ImagePlaceHolder = ({
           onImageUploaded(enhancedUrl, index);
         }
 
-        const enhancementLabel = enhancements.find(e => e.effect === tempEnhancement)?.label || 'Enhancement';
+        const enhancementLabel =
+          enhancements.find((e) => e.effect === tempEnhancement)?.label ||
+          'Enhancement';
         toast.success('Enhancement applied', {
           description: `${enhancementLabel} - Image updated`,
         });
-      } else if (!tempEnhancement && imagePreview && !imagePreview.startsWith('blob:')) {
+      } else if (
+        !tempEnhancement &&
+        imagePreview &&
+        !imagePreview.startsWith('blob:')
+      ) {
         // Clear enhancement - use original URL without transformation params
         const imagePath = getImageKitPath(imagePreview.split('?')[0]); // Strip params
 
@@ -354,20 +394,20 @@ const ImagePlaceHolder = ({
             /* Use IKImage only for basic ImageKit URLs without transformations */
             <IKImage
               urlEndpoint={imagekitConfig.urlEndpoint}
-              path={getImageKitPath(imagePreview)}
+              src={getImageKitPath(imagePreview)}
               alt={`Product ${index}`}
               width={400}
               height={400}
-              transformation={[{
-                width: '400',
-                height: '400',
-                crop: 'at_max',
-                quality: 85,
-                focus: 'auto',
-                ...(selectedEnhancement && {
-                  e: selectedEnhancement.replace('e-', '')
-                })
-              }]}
+              transformation={[
+                {
+                  width: '400',
+                  height: '400',
+                  crop: 'at_max',
+                  quality: 85,
+                  focus: 'auto',
+                  ...enhancementTransformation(selectedEnhancement),
+                },
+              ]}
               loading="eager"
               className="absolute inset-0 w-full h-full object-cover"
             />
@@ -408,8 +448,16 @@ const ImagePlaceHolder = ({
                   </button>
                   {selectedEnhancement && (
                     <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                      <svg className="w-2 h-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      <svg
+                        className="w-2 h-2"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     </span>
                   )}
@@ -429,9 +477,7 @@ const ImagePlaceHolder = ({
 
           {/* AI Enhancement Modal */}
           {isImageUploaded && showEnhancementModal && (
-            <div
-              className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-75 animate-fade-in"
-            >
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-75 animate-fade-in">
               <div
                 ref={modalRef}
                 className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-2xl mx-4 animate-slide-up"
@@ -463,20 +509,20 @@ const ImagePlaceHolder = ({
                     <div className="relative w-full max-w-md h-64 bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-700">
                       <IKImage
                         urlEndpoint={imagekitConfig.urlEndpoint}
-                        path={getImageKitPath(imagePreview.split('?')[0])}
+                        src={getImageKitPath(imagePreview.split('?')[0])}
                         alt="Preview"
                         width={400}
                         height={400}
-                        transformation={[{
-                          width: '400',
-                          height: '400',
-                          crop: 'at_max',
-                          quality: 90,
-                          focus: 'auto',
-                          ...(tempEnhancement && {
-                            e: tempEnhancement.replace('e-', '')
-                          })
-                        }]}
+                        transformation={[
+                          {
+                            width: '400',
+                            height: '400',
+                            crop: 'at_max',
+                            quality: 90,
+                            focus: 'auto',
+                            ...enhancementTransformation(tempEnhancement),
+                          },
+                        ]}
                         loading="eager"
                         className="absolute inset-0 w-full h-full object-contain"
                       />
@@ -490,30 +536,37 @@ const ImagePlaceHolder = ({
                     </h4>
                     <div className="grid grid-cols-2 gap-3">
                       {enhancements.map((enhancement) => {
-                        const isSelected = tempEnhancement === enhancement.effect;
+                        const isSelected =
+                          tempEnhancement === enhancement.effect;
                         return (
                           <button
                             key={enhancement.effect}
                             type="button"
-                            onClick={() => handleSelectEnhancement(enhancement.effect)}
+                            onClick={() =>
+                              handleSelectEnhancement(enhancement.effect)
+                            }
                             className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all ${
                               isSelected
                                 ? 'bg-gradient-to-br from-purple-600/20 to-blue-600/20 border-purple-500'
                                 : 'bg-gray-800 border-gray-700 hover:border-gray-600'
                             }`}
                           >
-                            <div className={`flex items-center justify-center w-5 h-5 rounded-full border-2 transition-colors ${
-                              isSelected
-                                ? 'bg-purple-600 border-purple-600'
-                                : 'border-gray-600'
-                            }`}>
+                            <div
+                              className={`flex items-center justify-center w-5 h-5 rounded-full border-2 transition-colors ${
+                                isSelected
+                                  ? 'bg-purple-600 border-purple-600'
+                                  : 'border-gray-600'
+                              }`}
+                            >
                               {isSelected && (
                                 <div className="w-2.5 h-2.5 bg-white rounded-full" />
                               )}
                             </div>
-                            <span className={`text-sm font-medium ${
-                              isSelected ? 'text-white' : 'text-gray-300'
-                            }`}>
+                            <span
+                              className={`text-sm font-medium ${
+                                isSelected ? 'text-white' : 'text-gray-300'
+                              }`}
+                            >
                               {enhancement.label}
                             </span>
                           </button>

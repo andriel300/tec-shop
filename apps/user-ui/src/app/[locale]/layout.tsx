@@ -6,6 +6,10 @@ import { Providers } from '../providers';
 import Navbar from '../../shared/widgets/navbar';
 import ConditionalFooter from '../../shared/widgets/conditional-footer';
 
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
 type Props = {
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
@@ -32,6 +36,3 @@ export default async function LocaleLayout({ children, params }: Props) {
   );
 }
 
-export function generateStaticParams() {
-  return routing.locales.map((locale) => ({ locale }));
-}

@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { IKImage } from 'imagekitio-next';
+import { Image as IKImage } from '@imagekit/next';
 import { Package, Plus, Edit, Trash2, Search } from 'lucide-react';
 import {
   useProducts,
@@ -202,7 +202,7 @@ const ProductsPage = () => {
                           {imagekitConfig.urlEndpoint ? (
                             <IKImage
                               urlEndpoint={imagekitConfig.urlEndpoint}
-                              path={getImageKitPath(product.images[0])}
+                              src={getImageKitPath(product.images[0])}
                               alt={product.name}
                               width={48}
                               height={48}
@@ -343,7 +343,7 @@ const ProductsPage = () => {
               {imagekitConfig.urlEndpoint ? (
                 <IKImage
                   urlEndpoint={imagekitConfig.urlEndpoint}
-                  path={getImageKitPath(hoveredImage)}
+                  src={getImageKitPath(hoveredImage)}
                   alt="Product preview"
                   width={256}
                   height={256}

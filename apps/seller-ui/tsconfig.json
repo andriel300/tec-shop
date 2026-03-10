@@ -50,9 +50,6 @@
   "references": [
     {
       "path": "../../libs/shared/i18n"
-    },
-    {
-      "path": "../../libs/shared/next-logger"
     }
   ]
 }

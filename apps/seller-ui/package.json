@@ -3,12 +3,16 @@
   "version": "0.0.1",
   "private": true,
   "nx": {
-    "tags": ["type:app", "scope:frontend", "domain:seller"]
+    "tags": [
+      "type:app",
+      "scope:frontend",
+      "domain:seller"
+    ]
   },
   "dependencies": {
+    "@imagekit/next": "^2.1.5",
     "@sentry/nextjs": "^10.25.0",
-    "imagekitio-next": "^1.0.1",
-    "next": "~15.2.4",
+    "next": "16.0.9",
     "react": "19.0.0",
     "react-dom": "19.0.0"
   }

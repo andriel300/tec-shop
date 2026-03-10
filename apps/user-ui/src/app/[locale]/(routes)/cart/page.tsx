@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { Input } from '../../../../components/ui/core/Input';
 import { useAuth } from '../../../../hooks/use-auth';
 import useDeviceTracking from '../../../../hooks/use-device-tracking';

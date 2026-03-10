@@ -1,6 +1,8 @@
 /* eslint-disable @nx/enforce-module-boundaries */
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect, Suspense } from 'react';
 import { ProtectedRoute } from '../../../../components/auth/protected-route';
 import CreateShop from '../../../../shared/modules/auth/create-shop';

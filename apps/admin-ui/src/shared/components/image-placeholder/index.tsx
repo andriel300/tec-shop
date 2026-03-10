@@ -1,12 +1,30 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { IKImage } from 'imagekitio-next';
+import { Image as IKImage } from '@imagekit/next';
+import type { Transformation } from '@imagekit/javascript';
 import { Upload, X, Image as ImageIcon, Loader2, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { imagekitConfig, getImageKitPath } from '../../../lib/imagekit-config';
-import { enhancements } from '../../../lib/utils/AI.enhancements';
+import {
+  enhancements,
+  effectToUrlParam,
+  type EnhancementEffect,
+} from '../../../lib/utils/AI.enhancements';
 import { uploadImage } from '../../../lib/api/upload';
+
+const enhancementTransformation = (
+  effect: EnhancementEffect | null
+): Partial<Transformation> => {
+  if (!effect) return {};
+  const map: Record<EnhancementEffect, Partial<Transformation>> = {
+    aiRemoveBackground: { aiRemoveBackground: true },
+    aiDropShadow: { aiDropShadow: true },
+    aiRetouch: { aiRetouch: true },
+    aiUpscale: { aiUpscale: true },
+  };
+  return map[effect];
+};
 
 const ImagePlaceHolder = ({
   size,
@@ -31,10 +49,10 @@ const ImagePlaceHolder = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [showEnhancementModal, setShowEnhancementModal] = useState(false);
-  const [selectedEnhancement, setSelectedEnhancement] = useState<string | null>(
-    null
-  );
-  const [tempEnhancement, setTempEnhancement] = useState<string | null>(null);
+  const [selectedEnhancement, setSelectedEnhancement] =
+    useState<EnhancementEffect | null>(null);
+  const [tempEnhancement, setTempEnhancement] =
+    useState<EnhancementEffect | null>(null);
   const [isApplyingEnhancement, setIsApplyingEnhancement] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -231,7 +249,7 @@ const ImagePlaceHolder = ({
   };
 
   // Enhancement modal handlers
-  const handleSelectEnhancement = (effect: string) => {
+  const handleSelectEnhancement = (effect: EnhancementEffect) => {
     // Toggle: if same effect is clicked, deselect it
     setTempEnhancement((prev) => (prev === effect ? null : effect));
   };
@@ -255,7 +273,7 @@ const ImagePlaceHolder = ({
       ) {
         // Build enhanced URL with ImageKit transformation
         const imagePath = getImageKitPath(imagePreview.split('?')[0]); // Strip existing params
-        const enhancementParam = tempEnhancement.replace('e-', '');
+        const enhancementParam = effectToUrlParam[tempEnhancement];
 
         // Ensure proper URL construction with exactly one slash between endpoint and path
         const endpoint = imagekitConfig.urlEndpoint.replace(/\/$/, ''); // Remove trailing slash
@@ -376,7 +394,7 @@ const ImagePlaceHolder = ({
             /* Use IKImage only for basic ImageKit URLs without transformations */
             <IKImage
               urlEndpoint={imagekitConfig.urlEndpoint}
-              path={getImageKitPath(imagePreview)}
+              src={getImageKitPath(imagePreview)}
               alt={`Product ${index}`}
               width={400}
               height={400}
@@ -387,9 +405,7 @@ const ImagePlaceHolder = ({
                   crop: 'at_max',
                   quality: 85,
                   focus: 'auto',
-                  ...(selectedEnhancement && {
-                    e: selectedEnhancement.replace('e-', ''),
-                  }),
+                  ...enhancementTransformation(selectedEnhancement),
                 },
               ]}
               loading="eager"
@@ -487,7 +503,7 @@ const ImagePlaceHolder = ({
                     <div className="relative w-full max-w-md h-64 bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-700">
                       <IKImage
                         urlEndpoint={imagekitConfig.urlEndpoint}
-                        path={getImageKitPath(imagePreview.split('?')[0])}
+                        src={getImageKitPath(imagePreview.split('?')[0])}
                         alt="Preview"
                         width={400}
                         height={400}
@@ -498,9 +514,7 @@ const ImagePlaceHolder = ({
                             crop: 'at_max',
                             quality: 90,
                             focus: 'auto',
-                            ...(tempEnhancement && {
-                              e: tempEnhancement.replace('e-', ''),
-                            }),
+                            ...enhancementTransformation(tempEnhancement),
                           },
                         ]}
                         loading="eager"
