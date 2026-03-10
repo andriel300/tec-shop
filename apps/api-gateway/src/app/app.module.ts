@@ -21,7 +21,9 @@ import { LoggerGrafanaModule } from './logger/logger.module';
 import { RecommendationModule } from './recommendation/recommendation.module';
 import { ChatModule } from './chat/chat.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { RedisModule } from '@tec-shop/redis-client';
 import { MetricsModule, HttpMetricsInterceptor, HealthModule } from '@tec-shop/metrics';
 import { ImageKitModule } from '@tec-shop/shared/imagekit';
 import { LogProducerModule } from '@tec-shop/logger-producer';
@@ -33,32 +35,37 @@ import { CircuitBreakerModule } from '../common/circuit-breaker.module';
     ConfigModule.forRoot({ isGlobal: true }),
     ImageKitModule.forRoot(),
     LogProducerModule.forRoot({ clientId: 'api-gateway' }),
+    RedisModule.forRoot(),
     ThrottlerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
         const isDevelopment = config.get<string>('NODE_ENV') !== 'production';
+        const redisUrl = config.get<string>('REDIS_URL');
+        if (!redisUrl) {
+          throw new Error('REDIS_URL environment variable not set');
+        }
 
-        return [
-          {
-            name: 'short',
-            ttl: 60000, // 1 minute
-            // Dev: 1000 req/min (unobtrusive), Prod: 100 req/min (protected)
-            limit: isDevelopment ? 1000 : 100,
-          },
-          {
-            name: 'medium',
-            ttl: 900000, // 15 minutes
-            // Dev: 100 attempts/15min, Prod: 20 attempts/15min (auth protection)
-            limit: isDevelopment ? 100 : 20,
-          },
-          {
-            name: 'long',
-            ttl: 60000, // 1 minute
-            // Dev: 2000 req/min (search-friendly), Prod: 200 req/min (protected)
-            limit: isDevelopment ? 2000 : 200,
-          },
-        ];
+        return {
+          storage: new ThrottlerStorageRedisService(redisUrl),
+          throttlers: [
+            {
+              name: 'short',
+              ttl: 60000,
+              limit: isDevelopment ? 1000 : 100,
+            },
+            {
+              name: 'medium',
+              ttl: 900000,
+              limit: isDevelopment ? 100 : 20,
+            },
+            {
+              name: 'long',
+              ttl: 60000,
+              limit: isDevelopment ? 2000 : 200,
+            },
+          ],
+        };
       },
     }),
     LoggerModule.forRootAsync({
