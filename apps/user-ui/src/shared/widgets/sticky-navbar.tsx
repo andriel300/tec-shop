@@ -1,6 +1,6 @@
 'use client';
 import { createLogger } from '@tec-shop/next-logger';
-import { AlignLeft, ChevronDown, ChevronRight, HeartIcon } from 'lucide-react';
+import { AlignLeft, ChevronDown, ChevronRight } from 'lucide-react';
 
 const logger = createLogger('user-ui:sticky-navbar');
 import { Link } from '../../i18n/navigation';
@@ -10,11 +10,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '../../i18n/navigation';
 import { navItems } from '../../configs/constants';
 import ProfileIcon from '../../assets/svgs/profile-icon';
-import CartIcon from '../../assets/svgs/cart-icon';
 import { useAuth } from '../../hooks/use-auth';
-import useStore from '../../store';
+
 import { useCategoryTree } from '../../hooks/use-categories';
 import { NotificationBell } from '../components/notification-bell';
+import { WishlistDropdown } from '../components/wishlist-dropdown';
+import { CartDropdown } from '../components/cart-dropdown';
 import LanguageSwitcher from '../components/language-switcher';
 
 const StickyNavbar = () => {
@@ -30,10 +31,6 @@ const StickyNavbar = () => {
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // zustand hooks
-  const wishlist = useStore((state) => state.wishlist);
-  const cart = useStore((state) => state.cart);
 
   // Fetch categories
   const { data: categories, isLoading: categoriesLoading } = useCategoryTree({
@@ -327,33 +324,11 @@ const StickyNavbar = () => {
                 {/* Language Switcher */}
                 <LanguageSwitcher />
 
-                {/* Wishlist Icon */}
-                <Link
-                  href={'/wishlist'}
-                  className="relative p-2 hover:bg-ui-muted rounded-full transition-colors"
-                  title="Wishlist"
-                >
-                  <HeartIcon className="w-7 h-7 text-text-primary" />
-                  <div className="w-6 h-6 border-2 border-white bg-red-500 rounded-full flex items-center justify-center absolute top-[-5px] right-[-5px]">
-                    <span className="text-white font-medium text-sm">
-                      {wishlist.length}
-                    </span>
-                  </div>
-                </Link>
+                {/* Wishlist Dropdown */}
+                <WishlistDropdown />
 
-                {/* Cart Icon */}
-                <Link
-                  href={'/cart'}
-                  className="relative p-2 hover:bg-ui-muted rounded-full transition-colors"
-                  title="Cart"
-                >
-                  <CartIcon className="w-7 h-7 text-text-primary" />
-                  <div className="w-6 h-6 border-2 border-white bg-red-500 rounded-full flex items-center justify-center absolute top-[-5px] right-[-5px]">
-                    <span className="text-white font-medium text-sm">
-                      {cart.length}
-                    </span>
-                  </div>
-                </Link>
+                {/* Cart Dropdown */}
+                <CartDropdown />
               </div>
             </div>
           )}
