@@ -14,6 +14,7 @@ import {
   Package,
 } from 'lucide-react';
 import Image from 'next/image';
+import { Link } from '../../../../../i18n/navigation';
 import { useRouter } from '../../../../../i18n/navigation';
 import { useParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
@@ -21,6 +22,7 @@ import React, { useEffect, useState } from 'react';
 interface OrderItem {
   id: string;
   productId: string;
+  productSlug?: string;
   productName: string;
   productImage?: string;
   quantity: number;
@@ -277,9 +279,12 @@ const Page = () => {
 
                   {/* Product Details */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-gray-800 truncate">
+                    <Link
+                      href={`/productview/${item.productSlug || item.productId}`}
+                      className="font-medium text-gray-800 truncate hover:text-brand-primary hover:underline transition-colors"
+                    >
                       {item.productName}
-                    </h3>
+                    </Link>
                     {item.shopName && (
                       <p className="text-xs text-gray-400">
                         Sold by {item.shopName}

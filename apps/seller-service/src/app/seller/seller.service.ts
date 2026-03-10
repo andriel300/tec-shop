@@ -394,10 +394,11 @@ export class SellerService {
         seller: {
           select: {
             id: true,
+            authId: true, // Required by frontend to identify seller for cart/order processing
             name: true,
             country: true,
             isVerified: true,
-            // authId, email, phoneNumber, stripeAccountId and all Stripe fields
+            // email, phoneNumber, stripeAccountId and all Stripe fields
             // are intentionally excluded — this is a public endpoint
           },
         },

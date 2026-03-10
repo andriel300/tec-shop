@@ -55,9 +55,12 @@ const ReviewItemsModal = ({
                 </div>
               )}
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-800 truncate">
+                <Link
+                  href={`/productview/${item.productSlug || item.productId}`}
+                  className="text-sm font-semibold text-gray-800 truncate hover:text-brand-primary hover:underline transition-colors"
+                >
                   {item.productName}
-                </p>
+                </Link>
                 <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
               </div>
             </div>
