@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { MetricsModule, HealthModule } from '@tec-shop/metrics';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AnalyticsService } from '../services/analytics.service';
 import { KafkaController } from './kafka.controller';
@@ -65,6 +66,28 @@ import { KafkaController } from './kafka.controller';
 
     // Database
     PrismaModule,
+
+    // DLQ producer client
+    ClientsModule.registerAsync([
+      {
+        name: 'KAFKA_DLQ_CLIENT',
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: (config: ConfigService) => {
+          const broker =
+            config.get<string>('KAFKA_BROKER') ||
+            config.get<string>('REDPANDA_BROKER') ||
+            'localhost:9092';
+          return {
+            transport: Transport.KAFKA,
+            options: {
+              client: { clientId: 'kafka-service-dlq', brokers: [broker] },
+              producer: {},
+            },
+          };
+        },
+      },
+    ]),
   ],
   controllers: [KafkaController],
   providers: [AnalyticsService],

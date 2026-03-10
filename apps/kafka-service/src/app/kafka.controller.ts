@@ -1,19 +1,23 @@
-import { Controller, Logger } from '@nestjs/common';
-import { EventPattern, Payload } from '@nestjs/microservices';
+import { Controller, Logger, Inject, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { EventPattern, Payload, ClientProxy } from '@nestjs/microservices';
 import { AnalyticsService } from '../services/analytics.service';
 import type {
   AnalyticsEvent,
   KafkaEventPayload,
 } from '../interfaces/analytics-event.interface';
 
+const DLQ_TOPIC = 'users-event.DLQ';
+const MAX_ATTEMPTS = 3;
+const BASE_DELAY_MS = 1000;
+
 @Controller()
-export class KafkaController {
+export class KafkaController implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(KafkaController.name);
   private readonly eventQueue: AnalyticsEvent[] = [];
-  private readonly BATCH_INTERVAL_MS = 3000; // Process batch every 3 seconds
-  private readonly BATCH_SIZE = 100; // Process max 100 events per batch
+  private readonly BATCH_INTERVAL_MS = 3000;
+  private readonly BATCH_SIZE = 100;
+  private batchInterval: NodeJS.Timeout | undefined;
 
-  // Valid action types
   private readonly validActions = new Set([
     'add_to_wishlist',
     'add_to_cart',
@@ -24,21 +28,28 @@ export class KafkaController {
     'purchase',
   ]);
 
-  constructor(private readonly analyticsService: AnalyticsService) {
-    // Start batch processing interval
-    setInterval(() => this.processQueue(), this.BATCH_INTERVAL_MS);
+  constructor(
+    private readonly analyticsService: AnalyticsService,
+    @Inject('KAFKA_DLQ_CLIENT') private readonly dlqClient: ClientProxy
+  ) {}
+
+  onModuleInit() {
+    this.batchInterval = setInterval(
+      () => void this.processQueue(),
+      this.BATCH_INTERVAL_MS
+    );
     this.logger.log(
       `Batch processing started (interval: ${this.BATCH_INTERVAL_MS}ms)`
     );
   }
 
-  /**
-   * Process queued events in batches
-   */
+  onModuleDestroy() {
+    if (this.batchInterval) clearInterval(this.batchInterval);
+  }
+
   private async processQueue(): Promise<void> {
     if (this.eventQueue.length === 0) return;
 
-    // Take up to BATCH_SIZE events from the queue
     const batch = this.eventQueue.splice(0, this.BATCH_SIZE);
     this.logger.log(`Processing batch of ${batch.length} events`);
 
@@ -46,33 +57,53 @@ export class KafkaController {
     let failureCount = 0;
 
     for (const event of batch) {
+      if (!this.validActions.has(event.action)) {
+        this.logger.warn(`Invalid action type: ${event.action}`);
+        continue;
+      }
+
       try {
-        // Validate action type
-        if (!this.validActions.has(event.action)) {
-          this.logger.warn(`Invalid action type: ${event.action}`);
-          continue;
-        }
-
-        // Process analytics in parallel
-        await Promise.all([
-          this.analyticsService.updateUserAnalytics(event),
-          this.analyticsService.updateProductAnalytics(event),
-          this.analyticsService.updateShopAnalytics(event),
-        ]);
-
+        await this.withRetry(() =>
+          Promise.all([
+            this.analyticsService.updateUserAnalytics(event),
+            this.analyticsService.updateProductAnalytics(event),
+            this.analyticsService.updateShopAnalytics(event),
+          ])
+        );
         successCount++;
       } catch (error) {
         failureCount++;
         this.logger.error(
-          `Failed to process event for user ${event.userId}`,
+          `All retries exhausted for user ${event.userId} — sending to DLQ`,
           error instanceof Error ? error.stack : undefined
         );
+        this.dlqClient.emit(DLQ_TOPIC, {
+          originalTopic: 'users-event',
+          payload: event,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          failedAt: new Date().toISOString(),
+        });
       }
     }
 
     this.logger.log(
-      `Batch processed: ${successCount} success, ${failureCount} failed`
+      `Batch processed: ${successCount} success, ${failureCount} sent to DLQ`
     );
+  }
+
+  private async withRetry<T>(fn: () => Promise<T>): Promise<T> {
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        return await fn();
+      } catch (err) {
+        lastError = err;
+        if (attempt < MAX_ATTEMPTS) {
+          await new Promise((r) => setTimeout(r, BASE_DELAY_MS * attempt));
+        }
+      }
+    }
+    throw lastError;
   }
 
   /**
