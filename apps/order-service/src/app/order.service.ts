@@ -358,7 +358,7 @@ export class OrderService {
           eventType: 'order.created',
           payload: {
             orderId: created.id,
-            userId: sessionData.userId,
+            userId: sessionData.userId as string,
             cartData: cartData as unknown as Prisma.InputJsonValue,
           },
         },
@@ -384,7 +384,7 @@ export class OrderService {
     for (const event of events) {
       try {
         if (event.eventType === 'order.created') {
-          const payload = event.payload as { orderId: string; userId: string; cartData: CartItemDto[] };
+          const payload = event.payload as unknown as { orderId: string; userId: string; cartData: CartItemDto[] };
           await this.sendOrderConfirmationEmail(payload.orderId);
           await this.sendSellerNotifications(payload.orderId);
           await this.trackPurchaseEvent(payload.orderId, payload.userId, payload.cartData);

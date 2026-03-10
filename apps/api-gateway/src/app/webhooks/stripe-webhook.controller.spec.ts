@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { StripeWebhookController } from './stripe-webhook.controller';
 import { ClientProxy } from '@nestjs/microservices';
 import { BadRequestException } from '@nestjs/common';
-import { of, throwError } from 'rxjs';
 import type { RawBodyRequest } from '@nestjs/common';
 import type { Request } from 'express';
 import Stripe from 'stripe';
@@ -35,13 +34,13 @@ describe('StripeWebhookController', () => {
         {
           provide: 'SELLER_SERVICE',
           useValue: {
-            send: jest.fn(),
+            emit: jest.fn(),
           },
         },
         {
           provide: 'ORDER_SERVICE',
           useValue: {
-            send: jest.fn(),
+            emit: jest.fn(),
           },
         },
       ],
@@ -92,13 +91,9 @@ describe('StripeWebhookController', () => {
       const rawBody = Buffer.from(JSON.stringify(mockEvent));
       const signature = 'test-signature';
       const req = mockRequest(rawBody, rawBody);
-      const expectedResult = { received: true, processed: true };
 
-      // Mock Stripe webhook verification
       const constructEventSpy = jest.spyOn(controller['stripe'].webhooks, 'constructEvent')
         .mockReturnValue(mockEvent);
-
-      jest.spyOn(sellerServiceClient, 'send').mockReturnValue(of(expectedResult));
 
       // Act
       const result = await controller.handleStripeWebhook(req, signature);
@@ -109,8 +104,10 @@ describe('StripeWebhookController', () => {
         signature,
         process.env.STRIPE_WEBHOOK_SECRET
       );
-      expect(sellerServiceClient.send).toHaveBeenCalledWith('stripe-webhook', mockEvent);
-      expect(result).toEqual(expectedResult);
+      // Fire-and-forget: sellerService.emit called, not send
+      expect(sellerServiceClient.emit).toHaveBeenCalledWith('stripe-webhook', mockEvent);
+      // Always returns immediately without waiting for downstream
+      expect(result).toEqual({ received: true });
 
       constructEventSpy.mockRestore();
     });
@@ -167,8 +164,8 @@ describe('StripeWebhookController', () => {
       constructEventSpy.mockRestore();
     });
 
-    it('should throw error when webhook processing fails in seller-service', async () => {
-      // Arrange
+    it('should return received:true immediately regardless of downstream availability', async () => {
+      // Arrange — webhook uses fire-and-forget (emit), so downstream errors do not propagate
       const mockEvent = {
         id: 'evt_test_123',
         object: 'event',
@@ -180,26 +177,20 @@ describe('StripeWebhookController', () => {
       const signature = 'test-signature';
       const req = mockRequest(rawBody, rawBody);
 
-      // Mock successful verification but failed processing
       const constructEventSpy = jest.spyOn(controller['stripe'].webhooks, 'constructEvent')
         .mockReturnValue(mockEvent);
 
-      jest.spyOn(sellerServiceClient, 'send').mockReturnValue(
-        throwError(() => new Error('Processing failed'))
-      );
+      // Act
+      const result = await controller.handleStripeWebhook(req, signature);
 
-      // Act & Assert
-      await expect(controller.handleStripeWebhook(req, signature)).rejects.toThrow(
-        BadRequestException
-      );
-      await expect(controller.handleStripeWebhook(req, signature)).rejects.toThrow(
-        'Webhook processing failed'
-      );
+      // Assert — always returns 200 to Stripe; downstream processes event asynchronously
+      expect(sellerServiceClient.emit).toHaveBeenCalledWith('stripe-webhook', mockEvent);
+      expect(result).toEqual({ received: true });
 
       constructEventSpy.mockRestore();
     });
 
-    it('should handle different Stripe event types', async () => {
+    it('should route seller Connect events to sellerService via emit', async () => {
       // Arrange
       const eventTypes = [
         'account.updated',
@@ -223,16 +214,12 @@ describe('StripeWebhookController', () => {
         const constructEventSpy = jest.spyOn(controller['stripe'].webhooks, 'constructEvent')
           .mockReturnValue(mockEvent);
 
-        jest.spyOn(sellerServiceClient, 'send').mockReturnValue(
-          of({ received: true, type: eventType })
-        );
-
         // Act
         const result = await controller.handleStripeWebhook(req, signature);
 
-        // Assert
-        expect(sellerServiceClient.send).toHaveBeenCalledWith('stripe-webhook', mockEvent);
-        expect(result.type).toBe(eventType);
+        // Assert — fire-and-forget: emit called, always returns { received: true }
+        expect(sellerServiceClient.emit).toHaveBeenCalledWith('stripe-webhook', mockEvent);
+        expect(result).toEqual({ received: true });
 
         constructEventSpy.mockRestore();
         jest.clearAllMocks();
