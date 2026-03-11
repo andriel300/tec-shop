@@ -741,7 +741,7 @@ const Page = () => {
                     {
                       label: 'Support Center',
                       Icon: PhoneCall,
-                      action: () => {},
+                      action: () => { /* placeholder */ },
                     },
                   ] as const
                 ).map((item) => (
@@ -781,7 +781,7 @@ interface ProfileTabContentProps {
   onSave: (data: { name?: string; bio?: string }) => void;
   onCancelEdit: () => void;
   onChangePhoto: () => void;
-  updateAuthState: (updates: { user?: Partial<User> }) => void;
+  updateAuthState: (updates: Partial<{ isAuthenticated: boolean; isLoading: boolean; user: User | null; userProfile: UserProfile | null }>) => void;
 }
 
 const ProfileTabContent = ({

@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { WorldMap } from 'react-svg-worldmap';
+import type { DataItem } from 'react-svg-worldmap';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Users, Store, Globe } from 'lucide-react';
 
@@ -168,9 +169,9 @@ const GeographicalMap: React.FC<GeographicalMapProps> = ({ data, isLoading }) =>
   }, [data]);
 
   // Convert to react-svg-worldmap data format
-  const mapData = useMemo(() => {
+  const mapData = useMemo<DataItem[]>(() => {
     return countryData.map((c) => ({
-      country: c.country,
+      country: c.country as DataItem['country'],
       value: c.users + c.sellers, // Total activity
     }));
   }, [countryData]);

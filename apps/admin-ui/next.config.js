@@ -10,17 +10,29 @@ const withNextIntl = createNextIntlPlugin(i18nRequestPath.startsWith('.') ? i18n
 /**
  * @type {import('@nx/next/plugins/with-nx').WithNxOptions}
  **/
+const browserLoggerPath = path.resolve(__dirname, '../../libs/shared/next-logger/src/browser.ts');
+
 const nextConfig = {
   // Use this to set Nx-specific options
   // See: https://nx.dev/recipes/next/next-config-setup
   nx: {},
   serverExternalPackages: ['pino', 'pino-pretty', 'thread-stream'],
-  webpack: (config) => {
+  experimental: {
+    turbopack: {
+      resolveAlias: {
+        '@tec-shop/next-logger': browserLoggerPath,
+      },
+    },
+  },
+  webpack: (config, { isServer }) => {
     config.resolve.extensionAlias = { '.js': ['.ts', '.tsx', '.js'], '.jsx': ['.tsx', '.jsx'] };
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': path.join(__dirname, 'src'),
     };
+    if (!isServer) {
+      config.resolve.alias['@tec-shop/next-logger'] = browserLoggerPath;
+    }
     return config;
   },
 };

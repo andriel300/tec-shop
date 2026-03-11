@@ -1,6 +1,3 @@
-// Type-only import — erased at runtime; prevents pino from being bundled in client builds
-import type pinoDefault from 'pino';
-
 export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 
 // Guard against edge runtime or restricted prerender contexts where process may be unavailable
@@ -16,41 +13,8 @@ const isDev = (() => {
 })();
 
 /**
- * Server-side logger using pino with pretty printing in development.
- * Uses require() so pino is never included in client-side bundles via webpack
- * dead-code elimination on the typeof window === 'undefined' guard in createLogger.
- */
-function createServerLogger(name: string): AppLogger {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pino = require('pino') as typeof pinoDefault;
-    return pino({
-      name,
-      level: isDev ? 'debug' : 'info',
-      ...(isDev
-        ? {
-            transport: {
-              target: 'pino-pretty',
-              options: {
-                colorize: true,
-                levelFirst: true,
-                translateTime: 'SYS:standard',
-                ignore: 'pid,hostname',
-              },
-            },
-          }
-        : {}),
-    }) as unknown as AppLogger;
-  } catch {
-    // Fallback if pino is unavailable (edge runtime, restricted prerender)
-    return createBrowserLogger(name);
-  }
-}
-
-/**
  * Client-side logger — thin console wrapper.
  * In production only errors are emitted; debug/info are silenced.
- * Errors are already captured by Sentry, so this is for local dev insight only.
  */
 function createBrowserLogger(name: string) {
   const prefix = `[${name}]`;
@@ -70,26 +34,50 @@ function createBrowserLogger(name: string) {
 export type AppLogger = ReturnType<typeof createBrowserLogger>;
 
 /**
+ * Server-side logger using pino with pretty printing in development.
+ * Uses indirect eval so neither webpack nor Turbopack statically traces
+ * into pino and its Node.js-only dependencies (thread-stream, etc.).
+ */
+function createServerLogger(name: string): AppLogger {
+  try {
+    // (0, eval)('require') is the standard "indirect eval" pattern.
+    // It returns the Node.js require function without exposing a static
+    // string literal to bundler module-graph analysis.
+    // eslint-disable-next-line no-eval
+    const nodeRequire = (0, eval)('require') as NodeRequire;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pino = nodeRequire('pino') as (opts: Record<string, unknown>) => any;
+    return pino({
+      name,
+      level: isDev ? 'debug' : 'info',
+      ...(isDev
+        ? {
+            transport: {
+              target: 'pino-pretty',
+              options: {
+                colorize: true,
+                levelFirst: true,
+                translateTime: 'SYS:standard',
+                ignore: 'pid,hostname',
+              },
+            },
+          }
+        : {}),
+    }) as AppLogger;
+  } catch {
+    return createBrowserLogger(name);
+  }
+}
+
+/**
  * Creates a named logger for a Next.js app.
  *
  * - Server (server components, server actions, middleware, route handlers):
  *   uses pino with JSON output (pretty in dev).
  * - Client (browser / 'use client' components):
  *   uses a console wrapper — silenced in production except warn/error.
- *
- * Usage:
- *   // In a server component or server action:
- *   const logger = createLogger('user-ui:checkout');
- *   logger.info({ userId }, 'Checkout initiated');
- *
- *   // In a client component:
- *   const logger = createLogger('user-ui:cart');
- *   logger.warn('Item out of stock');
  */
 export function createLogger(name: string): AppLogger {
-  // Inline typeof check gives webpack better dead code elimination:
-  // in client bundles, this branch is statically false so createServerLogger
-  // (and its require('pino')) is dropped entirely from the bundle.
   if (typeof window === 'undefined') {
     return createServerLogger(name);
   }

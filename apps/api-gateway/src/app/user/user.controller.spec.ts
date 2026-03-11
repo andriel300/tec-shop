@@ -3,6 +3,7 @@ import { UserController } from './user.controller';
 import { ClientProxy } from '@nestjs/microservices';
 import { of, throwError } from 'rxjs';
 import { CircuitBreakerService } from '../../common/circuit-breaker.service';
+import { ImageKitService } from '@tec-shop/shared/imagekit';
 
 describe('UserController', () => {
   let controller: UserController;
@@ -26,6 +27,12 @@ describe('UserController', () => {
           provide: CircuitBreakerService,
           useValue: {
             fire: jest.fn((_, fn: () => Promise<unknown>) => fn()),
+          },
+        },
+        {
+          provide: ImageKitService,
+          useValue: {
+            uploadFile: jest.fn(),
           },
         },
       ],

@@ -126,7 +126,7 @@ const Page = () => {
         };
 
         logger.debug('Submitting product:', { data: productData });
-        const createdProduct = await createProduct(productData);
+        await createProduct(productData);
         logger.info('Product created successfully:');
 
         setSubmitSuccess(true);
