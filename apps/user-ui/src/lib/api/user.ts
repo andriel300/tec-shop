@@ -42,3 +42,14 @@ export const updateUserProfile = async (data: Partial<UserProfile>): Promise<Use
   const response = await apiClient.patch('/user', data);
   return response.data;
 };
+
+export const uploadUserAvatar = async (file: File): Promise<{ url: string; fileId: string }> => {
+  const formData = new FormData();
+  formData.append('image', file);
+  const response = await apiClient.post<{ url: string; fileId: string }>(
+    '/user/upload-avatar',
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } },
+  );
+  return response.data;
+};

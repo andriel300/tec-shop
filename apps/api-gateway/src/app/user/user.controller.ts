@@ -9,7 +9,11 @@ import {
   Post,
   Delete,
   Param,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { firstValueFrom } from 'rxjs';
 import { ClientProxy } from '@nestjs/microservices';
 import type {
@@ -25,6 +29,9 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { CircuitBreakerService } from '../../common/circuit-breaker.service';
+import { ImageKitService } from '@tec-shop/shared/imagekit';
+
+const AVATAR_SIZE_LIMIT = 5 * 1024 * 1024; // 5 MB
 
 @ApiTags('User')
 @ApiBearerAuth()
@@ -32,7 +39,8 @@ import { CircuitBreakerService } from '../../common/circuit-breaker.service';
 export class UserController {
   constructor(
     @Inject('USER_SERVICE') private readonly userClient: ClientProxy,
-    private readonly cb: CircuitBreakerService
+    private readonly cb: CircuitBreakerService,
+    private readonly imagekitService: ImageKitService,
   ) {}
   @UseGuards(JwtAuthGuard)
   @Get()
@@ -55,6 +63,20 @@ export class UserController {
       data: body,
     };
     return this.cb.fire('USER_SERVICE', () => firstValueFrom(this.userClient.send('update-user-profile', payload)));
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('upload-avatar')
+  @ApiOperation({ summary: 'Upload a profile avatar image' })
+  @ApiResponse({ status: 201, description: 'Avatar uploaded successfully.' })
+  @ApiResponse({ status: 400, description: 'Invalid file.' })
+  @UseInterceptors(FileInterceptor('image', { limits: { fileSize: AVATAR_SIZE_LIMIT } }))
+  async uploadAvatar(
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<{ url: string; fileId: string }> {
+    if (!file) throw new BadRequestException('No image file provided');
+    const result = await this.imagekitService.uploadFile(file.buffer, file.originalname, 'user-avatars');
+    return { url: result.url, fileId: result.fileId };
   }
 
   // Shipping Address Endpoints

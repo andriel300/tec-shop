@@ -3,12 +3,17 @@
   "version": "0.0.1",
   "private": true,
   "nx": {
-    "tags": ["type:app", "scope:frontend", "domain:user"]
+    "tags": [
+      "type:app",
+      "scope:frontend",
+      "domain:user"
+    ]
   },
   "dependencies": {
     "@sentry/nextjs": "^10.25.0",
     "next": "16.0.9",
     "react": "19.0.0",
-    "react-dom": "19.0.0"
+    "react-dom": "19.0.0",
+    "react-easy-crop": "^5.5.6"
   }
 }

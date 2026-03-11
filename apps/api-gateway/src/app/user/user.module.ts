@@ -6,10 +6,12 @@ import { JwtAuthGuard } from '../../guards/auth';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ImageKitModule } from '@tec-shop/shared/imagekit';
 
 @Module({
   imports: [
     AuthModule,
+    ImageKitModule.forRoot(),
     ClientsModule.registerAsync([
       {
         name: 'USER_SERVICE',
