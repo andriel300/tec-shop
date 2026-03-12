@@ -9,7 +9,8 @@
       "options": {
         "command": "prisma generate --schema=prisma/schema.prisma",
         "cwd": "libs/prisma-schemas/product-schema"
-      }
+      },
+      "outputs": ["{workspaceRoot}/node_modules/.prisma/product-client"]
     },
     "migrate": {
       "executor": "nx:run-commands",
