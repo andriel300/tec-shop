@@ -361,10 +361,10 @@ describe('AuthService', () => {
     it('sends a reset email and returns success when the user exists and is verified', async () => {
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
       jest
-        .spyOn(prismaService.passwordResetToken as any, 'deleteMany')
+        .spyOn(prismaService.passwordResetToken as unknown as Record<string, jest.Mock>, 'deleteMany')
         .mockResolvedValue({ count: 0 });
       jest
-        .spyOn(prismaService.passwordResetToken as any, 'create')
+        .spyOn(prismaService.passwordResetToken as unknown as Record<string, jest.Mock>, 'create')
         .mockResolvedValue({
           id: 'tok-1',
           token: 'abc123',
@@ -423,14 +423,14 @@ describe('AuthService', () => {
 
     it('hashes the new password, marks the token used, and sends a confirmation email', async () => {
       jest
-        .spyOn(prismaService.passwordResetToken as any, 'findUnique')
+        .spyOn(prismaService.passwordResetToken as unknown as Record<string, jest.Mock>, 'findUnique')
         .mockResolvedValue(mockResetToken);
       jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockUser);
       jest
-        .spyOn(prismaService.passwordResetToken as any, 'update')
+        .spyOn(prismaService.passwordResetToken as unknown as Record<string, jest.Mock>, 'update')
         .mockResolvedValue({ ...mockResetToken, used: true });
       jest
-        .spyOn(prismaService.passwordResetToken as any, 'deleteMany')
+        .spyOn(prismaService.passwordResetToken as unknown as Record<string, jest.Mock>, 'deleteMany')
         .mockResolvedValue({ count: 1 });
       jest
         .spyOn(emailService, 'sendPasswordChangedNotification')
@@ -452,7 +452,7 @@ describe('AuthService', () => {
 
     it('throws UnauthorizedException for an invalid or expired token', async () => {
       jest
-        .spyOn(prismaService.passwordResetToken as any, 'findUnique')
+        .spyOn(prismaService.passwordResetToken as unknown as Record<string, jest.Mock>, 'findUnique')
         .mockResolvedValue(null);
 
       await expect(
