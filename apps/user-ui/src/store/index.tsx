@@ -87,7 +87,7 @@ const useStore = create<Store>()(
         // For products with variants, match by both productId and variantId
         // For simple products, match only by productId
         const existing = state.cart.find((item) => {
-          if (product.variantId && item.variantId) {
+          if (product.variantId) {
             return item.id === product.id && item.variantId === product.variantId;
           }
           return item.id === product.id && !item.variantId;
@@ -96,7 +96,7 @@ const useStore = create<Store>()(
         if (existing) {
           set({
             cart: state.cart.map((item) => {
-              const isMatch = product.variantId && item.variantId
+              const isMatch = product.variantId
                 ? item.id === product.id && item.variantId === product.variantId
                 : item.id === product.id && !item.variantId;
 

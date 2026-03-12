@@ -9,6 +9,7 @@ import Stripe from 'stripe';
 describe('StripeWebhookController', () => {
   let controller: StripeWebhookController;
   let sellerServiceClient: ClientProxy;
+  let orderServiceClient: ClientProxy;
 
   const mockRequest = (body: string | Buffer, rawBody?: Buffer): RawBodyRequest<Request> => ({
     body,
@@ -48,6 +49,7 @@ describe('StripeWebhookController', () => {
 
     controller = module.get<StripeWebhookController>(StripeWebhookController);
     sellerServiceClient = module.get<ClientProxy>('SELLER_SERVICE');
+    orderServiceClient = module.get<ClientProxy>('ORDER_SERVICE');
   });
 
   afterEach(() => {
@@ -224,6 +226,75 @@ describe('StripeWebhookController', () => {
         constructEventSpy.mockRestore();
         jest.clearAllMocks();
       }
+    });
+
+    it('should route payment_intent.succeeded to orderService, not sellerService', async () => {
+      const mockEvent = {
+        id: 'evt_payment_succeeded',
+        object: 'event',
+        type: 'payment_intent.succeeded',
+        data: { object: { id: 'pi_123' } },
+      } as Stripe.Event;
+
+      const rawBody = Buffer.from(JSON.stringify(mockEvent));
+      const req = mockRequest(rawBody, rawBody);
+
+      const constructEventSpy = jest.spyOn(controller['stripe'].webhooks, 'constructEvent')
+        .mockReturnValue(mockEvent);
+
+      const result = await controller.handleStripeWebhook(req, 'test-signature');
+
+      expect(orderServiceClient.emit).toHaveBeenCalledWith('handle-stripe-webhook', mockEvent);
+      expect(sellerServiceClient.emit).not.toHaveBeenCalled();
+      expect(result).toEqual({ received: true });
+
+      constructEventSpy.mockRestore();
+    });
+
+    it('should route payment_intent.payment_failed to orderService, not sellerService', async () => {
+      const mockEvent = {
+        id: 'evt_payment_failed',
+        object: 'event',
+        type: 'payment_intent.payment_failed',
+        data: { object: { id: 'pi_456' } },
+      } as Stripe.Event;
+
+      const rawBody = Buffer.from(JSON.stringify(mockEvent));
+      const req = mockRequest(rawBody, rawBody);
+
+      const constructEventSpy = jest.spyOn(controller['stripe'].webhooks, 'constructEvent')
+        .mockReturnValue(mockEvent);
+
+      const result = await controller.handleStripeWebhook(req, 'test-signature');
+
+      expect(orderServiceClient.emit).toHaveBeenCalledWith('handle-stripe-webhook', mockEvent);
+      expect(sellerServiceClient.emit).not.toHaveBeenCalled();
+      expect(result).toEqual({ received: true });
+
+      constructEventSpy.mockRestore();
+    });
+
+    it('should route checkout.session.completed to orderService, not sellerService', async () => {
+      const mockEvent = {
+        id: 'evt_checkout_completed',
+        object: 'event',
+        type: 'checkout.session.completed',
+        data: { object: { id: 'cs_789' } },
+      } as Stripe.Event;
+
+      const rawBody = Buffer.from(JSON.stringify(mockEvent));
+      const req = mockRequest(rawBody, rawBody);
+
+      const constructEventSpy = jest.spyOn(controller['stripe'].webhooks, 'constructEvent')
+        .mockReturnValue(mockEvent);
+
+      const result = await controller.handleStripeWebhook(req, 'test-signature');
+
+      expect(orderServiceClient.emit).toHaveBeenCalledWith('handle-stripe-webhook', mockEvent);
+      expect(sellerServiceClient.emit).not.toHaveBeenCalled();
+      expect(result).toEqual({ received: true });
+
+      constructEventSpy.mockRestore();
     });
   });
 });

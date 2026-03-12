@@ -23,51 +23,64 @@ describe('EmailService', () => {
     mailerService = module.get<MailerService>(MailerService);
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
+  afterEach(() => jest.clearAllMocks());
 
   describe('sendOtp', () => {
-    it('should call mailerService.sendMail with correct parameters', async () => {
-      const to = 'test@example.com';
-      const otp = '123456';
-
-      await service.sendOtp(to, otp);
+    it('calls sendMail with the OTP embedded in html', async () => {
+      await service.sendOtp('test@example.com', '123456');
 
       expect(mailerService.sendMail).toHaveBeenCalledWith({
-        to,
+        to: 'test@example.com',
         subject: 'Your Tec-Shop One-Time Password',
-        html: expect.stringContaining(otp),
+        html: expect.stringContaining('123456'),
       });
+    });
+
+    it('propagates errors when the mailer fails', async () => {
+      jest.spyOn(mailerService, 'sendMail').mockRejectedValue(new Error('SMTP unavailable'));
+
+      await expect(service.sendOtp('test@example.com', '123456')).rejects.toThrow('SMTP unavailable');
     });
   });
 
   describe('sendPasswordResetLink', () => {
-    it('should call mailerService.sendMail with correct parameters', async () => {
-      const to = 'test@example.com';
-      const resetLink = 'http://localhost:4200/reset-password?token=abc';
-
-      await service.sendPasswordResetLink(to, resetLink);
+    it('calls sendMail with the reset link embedded in html', async () => {
+      const resetLink = 'http://localhost:3000/reset-password?token=abc';
+      await service.sendPasswordResetLink('test@example.com', resetLink);
 
       expect(mailerService.sendMail).toHaveBeenCalledWith({
-        to,
+        to: 'test@example.com',
         subject: 'Tec-Shop Password Reset Request',
         html: expect.stringContaining(resetLink),
       });
     });
+
+    it('propagates errors when the mailer fails', async () => {
+      jest.spyOn(mailerService, 'sendMail').mockRejectedValue(new Error('SMTP unavailable'));
+
+      await expect(
+        service.sendPasswordResetLink('test@example.com', 'http://reset')
+      ).rejects.toThrow('SMTP unavailable');
+    });
   });
 
   describe('sendPasswordChangedNotification', () => {
-    it('should call mailerService.sendMail with correct parameters', async () => {
-      const to = 'test@example.com';
-
-      await service.sendPasswordChangedNotification(to);
+    it('calls sendMail with a confirmation message in html', async () => {
+      await service.sendPasswordChangedNotification('test@example.com');
 
       expect(mailerService.sendMail).toHaveBeenCalledWith({
-        to,
+        to: 'test@example.com',
         subject: 'Your Tec-Shop Password Has Been Changed',
         html: expect.stringContaining('password has been successfully changed'),
       });
+    });
+
+    it('propagates errors when the mailer fails', async () => {
+      jest.spyOn(mailerService, 'sendMail').mockRejectedValue(new Error('SMTP unavailable'));
+
+      await expect(
+        service.sendPasswordChangedNotification('test@example.com')
+      ).rejects.toThrow('SMTP unavailable');
     });
   });
 });

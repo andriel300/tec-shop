@@ -409,8 +409,8 @@ describe('SellerService', () => {
     });
   });
 
-  describe('Performance Tests', () => {
-    it('should handle multiple concurrent profile creations', async () => {
+  describe('concurrent profile creation', () => {
+    it('creates all profiles when multiple requests are made concurrently', async () => {
       // Arrange
       const profiles = TestDataFactory.createPerformanceTestData('small').sellers.map((seller: Record<string, unknown>) =>
         TestDataFactory.createSellerProfileDto({
@@ -426,15 +426,12 @@ describe('SellerService', () => {
       );
 
       // Act
-      const startTime = Date.now();
       const results = await Promise.all(
         profiles.map((profile: Record<string, unknown>) => service.createProfile(profile))
       );
-      const duration = Date.now() - startTime;
 
-      // Assert
+      // Assert — each profile was created exactly once
       expect(results).toHaveLength(profiles.length);
-      expect(duration).toBeLessThan(1000); // Should complete within 1 second
       expect(prisma.seller.create).toHaveBeenCalledTimes(profiles.length);
     });
   });

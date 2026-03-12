@@ -261,6 +261,16 @@ describe('AuthController', () => {
       // Act & Assert
       await expect(controller.refreshToken({}, req, res)).rejects.toThrow('No refresh token found. Please log in again.');
     });
+
+    it('should throw when userType=seller is specified but seller_refresh_token cookie is absent', async () => {
+      // customer_refresh_token is present but caller explicitly requests the seller token
+      const req = mockRequest({ customer_refresh_token: 'some-token' });
+      const res = mockResponse();
+
+      await expect(
+        controller.refreshToken({ userType: 'seller' }, req, res)
+      ).rejects.toThrow('No refresh token found. Please log in again.');
+    });
   });
 
   describe('logout', () => {
@@ -280,6 +290,13 @@ describe('AuthController', () => {
         reason: 'logout',
       });
       expect(authServiceClient.send).toHaveBeenCalledWith('auth-revoke-refresh-token', 'user-123');
+      // Primary customer cookies must be cleared
+      expect(res.clearCookie).toHaveBeenCalledWith('customer_access_token', expect.any(Object));
+      expect(res.clearCookie).toHaveBeenCalledWith('customer_refresh_token', expect.any(Object));
+      // Seller cookies must also be cleared (handles mixed-session logout)
+      expect(res.clearCookie).toHaveBeenCalledWith('seller_access_token', expect.any(Object));
+      expect(res.clearCookie).toHaveBeenCalledWith('seller_refresh_token', expect.any(Object));
+      // Legacy cookies cleared for backward compat
       expect(res.clearCookie).toHaveBeenCalledWith('access_token', expect.any(Object));
       expect(res.clearCookie).toHaveBeenCalledWith('refresh_token', expect.any(Object));
       expect(result).toEqual({ message: 'Logout successful' });
