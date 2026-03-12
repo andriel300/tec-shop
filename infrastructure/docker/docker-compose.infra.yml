@@ -8,10 +8,11 @@
 #   npm run infra:down  (stop and remove containers)
 #   npm run infra:logs  (tail logs)
 #
-# Kafka UI:  http://localhost:8090
-# Prometheus: http://localhost:9090
-# Grafana:   http://localhost:3030  (admin/admin)
-# Jaeger:    http://localhost:16686
+# Kafka UI:     http://localhost:8090
+# Prometheus:   http://localhost:9090
+# Grafana:      http://localhost:3030  (admin/admin)
+# Alertmanager: http://localhost:9093
+# Tempo:        http://localhost:3200
 
 networks:
   tec-shop-infra:
@@ -23,6 +24,7 @@ volumes:
   zookeeper-data:
   zookeeper-logs:
   grafana-data:
+  tempo-data:
 
 services:
   redis:
@@ -118,11 +120,30 @@ services:
     restart: unless-stopped
     ports:
       - "9090:9090"
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-remote-write-receiver"
+      - "--enable-feature=exemplar-storage"
     volumes:
       - ../monitoring/prometheus/prometheus.dev.yml:/etc/prometheus/prometheus.yml:ro
       - ../monitoring/prometheus/alerts:/etc/prometheus/alerts:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    networks:
+      - tec-shop-infra
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: tec-shop-alertmanager
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+    volumes:
+      - ../monitoring/prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     networks:
       - tec-shop-infra
 
@@ -145,18 +166,50 @@ services:
     networks:
       - tec-shop-infra
 
-  jaeger:
-    image: jaegertracing/all-in-one:1.52
-    container_name: tec-shop-jaeger
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tec-shop-tempo
     restart: unless-stopped
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ../tracing/tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-data:/var/tempo
     ports:
-      - "16686:16686"   # Jaeger UI
-      - "4317:4317"     # OTLP gRPC
-      - "4318:4318"     # OTLP HTTP
-    environment:
-      COLLECTOR_OTLP_ENABLED: "true"
+      - "3200:3200"   # Tempo HTTP API
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
     networks:
       - tec-shop-infra
+
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: tec-shop-redis-exporter
+    restart: unless-stopped
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    ports:
+      - "9121:9121"
+    networks:
+      - tec-shop-infra
+    depends_on:
+      - redis
+
+  # mongodb-exporter is disabled — project uses MongoDB Atlas which has its own
+  # built-in monitoring. The exporter requires direct wire protocol access and
+  # Atlas credentials; use the Atlas UI for MongoDB metrics instead.
+  # mongodb-exporter:
+  #   image: percona/mongodb_exporter:0.40
+  #   container_name: tec-shop-mongodb-exporter
+  #   restart: unless-stopped
+  #   command:
+  #     - --mongodb.uri=mongodb://host.docker.internal:27017
+  #     - --collect-all
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
+  #   ports:
+  #     - "9216:9216"
+  #   networks:
+  #     - tec-shop-infra
 
   kafka-init:
     image: confluentinc/cp-kafka:7.5.0

@@ -1,8 +1,15 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { Kafka, Producer } from 'kafkajs';
+import { Counter } from 'prom-client';
 import type { LogEventDto, LogLevel, LogCategory } from '@tec-shop/dto';
 
 const LOG_EVENTS_TOPIC = 'log-events';
+
+const droppedLogsCounter = new Counter({
+  name: 'kafka_producer_logs_dropped_total',
+  help: 'Log events dropped because Kafka producer was not connected',
+  labelNames: ['service', 'level'],
+});
 
 @Injectable()
 export class LogProducerService {
@@ -37,6 +44,7 @@ export class LogProducerService {
   async emit(event: LogEventDto): Promise<void> {
     if (!this.connected) {
       this.logger.warn('LogProducer not connected, log event dropped');
+      droppedLogsCounter.inc({ service: event.service, level: event.level });
       return;
     }
 

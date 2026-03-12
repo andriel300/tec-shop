@@ -107,30 +107,23 @@ groups:
   # ─── Database ──────────────────────────────────────────────────────────────────
   - name: database
     rules:
-      # TODO: Enable when MongoDB exporter is deployed
-      # - alert: MongoDBDown
-      #   expr: mongodb_up == 0
-      #   for: 1m
-      #   labels:
-      #     severity: critical
-      #   annotations:
-      #     summary: "MongoDB is down"
-
-      # TODO: Enable when Redis exporter is deployed
-      # - alert: RedisDown
-      #   expr: redis_up == 0
-      #   for: 1m
-      #   labels:
-      #     severity: critical
-      #   annotations:
-      #     summary: "Redis is down"
-      - alert: PlaceholderDatabaseAlert
-        expr: vector(0)
-        for: 999h
+      - alert: MongoDBDown
+        expr: mongodb_up == 0
+        for: 1m
         labels:
-          severity: none
+          severity: critical
         annotations:
-          summary: "Placeholder - TODO: replace with real database alerts"
+          summary: "MongoDB is down"
+          description: "MongoDB exporter reports that MongoDB is not reachable."
+
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis exporter reports that Redis is not reachable."
 
   # ─── Kafka Consumer Lag ───────────────────────────────────────────────────────
   # Requires kafka_exporter (danielqsj/kafka-exporter) scraping on port 9308.
@@ -181,3 +174,17 @@ groups:
           description: >
             Consumer group {{ $labels.consumergroup }} has not reduced lag on
             topic {{ $labels.topic }} for 10 minutes — consumer may be crashed.
+
+  # ─── Log Producer Health ──────────────────────────────────────────────────────
+  - name: log_producer
+    rules:
+      - alert: LogEventsDropping
+        expr: rate(kafka_producer_logs_dropped_total[5m]) > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Log events are being dropped in {{ $labels.service }}"
+          description: >
+            Kafka producer is disconnected in service {{ $labels.service }} and
+            log events at level {{ $labels.level }} are being silently dropped.

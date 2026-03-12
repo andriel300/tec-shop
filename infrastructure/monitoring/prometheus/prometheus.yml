@@ -16,13 +16,11 @@ rule_files:
   - "alerts/alerts.yml"
   # TODO: Add additional rule files as needed
 
-# Alertmanager configuration
-# TODO: Configure Alertmanager for alert routing (PagerDuty, Slack, email)
-# alerting:
-#   alertmanagers:
-#     - static_configs:
-#         - targets:
-#             - alertmanager:9093
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
 
 scrape_configs:
   # Prometheus self-monitoring
@@ -99,23 +97,16 @@ scrape_configs:
       - targets: ["kafka-exporter:9308"]
     metrics_path: /metrics
 
-  # Redis Exporter
-  # TODO: Deploy redis_exporter sidecar or standalone
-  # - job_name: "redis"
-  #   static_configs:
-  #     - targets: ["redis-exporter:9121"]
+  - job_name: "redis"
+    static_configs:
+      - targets: ["redis-exporter:9121"]
+    metrics_path: /metrics
 
-  # MongoDB Exporter
-  # TODO: Deploy mongodb_exporter
+  # mongodb exporter disabled — project uses MongoDB Atlas (see docker-compose.infra.yml)
   # - job_name: "mongodb"
   #   static_configs:
   #     - targets: ["mongodb-exporter:9216"]
-
-  # Kafka Exporter
-  # TODO: Deploy kafka_exporter
-  # - job_name: "kafka"
-  #   static_configs:
-  #     - targets: ["kafka-exporter:9308"]
+  #   metrics_path: /metrics
 
   # Kubernetes pod auto-discovery (for K8s deployments)
   # TODO: Enable when running on Kubernetes

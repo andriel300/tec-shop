@@ -13,10 +13,24 @@ datasources:
     isDefault: true
     editable: false
     jsonData:
-      # Scrape interval should match prometheus.yml global.scrape_interval
       timeInterval: "15s"
-      # TODO: Enable exemplars after adding tracing integration
-      # exemplarTraceIdDestinations:
-      #   - name: traceID
-      #     datasourceUid: jaeger
+      exemplarTraceIdDestinations:
+        - name: traceId
+          datasourceUid: tempo
+    version: 1
+
+  - name: Tempo
+    type: tempo
+    uid: tempo
+    url: http://tempo:3200
+    access: proxy
+    isDefault: false
+    editable: false
+    jsonData:
+      tracesToLogsV2:
+        datasourceUid: prometheus
+      serviceMap:
+        datasourceUid: prometheus
+      nodeGraph:
+        enabled: true
     version: 1

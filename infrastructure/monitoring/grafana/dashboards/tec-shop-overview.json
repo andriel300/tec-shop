@@ -1,6 +1,6 @@
 {
   "annotations": { "list": [] },
-  "description": "TecShop platform overview — service health, Node.js runtime metrics, and API Gateway HTTP metrics.",
+  "description": "TecShop platform overview — service health, API Gateway RED metrics, per-service error rates, Kafka consumer lag, business metrics, and resource usage.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -16,7 +16,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "description": "Number of services Prometheus can reach.",
+      "description": "Number of services Prometheus can currently reach.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -47,7 +47,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "count(up == 1)",
+          "expr": "count(up{job=~\".*-service|api-gateway\"} == 1)",
           "legendFormat": "Services UP",
           "refId": "A"
         }
@@ -88,7 +88,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "up",
+          "expr": "up{job=~\".*-service|api-gateway\"}",
           "legendFormat": "{{ job }}",
           "refId": "A"
         }
@@ -98,12 +98,12 @@
       "collapsed": false,
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
       "id": 10,
-      "title": "API Gateway — HTTP Metrics",
+      "title": "API Gateway — RED Metrics",
       "type": "row"
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "description": "HTTP requests per second through the API Gateway, broken down by route.",
+      "description": "HTTP request rate through the API Gateway, broken down by route.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -118,12 +118,12 @@
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
         "tooltip": { "mode": "multi", "sort": "none" }
       },
-      "title": "Requests per Second (API Gateway)",
+      "title": "Request Rate (API Gateway)",
       "type": "timeseries",
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(rate(http_request_duration_seconds_count{job=\"api-gateway\"}[1m])) by (route)",
+          "expr": "sum(rate(http_request_duration_seconds_count{job=\"api-gateway\"}[5m])) by (route)",
           "legendFormat": "{{ route }}",
           "refId": "A"
         }
@@ -131,12 +131,14 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "description": "HTTP 5xx error rate through the API Gateway.",
+      "description": "Percentage of HTTP responses with 5xx status from the API Gateway.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
           "custom": { "lineWidth": 2, "showPoints": "never" },
-          "unit": "percentunit"
+          "unit": "percent",
+          "min": 0,
+          "max": 100
         },
         "overrides": []
       },
@@ -146,20 +148,20 @@
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
         "tooltip": { "mode": "multi", "sort": "none" }
       },
-      "title": "Error Rate 5xx (API Gateway)",
+      "title": "Error Rate 5xx % (API Gateway)",
       "type": "timeseries",
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "(sum(rate(http_request_duration_seconds_count{job=\"api-gateway\",status_code=~\"5..\"}[1m])) or on() vector(0)) / sum(rate(http_request_duration_seconds_count{job=\"api-gateway\"}[1m]))",
-          "legendFormat": "5xx error rate",
+          "expr": "(sum(rate(http_request_duration_seconds_count{job=\"api-gateway\",status_code=~\"5..\"}[5m])) or on() vector(0)) / sum(rate(http_request_duration_seconds_count{job=\"api-gateway\"}[5m])) * 100",
+          "legendFormat": "5xx error rate %",
           "refId": "A"
         }
       ]
     },
     {
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "description": "P50 and P99 request latency through the API Gateway.",
+      "description": "P50 request latency through the API Gateway.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -168,33 +170,247 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 14 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
       "id": 13,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
         "tooltip": { "mode": "multi", "sort": "none" }
       },
-      "title": "Request Latency P50 / P99 (API Gateway)",
+      "title": "P50 Latency (API Gateway)",
       "type": "timeseries",
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"api-gateway\"}[5m])) by (le, route))",
-          "legendFormat": "P99 {{ route }}",
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"api-gateway\"}[5m])) by (le))",
+          "legendFormat": "P50",
           "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "P99 request latency through the API Gateway.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "showPoints": "never" },
+          "unit": "s"
         },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "id": 14,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "title": "P99 Latency (API Gateway)",
+      "type": "timeseries",
+      "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{job=\"api-gateway\"}[5m])) by (le, route))",
-          "legendFormat": "P50 {{ route }}",
-          "refId": "B"
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"api-gateway\"}[5m])) by (le))",
+          "legendFormat": "P99",
+          "refId": "A"
         }
       ]
     },
     {
       "collapsed": false,
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
-      "id": 20,
+      "id": 30,
+      "title": "Per-Service Error Rates",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "5xx error rate per service over a 5-minute window.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "showPoints": "never" },
+          "unit": "percent",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 23 },
+      "id": 31,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "title": "5xx Error Rate by Service",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "(sum(rate(http_request_duration_seconds_count{status_code=~\"5..\"}[5m])) by (job) or on() vector(0)) / sum(rate(http_request_duration_seconds_count[5m])) by (job) * 100",
+          "legendFormat": "{{ job }}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 31 },
+      "id": 40,
+      "title": "Kafka Consumer Lag",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Kafka consumer group lag per topic and partition.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "showPoints": "never" },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 18, "x": 0, "y": 32 },
+      "id": 41,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "title": "Consumer Lag by Group",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "kafka_consumergroup_lag",
+          "legendFormat": "{{ consumergroup }} / {{ topic }}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Total messages in dead-letter queues (DLQ topics).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 32 },
+      "id": 42,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "title": "DLQ Messages",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(kafka_consumergroup_lag{topic=~\".*DLQ.*\"}) or on() vector(0)",
+          "legendFormat": "DLQ total",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 40 },
+      "id": 50,
+      "title": "Business Metrics",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Placeholder row for application-level business metrics. Add custom counters and gauges from your NestJS services here. Examples: orders_created_total, products_viewed_total, users_registered_total.",
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "gridPos": { "h": 4, "w": 24, "x": 0, "y": 41 },
+      "id": 51,
+      "options": {
+        "content": "**Business metrics** will appear here once instrumented in the NestJS services.\n\nSuggested metrics to add:\n- `orders_created_total` — counter on order-service\n- `products_viewed_total` — counter on product-service\n- `users_registered_total` — counter on auth-service\n- `active_sessions_total` — gauge on auth-service\n- `revenue_total` — counter on order-service",
+        "mode": "markdown"
+      },
+      "title": "Business Metrics — Instrumentation Guide",
+      "type": "text"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 45 },
+      "id": 60,
+      "title": "Resource Usage",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Resident Set Size (RSS) — total memory allocated by the OS for each service process.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "showPoints": "never" },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 46 },
+      "id": 61,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "title": "Memory (RSS) per Service",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "process_resident_memory_bytes",
+          "legendFormat": "{{ job }}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "CPU usage rate per service — seconds of CPU consumed per wall-clock second.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "showPoints": "never" },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 46 },
+      "id": 62,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "none" }
+      },
+      "title": "CPU Usage Rate per Service",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "rate(process_cpu_seconds_total[5m])",
+          "legendFormat": "{{ job }}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 54 },
+      "id": 70,
       "title": "Node.js Runtime — All Services",
       "type": "row"
     },
@@ -209,7 +425,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 23 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 55 },
       "id": 21,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
@@ -237,7 +453,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 23 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 55 },
       "id": 22,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
@@ -265,7 +481,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 31 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 63 },
       "id": 23,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
@@ -293,7 +509,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 31 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 63 },
       "id": 24,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
@@ -321,7 +537,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 39 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 71 },
       "id": 25,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
@@ -349,7 +565,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 39 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 71 },
       "id": 26,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" },
@@ -382,5 +598,5 @@
   "timezone": "browser",
   "title": "TecShop Platform Overview",
   "uid": "tec-shop-overview",
-  "version": 2
+  "version": 3
 }
