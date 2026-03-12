@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AdminController } from './admin.controller';
-import { readFile } from 'fs/promises';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 
 @Module({
@@ -11,21 +11,21 @@ import { join } from 'path';
       {
         name: 'ADMIN_SERVICE',
         imports: [ConfigModule],
-        useFactory: async (configService: ConfigService) => {
-          // Load mTLS certificates for client authentication
+        useFactory: (configService: ConfigService) => {
           const certsPath = join(process.cwd(), 'certs');
-          const [key, cert, ca] = await Promise.all([
-            readFile(join(certsPath, 'api-gateway/api-gateway-key.pem')),
-            readFile(join(certsPath, 'api-gateway/api-gateway-cert.pem')),
-            readFile(join(certsPath, 'ca/ca-cert.pem')),
-          ]);
-          const tlsOptions = {
-            key,
-            cert,
-            ca,
-            checkServerIdentity: () => undefined, // Allow self-signed certificates
-          };
-
+          let tlsOptions: { key: Buffer; cert: Buffer; ca: Buffer; rejectUnauthorized: boolean };
+          try {
+            tlsOptions = {
+              key: readFileSync(join(certsPath, 'api-gateway/api-gateway-key.pem')),
+              cert: readFileSync(join(certsPath, 'api-gateway/api-gateway-cert.pem')),
+              ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
+              rejectUnauthorized: true,
+            };
+          } catch (error) {
+            throw new Error(
+              `[mTLS] Failed to load API Gateway certificates for ADMIN_SERVICE: ${error instanceof Error ? error.message : String(error)}. Run ./generate-certs.sh --all`,
+            );
+          }
           return {
             transport: Transport.TCP,
             options: {

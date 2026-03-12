@@ -17,23 +17,25 @@ import { ImageKitModule } from '@tec-shop/shared/imagekit';
         name: 'USER_SERVICE',
         imports: [ConfigModule],
         useFactory: (configService: ConfigService) => {
-          // Load mTLS certificates for client authentication
           const certsPath = join(process.cwd(), 'certs');
-          const tlsOptions = {
-            key: readFileSync(join(certsPath, 'api-gateway/api-gateway-key.pem')),
-            cert: readFileSync(join(certsPath, 'api-gateway/api-gateway-cert.pem')),
-            ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
-            checkServerIdentity: () => undefined, // Allow self-signed certificates
-          };
-
+          let tlsOptions: { key: Buffer; cert: Buffer; ca: Buffer; rejectUnauthorized: boolean };
+          try {
+            tlsOptions = {
+              key: readFileSync(join(certsPath, 'api-gateway/api-gateway-key.pem')),
+              cert: readFileSync(join(certsPath, 'api-gateway/api-gateway-cert.pem')),
+              ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
+              rejectUnauthorized: true,
+            };
+          } catch (error) {
+            throw new Error(
+              `[mTLS] Failed to load API Gateway certificates for USER_SERVICE: ${error instanceof Error ? error.message : String(error)}. Run ./generate-certs.sh --all`,
+            );
+          }
           return {
             transport: Transport.TCP,
             options: {
               host: configService.get<string>('USER_SERVICE_HOST') || 'localhost',
-              port: parseInt(
-                configService.get<string>('USER_SERVICE_PORT') || '6002',
-                10
-              ),
+              port: parseInt(configService.get<string>('USER_SERVICE_PORT') || '6002', 10),
               tlsOptions,
             },
           };

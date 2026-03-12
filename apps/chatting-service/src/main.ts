@@ -8,7 +8,7 @@ import { NestFactory } from '@nestjs/core';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { AppModule } from './app/app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import { Logger as PinoLogger } from 'nestjs-pino';
 
@@ -18,8 +18,21 @@ async function bootstrap() {
   const keyPath = join(certsPath, 'chatting-service/chatting-service-key.pem');
   const caPath = join(certsPath, 'ca/ca-cert.pem');
 
-  // Check if certificates exist - mTLS is optional
-  const useTls = existsSync(certPath) && existsSync(keyPath) && existsSync(caPath);
+  let tlsCerts: { key: Buffer; cert: Buffer; ca: Buffer };
+  try {
+    tlsCerts = {
+      key: readFileSync(keyPath),
+      cert: readFileSync(certPath),
+      ca: readFileSync(caPath),
+    };
+  } catch (error) {
+    Logger.error(
+      '[mTLS] Failed to load chatting-service certificates. Run ./generate-certs.sh --service chatting-service',
+      error instanceof Error ? error.message : String(error),
+      'Bootstrap',
+    );
+    process.exit(1);
+  }
 
   // Create HTTP app for WebSocket support (Socket.io)
   const app = await NestFactory.create(AppModule, {
@@ -51,34 +64,18 @@ async function bootstrap() {
   });
 
   // Connect TCP microservice for inter-service communication
-  const tcpOptions: {
-    host: string;
-    port: number;
-    tlsOptions?: {
-      key: Buffer;
-      cert: Buffer;
-      ca: Buffer;
-      requestCert: boolean;
-      rejectUnauthorized: boolean;
-    };
-  } = {
-    host: process.env.CHATTING_SERVICE_HOST || 'localhost',
-    port: parseInt(process.env.CHATTING_SERVICE_TCP_PORT || '6010', 10),
-  };
-
-  if (useTls) {
-    tcpOptions.tlsOptions = {
-      key: readFileSync(keyPath),
-      cert: readFileSync(certPath),
-      ca: readFileSync(caPath),
-      requestCert: true,
-      rejectUnauthorized: true,
-    };
-  }
-
+  const tcpPort = parseInt(process.env.CHATTING_SERVICE_TCP_PORT || '6010', 10);
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.TCP,
-    options: tcpOptions,
+    options: {
+      host: process.env.CHATTING_SERVICE_HOST || 'localhost',
+      port: tcpPort,
+      tlsOptions: {
+        ...tlsCerts,
+        requestCert: true,
+        rejectUnauthorized: true,
+      },
+    },
   });
 
   // Start all microservices (TCP)
@@ -88,14 +85,8 @@ async function bootstrap() {
   const httpPort = parseInt(process.env.CHATTING_SERVICE_PORT || '6007', 10);
   await app.listen(httpPort);
 
-  Logger.log(
-    `Chatting Service HTTP/WebSocket server running on port ${httpPort}`
-  );
-  Logger.log(
-    `Chatting Service TCP microservice running on port ${tcpOptions.port}${
-      useTls ? ' with mTLS' : ''
-    }`
-  );
+  Logger.log(`Chatting Service HTTP/WebSocket server running on port ${httpPort}`);
+  Logger.log(`Chatting Service TCP microservice running on port ${tcpPort} with mTLS`);
 }
 
 bootstrap();

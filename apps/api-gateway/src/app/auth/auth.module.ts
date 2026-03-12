@@ -16,23 +16,25 @@ import { join } from 'path';
         name: 'AUTH_SERVICE',
         imports: [ConfigModule],
         useFactory: (configService: ConfigService) => {
-          // Load mTLS certificates for client authentication
           const certsPath = join(process.cwd(), 'certs');
-          const tlsOptions = {
-            key: readFileSync(join(certsPath, 'api-gateway/api-gateway-key.pem')),
-            cert: readFileSync(join(certsPath, 'api-gateway/api-gateway-cert.pem')),
-            ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
-            checkServerIdentity: () => undefined, // Allow self-signed certificates
-          };
-
+          let tlsOptions: { key: Buffer; cert: Buffer; ca: Buffer; rejectUnauthorized: boolean };
+          try {
+            tlsOptions = {
+              key: readFileSync(join(certsPath, 'api-gateway/api-gateway-key.pem')),
+              cert: readFileSync(join(certsPath, 'api-gateway/api-gateway-cert.pem')),
+              ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
+              rejectUnauthorized: true,
+            };
+          } catch (error) {
+            throw new Error(
+              `[mTLS] Failed to load API Gateway certificates for AUTH_SERVICE: ${error instanceof Error ? error.message : String(error)}. Run ./generate-certs.sh --all`,
+            );
+          }
           return {
             transport: Transport.TCP,
             options: {
               host: configService.get<string>('AUTH_SERVICE_HOST') || 'localhost',
-              port: parseInt(
-                configService.get<string>('AUTH_SERVICE_PORT') || '6001',
-                10
-              ),
+              port: parseInt(configService.get<string>('AUTH_SERVICE_PORT') || '6001', 10),
               tlsOptions,
             },
           };

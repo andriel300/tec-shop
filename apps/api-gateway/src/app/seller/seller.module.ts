@@ -8,6 +8,22 @@ import { ImageKitModule } from '@tec-shop/shared/imagekit';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
+function loadGatewayCerts(): { key: Buffer; cert: Buffer; ca: Buffer; rejectUnauthorized: boolean } {
+  try {
+    const certsPath = join(process.cwd(), 'certs');
+    return {
+      key: readFileSync(join(certsPath, 'api-gateway/api-gateway-key.pem')),
+      cert: readFileSync(join(certsPath, 'api-gateway/api-gateway-cert.pem')),
+      ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
+      rejectUnauthorized: true,
+    };
+  } catch (error) {
+    throw new Error(
+      `[mTLS] Failed to load API Gateway certificates: ${error instanceof Error ? error.message : String(error)}. Run ./generate-certs.sh --all`,
+    );
+  }
+}
+
 @Module({
   imports: [
     ImageKitModule.forRoot(),
@@ -15,118 +31,53 @@ import { join } from 'path';
       {
         name: 'SELLER_SERVICE',
         imports: [ConfigModule],
-        useFactory: (configService: ConfigService) => {
-          // Load mTLS certificates for client authentication
-          const certsPath = join(process.cwd(), 'certs');
-          const tlsOptions = {
-            key: readFileSync(
-              join(certsPath, 'api-gateway/api-gateway-key.pem')
-            ),
-            cert: readFileSync(
-              join(certsPath, 'api-gateway/api-gateway-cert.pem')
-            ),
-            ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
-            checkServerIdentity: () => undefined, // Allow self-signed certificates
-          };
-
-          return {
-            transport: Transport.TCP,
-            options: {
-              host:
-                configService.get<string>('SELLER_SERVICE_HOST') || 'localhost',
-              port: configService.get<number>('SELLER_SERVICE_PORT') || 6003,
-              tlsOptions,
-            },
-          };
-        },
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: configService.get<string>('SELLER_SERVICE_HOST') || 'localhost',
+            port: configService.get<number>('SELLER_SERVICE_PORT') || 6003,
+            tlsOptions: loadGatewayCerts(),
+          },
+        }),
         inject: [ConfigService],
       },
       {
         name: 'PRODUCT_SERVICE',
         imports: [ConfigModule],
-        useFactory: (configService: ConfigService) => {
-          // Load mTLS certificates for client authentication
-          const certsPath = join(process.cwd(), 'certs');
-          const tlsOptions = {
-            key: readFileSync(
-              join(certsPath, 'api-gateway/api-gateway-key.pem')
-            ),
-            cert: readFileSync(
-              join(certsPath, 'api-gateway/api-gateway-cert.pem')
-            ),
-            ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
-            checkServerIdentity: () => undefined, // Allow self-signed certificates
-          };
-
-          return {
-            transport: Transport.TCP,
-            options: {
-              host:
-                configService.get<string>('PRODUCT_SERVICE_HOST') ||
-                'localhost',
-              port: configService.get<number>('PRODUCT_SERVICE_PORT') || 6004,
-              tlsOptions,
-            },
-          };
-        },
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: configService.get<string>('PRODUCT_SERVICE_HOST') || 'localhost',
+            port: configService.get<number>('PRODUCT_SERVICE_PORT') || 6004,
+            tlsOptions: loadGatewayCerts(),
+          },
+        }),
         inject: [ConfigService],
       },
       {
         name: 'ORDER_SERVICE',
         imports: [ConfigModule],
-        useFactory: (configService: ConfigService) => {
-          // Load mTLS certificates for client authentication
-          const certsPath = join(process.cwd(), 'certs');
-          const tlsOptions = {
-            key: readFileSync(
-              join(certsPath, 'api-gateway/api-gateway-key.pem')
-            ),
-            cert: readFileSync(
-              join(certsPath, 'api-gateway/api-gateway-cert.pem')
-            ),
-            ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
-            checkServerIdentity: () => undefined, // Allow self-signed certificates
-          };
-
-          return {
-            transport: Transport.TCP,
-            options: {
-              host:
-                configService.get<string>('ORDER_SERVICE_HOST') || 'localhost',
-              port: configService.get<number>('ORDER_SERVICE_PORT') || 6005,
-              tlsOptions,
-            },
-          };
-        },
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: configService.get<string>('ORDER_SERVICE_HOST') || 'localhost',
+            port: configService.get<number>('ORDER_SERVICE_PORT') || 6005,
+            tlsOptions: loadGatewayCerts(),
+          },
+        }),
         inject: [ConfigService],
       },
       {
         name: 'USER_SERVICE',
         imports: [ConfigModule],
-        useFactory: (configService: ConfigService) => {
-          // Load mTLS certificates for client authentication
-          const certsPath = join(process.cwd(), 'certs');
-          const tlsOptions = {
-            key: readFileSync(
-              join(certsPath, 'api-gateway/api-gateway-key.pem')
-            ),
-            cert: readFileSync(
-              join(certsPath, 'api-gateway/api-gateway-cert.pem')
-            ),
-            ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
-            checkServerIdentity: () => undefined, // Allow self-signed certificates
-          };
-
-          return {
-            transport: Transport.TCP,
-            options: {
-              host:
-                configService.get<string>('USER_SERVICE_HOST') || 'localhost',
-              port: configService.get<number>('USER_SERVICE_PORT') || 6002,
-              tlsOptions,
-            },
-          };
-        },
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: configService.get<string>('USER_SERVICE_HOST') || 'localhost',
+            port: configService.get<number>('USER_SERVICE_PORT') || 6002,
+            tlsOptions: loadGatewayCerts(),
+          },
+        }),
         inject: [ConfigService],
       },
     ]),

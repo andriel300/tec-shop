@@ -19,20 +19,33 @@ async function bootstrap() {
 
   // Load mTLS certificates
   const certsPath = join(process.cwd(), 'certs');
-  const tlsOptions = {
-    key: readFileSync(join(certsPath, 'auth-service/auth-service-key.pem')),
-    cert: readFileSync(join(certsPath, 'auth-service/auth-service-cert.pem')),
-    ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
-    requestCert: true,
-    rejectUnauthorized: true,
-  };
+  let tlsOptions: { key: Buffer; cert: Buffer; ca: Buffer; requestCert: boolean; rejectUnauthorized: boolean };
+  try {
+    tlsOptions = {
+      key: readFileSync(join(certsPath, 'auth-service/auth-service-key.pem')),
+      cert: readFileSync(join(certsPath, 'auth-service/auth-service-cert.pem')),
+      ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
+      requestCert: true,
+      rejectUnauthorized: true,
+    };
+  } catch (error) {
+    Logger.error(
+      '[mTLS] Failed to load auth-service certificates. Run ./generate-certs.sh --service auth-service',
+      error instanceof Error ? error.message : String(error),
+      'Bootstrap',
+    );
+    process.exit(1);
+  }
+
+  const tcpPort = parseInt(process.env.AUTH_SERVICE_PORT ?? '6001', 10);
+  const tcpHost = process.env.AUTH_SERVICE_HOST ?? 'localhost';
 
   app.connectMicroservice<MicroserviceOptions>(
     {
       transport: Transport.TCP,
       options: {
-        host: 'localhost',
-        port: 6001,
+        host: tcpHost,
+        port: tcpPort,
         tlsOptions,
       },
     },
@@ -55,6 +68,6 @@ async function bootstrap() {
   await app.startAllMicroservices();
   const metricsPort = parseInt(process.env.AUTH_METRICS_PORT ?? '9001', 10);
   await app.listen(metricsPort, '0.0.0.0');
-  Logger.log(`auth-service TCP on port 6001 with mTLS, metrics on port ${metricsPort}`);
+  Logger.log(`auth-service TCP on port ${tcpPort} with mTLS, metrics on port ${metricsPort}`);
 }
 bootstrap();

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import { LoggerController } from './logger.controller';
 
@@ -14,43 +14,26 @@ import { LoggerController } from './logger.controller';
         inject: [ConfigService],
         useFactory: (configService: ConfigService) => {
           const certsPath = join(process.cwd(), 'certs');
-          const certPath = join(certsPath, 'api-gateway/api-gateway-cert.pem');
-          const keyPath = join(certsPath, 'api-gateway/api-gateway-key.pem');
-          const caPath = join(certsPath, 'ca/ca-cert.pem');
-
-          const useTls =
-            existsSync(certPath) && existsSync(keyPath) && existsSync(caPath);
-
-          const tcpOptions: {
-            host: string;
-            port: number;
-            tlsOptions?: {
-              key: Buffer;
-              cert: Buffer;
-              ca: Buffer;
-              rejectUnauthorized: boolean;
-            };
-          } = {
-            host:
-              configService.get<string>('LOGGER_SERVICE_HOST') || 'localhost',
-            port: parseInt(
-              configService.get<string>('LOGGER_SERVICE_TCP_PORT') || '6011',
-              10
-            ),
-          };
-
-          if (useTls) {
-            tcpOptions.tlsOptions = {
-              key: readFileSync(keyPath),
-              cert: readFileSync(certPath),
-              ca: readFileSync(caPath),
+          let tlsOptions: { key: Buffer; cert: Buffer; ca: Buffer; rejectUnauthorized: boolean };
+          try {
+            tlsOptions = {
+              key: readFileSync(join(certsPath, 'api-gateway/api-gateway-key.pem')),
+              cert: readFileSync(join(certsPath, 'api-gateway/api-gateway-cert.pem')),
+              ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
               rejectUnauthorized: true,
             };
+          } catch (error) {
+            throw new Error(
+              `[mTLS] Failed to load API Gateway certificates for LOGGER_SERVICE: ${error instanceof Error ? error.message : String(error)}. Run ./generate-certs.sh --all`,
+            );
           }
-
           return {
             transport: Transport.TCP,
-            options: tcpOptions,
+            options: {
+              host: configService.get<string>('LOGGER_SERVICE_HOST') || 'localhost',
+              port: parseInt(configService.get<string>('LOGGER_SERVICE_TCP_PORT') || '6011', 10),
+              tlsOptions,
+            },
           };
         },
       },
