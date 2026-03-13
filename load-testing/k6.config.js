@@ -9,19 +9,15 @@
  *   p99 < 800ms  — worst-case tail latency
  *   error rate < 0.1%
  *
- * IMPORTANT — throttler configuration:
- *   The api-gateway "long" throttler allows 2000 req/min per IP in development.
- *   Under load testing, all VUs share one IP, so 200+ concurrent VUs will
- *   exhaust this limit quickly and return HTTP 429 responses.
+ * IMPORTANT — throttler bypass:
+ *   The api-gateway uses ConditionalThrottlerGuard. Set LOAD_TEST=true in the
+ *   root .env before running any scenario, then restart the api-gateway.
+ *   The guard reads this value at request time and bypasses all throttle checks.
+ *   Set LOAD_TEST=false and restart after testing to re-enable throttling.
  *
- *   Before running stress or spike scenarios, increase the limit in
- *   apps/api-gateway/src/app/app.module.ts:
- *
- *     name: 'long',
- *     ttl: 60000,
- *     limit: isDevelopment ? 50000 : 200,   // raised from 2000
- *
- *   Restore the original value after testing.
+ *     # root .env
+ *     LOAD_TEST=true    # before test
+ *     LOAD_TEST=false   # after test
  */
 
 /** @type {string} */
@@ -39,13 +35,16 @@ export const thresholds = {
 };
 
 /**
- * Common HTTP parameters: JSON content-type, no redirects.
+ * Common HTTP parameters: JSON content-type, gzip compression, no redirects.
+ * Accept-Encoding ensures the server sends compressed responses, matching
+ * real browser behavior and correctly benchmarking the compression middleware.
  * @type {import('k6/http').Params}
  */
 export const httpParams = {
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
+    'Accept-Encoding': 'gzip, deflate',
   },
   redirects: 0,
 };

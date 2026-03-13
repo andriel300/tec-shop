@@ -24,6 +24,12 @@
     "lint": "npx nx run-many --target=lint --all",
     "build": "npx nx run-many --target=build --all",
     "typecheck": "npx nx run-many --target=typecheck --all",
+    "load-test": "bash load-testing/run-tests.sh",
+    "load-test:all": "bash load-testing/run-tests.sh --all",
+    "load-test:baseline": "bash load-testing/run-tests.sh --baseline",
+    "load-test:stress": "bash load-testing/run-tests.sh --stress",
+    "load-test:spike": "bash load-testing/run-tests.sh --spike",
+    "load-test:soak": "bash load-testing/run-tests.sh --soak",
     "create-ttl-indexes": "node infrastructure/scripts/create-ttl-indexes.js",
     "postinstall": "patch-package"
   },

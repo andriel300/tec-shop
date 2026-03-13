@@ -73,3 +73,6 @@ out
 
 # Build artifacts
 tsconfig.tsbuildinfo
+
+# Load test result files (large JSON exports — analyse locally, never commit)
+load-testing/results/

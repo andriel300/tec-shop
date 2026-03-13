@@ -536,6 +536,9 @@ k6 run load-testing/scenarios/stress.js
 # Spike — 0 to 500 VUs in 30 seconds
 k6 run load-testing/scenarios/spike.js
 
+# Soak — 30 VUs sustained for 30 minutes (detects memory leaks, TTL cycling)
+k6 run load-testing/scenarios/soak.js
+
 # Set LOAD_TEST=false and restart api-gateway when done
 ```
 

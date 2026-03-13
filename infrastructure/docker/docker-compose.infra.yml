@@ -125,6 +125,7 @@ services:
       - "--storage.tsdb.path=/prometheus"
       - "--web.enable-remote-write-receiver"
       - "--enable-feature=exemplar-storage"
+      - "--enable-feature=native-histograms"
     volumes:
       - ../monitoring/prometheus/prometheus.dev.yml:/etc/prometheus/prometheus.yml:ro
       - ../monitoring/prometheus/alerts:/etc/prometheus/alerts:ro

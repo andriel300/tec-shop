@@ -15,13 +15,14 @@
  *  50 →   0 VUs  over 30s    (cool-down)
  *
  * Key metrics to watch:
- *   - Error rate during spike (target < 1%)
- *   - Time to recovery (p95 returning to baseline levels after the spike drops)
- *   - Whether the system returns to normal without a restart
+ *   - spike_listing_latency p95: listing endpoint under burst (highly cached)
+ *   - spike_detail_latency p95:  detail endpoint under burst (cold-cache long tail)
+ *   - spike_errors: combined HTTP errors + response time violations
+ *   - http_req_failed: network-level failures (should stay 0%)
  *
- * PREREQUISITE — raise the throttler limit before running:
- *   apps/api-gateway/src/app/app.module.ts
- *   long.limit: isDevelopment ? 50000 : 200
+ * PREREQUISITE — bypass the throttler before running:
+ *   Set LOAD_TEST=true in root .env, restart api-gateway.
+ *   Set LOAD_TEST=false and restart after testing.
  *
  * Run:
  *   k6 run load-testing/scenarios/spike.js
@@ -35,50 +36,59 @@ import { check, group, sleep } from 'k6';
 import { Rate, Trend } from 'k6/metrics';
 import { BASE_URL, httpParams, randomInt } from '../k6.config.js';
 
+// Mark 404 as a non-failure — product detail slugs may not exist in the dataset
+http.setResponseCallback(http.expectedStatuses({ min: 200, max: 299 }, 404));
+
+// Separate Trends per endpoint — previously both were merged into one metric,
+// which masked whether the listing (cached) or detail (cold-miss) was slower
+const listingLatency = new Trend('spike_listing_latency', true);
+const detailLatency  = new Trend('spike_detail_latency',  true);
 const spikeErrorRate = new Rate('spike_errors');
-const spikeLatency = new Trend('spike_latency', true);
 
 export const options = {
   stages: [
-    { duration: '30s', target: 500 },  // spike
-    { duration: '1m',  target: 500 },  // hold peak
-    { duration: '30s', target: 50 },   // drop to normal
-    { duration: '2m',  target: 50 },   // recovery window
-    { duration: '30s', target: 0 },    // cool-down
+    { duration: '30s', target: 500 }, // spike
+    { duration: '1m',  target: 500 }, // hold peak
+    { duration: '30s', target: 50  }, // drop to normal
+    { duration: '2m',  target: 50  }, // recovery window
+    { duration: '30s', target: 0   }, // cool-down
   ],
   thresholds: {
-    // During spike, allow degraded latency but not a total failure
     http_req_failed: ['rate<0.05'],
-    spike_errors: ['rate<0.05'],
-    // Recovery window check: after spike drops, latency should recover
-    spike_latency: ['p(95)<800'],
+    spike_errors:    ['rate<0.05'],
+    // Separate SLOs per endpoint — listing should recover faster than detail
+    spike_listing_latency: ['p(95)<500'],  // cached: should recover within seconds
+    spike_detail_latency:  ['p(95)<1000'], // cold-miss long tail allowed during burst
   },
 };
 
 /**
- * Setup: collect slugs once.
+ * Setup: build a diverse slug pool across 4 pages (up to 200 slugs).
+ * More slugs = more unique cache keys = better stress on the cold-miss path.
  * @returns {{ slugs: string[] }}
  */
 export function setup() {
-  const res = http.get(`${BASE_URL}/api/public/products?limit=50&offset=0`, httpParams);
-  let slugs = ['sample-product'];
+  const offsets = [0, 50, 100, 150];
+  const slugSet = new Set();
 
-  if (res.status === 200) {
-    try {
-      const products = JSON.parse(res.body).products || [];
-      if (products.length > 0) {
-        slugs = products.map((p) => p.slug).filter(Boolean);
-      }
-    } catch (_) {
-      // fallback
+  for (const offset of offsets) {
+    const res = http.get(
+      `${BASE_URL}/api/public/products?limit=50&offset=${offset}`,
+      httpParams
+    );
+    if (res.status === 200) {
+      try {
+        const products = JSON.parse(res.body).products || [];
+        products.forEach((p) => p.slug && slugSet.add(p.slug));
+      } catch (_) {}
     }
   }
 
-  return { slugs };
+  return { slugs: slugSet.size > 0 ? [...slugSet] : ['sample-product'] };
 }
 
 /**
- * Default VU function — simplified to product listing only (highest traffic endpoint).
+ * Default VU function.
  * @param {{ slugs: string[] }} data
  */
 export default function (data) {
@@ -89,7 +99,7 @@ export default function (data) {
       `${BASE_URL}/api/public/products?limit=20&offset=0`,
       httpParams
     );
-    spikeLatency.add(res.timings.duration);
+    listingLatency.add(res.timings.duration);
     const ok = check(res, {
       'listing 200': (r) => r.status === 200,
       'response time under 2s': (r) => r.timings.duration < 2000,
@@ -101,7 +111,7 @@ export default function (data) {
 
   group('spike_product_detail', () => {
     const res = http.get(`${BASE_URL}/api/public/products/${slug}`, httpParams);
-    spikeLatency.add(res.timings.duration);
+    detailLatency.add(res.timings.duration);
     const ok = check(res, {
       'detail 200 or 404': (r) => r.status === 200 || r.status === 404,
     });
