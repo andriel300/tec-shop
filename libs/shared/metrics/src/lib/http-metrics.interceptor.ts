@@ -44,19 +44,19 @@ export class HttpMetricsInterceptor implements NestInterceptor {
 
         const activeContext = trace.getActiveSpan()?.spanContext();
         if (activeContext) {
-          httpRequestDuration.observeWithExemplar({
+          // prom-client types incorrectly constrain exemplarLabels to the histogram
+          // label set (T), but exemplar labels are trace context with arbitrary keys.
+          // Cast is required to work around this upstream type definition bug.
+          httpRequestDuration.observe({
             labels,
             value: durationSeconds,
             exemplarLabels: {
               traceId: activeContext.traceId,
               spanId: activeContext.spanId,
-            },
+            } as unknown as typeof labels,
           });
         } else {
-          httpRequestDuration.observeWithoutExemplar({
-            labels,
-            value: durationSeconds,
-          });
+          httpRequestDuration.observe(labels, durationSeconds);
         }
       }),
     );
