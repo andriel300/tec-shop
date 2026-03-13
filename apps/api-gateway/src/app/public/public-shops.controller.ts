@@ -168,6 +168,7 @@ Retrieves all active shops for the marketplace frontend.
   }
 
   @Get(':shopId')
+  @Throttle({ long: { limit: 200, ttl: 60000 } })
   @ApiOperation({
     summary: 'Get public shop details by ID',
     description:
@@ -186,7 +187,6 @@ Retrieves all active shops for the marketplace frontend.
     status: 404,
     description: 'Shop not found.',
   })
-  @Throttle({ long: { limit: 200, ttl: 60000 } })
   async getShopById(@Param('shopId') shopId: string) {
     try {
       const shop = await firstValueFrom(

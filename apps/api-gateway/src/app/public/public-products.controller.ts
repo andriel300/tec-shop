@@ -3,18 +3,26 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ApiOperation, ApiResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { RedisService } from '@tec-shop/redis-client';
+
+const PRODUCT_LIST_TTL = 60; // seconds
+const PRODUCT_DETAIL_TTL = 30; // seconds — short so price/stock changes propagate quickly
+const FILTERS_TTL = 300; // seconds — filter options change rarely
 
 @ApiTags('Public Products')
 @Controller('public/products')
 export class PublicProductsController {
-  constructor(@Inject('PRODUCT_SERVICE') private productService: ClientProxy) {}
+  constructor(
+    @Inject('PRODUCT_SERVICE') private productService: ClientProxy,
+    private readonly redisService: RedisService
+  ) {}
 
   /**
    * Get all public products for marketplace frontend
    * Public endpoint - no authentication required
    */
   @Get()
-  @Throttle({ long: { limit: 200, ttl: 60000 } }) // 200 requests per minute for public read operations
+  @Throttle({ long: { limit: 200, ttl: 60000 } })
   @ApiOperation({
     summary: 'Get all public products (marketplace listing)',
     description: `
@@ -322,25 +330,33 @@ Retrieves all publicly available products for the marketplace frontend.
     // Validate and cap limit
     const validatedLimit = Math.min(Math.max(limit, 1), 100);
 
-    return firstValueFrom(
-      this.productService.send('product-get-public-products', {
-        categoryId,
-        brandId,
-        shopId,
-        search,
-        minPrice,
-        maxPrice,
-        productType,
-        isFeatured,
-        onSale,
-        tags: tagsArray,
-        colors: colorsArray,
-        sizes: sizesArray,
-        sort: sort || 'newest',
-        limit: validatedLimit,
-        offset,
-      })
+    const params = {
+      categoryId,
+      brandId,
+      shopId,
+      search,
+      minPrice,
+      maxPrice,
+      productType,
+      isFeatured,
+      onSale,
+      tags: tagsArray,
+      colors: colorsArray,
+      sizes: sizesArray,
+      sort: sort || 'newest',
+      limit: validatedLimit,
+      offset,
+    };
+
+    const cacheKey = `cache:products:list:${JSON.stringify(params)}`;
+    const cached = await this.redisService.getJson<unknown>(cacheKey);
+    if (cached !== null) return cached;
+
+    const result = await firstValueFrom(
+      this.productService.send('product-get-public-products', params)
     );
+    await this.redisService.setJson(cacheKey, result, PRODUCT_LIST_TTL);
+    return result;
   }
 
   /**
@@ -395,9 +411,15 @@ Retrieves all available filter options (colors, sizes) dynamically extracted fro
     description: 'Internal server error',
   })
   async getAvailableFilters() {
-    return firstValueFrom(
+    const cacheKey = 'cache:products:filters';
+    const cached = await this.redisService.getJson<unknown>(cacheKey);
+    if (cached !== null) return cached;
+
+    const result = await firstValueFrom(
       this.productService.send('product-get-available-filters', {})
     );
+    await this.redisService.setJson(cacheKey, result, FILTERS_TTL);
+    return result;
   }
 
   /**
@@ -501,8 +523,14 @@ Retrieves a single product by its slug for the product detail page.
     description: 'Product not found or not available',
   })
   async getProductBySlug(@Param('slug') slug: string) {
-    return firstValueFrom(
+    const cacheKey = `cache:products:slug:${slug}`;
+    const cached = await this.redisService.getJson<unknown>(cacheKey);
+    if (cached !== null) return cached;
+
+    const result = await firstValueFrom(
       this.productService.send('product-get-by-slug', { slug })
     );
+    await this.redisService.setJson(cacheKey, result, PRODUCT_DETAIL_TTL);
+    return result;
   }
 }

@@ -17,6 +17,7 @@ import { AppModule } from './app/app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger as PinoLogger } from 'nestjs-pino';
 import helmet from 'helmet';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { raw } from 'express';
 import { RpcExceptionFilter } from './filters/rpc-exception.filter';
@@ -29,6 +30,9 @@ async function bootstrap() {
   app.useLogger(app.get(PinoLogger));
 
   const isProduction = process.env.NODE_ENV === 'production';
+
+  // Compress all responses (gzip/deflate) — reduces JSON payload size 60-70%
+  app.use(compression());
 
   // Configure cookie parser for secure authentication
   app.use(cookieParser());

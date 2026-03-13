@@ -20,7 +20,8 @@ import { LoggerModule } from 'nestjs-pino';
 import { LoggerGrafanaModule } from './logger/logger.module';
 import { RecommendationModule } from './recommendation/recommendation.module';
 import { ChatModule } from './chat/chat.module';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { ConditionalThrottlerGuard } from '../guards/conditional-throttler.guard';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { RedisModule } from '@tec-shop/redis-client';
@@ -128,7 +129,7 @@ import { CircuitBreakerModule } from '../common/circuit-breaker.module';
     AppService,
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: ConditionalThrottlerGuard,
     },
     {
       provide: APP_INTERCEPTOR,
