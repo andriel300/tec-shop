@@ -12,6 +12,10 @@ services:
       - "8080:8080"
     environment:
       NODE_ENV: production
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
@@ -31,6 +35,10 @@ services:
     restart: always
     environment:
       NODE_ENV: production
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
@@ -50,6 +58,10 @@ services:
     restart: always
     environment:
       NODE_ENV: production
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
@@ -69,6 +81,10 @@ services:
     restart: always
     environment:
       NODE_ENV: production
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
@@ -88,6 +104,10 @@ services:
     restart: always
     environment:
       NODE_ENV: production
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
@@ -107,6 +127,10 @@ services:
     restart: always
     environment:
       NODE_ENV: production
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
@@ -126,6 +150,10 @@ services:
     restart: always
     environment:
       NODE_ENV: production
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
@@ -145,6 +173,10 @@ services:
     restart: always
     environment:
       NODE_ENV: production
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
@@ -164,6 +196,10 @@ services:
     restart: always
     environment:
       NODE_ENV: production
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
@@ -183,6 +219,10 @@ services:
     restart: always
     environment:
       NODE_ENV: production
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
@@ -202,6 +242,10 @@ services:
     restart: always
     environment:
       NODE_ENV: production
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
@@ -221,6 +265,10 @@ services:
     restart: always
     environment:
       NODE_ENV: production
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
@@ -240,6 +288,10 @@ services:
     restart: always
     environment:
       NODE_ENV: production
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
@@ -247,7 +299,7 @@ services:
           memory: 512M
         reservations:
           cpus: "0.1"
-          memory: 128M
+          memory: 64M
     logging:
       driver: "json-file"
       options:
@@ -259,6 +311,10 @@ services:
     restart: always
     environment:
       NODE_ENV: production
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     deploy:
       resources:
         limits:
@@ -266,7 +322,7 @@ services:
           memory: 512M
         reservations:
           cpus: "0.1"
-          memory: 128M
+          memory: 64M
     logging:
       driver: "json-file"
       options:

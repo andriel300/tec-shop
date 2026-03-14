@@ -1,6 +1,7 @@
 'use client';
 
 import { createLogger } from '@tec-shop/next-logger';
+import DOMPurify from 'isomorphic-dompurify';
 import Image from 'next/image';
 
 const logger = createLogger('user-ui:product-details-card');
@@ -535,7 +536,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                 className={`prose prose-sm prose-slate max-w-none ${
                   !showFullDescription ? 'line-clamp-3' : ''
                 }`}
-                dangerouslySetInnerHTML={{ __html: product.description }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.description) }}
               />
               {product.description.length > 150 && (
                 <button

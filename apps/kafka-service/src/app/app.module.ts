@@ -17,17 +17,17 @@ import { KafkaController } from './kafka.controller';
       isGlobal: true,
       envFilePath: '.env',
       validate: (config) => {
-        const requiredEnvVars = [
-          'ANALYTICS_SERVICE_DB_URL',
-          'REDPANDA_USERNAME',
-          'REDPANDA_PASSWORD',
-          'REDPANDA_BROKER',
-        ];
+        // Only the DB URL is always required; Kafka broker/credentials are
+        // optional — local dev uses KAFKA_BROKER=localhost:9092 with no auth.
+        if (!config['ANALYTICS_SERVICE_DB_URL']) {
+          throw new Error('Missing required environment variable: ANALYTICS_SERVICE_DB_URL');
+        }
 
-        for (const envVar of requiredEnvVars) {
-          if (!config[envVar]) {
-            throw new Error(`Missing required environment variable: ${envVar}`);
-          }
+        const broker = config['KAFKA_BROKER'] || config['REDPANDA_BROKER'];
+        if (!broker) {
+          throw new Error(
+            'Missing required environment variable: KAFKA_BROKER (or legacy REDPANDA_BROKER)'
+          );
         }
 
         return config;

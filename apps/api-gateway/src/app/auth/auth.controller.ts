@@ -61,10 +61,8 @@ export class AuthController {
   ): CookieConfig {
     const isProduction = this.configService.get('NODE_ENV') === 'production';
 
-    // Calculate expiration times based on remember me preference
-    const accessTokenMaxAge = isRememberMe
-      ? 7 * 24 * 60 * 60 * 1000 // 7 days for remember me
-      : 24 * 60 * 60 * 1000; // 24 hours for normal session
+    // Access token is always 15 minutes (short-lived); rememberMe only extends the refresh token
+    const accessTokenMaxAge = 15 * 60 * 1000; // 15 minutes
 
     const refreshTokenMaxAge = isRememberMe
       ? 30 * 24 * 60 * 60 * 1000 // 30 days for remember me

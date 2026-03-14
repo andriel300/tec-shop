@@ -1115,7 +1115,7 @@ export class AuthService implements OnModuleInit {
     };
 
     // Set token expiration based on rememberMe preference
-    const accessTokenExpiry = rememberMe ? '7d' : '1d'; // Extended: 7 days, Normal: 1 day
+    const accessTokenExpiry = '15m'; // Short-lived — refresh token handles session continuity
 
     // Generate access token with appropriate expiration
     const access_token = this.jwtService.sign(payload, {
@@ -1154,7 +1154,7 @@ export class AuthService implements OnModuleInit {
     };
 
     // Set token expiration based on rememberMe preference
-    const accessTokenExpiry = rememberMe ? '7d' : '1d'; // Extended: 7 days, Normal: 1 day
+    const accessTokenExpiry = '15m'; // Short-lived — refresh token handles session continuity
 
     // Generate access token with appropriate expiration
     const access_token = this.jwtService.sign(payload, {
@@ -1195,7 +1195,7 @@ export class AuthService implements OnModuleInit {
     };
 
     // Set token expiration based on rememberMe preference
-    const accessTokenExpiry = rememberMe ? '7d' : '1d'; // Extended: 7 days, Normal: 1 day
+    const accessTokenExpiry = '15m'; // Short-lived — refresh token handles session continuity
 
     // Generate access token with appropriate expiration
     const access_token = this.jwtService.sign(payload, {

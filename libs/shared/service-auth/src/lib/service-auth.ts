@@ -1,4 +1,4 @@
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 
 export interface SignedRequest {
   payload: Record<string, unknown>;
@@ -61,7 +61,9 @@ export class ServiceAuthUtil {
       .update(JSON.stringify(requestData))
       .digest('hex');
 
-    if (signature !== expectedSignature) {
+    const sigBuf = Buffer.from(signature, 'hex');
+    const expBuf = Buffer.from(expectedSignature, 'hex');
+    if (sigBuf.length !== expBuf.length || !timingSafeEqual(sigBuf, expBuf)) {
       return { valid: false, reason: 'invalid_signature' };
     }
 

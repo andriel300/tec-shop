@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import { SellerPrismaService } from '../../prisma/prisma.service';
@@ -7,6 +7,7 @@ import type { Prisma } from '@tec-shop/seller-client';
 
 @Injectable()
 export class StripeService {
+  private readonly logger = new Logger(StripeService.name);
   private stripe: Stripe;
 
   private readonly isProduction = process.env.NODE_ENV === 'production';
@@ -27,7 +28,7 @@ export class StripeService {
     // In development, sync accounts periodically since webhooks may not be available
     if (!this.isProduction) {
       setInterval(() => this.syncPendingAccounts(), 60000); // Every 60 seconds (reduced frequency)
-      console.log('🔄 Development mode: Polling for Stripe account updates every 60 seconds');
+      this.logger.log('Development mode: Polling for Stripe account updates every 60 seconds');
     }
   }
 
@@ -83,7 +84,7 @@ export class StripeService {
       return this.createAccountLink(account.id, authId);
     } catch (error) {
       // Log error without exposing sensitive Stripe API details
-      console.error('Stripe account creation failed for seller:', { authId, error: error instanceof Error ? error.message : 'Unknown error' });
+      this.logger.error('Stripe account creation failed for seller:', { authId, error: error instanceof Error ? error.message : 'Unknown error' });
       throw new BadRequestException('Failed to create Stripe account. Please try again.');
     }
   }
@@ -165,7 +166,7 @@ export class StripeService {
       };
     } catch (error) {
       // Log without exposing account details
-      console.error('Account link creation failed for seller:', { authId, error: error instanceof Error ? error.message : 'Unknown error' });
+      this.logger.error('Account link creation failed for seller:', { authId, error: error instanceof Error ? error.message : 'Unknown error' });
       throw new BadRequestException('Failed to create onboarding link');
     }
   }
@@ -221,7 +222,7 @@ export class StripeService {
       };
     } catch (error) {
       // Log without exposing account details
-      console.error('Failed to retrieve account status for seller:', { authId, error: error instanceof Error ? error.message : 'Unknown error' });
+      this.logger.error('Failed to retrieve account status for seller:', { authId, error: error instanceof Error ? error.message : 'Unknown error' });
       throw new BadRequestException('Failed to retrieve account status');
     }
   }
@@ -284,7 +285,7 @@ export class StripeService {
    * Process Stripe webhook
    */
   async handleWebhook(event: Stripe.Event) {
-    console.log(`Processing webhook: ${event.type}`);
+    this.logger.log(`Processing webhook: ${event.type}`);
 
     switch (event.type) {
       case 'account.updated':
@@ -294,7 +295,7 @@ export class StripeService {
         await this.handleCapabilityUpdated(event);
         break;
       default:
-        console.log(`Unhandled webhook type: ${event.type}`);
+        this.logger.warn(`Unhandled webhook type: ${event.type}`);
     }
 
     return { received: true };
@@ -320,9 +321,9 @@ export class StripeService {
         },
       });
 
-      console.log(`Updated account status: ${status}`);
+      this.logger.log(`Updated account status: ${status}`);
     } catch (error) {
-      console.error('Failed to update account from webhook:', error);
+      this.logger.error('Failed to update account from webhook:', error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -338,7 +339,7 @@ export class StripeService {
       const account = await this.stripe.accounts.retrieve(accountId);
       await this.handleAccountUpdated(account);
     } catch (error) {
-      console.error('Failed to process capability update:', error);
+      this.logger.error('Failed to process capability update:', error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -396,7 +397,7 @@ export class StripeService {
 
       if (pendingSellers.length === 0) return;
 
-      console.log(`🔄 Syncing ${pendingSellers.length} pending Stripe accounts (max 10 per batch)...`);
+      this.logger.log(`Syncing ${pendingSellers.length} pending Stripe accounts (max 10 per batch)`);
 
       // Process with delay between requests to avoid rate limiting Stripe API
       for (let i = 0; i < pendingSellers.length; i++) {
@@ -409,12 +410,12 @@ export class StripeService {
             await new Promise(resolve => setTimeout(resolve, 100));
           }
         } catch (error) {
-          console.error('Failed to sync seller account:', { error: error instanceof Error ? error.message : 'Unknown error' });
+          this.logger.error('Failed to sync seller account:', error instanceof Error ? error.message : 'Unknown error');
           // Continue with other sellers even if one fails
         }
       }
     } catch (error) {
-      console.error('Error during account sync:', error);
+      this.logger.error('Error during account sync:', error instanceof Error ? error.message : String(error));
     }
   }
 

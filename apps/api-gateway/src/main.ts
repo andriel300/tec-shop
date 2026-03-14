@@ -23,6 +23,10 @@ import { raw } from 'express';
 import { RpcExceptionFilter } from './filters/rpc-exception.filter';
 
 async function bootstrap() {
+  if (process.env['LOAD_TEST'] === 'true' && process.env['NODE_ENV'] === 'production') {
+    throw new Error('LOAD_TEST=true is not allowed in production. Refusing to start.');
+  }
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
     rawBody: true, // Enable raw body parsing globally

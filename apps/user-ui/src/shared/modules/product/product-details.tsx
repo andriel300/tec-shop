@@ -1,6 +1,7 @@
 'use client';
 
 import { createLogger } from '@tec-shop/next-logger';
+import DOMPurify from 'isomorphic-dompurify';
 import { toast } from 'sonner';
 import CartIcon from '../../../assets/svgs/cart-icon';
 
@@ -634,7 +635,7 @@ const ProductDetails = ({ product }: { product: Product }) => {
           </h2>
           <div
             className="prose prose-sm text-gray-500 max-w-none"
-            dangerouslySetInnerHTML={{ __html: product.description }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.description) }}
           />
         </div>
       </div>

@@ -91,7 +91,7 @@ async function seedAdmin() {
     console.log(`   ID: ${admin.id}`);
     console.log(`   Email: ${admin.email}`);
     // console.log(`   Name: ${admin.name}`);
-    console.log(`   Password: ${defaultAdmin.password}`);
+    console.log('   Password: [set via SEED_ADMIN_PASSWORD env var — change after first login]');
     console.log(`   User Type: ${admin.userType}`);
     console.log(`   Email Verified: ${admin.isEmailVerified}`);
     console.log(`   Created At: ${admin.createdAt}`);

@@ -32,6 +32,7 @@ import { CircuitBreakerService } from '../../common/circuit-breaker.service';
 import { ImageKitService } from '@tec-shop/shared/imagekit';
 
 const AVATAR_SIZE_LIMIT = 5 * 1024 * 1024; // 5 MB
+const ALLOWED_AVATAR_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 @ApiTags('User')
 @ApiBearerAuth()
@@ -70,7 +71,15 @@ export class UserController {
   @ApiOperation({ summary: 'Upload a profile avatar image' })
   @ApiResponse({ status: 201, description: 'Avatar uploaded successfully.' })
   @ApiResponse({ status: 400, description: 'Invalid file.' })
-  @UseInterceptors(FileInterceptor('image', { limits: { fileSize: AVATAR_SIZE_LIMIT } }))
+  @UseInterceptors(FileInterceptor('image', {
+    limits: { fileSize: AVATAR_SIZE_LIMIT },
+    fileFilter: (_req, file, cb) => {
+      if (!ALLOWED_AVATAR_MIME_TYPES.includes(file.mimetype)) {
+        return cb(new BadRequestException('Only JPEG, PNG, WebP, and GIF images are allowed'), false);
+      }
+      cb(null, true);
+    },
+  }))
   async uploadAvatar(
     @UploadedFile() file: Express.Multer.File,
   ): Promise<{ url: string; fileId: string }> {
