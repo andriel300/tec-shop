@@ -15,6 +15,7 @@ import {
 } from '../../lib/utils/AI.enhancements';
 import type { Transformation } from '@imagekit/javascript';
 import { uploadImage } from '../../lib/api/upload';
+import { sanitizeUrl } from '../../lib/utils/sanitize-url';
 
 const enhancementTransformation = (
   effect: EnhancementEffect | null
@@ -347,7 +348,7 @@ const ImagePlaceHolder = ({
 
   // Check if image is uploaded (not a blob URL)
   const isImageUploaded = imagePreview && !imagePreview.startsWith('blob:');
-
+  const safeImagePreview = sanitizeUrl(imagePreview);
   return (
     <div
       onClick={handleClick}
@@ -355,13 +356,11 @@ const ImagePlaceHolder = ({
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      className={`relative ${
-        small ? 'h-[120px]' : 'h-[300px]'
-      } w-full cursor-pointer bg-gray-800 border-2 border-dashed rounded-lg flex flex-col justify-center items-center transition-all duration-200 group overflow-hidden ${
-        isDragging
+      className={`relative ${small ? 'h-[120px]' : 'h-[300px]'
+        } w-full cursor-pointer bg-gray-800 border-2 border-dashed rounded-lg flex flex-col justify-center items-center transition-all duration-200 group overflow-hidden ${isDragging
           ? 'border-blue-400 bg-blue-900/20 scale-[1.02]'
           : 'border-gray-600 hover:border-blue-500 hover:bg-gray-750'
-      } ${isLoading ? 'cursor-wait' : ''}`}
+        } ${isLoading ? 'cursor-wait' : ''}`}
     >
       <input
         type="file"
@@ -384,12 +383,12 @@ const ImagePlaceHolder = ({
         </div>
       )}
 
-      {imagePreview ? (
+      {safeImagePreview ? (
         <>
           {/* Image Preview - Use regular img for blob URLs and enhanced URLs */}
-          {imagePreview.startsWith('blob:') || imagePreview.includes('?tr=') ? (
+          {safeImagePreview.startsWith('blob:') || safeImagePreview.includes('?tr=') ? (
             <img
-              src={imagePreview}
+              src={safeImagePreview}
               alt={`Product ${index}`}
               className="absolute inset-0 w-full h-full object-cover"
             />
@@ -397,7 +396,7 @@ const ImagePlaceHolder = ({
             /* Use IKImage only for basic ImageKit URLs without transformations */
             <IKImage
               urlEndpoint={imagekitConfig.urlEndpoint}
-              src={getImageKitPath(imagePreview)}
+              src={getImageKitPath(safeImagePreview)}
               alt={`Product ${index}`}
               width={400}
               height={400}
@@ -416,7 +415,7 @@ const ImagePlaceHolder = ({
             />
           ) : (
             <img
-              src={imagePreview}
+              src={safeImagePreview}
               alt={`Product ${index}`}
               className="absolute inset-0 w-full h-full object-cover"
             />
@@ -440,11 +439,10 @@ const ImagePlaceHolder = ({
                     type="button"
                     onClick={handleWandClick}
                     disabled={isLoading}
-                    className={`p-2 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                      selectedEnhancement
-                        ? 'bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700'
-                        : 'bg-purple-600 hover:bg-purple-700'
-                    }`}
+                    className={`p-2 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${selectedEnhancement
+                      ? 'bg-gradient-to-br from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700'
+                      : 'bg-purple-600 hover:bg-purple-700'
+                      }`}
                     title="AI Enhancements"
                   >
                     <Wand2 size={small ? 16 : 20} />
@@ -512,7 +510,7 @@ const ImagePlaceHolder = ({
                     <div className="relative w-full max-w-md h-64 bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-700">
                       <IKImage
                         urlEndpoint={imagekitConfig.urlEndpoint}
-                        src={getImageKitPath(imagePreview.split('?')[0])}
+                        src={getImageKitPath(safeImagePreview.split('?')[0])}
                         alt="Preview"
                         width={400}
                         height={400}
@@ -548,27 +546,24 @@ const ImagePlaceHolder = ({
                             onClick={() =>
                               handleSelectEnhancement(enhancement.effect)
                             }
-                            className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all ${
-                              isSelected
-                                ? 'bg-gradient-to-br from-purple-600/20 to-blue-600/20 border-purple-500'
-                                : 'bg-gray-800 border-gray-700 hover:border-gray-600'
-                            }`}
+                            className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all ${isSelected
+                              ? 'bg-gradient-to-br from-purple-600/20 to-blue-600/20 border-purple-500'
+                              : 'bg-gray-800 border-gray-700 hover:border-gray-600'
+                              }`}
                           >
                             <div
-                              className={`flex items-center justify-center w-5 h-5 rounded-full border-2 transition-colors ${
-                                isSelected
-                                  ? 'bg-purple-600 border-purple-600'
-                                  : 'border-gray-600'
-                              }`}
+                              className={`flex items-center justify-center w-5 h-5 rounded-full border-2 transition-colors ${isSelected
+                                ? 'bg-purple-600 border-purple-600'
+                                : 'border-gray-600'
+                                }`}
                             >
                               {isSelected && (
                                 <div className="w-2.5 h-2.5 bg-white rounded-full" />
                               )}
                             </div>
                             <span
-                              className={`text-sm font-medium ${
-                                isSelected ? 'text-white' : 'text-gray-300'
-                              }`}
+                              className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-gray-300'
+                                }`}
                             >
                               {enhancement.label}
                             </span>
@@ -613,11 +608,10 @@ const ImagePlaceHolder = ({
         <>
           {/* Upload Placeholder */}
           <div
-            className={`flex flex-col items-center justify-center transition-colors ${
-              isDragging
-                ? 'text-blue-400 scale-110'
-                : 'text-gray-400 group-hover:text-blue-400'
-            }`}
+            className={`flex flex-col items-center justify-center transition-colors ${isDragging
+              ? 'text-blue-400 scale-110'
+              : 'text-gray-400 group-hover:text-blue-400'
+              }`}
           >
             {small ? (
               <>
