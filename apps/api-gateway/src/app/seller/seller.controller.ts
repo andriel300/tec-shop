@@ -63,13 +63,14 @@ export class SellerController {
     @Inject('PRODUCT_SERVICE') private readonly productService: ClientProxy,
     private readonly imagekitService: ImageKitService,
     private readonly cb: CircuitBreakerService
-  ) {}
+  ) { }
 
   /**
    * Validate uploaded files
    */
   private validateFiles(files: Express.Multer.File[]): void {
-    if (!files || files.length === 0) {
+    // Ensure files is a non-empty array of file-like objects
+    if (!Array.isArray(files) || files.length === 0) {
       throw new BadRequestException('At least one product image is required');
     }
 
@@ -78,6 +79,19 @@ export class SellerController {
     }
 
     files.forEach((file) => {
+      if (
+        !file ||
+        typeof file !== 'object' ||
+        typeof (file as Express.Multer.File).mimetype !== 'string' ||
+        typeof (file as Express.Multer.File).originalname !== 'string' ||
+        typeof (file as Express.Multer.File).size !== 'number'
+      ) {
+        throw new BadRequestException(
+          'Invalid file upload payload received'
+        );
+      }
+
+
       if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
         throw new BadRequestException(
           `Invalid file type: ${file.originalname}. Only JPEG, PNG, GIF, and WebP images are allowed`
@@ -615,7 +629,7 @@ export class PublicShopsController {
     @Inject('SELLER_SERVICE') private readonly sellerService: ClientProxy,
     @Inject('USER_SERVICE') private readonly userService: ClientProxy,
     private readonly cb: CircuitBreakerService
-  ) {}
+  ) { }
 
   @Get()
   @ApiOperation({

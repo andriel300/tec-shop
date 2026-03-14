@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Logger } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Logger, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { KafkaProducerService } from '../../services/kafka-producer.service';
@@ -9,7 +9,7 @@ import { TrackEventDto } from '@tec-shop/dto';
 export class AnalyticsController {
   private readonly logger = new Logger(AnalyticsController.name);
 
-  constructor(private readonly kafkaProducer: KafkaProducerService) {}
+  constructor(private readonly kafkaProducer: KafkaProducerService) { }
 
   @Post('track')
   @Throttle({ short: { limit: 30, ttl: 60000 } }) // 30 events/min per IP
@@ -64,6 +64,13 @@ export class AnalyticsController {
   async trackEventsBatch(
     @Body() events: TrackEventDto[]
   ): Promise<{ success: boolean; count: number }> {
+    // Basic runtime validation to prevent type confusion on request body
+    if (!Array.isArray(events)) {
+      this.logger.warn('Invalid analytics events batch payload: expected an array.');
+      throw new BadRequestException('Invalid event data');
+    }
+
+
     try {
       // Send events to Kafka asynchronously
       this.kafkaProducer

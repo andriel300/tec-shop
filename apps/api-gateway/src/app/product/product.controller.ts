@@ -50,15 +50,30 @@ export class ProductController {
     @Inject('USER_SERVICE') private readonly userService: ClientProxy,
     private readonly imagekitService: ImageKitService,
     private readonly cb: CircuitBreakerService
-  ) {}
+  ) { }
 
   /**
    * Validate uploaded files
    */
   private validateFiles(files: Express.Multer.File[]): void {
-    if (!files || files.length === 0) {
+    // Ensure files is an array of file-like objects to prevent type confusion
+    if (!Array.isArray(files) || files.length === 0) {
       throw new BadRequestException('At least one product image is required');
     }
+    const invalidFile = files.find(
+      (file) =>
+        !file ||
+        typeof file !== 'object' ||
+        typeof (file as Express.Multer.File).mimetype !== 'string' ||
+        typeof (file as Express.Multer.File).originalname !== 'string' ||
+        typeof (file as Express.Multer.File).size !== 'number' ||
+        !(file as Express.Multer.File).buffer
+    );
+
+    if (invalidFile) {
+      throw new BadRequestException('Invalid file upload payload');
+    }
+
 
     if (files.length > MAX_FILES) {
       throw new BadRequestException(`Maximum ${MAX_FILES} images allowed`);
@@ -225,6 +240,10 @@ export class ProductController {
 
     let imageUrls: string[] | undefined;
 
+    // Ensure files, if present, is an array to prevent type confusion
+    if (files !== undefined && !Array.isArray(files)) {
+      throw new BadRequestException('Invalid files payload');
+    }
     // If files are provided, validate and upload to ImageKit
     if (files && files.length > 0) {
       // Validate files (but don't require at least one for updates)
