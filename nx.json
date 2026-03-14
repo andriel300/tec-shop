@@ -1,7 +1,10 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "namedInputs": {
-    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "default": [
+      "{projectRoot}/**/*",
+      "sharedGlobals"
+    ],
     "production": [
       "default",
       "!{projectRoot}/.eslintrc.json",
@@ -12,7 +15,9 @@
       "!{projectRoot}/src/test-setup.[jt]s",
       "!{projectRoot}/test-setup.[jt]s"
     ],
-    "sharedGlobals": ["{workspaceRoot}/.github/workflows/ci.yml"]
+    "sharedGlobals": [
+      "{workspaceRoot}/.github/workflows/ci.yml"
+    ]
   },
   "nxCloudId": "68ae07ebbd49776c13e123bf",
   "plugins": [
@@ -162,17 +167,26 @@
   ],
   "targetDefaults": {
     "test": {
-      "dependsOn": ["^build", "generate-types"]
+      "dependsOn": [
+        "^build",
+        "generate-types"
+      ]
     },
     "build": {
-      "dependsOn": ["generate-types"]
+      "dependsOn": [
+        "generate-types"
+      ]
     },
     "typecheck": {
-      "dependsOn": ["generate-types"]
+      "dependsOn": [
+        "generate-types"
+      ]
     },
     "generate-types": {
       "cache": true,
-      "inputs": ["{workspaceRoot}/libs/prisma-schemas/**/*"],
+      "inputs": [
+        "{workspaceRoot}/libs/prisma-schemas/**/*"
+      ],
       "outputs": [
         "{workspaceRoot}/node_modules/.prisma/auth-client",
         "{workspaceRoot}/node_modules/.prisma/user-client",
@@ -191,35 +205,76 @@
     },
     "format": {
       "cache": true,
-      "inputs": ["{workspaceRoot}/libs/prisma-schemas/**/*.prisma"]
+      "inputs": [
+        "{workspaceRoot}/libs/prisma-schemas/**/*.prisma"
+      ]
     }
   },
   "release": {
     "projects": [
-      "api-gateway",
-      "auth-service",
-      "user-service",
-      "product-service",
-      "seller-service",
-      "order-service",
-      "analytics-service",
-      "admin-service",
-      "@tec-shop/shared/dto"
+      "apps/*-service",
+      "apps/*-ui",
+      "libs/*"
     ],
+    "projectsRelationship": "independent",
+    "version": {
+      "preVersionCommand": "npx nx run-many -t build",
+      "conventionalCommits": true
+    },
+    "conventionalCommits": {
+      "types": {
+        "feat": {
+          "semverBump": "minor",
+          "changelog": {
+            "title": "Features"
+          }
+        },
+        "fix": {
+          "semverBump": "patch",
+          "changelog": {
+            "title": "Bug Fixes"
+          }
+        },
+        "perf": {
+          "semverBump": "patch",
+          "changelog": {
+            "title": "Performance Improvements"
+          }
+        },
+        "docs": {
+          "semverBump": "none",
+          "changelog": {
+            "title": "Documentation Changes"
+          }
+        },
+        "chore": {
+          "semverBump": "none",
+          "changelog": false
+        },
+        "refactor": {
+          "semverBump": "none",
+          "changelog": {
+            "title": "Code Refactoring"
+          }
+        },
+        "test": {
+          "semverBump": "none",
+          "changelog": {
+            "title": "Tests"
+          }
+        }
+      }
+    },
     "changelog": {
       "projectChangelogs": {
         "renderOptions": {
-          "watchDepsNamesdasauthors": true,
+          "authors": true,
           "applyUsernameToAuthors": true,
           "commitReferences": true,
           "versionTitleDate": true
         }
       },
       "workspaceChangelog": false
-    },
-    "version": {
-      "preVersionCommand": "npx nx run-many -t build",
-      "conventionalCommits": true
     }
   },
   "generators": {

@@ -1,5 +1,7 @@
 # TecShop
 
+![Performance](https://img.shields.io/badge/performance-p95%20190ms-brightgreen)
+
 A modern, secure, and scalable multi-vendor e-commerce platform built with a microservices architecture. TecShop demonstrates enterprise-grade patterns including mutual TLS authentication, real-time communication, collaborative filtering recommendations, and event-driven analytics.
 
 ## Overview & DEMO
@@ -7,6 +9,61 @@ A modern, secure, and scalable multi-vendor e-commerce platform built with a mic
 TecShop is a production-ready microservices-based e-commerce platform showcasing modern software architecture principles. The system implements a secure, scalable foundation suitable for enterprise applications with features like JWT authentication, refresh token rotation, social login, Stripe payments, real-time chat, AI-powered product recommendations, and comprehensive admin tooling.
 
 I will add a video demo link later.
+
+## Technology Stack
+
+![NestJS](https://img.shields.io/badge/NestJS-e0234e?style=for-the-badge&logo=nestjs&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178c6?style=for-the-badge&logo=typescript&logoColor=white)
+![Nx](https://img.shields.io/badge/Nx-143055?style=for-the-badge&logo=nx&logoColor=white)
+
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+
+![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Kafka](https://img.shields.io/badge/Apache_Kafka-231F20?style=for-the-badge&logo=apachekafka&logoColor=white)
+
+![pnpm](https://img.shields.io/badge/pnpm-F69220?style=for-the-badge&logo=pnpm&logoColor=white)
+![k6](https://img.shields.io/badge/k6-7D64FF?style=for-the-badge&logo=k6&logoColor=white)
+![Sentry](https://img.shields.io/badge/Sentry-362D59?style=for-the-badge&logo=sentry&logoColor=white)
+
+### Backend
+
+- **Framework**: NestJS with TypeScript
+- **Database**: MongoDB with Prisma ORM (separate schema and client per service)
+- **Caching & Sessions**: Redis (`ioredis`) via `@tec-shop/redis-client`
+- **Message Broker**: Apache Kafka for async analytics and notification events
+- **Authentication**: JWT with Passport (local + Google OAuth 2.0 strategies)
+- **Payments**: Stripe (Checkout Sessions, Connect, webhooks)
+- **Real-Time**: Socket.IO for chat and live notifications
+- **File Uploads**: ImageKit CDN integration
+- **Logging**: Structured logging with `nestjs-pino` + Pino across all services
+- **Documentation**: Swagger / OpenAPI at `/api-docs`
+- **Machine Learning TensorFlowJS**: Collaborative filtering model for product recommendations
+
+### Frontend
+
+- **Framework**: Next.js 16 with React 19
+- **Styling**: Tailwind CSS
+- **State Management**: TanStack Query (server state) + Zustand (client state)
+- **Forms**: TanStack Form + class-validator
+- **Internationalization**: `next-intl` v4 with URL-based locale routing (`/en/`, `/ar/`)
+- **UI Components**: Radix UI primitives + Lucide icons
+- **Notifications**: Sonner toast messages
+
+### Infrastructure
+
+- **Monorepo**: Nx workspace with module boundary enforcement (ESLint)
+- **Testing**: Jest with per-service test suites
+- **Linting**: ESLint with TypeScript and NX boundary rules
+- **DevOps**: Docker multi-stage builds, Kubernetes + Helm chart
+- **Monitoring**: Prometheus, Grafana.
+- **Load Testing** : K6s
+- **Package Management**: pnpm workspaces
 
 ## Kanban Project Management Methodology
 
@@ -24,45 +81,49 @@ The project is managed using the Kanban methodology via Jira, with tasks tracked
 
 ### Microservices Design
 
-| Service | Port | Type | Responsibility |
-|---|---|---|---|
-| **API Gateway** | 8080 | REST | Central entry point, routing, rate limiting, auth guards |
-| **Auth Service** | 6001 | TCP | Authentication, JWT, OAuth, OTP, password management |
-| **User Service** | 6002 | TCP | User profiles, followers, shipping addresses, image uploads |
-| **Seller Service** | 6003 | TCP | Seller accounts, shops, discounts, events, Stripe Connect |
-| **Product Service** | 6004 | TCP | Product catalog, categories, brands, variants, ratings |
-| **Order Service** | 6005 | TCP | Orders, payments, Stripe Checkout, payouts |
-| **Admin Service** | 6006 | TCP | Platform administration, user/seller management |
-| **Chatting Service** | 6007 | TCP + WS | Real-time buyer-seller messaging via Socket.IO |
-| **Logger Service** | 6008 | TCP + WS | Centralized structured logging and notifications |
-| **Recommendation Service** | 6009 | TCP | ML-based product recommendations (collaborative filtering) |
-| **Kafka Service** | - | Kafka | Analytics event consumer, user/product/shop metrics |
-| **User UI** | 3000 | Next.js | Customer-facing storefront |
-| **Seller UI** | 3001 | Next.js | Seller dashboard and shop management |
-| **Admin UI** | 3002 | Next.js | Platform administration panel |
+| Service                    | Port | Type     | Responsibility                                              |
+| -------------------------- | ---- | -------- | ----------------------------------------------------------- |
+| **API Gateway**            | 8080 | REST     | Central entry point, routing, rate limiting, auth guards    |
+| **Auth Service**           | 6001 | TCP      | Authentication, JWT, OAuth, OTP, password management        |
+| **User Service**           | 6002 | TCP      | User profiles, followers, shipping addresses, image uploads |
+| **Seller Service**         | 6003 | TCP      | Seller accounts, shops, discounts, events, Stripe Connect   |
+| **Product Service**        | 6004 | TCP      | Product catalog, categories, brands, variants, ratings      |
+| **Order Service**          | 6005 | TCP      | Orders, payments, Stripe Checkout, payouts                  |
+| **Admin Service**          | 6006 | TCP      | Platform administration, user/seller management             |
+| **Chatting Service**       | 6007 | TCP + WS | Real-time buyer-seller messaging via Socket.IO              |
+| **Logger Service**         | 6008 | TCP + WS | Centralized structured logging and notifications            |
+| **Recommendation Service** | 6009 | TCP      | ML-based product recommendations (collaborative filtering)  |
+| **Kafka Service**          | -    | Kafka    | Analytics event consumer, user/product/shop metrics         |
+| Notification Service       | 6014 | TCP + WS | Notification events producer/consumer                       |
+| **User UI**                | 3000 | Next.js  | Customer-facing storefront                                  |
+| **Seller UI**              | 3001 | Next.js  | Seller dashboard and shop management                        |
+| **Admin UI**               | 3002 | Next.js  | Platform administration panel                               |
 
 ### Shared Libraries
 
-| Library | Path | Purpose |
-|---|---|---|
-| `@tec-shop/dto` | `libs/shared/dto` | Shared DTOs across all services |
-| `@tec-shop/validation` | `libs/shared/validation` | Shared validation logic |
-| `@tec-shop/interceptor` | `libs/shared/interceptor` | `LoggingInterceptor`, `ErrorInterceptor`, `AllExceptionsFilter` |
-| `@tec-shop/service-auth` | `libs/shared/service-auth` | HMAC inter-service request signing (`ServiceAuthUtil`) |
-| `@tec-shop/redis-client` | `libs/shared/redis-client` | Shared `RedisModule.forRoot()` and `RedisService` |
-| `@tec-shop/kafka-events` | `libs/shared/kafka-events` | Typed Kafka topic constants and event interfaces |
-| `@tec-shop/logger-producer` | `libs/shared/logger-producer` | Kafka producer for structured log events |
-| `@tec-shop/notification-producer` | `libs/shared/notification-producer` | Kafka producer for notification events |
-| `@tec-shop/i18n` | `libs/shared/i18n` | Shared `next-intl` v4 routing config and navigation helpers |
-| `@tec-shop/imagekit` | `libs/shared/imagekit` | ImageKit CDN integration |
-| `@tec-shop/components` | `libs/shared/components` | Shared UI component primitives |
+| Library                           | Path                                | Purpose                                                         |
+| --------------------------------- | ----------------------------------- | --------------------------------------------------------------- |
+| `@tec-shop/dto`                   | `libs/shared/dto`                   | Shared DTOs across all services                                 |
+| `@tec-shop/validation`            | `libs/shared/validation`            | Shared validation logic                                         |
+| `@tec-shop/interceptor`           | `libs/shared/interceptor`           | `LoggingInterceptor`, `ErrorInterceptor`, `AllExceptionsFilter` |
+| `@tec-shop/service-auth`          | `libs/shared/service-auth`          | HMAC inter-service request signing (`ServiceAuthUtil`)          |
+| `@tec-shop/redis-client`          | `libs/shared/redis-client`          | Shared `RedisModule.forRoot()` and `RedisService`               |
+| `@tec-shop/kafka-events`          | `libs/shared/kafka-events`          | Typed Kafka topic constants and event interfaces                |
+| `@tec-shop/logger-producer`       | `libs/shared/logger-producer`       | Kafka producer for structured log events                        |
+| `@tec-shop/notification-producer` | `libs/shared/notification-producer` | Kafka producer for notification events                          |
+| `@tec-shop/i18n`                  | `libs/shared/i18n`                  | Shared `next-intl` v4 routing config and navigation helpers     |
+| `@tec-shop/imagekit`              | `libs/shared/imagekit`              | ImageKit CDN integration                                        |
+| `@tec-shop/components`            | `libs/shared/components`            | Shared UI component primitives                                  |
+| `@tec-shop/tracing`               | `libs/shared/tracing`               | Shared OpenTelemetry tracing integration                        |
+| `@tec-shop/metrics`               | `libs/shared/metrics`               | Shared Prometheus metrics integration                           |
+| `@tec-shop/next-logger`           | `libs/shared/next-logger`           | Shared `nestjs-pino` logging integration                        |
 
 ### Inter-Service Communication
 
 - All backend services communicate via **NestJS TCP microservices**
 - Sensitive cross-service calls (profile creation) use **HMAC-signed requests** (`ServiceAuthUtil`)
 - Analytics events flow through **Apache Kafka** (producer in each service, consumer in `kafka-service`)
-- Real-time features use **Socket.IO** (chatting-service, logger-service notifications)
+- Real-time features use **Socket.IO** (chatting-service, logger-service, notification-service)
 - **mTLS** certificates available for encrypted service-to-service transport in production
 
 ### Security Features
@@ -76,40 +137,6 @@ The project is managed using the Kanban methodology via Jira, with tasks tracked
 - **Input Validation**: class-validator + class-transformer DTOs
 - **Password Security**: bcrypt with configurable salt rounds
 - **Token Blacklisting**: Redis-backed refresh token revocation
-
-## Technology Stack
-
-### Backend
-
-- **Framework**: NestJS with TypeScript
-- **Database**: MongoDB with Prisma ORM (separate schema and client per service)
-- **Caching & Sessions**: Redis (`ioredis`) via `@tec-shop/redis-client`
-- **Message Broker**: Apache Kafka for async analytics and notification events
-- **Authentication**: JWT with Passport (local + Google OAuth 2.0 strategies)
-- **Payments**: Stripe (Checkout Sessions, Connect, webhooks)
-- **Real-Time**: Socket.IO for chat and live notifications
-- **File Uploads**: ImageKit CDN integration
-- **Logging**: Structured logging with `nestjs-pino` + Pino across all services
-- **Documentation**: Swagger / OpenAPI at `/api-docs`
-- **ML**: Collaborative filtering model for product recommendations
-
-### Frontend
-
-- **Framework**: Next.js 15 with React 19
-- **Styling**: Tailwind CSS
-- **State Management**: TanStack Query (server state) + Zustand (client state)
-- **Forms**: TanStack Form + class-validator
-- **Internationalization**: `next-intl` v4 with URL-based locale routing (`/en/`, `/ar/`)
-- **UI Components**: Radix UI primitives + Lucide icons
-- **Notifications**: Sonner toast messages
-
-### DevOps & Tooling
-
-- **Monorepo**: Nx workspace with module boundary enforcement (ESLint)
-- **Testing**: Jest with per-service test suites
-- **Linting**: ESLint with TypeScript and NX boundary rules
-- **Infrastructure**: Docker multi-stage builds, Kubernetes + Helm chart, Prometheus monitoring
-- **Package Management**: npm workspaces
 
 ## Key Features
 
@@ -149,13 +176,14 @@ The project is managed using the Kanban methodology via Jira, with tasks tracked
 ### Recommendations
 
 - Collaborative filtering model trained on user analytics (views, add-to-cart, purchases)
+- it uses TensorFlowJS to train the model based on interaction data by users
 - Fallback to popularity-based rankings for cold-start users
 - Similar product discovery by shop context
 - Redis-cached results with background retraining scheduler
 
 ### Internationalization
 
-- Full URL-based locale routing (`/en/`, `/ar/`) via `next-intl` v4
+- Full URL-based locale routing (`/en/`, `/ptbr/`) via `next-intl` v4
 - Shared translations in `@tec-shop/i18n`; per-app overrides merged at request time
 - Language switcher across all three frontends
 
@@ -178,57 +206,57 @@ git clone <repository-url>
 cd tec-shop
 ```
 
-2. Install dependencies
+1. Install dependencies
 
 ```bash
-npm install
+pnpm install
 ```
 
-3. Set up environment variables
+1. Set up environment variables
 
 ```bash
 cp .env.example .env
 # Edit .env with your configuration
 ```
 
-4. Generate Prisma clients
+1. Generate Prisma clients
 
 ```bash
-npm run prisma:generate
+pnpm run prisma:generate
 ```
 
-5. Push database schemas
+1. Push database schemas
 
 ```bash
-npm run prisma:db-push
+pnpm run prisma:db-push
 ```
 
-6. Generate mTLS certificates (optional for development)
+1. Generate mTLS certificates (optional for development)
 
 ```bash
 ./generate-certs.sh --all
 ```
 
-7. Start all services
+1. Start all services
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 The application will be available at:
 
-- API Gateway: http://localhost:8080/api
-- API Documentation: http://localhost:8080/api-docs
-- User UI: http://localhost:3000
-- Seller UI: http://localhost:3001
-- Admin UI: http://localhost:3002
+- API Gateway: <http://localhost:8080/api>
+- API Documentation: <http://localhost:8080/api-docs>
+- User UI: <http://localhost:3000>
+- Seller UI: <http://localhost:3001>
+- Admin UI: <http://localhost:3002>
 
 ## Development Commands
 
 ### Service Management
 
 ```bash
-npm run dev                          # Start all services
+pnpm run dev                          # Start all services
 npx nx serve <service-name>          # Start specific service
 npx nx build <service-name>          # Build specific service
 npx nx run-many --target=serve --all # Start all services
@@ -237,9 +265,9 @@ npx nx run-many --target=serve --all # Start all services
 ### Database Operations
 
 ```bash
-npm run prisma:generate  # Generate all Prisma clients
-npm run prisma:db-push   # Push schema changes to database
-npm run prisma:studio    # Open Prisma Studio
+pnpm run prisma:generate  # Generate all Prisma clients
+pnpm run prisma:db-push   # Push schema changes to database
+pnpm run prisma:studio    # Open Prisma Studio
 ```
 
 ### Certificate Management
@@ -269,26 +297,29 @@ AUTH_SERVICE_DB_URL="mongodb://localhost:27017/auth"
 USER_SERVICE_DB_URL="mongodb://localhost:27017/user"
 SELLER_SERVICE_DB_URL="mongodb://localhost:27017/seller"
 PRODUCT_SERVICE_DB_URL="mongodb://localhost:27017/product"
-ORDER_SERVICE_DB_URL="mongodb://localhost:27017/order"
+
+# The order service will use PostgreSQL, I personally use Neon PostgreSQL
+ORDER_SERVICE_DB_URL="postgres://postgres:password@localhost:5432/order"
+
 ANALYTICS_SERVICE_DB_URL="mongodb://localhost:27017/analytics"
 CHATTING_SERVICE_DB_URL="mongodb://localhost:27017/chatting"
 LOGGER_SERVICE_DB_URL="mongodb://localhost:27017/logger"
 
-# Redis
+# Redis, I personally use upstash
 REDIS_URL="redis://localhost:6379"
 
-# Security (minimum 32 characters, no defaults allowed)
+# Security (minimum 32 characters, no defaults allowed) use JWT generator online or run `openssl rand -base64 32`
 JWT_SECRET="your-jwt-secret-minimum-32-characters"
 SERVICE_MASTER_SECRET="your-service-master-secret-32-chars"
 
-# Email
+# Email SMTP
 SMTP_HOST="smtp.example.com"
 SMTP_PORT=587
 SMTP_USER="your-smtp-user"
 SMTP_PASS="your-smtp-password"
 SMTP_FROM="noreply@yourdomain.com"
 
-# Google OAuth (optional)
+# Google OAuth
 GOOGLE_CLIENT_ID="your-google-client-id"
 GOOGLE_CLIENT_SECRET="your-google-client-secret"
 GOOGLE_CALLBACK_URL="http://localhost:8080/api/auth/google/callback"
@@ -304,18 +335,6 @@ IMAGEKIT_PRIVATE_KEY="your-imagekit-private-key"
 
 # Kafka
 KAFKA_BROKER="localhost:9092"
-
-# Service Hosts (defaults to localhost in development)
-AUTH_SERVICE_HOST=localhost
-AUTH_SERVICE_PORT=6001
-USER_SERVICE_HOST=localhost
-USER_SERVICE_PORT=6002
-SELLER_SERVICE_HOST=localhost
-SELLER_SERVICE_PORT=6003
-PRODUCT_SERVICE_HOST=localhost
-PRODUCT_SERVICE_PORT=6004
-ORDER_SERVICE_HOST=localhost
-ORDER_SERVICE_PORT=6005
 ```
 
 ### Production Configuration
@@ -332,84 +351,25 @@ For production deployment, use the `.env.production.example` template with:
 
 The API is fully documented with Swagger/OpenAPI. Access the interactive documentation at:
 
-- Development: http://localhost:8080/api-docs
-- Production: https://your-domain.com/api-docs
+- Development: <http://localhost:8080/api-docs>
+- Production: <https://your-domain.com/api-docs>
 
 ### Core Endpoint Groups
 
-| Group | Base Path | Auth Required |
-|---|---|---|
-| Authentication | `/api/auth` | Varies |
-| User Profiles | `/api/user` | JWT |
-| Sellers | `/api/seller` | JWT + SELLER |
-| Shops | `/api/shops` | Varies |
-| Products | `/api/products` | Varies |
-| Categories | `/api/categories` | Admin write |
-| Brands | `/api/brands` | Admin write |
-| Orders | `/api/orders` | JWT |
-| Admin | `/api/admin` | JWT + ADMIN |
-| Chat | `/api/chat` | JWT |
-| Recommendations | `/api/recommendations` | JWT |
-| Webhooks | `/api/webhooks/stripe` | Stripe signature |
-
-## Architecture Diagram
-
-```mermaid
-graph TB
-    UserUI[User UI :3000]
-    SellerUI[Seller UI :3001]
-    AdminUI[Admin UI :3002]
-    GW[API Gateway :8080]
-
-    Auth[Auth Service :6001]
-    User[User Service :6002]
-    Seller[Seller Service :6003]
-    Product[Product Service :6004]
-    Order[Order Service :6005]
-    Admin[Admin Service :6006]
-    Chat[Chatting Service :6007]
-    Logger[Logger Service :6008]
-    Rec[Recommendation Service :6009]
-    Kafka[Kafka Service]
-
-    MongoDB[(MongoDB per service)]
-    Redis[(Redis)]
-    KafkaBroker([Kafka Broker])
-    Stripe([Stripe])
-    ImageKit([ImageKit CDN])
-
-    UserUI <--> GW
-    SellerUI <--> GW
-    AdminUI <--> GW
-
-    GW <--> Auth
-    GW <--> User
-    GW <--> Seller
-    GW <--> Product
-    GW <--> Order
-    GW <--> Admin
-    GW <--> Chat
-    GW <--> Logger
-    GW <--> Rec
-
-    Auth --> User
-    Auth --> Seller
-    Product --> Seller
-    Order --> Stripe
-
-    Auth & User & Seller & Product & Order --> KafkaBroker
-    KafkaBroker --> Kafka
-    Kafka --> MongoDB
-
-    Auth & Order & Rec --> Redis
-    Chat & Logger --> Redis
-
-    User & Seller --> ImageKit
-
-    subgraph "mTLS Communication"
-        GW -.-> Auth & User & Seller & Product & Order
-    end
-```
+| Group           | Base Path              | Auth Required    |
+| --------------- | ---------------------- | ---------------- |
+| Authentication  | `/api/auth`            | Varies           |
+| User Profiles   | `/api/user`            | JWT              |
+| Sellers         | `/api/seller`          | JWT + SELLER     |
+| Shops           | `/api/shops`           | Varies           |
+| Products        | `/api/products`        | Varies           |
+| Categories      | `/api/categories`      | Admin write      |
+| Brands          | `/api/brands`          | Admin write      |
+| Orders          | `/api/orders`          | JWT              |
+| Admin           | `/api/admin`           | JWT + ADMIN      |
+| Chat            | `/api/chat`            | JWT              |
+| Recommendations | `/api/recommendations` | JWT              |
+| Webhooks        | `/api/webhooks/stripe` | Stripe signature |
 
 ## Security Considerations
 
@@ -425,11 +385,11 @@ graph TB
 
 ### Rate Limiting Tiers
 
-| Tier | Endpoints | Dev Limit | Prod Limit |
-|---|---|---|---|
-| Short | General | 1000 req/min | 100 req/min |
-| Medium | Auth operations | 100 req/15min | 20 req/15min |
-| Long | Search / high-frequency | 2000 req/min | 200 req/min |
+| Tier   | Endpoints               | Dev Limit     | Prod Limit   |
+| ------ | ----------------------- | ------------- | ------------ |
+| Short  | General                 | 1000 req/min  | 100 req/min  |
+| Medium | Auth operations         | 100 req/15min | 20 req/15min |
+| Long   | Search / high-frequency | 2000 req/min  | 200 req/min  |
 
 ### Data Protection
 
@@ -450,32 +410,32 @@ Full methodology, raw numbers, and before/after analysis: [View Full Case Study]
 
 #### Baseline — 50 concurrent users, 2 minutes
 
-| Metric | Before (no cache) | After (Redis + gzip) | Change |
-|---|---|---|---|
-| p50 latency | 770 ms | 187 ms | **-76%** |
-| p95 latency | 1,740 ms | 190 ms | **-89%** |
-| p99 latency | 2,160 ms | 1,580 ms | -27% |
-| Throughput | 26.5 req/s | 44.1 req/s | **+66%** |
+| Metric      | Before (no cache) | After (Redis + gzip) | Change   |
+| ----------- | ----------------- | -------------------- | -------- |
+| p50 latency | 770 ms            | 187 ms               | **-76%** |
+| p95 latency | 1,740 ms          | 190 ms               | **-89%** |
+| p99 latency | 2,160 ms          | 1,580 ms             | -27%     |
+| Throughput  | 26.5 req/s        | 44.1 req/s           | **+66%** |
 
 #### Stress test — ramp 0 to 500 concurrent users, 10 minutes
 
-| Metric | Without detail cache | All endpoints cached | Change |
-|---|---|---|---|
-| p95 latency | 13,970 ms | 195 ms | **-98.6%** |
-| p99 latency | 16,950 ms | 408 ms | **-97.6%** |
-| Throughput | 61.7 req/s | 135.4 req/s | **+119%** |
-| Requests completed | 37,168 | 81,659 | **+120%** |
-| Thresholds passed | 2 / 4 | 4 / 4 | All green |
-| HTTP error rate | 0.00% | 0.00% | — |
+| Metric             | Without detail cache | All endpoints cached | Change     |
+| ------------------ | -------------------- | -------------------- | ---------- |
+| p95 latency        | 13,970 ms            | 195 ms               | **-98.6%** |
+| p99 latency        | 16,950 ms            | 408 ms               | **-97.6%** |
+| Throughput         | 61.7 req/s           | 135.4 req/s          | **+119%**  |
+| Requests completed | 37,168               | 81,659               | **+120%**  |
+| Thresholds passed  | 2 / 4                | 4 / 4                | All green  |
+| HTTP error rate    | 0.00%                | 0.00%                | —          |
 
 #### Spike test — 0 to 500 users in 30 seconds
 
-| Metric | Result |
-|---|---|
-| p95 latency | 211 ms |
-| HTTP error rate | 0.00% |
-| Responses exceeding 2s | 0.12% (cold-cache spike) |
-| Recovery | Self-healing — cache warms within 30s, no intervention needed |
+| Metric                 | Result                                                        |
+| ---------------------- | ------------------------------------------------------------- |
+| p95 latency            | 211 ms                                                        |
+| HTTP error rate        | 0.00%                                                         |
+| Responses exceeding 2s | 0.12% (cold-cache spike)                                      |
+| Recovery               | Self-healing — cache warms within 30s, no intervention needed |
 
 ### Optimizations Applied
 
@@ -485,11 +445,11 @@ All public product endpoints cache responses in Redis before proxying to the mic
 The first request per unique query set hits MongoDB Atlas; every subsequent request returns
 from Redis. TTLs are tuned per endpoint:
 
-| Endpoint | Cache TTL | Rationale |
-|---|---|---|
-| `GET /public/products` (listing) | 60s | Balances freshness with Atlas offload |
-| `GET /public/products/:slug` (detail) | 30s | Short so price/stock changes propagate quickly |
-| `GET /public/products/filters/options` | 300s | Color/size options change rarely |
+| Endpoint                               | Cache TTL | Rationale                                      |
+| -------------------------------------- | --------- | ---------------------------------------------- |
+| `GET /public/products` (listing)       | 60s       | Balances freshness with Atlas offload          |
+| `GET /public/products/:slug` (detail)  | 30s       | Short so price/stock changes propagate quickly |
+| `GET /public/products/filters/options` | 300s      | Color/size options change rarely               |
 
 Trade-off: product view counters increment only on cache misses (at most once per TTL
 window per slug). This is an accepted trade-off for high-traffic product pages.
@@ -609,12 +569,64 @@ Helm chart and per-environment values files are in `infrastructure/helm/tec-shop
 - Check that the `kafka-service` consumer is running
 - Verify topic names match `KafkaTopics` constants in `@tec-shop/kafka-events`
 
-## Acknowledgements
+## Acknowledgments
+
+### Special Thanks
 
 - [Sakura dev](https://www.youtube.com/@SakuraDev) - Comprehensive NestJS microservices guidance and architecture patterns
-- NestJS community for excellent documentation and examples
-- Prisma team for outstanding ORM and database tooling
-- Next.js team for the powerful React framework
+- [ByteByteGo](https://www.youtube.com/playlist?list=PLCRMIe5FDPsd0gVs500xeOewfySTsmEjf) - System Design Fundamentals
+- [Renato Augusto](https://www.youtube.com/@renatoaugusto) - Microservices Architecture Guidance, System Design.
+
+## 📚 Resources
+
+### 🏗 Microservices Architecture
+
+- <https://smartbear.com/learn/api-design/microservices/> - What are Microservices ?
+- <https://microservices.io> — Patterns and best practices for microservices architecture.
+- <https://martinfowler.com/microservices> — Foundational articles explaining microservices by Martin Fowler.
+
+---
+
+### ⚙️ NestJS
+
+- <https://docs.nestjs.com> — Official NestJS documentation.
+- <https://docs.nestjs.com/microservices/basics> — Official guide for building microservices with NestJS.
+- <https://trilon.io/blog> — Advanced NestJS tutorials and architecture discussions.
+- <https://stackoverflow.com/questions/tagged/nestjs> — NestJS questions and community support.
+
+---
+
+### ⚛️ Next.js
+
+- <https://nextjs.org/docs> — Official Next.js documentation.
+- <https://nextjs.org/learn> — Official interactive Next.js tutorial.
+- <https://react.dev> — Official React documentation used by Next.js.
+- <https://vercel.com/blog> — Architecture insights and best practices for Next.js applications.
+
+---
+
+### 🧠 System Design
+
+- <https://github.com/donnemartin/system-design-primer> — One of the most famous GitHub repositories for learning system design.
+- <https://bytebytego.com> — High-quality system design explanations and diagrams.
+- <http://highscalability.com> — Real architecture breakdowns of large-scale systems.
+- <https://github.com/binhnguyennus/awesome-scalability> — Curated resources about scalability and distributed systems.
+
+---
+
+### 📊 Observability & Distributed Systems
+
+- <https://opentelemetry.io/docs> — Observability for distributed systems.
+- <https://prometheus.io/docs> — Monitoring system for microservices.
+- <https://grafana.com/docs> — Metrics visualization and dashboards.
+
+---
+
+### 💬 Communities
+
+- <https://stackoverflow.com> — Developer Q&A community.
+- <https://www.reddit.com/r/microservices> — Discussions about microservices architecture.
+- <https://discord.com> — Many developer communities around NestJS and Next.js.
 
 ## License
 
