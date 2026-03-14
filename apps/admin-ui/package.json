@@ -3,11 +3,15 @@
   "version": "0.0.1",
   "private": true,
   "nx": {
-    "tags": ["type:app", "scope:frontend", "domain:admin"]
+    "tags": [
+      "type:app",
+      "scope:frontend",
+      "domain:admin"
+    ]
   },
   "dependencies": {
     "@imagekit/next": "^2.1.5",
-    "next": "16.0.9",
+    "next": "16.1.6",
     "react": "19.0.0",
     "react-dom": "19.0.0"
   }

@@ -20,7 +20,10 @@ describe('AuthController', () => {
   };
 
   // Mock Request object
-  const mockRequest = (cookies: Record<string, string> = {}, user?: { userId: string }) => {
+  const mockRequest = (
+    cookies: Record<string, string> = {},
+    user?: { userId: string }
+  ) => {
     const req: Partial<Request & { user: { userId: string } }> = {
       cookies,
       user,
@@ -71,15 +74,22 @@ describe('AuthController', () => {
         name: 'Test User',
         termsAccepted: true,
       };
-      const expectedResponse = { message: 'User registration initiated. Check email for OTP.' };
+      const expectedResponse = {
+        message: 'User registration initiated. Check email for OTP.',
+      };
 
-      jest.spyOn(authServiceClient, 'send').mockReturnValue(of(expectedResponse));
+      jest
+        .spyOn(authServiceClient, 'send')
+        .mockReturnValue(of(expectedResponse));
 
       // Act
       const result = await controller.signup(signupDto);
 
       // Assert
-      expect(authServiceClient.send).toHaveBeenCalledWith('auth-signup', signupDto);
+      expect(authServiceClient.send).toHaveBeenCalledWith(
+        'auth-signup',
+        signupDto
+      );
       expect(result).toEqual(expectedResponse);
     });
 
@@ -93,12 +103,14 @@ describe('AuthController', () => {
         termsAccepted: true,
       };
 
-      jest.spyOn(authServiceClient, 'send').mockReturnValue(
-        throwError(() => new Error('User already exists'))
-      );
+      jest
+        .spyOn(authServiceClient, 'send')
+        .mockReturnValue(throwError(() => new Error('User already exists')));
 
       // Act & Assert
-      await expect(controller.signup(signupDto)).rejects.toThrow('User already exists');
+      await expect(controller.signup(signupDto)).rejects.toThrow(
+        'User already exists'
+      );
     });
   });
 
@@ -111,13 +123,18 @@ describe('AuthController', () => {
       };
       const expectedResponse = { message: 'Email verified successfully' };
 
-      jest.spyOn(authServiceClient, 'send').mockReturnValue(of(expectedResponse));
+      jest
+        .spyOn(authServiceClient, 'send')
+        .mockReturnValue(of(expectedResponse));
 
       // Act
       const result = await controller.verifyEmail(verifyEmailDto);
 
       // Assert
-      expect(authServiceClient.send).toHaveBeenCalledWith('auth-verify-email', verifyEmailDto);
+      expect(authServiceClient.send).toHaveBeenCalledWith(
+        'auth-verify-email',
+        verifyEmailDto
+      );
       expect(result).toEqual(expectedResponse);
     });
   });
@@ -125,7 +142,11 @@ describe('AuthController', () => {
   describe('login', () => {
     it('should set cookies with correct options for normal session', async () => {
       // Arrange
-      const loginDto = { email: 'test@example.com', password: 'password', rememberMe: false };
+      const loginDto = {
+        email: 'test@example.com',
+        password: 'password',
+        rememberMe: false,
+      };
       const authResult = {
         access_token: 'access-token-123',
         refresh_token: 'refresh-token-456',
@@ -141,29 +162,47 @@ describe('AuthController', () => {
       const result = await controller.login(loginDto, res);
 
       // Assert
-      expect(authServiceClient.send).toHaveBeenCalledWith('auth-login', loginDto);
-      expect(res.cookie).toHaveBeenCalledWith('customer_access_token', 'access-token-123', {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'strict',
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        path: '/',
+      expect(authServiceClient.send).toHaveBeenCalledWith(
+        'auth-login',
+        loginDto
+      );
+      expect(res.cookie).toHaveBeenCalledWith(
+        'customer_access_token',
+        'access-token-123',
+        {
+          httpOnly: true,
+          secure: false,
+          sameSite: 'strict',
+          maxAge: 15 * 60 * 1000, // 15 minutes
+          path: '/',
+        }
+      );
+      expect(res.cookie).toHaveBeenCalledWith(
+        'customer_refresh_token',
+        'refresh-token-456',
+        {
+          httpOnly: true,
+          secure: false,
+          sameSite: 'strict',
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+          path: '/',
+        }
+      );
+      expect(result).toEqual({
+        message: 'Login successful',
+        userType: 'customer',
       });
-      expect(res.cookie).toHaveBeenCalledWith('customer_refresh_token', 'refresh-token-456', {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        path: '/',
-      });
-      expect(result).toEqual({ message: 'Login successful', userType: 'customer' });
 
       process.env.NODE_ENV = originalEnv;
     });
 
     it('should set cookies with extended duration for rememberMe', async () => {
       // Arrange
-      const loginDto = { email: 'test@example.com', password: 'password', rememberMe: true };
+      const loginDto = {
+        email: 'test@example.com',
+        password: 'password',
+        rememberMe: true,
+      };
       const authResult = {
         access_token: 'access-token-123',
         refresh_token: 'refresh-token-456',
@@ -177,17 +216,29 @@ describe('AuthController', () => {
       await controller.login(loginDto, res);
 
       // Assert
-      expect(res.cookie).toHaveBeenCalledWith('customer_access_token', 'access-token-123', expect.objectContaining({
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days for remember me
-      }));
-      expect(res.cookie).toHaveBeenCalledWith('customer_refresh_token', 'refresh-token-456', expect.objectContaining({
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days for remember me
-      }));
+      expect(res.cookie).toHaveBeenCalledWith(
+        'customer_access_token',
+        'access-token-123',
+        expect.objectContaining({
+          maxAge: 15 * 60 * 1000, // 15 minutes - access token always short-lived
+        })
+      );
+      expect(res.cookie).toHaveBeenCalledWith(
+        'customer_refresh_token',
+        'refresh-token-456',
+        expect.objectContaining({
+          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days for remember me
+        })
+      );
     });
 
     it('should use secure cookies in production', async () => {
       // Arrange
-      const loginDto = { email: 'test@example.com', password: 'password', rememberMe: false };
+      const loginDto = {
+        email: 'test@example.com',
+        password: 'password',
+        rememberMe: false,
+      };
       const authResult = {
         access_token: 'access-token-123',
         refresh_token: 'refresh-token-456',
@@ -203,9 +254,13 @@ describe('AuthController', () => {
       await controller.login(loginDto, res);
 
       // Assert
-      expect(res.cookie).toHaveBeenCalledWith('__Host-customer_access_token', 'access-token-123', expect.objectContaining({
-        secure: true,
-      }));
+      expect(res.cookie).toHaveBeenCalledWith(
+        '__Host-customer_access_token',
+        'access-token-123',
+        expect.objectContaining({
+          secure: true,
+        })
+      );
 
       process.env.NODE_ENV = originalEnv;
     });
@@ -235,12 +290,23 @@ describe('AuthController', () => {
       const result = await controller.refreshToken({}, req, res);
 
       // Assert
-      expect(authServiceClient.send).toHaveBeenCalledWith('auth-refresh-token', {
-        refreshToken: 'old-refresh-token',
-        currentAccessToken: 'old-access-token',
-      });
-      expect(res.cookie).toHaveBeenCalledWith('customer_access_token', 'new-access-token', expect.any(Object));
-      expect(res.cookie).toHaveBeenCalledWith('customer_refresh_token', 'new-refresh-token', expect.any(Object));
+      expect(authServiceClient.send).toHaveBeenCalledWith(
+        'auth-refresh-token',
+        {
+          refreshToken: 'old-refresh-token',
+          currentAccessToken: 'old-access-token',
+        }
+      );
+      expect(res.cookie).toHaveBeenCalledWith(
+        'customer_access_token',
+        'new-access-token',
+        expect.any(Object)
+      );
+      expect(res.cookie).toHaveBeenCalledWith(
+        'customer_refresh_token',
+        'new-refresh-token',
+        expect.any(Object)
+      );
       expect(result).toEqual({
         message: 'Token refreshed successfully',
         userType: 'customer',
@@ -259,7 +325,9 @@ describe('AuthController', () => {
       const res = mockResponse();
 
       // Act & Assert
-      await expect(controller.refreshToken({}, req, res)).rejects.toThrow('No refresh token found. Please log in again.');
+      await expect(controller.refreshToken({}, req, res)).rejects.toThrow(
+        'No refresh token found. Please log in again.'
+      );
     });
 
     it('should throw when userType=seller is specified but seller_refresh_token cookie is absent', async () => {
@@ -276,10 +344,15 @@ describe('AuthController', () => {
   describe('logout', () => {
     it('should revoke tokens and clear cookies', async () => {
       // Arrange
-      const req = mockRequest({ access_token: 'token-123' }, { userId: 'user-123' });
+      const req = mockRequest(
+        { access_token: 'token-123' },
+        { userId: 'user-123' }
+      );
       const res = mockResponse();
 
-      jest.spyOn(authServiceClient, 'send').mockReturnValue(of({ success: true }));
+      jest
+        .spyOn(authServiceClient, 'send')
+        .mockReturnValue(of({ success: true }));
 
       // Act
       const result = await controller.logout(req, res);
@@ -289,27 +362,51 @@ describe('AuthController', () => {
         token: 'token-123',
         reason: 'logout',
       });
-      expect(authServiceClient.send).toHaveBeenCalledWith('auth-revoke-refresh-token', 'user-123');
+      expect(authServiceClient.send).toHaveBeenCalledWith(
+        'auth-revoke-refresh-token',
+        'user-123'
+      );
       // Primary customer cookies must be cleared
-      expect(res.clearCookie).toHaveBeenCalledWith('customer_access_token', expect.any(Object));
-      expect(res.clearCookie).toHaveBeenCalledWith('customer_refresh_token', expect.any(Object));
+      expect(res.clearCookie).toHaveBeenCalledWith(
+        'customer_access_token',
+        expect.any(Object)
+      );
+      expect(res.clearCookie).toHaveBeenCalledWith(
+        'customer_refresh_token',
+        expect.any(Object)
+      );
       // Seller cookies must also be cleared (handles mixed-session logout)
-      expect(res.clearCookie).toHaveBeenCalledWith('seller_access_token', expect.any(Object));
-      expect(res.clearCookie).toHaveBeenCalledWith('seller_refresh_token', expect.any(Object));
+      expect(res.clearCookie).toHaveBeenCalledWith(
+        'seller_access_token',
+        expect.any(Object)
+      );
+      expect(res.clearCookie).toHaveBeenCalledWith(
+        'seller_refresh_token',
+        expect.any(Object)
+      );
       // Legacy cookies cleared for backward compat
-      expect(res.clearCookie).toHaveBeenCalledWith('access_token', expect.any(Object));
-      expect(res.clearCookie).toHaveBeenCalledWith('refresh_token', expect.any(Object));
+      expect(res.clearCookie).toHaveBeenCalledWith(
+        'access_token',
+        expect.any(Object)
+      );
+      expect(res.clearCookie).toHaveBeenCalledWith(
+        'refresh_token',
+        expect.any(Object)
+      );
       expect(result).toEqual({ message: 'Logout successful' });
     });
 
     it('should clear cookies even if revocation fails', async () => {
       // Arrange
-      const req = mockRequest({ access_token: 'token-123' }, { userId: 'user-123' });
+      const req = mockRequest(
+        { access_token: 'token-123' },
+        { userId: 'user-123' }
+      );
       const res = mockResponse();
 
-      jest.spyOn(authServiceClient, 'send').mockReturnValue(
-        throwError(() => new Error('Revocation failed'))
-      );
+      jest
+        .spyOn(authServiceClient, 'send')
+        .mockReturnValue(throwError(() => new Error('Revocation failed')));
       // Act
       const result = await controller.logout(req, res);
 
@@ -323,15 +420,22 @@ describe('AuthController', () => {
     it('should forward forgot-password request to auth-service', async () => {
       // Arrange
       const forgotPasswordDto = { email: 'test@example.com' };
-      const expectedResponse = { message: 'Password reset email sent if account exists' };
+      const expectedResponse = {
+        message: 'Password reset email sent if account exists',
+      };
 
-      jest.spyOn(authServiceClient, 'send').mockReturnValue(of(expectedResponse));
+      jest
+        .spyOn(authServiceClient, 'send')
+        .mockReturnValue(of(expectedResponse));
 
       // Act
       const result = await controller.forgotPassword(forgotPasswordDto);
 
       // Assert
-      expect(authServiceClient.send).toHaveBeenCalledWith('auth-forgot-password', forgotPasswordDto);
+      expect(authServiceClient.send).toHaveBeenCalledWith(
+        'auth-forgot-password',
+        forgotPasswordDto
+      );
       expect(result).toEqual(expectedResponse);
     });
   });
@@ -342,13 +446,18 @@ describe('AuthController', () => {
       const validateDto = { token: 'reset-token-123' };
       const expectedResponse = { valid: true, email: 'test@example.com' };
 
-      jest.spyOn(authServiceClient, 'send').mockReturnValue(of(expectedResponse));
+      jest
+        .spyOn(authServiceClient, 'send')
+        .mockReturnValue(of(expectedResponse));
 
       // Act
       const result = await controller.validateResetToken(validateDto);
 
       // Assert
-      expect(authServiceClient.send).toHaveBeenCalledWith('auth-validate-reset-token', validateDto);
+      expect(authServiceClient.send).toHaveBeenCalledWith(
+        'auth-validate-reset-token',
+        validateDto
+      );
       expect(result).toEqual(expectedResponse);
     });
   });
@@ -362,13 +471,18 @@ describe('AuthController', () => {
       };
       const expectedResponse = { message: 'Password successfully reset' };
 
-      jest.spyOn(authServiceClient, 'send').mockReturnValue(of(expectedResponse));
+      jest
+        .spyOn(authServiceClient, 'send')
+        .mockReturnValue(of(expectedResponse));
 
       // Act
       const result = await controller.resetPassword(resetPasswordDto);
 
       // Assert
-      expect(authServiceClient.send).toHaveBeenCalledWith('auth-reset-password', resetPasswordDto);
+      expect(authServiceClient.send).toHaveBeenCalledWith(
+        'auth-reset-password',
+        resetPasswordDto
+      );
       expect(result).toEqual(expectedResponse);
     });
   });
@@ -387,13 +501,18 @@ describe('AuthController', () => {
       };
       const expectedResponse = { message: 'Seller registration initiated' };
 
-      jest.spyOn(authServiceClient, 'send').mockReturnValue(of(expectedResponse));
+      jest
+        .spyOn(authServiceClient, 'send')
+        .mockReturnValue(of(expectedResponse));
 
       // Act
       const result = await controller.sellerSignup(sellerSignupDto);
 
       // Assert
-      expect(authServiceClient.send).toHaveBeenCalledWith('seller-auth-signup', sellerSignupDto);
+      expect(authServiceClient.send).toHaveBeenCalledWith(
+        'seller-auth-signup',
+        sellerSignupDto
+      );
       expect(result).toEqual(expectedResponse);
     });
   });
@@ -405,15 +524,22 @@ describe('AuthController', () => {
         email: 'seller@example.com',
         otp: '123456',
       };
-      const expectedResponse = { message: 'Seller email verified successfully' };
+      const expectedResponse = {
+        message: 'Seller email verified successfully',
+      };
 
-      jest.spyOn(authServiceClient, 'send').mockReturnValue(of(expectedResponse));
+      jest
+        .spyOn(authServiceClient, 'send')
+        .mockReturnValue(of(expectedResponse));
 
       // Act
       const result = await controller.verifySellerEmail(verifyEmailDto);
 
       // Assert
-      expect(authServiceClient.send).toHaveBeenCalledWith('seller-auth-verify-email', verifyEmailDto);
+      expect(authServiceClient.send).toHaveBeenCalledWith(
+        'seller-auth-verify-email',
+        verifyEmailDto
+      );
       expect(result).toEqual(expectedResponse);
     });
   });
@@ -421,7 +547,11 @@ describe('AuthController', () => {
   describe('sellerLogin', () => {
     it('should set cookies for seller login', async () => {
       // Arrange
-      const loginDto = { email: 'seller@example.com', password: 'password', rememberMe: false };
+      const loginDto = {
+        email: 'seller@example.com',
+        password: 'password',
+        rememberMe: false,
+      };
       const authResult = {
         access_token: 'seller-access-token',
         refresh_token: 'seller-refresh-token',
@@ -435,9 +565,15 @@ describe('AuthController', () => {
       const result = await controller.sellerLogin(loginDto, res);
 
       // Assert
-      expect(authServiceClient.send).toHaveBeenCalledWith('seller-auth-login', loginDto);
+      expect(authServiceClient.send).toHaveBeenCalledWith(
+        'seller-auth-login',
+        loginDto
+      );
       expect(res.cookie).toHaveBeenCalledTimes(2);
-      expect(result).toEqual({ message: 'Seller login successful', userType: 'seller' });
+      expect(result).toEqual({
+        message: 'Seller login successful',
+        userType: 'seller',
+      });
     });
   });
 });
