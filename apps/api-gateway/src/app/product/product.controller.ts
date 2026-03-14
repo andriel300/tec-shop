@@ -245,7 +245,7 @@ export class ProductController {
       throw new BadRequestException('Invalid files payload');
     }
     // If files are provided, validate and upload to ImageKit
-    if (files && files.length > 0) {
+    if (Array.isArray(files) && files.length > 0) {
       // Validate files (but don't require at least one for updates)
       if (files.length > MAX_FILES) {
         throw new BadRequestException(`Maximum ${MAX_FILES} images allowed`);

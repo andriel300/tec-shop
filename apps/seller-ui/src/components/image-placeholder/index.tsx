@@ -31,13 +31,13 @@ const enhancementTransformation = (
 };
 
 const ImagePlaceHolder = ({
-  size,
+  // size,
   small,
   onImageChange,
   onRemove,
   defaultImage = null,
   index = 0,
-  setOpenImageModal,
+  // setOpenImageModal,
   onImageUploaded,
 }: {
   size: string;
