@@ -11,7 +11,7 @@ export class StripeService {
   private readonly logger = new Logger(StripeService.name);
   private stripe: Stripe;
 
-  private readonly isProduction = process.env.NODE_ENV === 'production';
+  private readonly isProduction = this.configService.get('NODE_ENV') === 'production';
 
   constructor(
     private configService: ConfigService,

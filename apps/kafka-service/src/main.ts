@@ -92,7 +92,19 @@ async function bootstrap() {
       },
     });
 
-    app.enableShutdownHooks();
+    const gracefulShutdown = async (signal: string) => {
+      logger.log(`Received ${signal}, starting graceful shutdown`);
+      const forceExit = setTimeout(() => {
+        logger.error('Forced exit after 30s timeout');
+        process.exit(1);
+      }, 30_000);
+      forceExit.unref();
+      await app.close();
+      clearTimeout(forceExit);
+    };
+    process.once('SIGTERM', () => { void gracefulShutdown('SIGTERM'); });
+    process.once('SIGINT', () => { void gracefulShutdown('SIGINT'); });
+
     await app.startAllMicroservices();
     const metricsPort = parseInt(process.env.KAFKA_SERVICE_METRICS_PORT ?? '9009', 10);
     await app.listen(metricsPort, '0.0.0.0');
@@ -110,12 +122,12 @@ async function bootstrap() {
 }
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  Logger.error(`Unhandled Rejection at: ${String(promise)}, reason: ${String(reason)}`, undefined, 'Bootstrap');
   process.exit(1);
 });
 
 process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
+  Logger.error('Uncaught Exception', error instanceof Error ? error.stack : String(error), 'Bootstrap');
   process.exit(1);
 });
 

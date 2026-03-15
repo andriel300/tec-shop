@@ -237,7 +237,18 @@ For issues or questions, please contact our development team.
   }
 
   const port = process.env.PORT || 8080;
-  app.enableShutdownHooks();
+  const gracefulShutdown = async (signal: string) => {
+    Logger.log(`Received ${signal}, starting graceful shutdown`, 'Bootstrap');
+    const forceExit = setTimeout(() => {
+      Logger.error('Forced exit after 30s timeout', undefined, 'Bootstrap');
+      process.exit(1);
+    }, 30_000);
+    forceExit.unref();
+    await app.close();
+    clearTimeout(forceExit);
+  };
+  process.once('SIGTERM', () => { void gracefulShutdown('SIGTERM'); });
+  process.once('SIGINT', () => { void gracefulShutdown('SIGINT'); });
   await app.listen(port);
   Logger.log(
     `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`
@@ -248,12 +259,12 @@ For issues or questions, please contact our development team.
 }
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  Logger.error(`Unhandled Rejection at: ${String(promise)}, reason: ${String(reason)}`, undefined, 'Bootstrap');
   process.exit(1);
 });
 
 process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
+  Logger.error('Uncaught Exception', error instanceof Error ? error.stack : String(error), 'Bootstrap');
   process.exit(1);
 });
 

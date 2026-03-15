@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { ProductController } from './product.controller';
@@ -24,33 +25,45 @@ function loadGatewayCerts(): { key: Buffer; cert: Buffer; ca: Buffer; rejectUnau
 @Module({
   imports: [
     ImageKitModule.forRoot(),
-    ClientsModule.register([
+    ClientsModule.registerAsync([
       {
         name: 'PRODUCT_SERVICE',
-        transport: Transport.TCP,
-        options: {
-          host: process.env.PRODUCT_SERVICE_HOST || 'localhost',
-          port: parseInt(process.env.PRODUCT_SERVICE_PORT || '6004', 10),
-          tlsOptions: loadGatewayCerts(),
-        },
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: (config: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: config.get('PRODUCT_SERVICE_HOST', 'localhost'),
+            port: parseInt(config.get('PRODUCT_SERVICE_PORT', '6004'), 10),
+            tlsOptions: loadGatewayCerts(),
+          },
+        }),
       },
       {
         name: 'ORDER_SERVICE',
-        transport: Transport.TCP,
-        options: {
-          host: process.env.ORDER_SERVICE_HOST || 'localhost',
-          port: parseInt(process.env.ORDER_SERVICE_PORT || '6005', 10),
-          tlsOptions: loadGatewayCerts(),
-        },
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: (config: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: config.get('ORDER_SERVICE_HOST', 'localhost'),
+            port: parseInt(config.get('ORDER_SERVICE_PORT', '6005'), 10),
+            tlsOptions: loadGatewayCerts(),
+          },
+        }),
       },
       {
         name: 'USER_SERVICE',
-        transport: Transport.TCP,
-        options: {
-          host: process.env.USER_SERVICE_HOST || 'localhost',
-          port: parseInt(process.env.USER_SERVICE_PORT || '6002', 10),
-          tlsOptions: loadGatewayCerts(),
-        },
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: (config: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: config.get('USER_SERVICE_HOST', 'localhost'),
+            port: parseInt(config.get('USER_SERVICE_PORT', '6002'), 10),
+            tlsOptions: loadGatewayCerts(),
+          },
+        }),
       },
     ]),
   ],

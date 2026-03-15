@@ -2,6 +2,7 @@ import { Controller, Post, Headers, Inject, BadRequestException, Logger, Req } f
 import type { RawBodyRequest } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiTags, ApiExcludeEndpoint } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import type { Request } from 'express';
 
@@ -13,9 +14,10 @@ export class StripeWebhookController {
 
   constructor(
     @Inject('SELLER_SERVICE') private readonly sellerService: ClientProxy,
-    @Inject('ORDER_SERVICE') private readonly orderService: ClientProxy
+    @Inject('ORDER_SERVICE') private readonly orderService: ClientProxy,
+    private readonly configService: ConfigService
   ) {
-    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
     if (!stripeSecretKey) {
       throw new Error('STRIPE_SECRET_KEY is required for webhook verification');
     }
@@ -31,7 +33,7 @@ export class StripeWebhookController {
     @Req() request: RawBodyRequest<Request>,
     @Headers('stripe-signature') signature: string
   ) {
-    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    const endpointSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET');
 
     if (!endpointSecret) {
       this.logger.warn('STRIPE_WEBHOOK_SECRET not configured - webhook processing disabled');

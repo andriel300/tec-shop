@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { OrderController } from './order.controller';
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -22,24 +23,32 @@ function loadGatewayCerts(): { key: Buffer; cert: Buffer; ca: Buffer; rejectUnau
 
 @Module({
   imports: [
-    ClientsModule.register([
+    ClientsModule.registerAsync([
       {
         name: 'ORDER_SERVICE',
-        transport: Transport.TCP,
-        options: {
-          host: process.env.ORDER_SERVICE_HOST || 'localhost',
-          port: parseInt(process.env.ORDER_SERVICE_PORT || '6005', 10),
-          tlsOptions: loadGatewayCerts(),
-        },
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: (config: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: config.get('ORDER_SERVICE_HOST', 'localhost'),
+            port: parseInt(config.get('ORDER_SERVICE_PORT', '6005'), 10),
+            tlsOptions: loadGatewayCerts(),
+          },
+        }),
       },
       {
         name: 'SELLER_SERVICE',
-        transport: Transport.TCP,
-        options: {
-          host: process.env.SELLER_SERVICE_HOST || 'localhost',
-          port: parseInt(process.env.SELLER_SERVICE_PORT || '6003', 10),
-          tlsOptions: loadGatewayCerts(),
-        },
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: (config: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: config.get('SELLER_SERVICE_HOST', 'localhost'),
+            port: parseInt(config.get('SELLER_SERVICE_PORT', '6003'), 10),
+            tlsOptions: loadGatewayCerts(),
+          },
+        }),
       },
     ]),
   ],

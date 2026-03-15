@@ -9,7 +9,8 @@ import {
   WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Injectable, Logger, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Injectable, Logger, UsePipes, ValidationPipe, OnApplicationShutdown } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import type { LogEntryResponseDto, LogLevel, LogCategory } from '@tec-shop/dto';
 import { LoggerCoreService } from './logger-core.service';
@@ -60,7 +61,7 @@ const socketToAdmin = new Map<string, AdminSocketInfo>();
   },
 })
 @UsePipes(new ValidationPipe())
-export class LoggerGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class LoggerGateway implements OnGatewayConnection, OnGatewayDisconnect, OnApplicationShutdown {
   @WebSocketServer()
   server!: Server;
 
@@ -68,11 +69,17 @@ export class LoggerGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   constructor(
     private readonly jwtService: JwtService,
-    private readonly loggerCore: LoggerCoreService
+    private readonly loggerCore: LoggerCoreService,
+    private readonly configService: ConfigService
   ) {}
 
+  onApplicationShutdown(): void {
+    this.server.disconnectSockets();
+    this.logger.log('WebSocket server disconnected all clients');
+  }
+
   private extractTokenFromCookies(cookieHeader: string): string | null {
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction = this.configService.get('NODE_ENV') === 'production';
     const prefix = isProduction ? '__Host-' : '';
     const cookieName = `${prefix}admin_access_token`;
 

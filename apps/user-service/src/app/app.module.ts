@@ -2,7 +2,11 @@ import { Module } from '@nestjs/common';
 import { APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
 import { LoggingInterceptor, ErrorInterceptor, AllExceptionsFilter } from '@tec-shop/interceptor';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { UserProfileService } from './user-profile.service';
+import { UserFollowService } from './user-follow.service';
+import { ShopFollowService } from './shop-follow.service';
+import { ImageService } from './image.service';
+import { ShippingAddressService } from './shipping-address.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { LoggerModule } from 'nestjs-pino';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -52,7 +56,11 @@ import { MetricsModule, HealthModule } from '@tec-shop/metrics';
   ],
   controllers: [AppController],
   providers: [
-    AppService,
+    UserProfileService,
+    UserFollowService,
+    ShopFollowService,
+    ImageService,
+    ShippingAddressService,
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,

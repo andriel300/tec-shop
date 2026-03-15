@@ -1,12 +1,19 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private readonly isDevelopment = process.env.NODE_ENV !== 'production';
 
-  constructor(private readonly mailerService: MailerService) {}
+  constructor(
+    private readonly mailerService: MailerService,
+    private readonly configService: ConfigService
+  ) {}
+
+  private get isDevelopment(): boolean {
+    return this.configService.get('NODE_ENV') !== 'production';
+  }
 
   async sendOtp(to: string, otp: string): Promise<void> {
     // Log OTP in development for easy testing

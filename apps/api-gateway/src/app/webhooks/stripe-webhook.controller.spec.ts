@@ -6,6 +6,7 @@ import type { RawBodyRequest } from '@nestjs/common';
 import type { Request } from 'express';
 import Stripe from 'stripe';
 import { of } from 'rxjs';
+import { ConfigService } from '@nestjs/config';
 
 describe('StripeWebhookController', () => {
   let controller: StripeWebhookController;
@@ -45,6 +46,12 @@ describe('StripeWebhookController', () => {
             emit: jest.fn().mockReturnValue(of(undefined)),
           },
         },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn((key: string) => process.env[key]),
+          },
+        },
       ],
     }).compile();
 
@@ -67,7 +74,8 @@ describe('StripeWebhookController', () => {
 
       // Act & Assert
       expect(() => {
-        new StripeWebhookController({} as ClientProxy, {} as ClientProxy);
+        const configService = { get: jest.fn().mockReturnValue(undefined) } as unknown as ConfigService;
+        new StripeWebhookController({} as ClientProxy, {} as ClientProxy, configService);
       }).toThrow('STRIPE_SECRET_KEY is required for webhook verification');
 
       // Cleanup

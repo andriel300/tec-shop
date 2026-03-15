@@ -1,5 +1,4 @@
 import { Controller } from '@nestjs/common';
-import { AppService } from './app.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import type {
   UpdateUserDto,
@@ -7,26 +6,33 @@ import type {
   CreateShippingAddressDto,
   UpdateShippingAddressDto,
 } from '@tec-shop/dto';
+import { UserProfileService } from './user-profile.service';
+import { ShopFollowService } from './shop-follow.service';
+import { ShippingAddressService } from './shipping-address.service';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(
+    private readonly userProfileService: UserProfileService,
+    private readonly shopFollowService: ShopFollowService,
+    private readonly shippingAddressService: ShippingAddressService,
+  ) {}
 
   @MessagePattern('get-user-profile')
   getUserProfile(@Payload() userId: string) {
-    return this.appService.getUserProfile(userId);
+    return this.userProfileService.getUserProfile(userId);
   }
 
   @MessagePattern('update-user-profile')
   updateUserProfile(
     @Payload() payload: { userId: string; data: UpdateUserDto }
   ) {
-    return this.appService.updateUserProfile(payload.userId, payload.data);
+    return this.userProfileService.updateUserProfile(payload.userId, payload.data);
   }
 
   @MessagePattern('create-user-profile')
   createUserProfile(@Payload() data: CreateUserProfileDto) {
-    return this.appService.createUserProfile(data);
+    return this.userProfileService.createUserProfile(data);
   }
 
   // Shipping Address Message Patterns
@@ -34,17 +40,17 @@ export class AppController {
   createShippingAddress(
     @Payload() payload: { userId: string; data: CreateShippingAddressDto }
   ) {
-    return this.appService.createShippingAddress(payload.userId, payload.data);
+    return this.shippingAddressService.createShippingAddress(payload.userId, payload.data);
   }
 
   @MessagePattern('get-shipping-addresses')
   getShippingAddresses(@Payload() userId: string) {
-    return this.appService.getShippingAddresses(userId);
+    return this.shippingAddressService.getShippingAddresses(userId);
   }
 
   @MessagePattern('get-shipping-address')
   getShippingAddress(@Payload() payload: { userId: string; addressId: string }) {
-    return this.appService.getShippingAddress(payload.userId, payload.addressId);
+    return this.shippingAddressService.getShippingAddress(payload.userId, payload.addressId);
   }
 
   @MessagePattern('update-shipping-address')
@@ -56,7 +62,7 @@ export class AppController {
       data: UpdateShippingAddressDto;
     }
   ) {
-    return this.appService.updateShippingAddress(
+    return this.shippingAddressService.updateShippingAddress(
       payload.userId,
       payload.addressId,
       payload.data
@@ -67,14 +73,14 @@ export class AppController {
   deleteShippingAddress(
     @Payload() payload: { userId: string; addressId: string }
   ) {
-    return this.appService.deleteShippingAddress(payload.userId, payload.addressId);
+    return this.shippingAddressService.deleteShippingAddress(payload.userId, payload.addressId);
   }
 
   @MessagePattern('set-default-shipping-address')
   setDefaultShippingAddress(
     @Payload() payload: { userId: string; addressId: string }
   ) {
-    return this.appService.setDefaultShippingAddress(
+    return this.shippingAddressService.setDefaultShippingAddress(
       payload.userId,
       payload.addressId
     );
@@ -84,32 +90,32 @@ export class AppController {
   copyShippingAddress(
     @Payload() payload: { userId: string; addressId: string }
   ) {
-    return this.appService.copyShippingAddress(payload.userId, payload.addressId);
+    return this.shippingAddressService.copyShippingAddress(payload.userId, payload.addressId);
   }
 
   // Shop Follow Message Patterns
   @MessagePattern('user-follow-shop')
   followShop(@Payload() payload: { userId: string; shopId: string }) {
-    return this.appService.followShop(payload.userId, payload.shopId);
+    return this.shopFollowService.followShop(payload.userId, payload.shopId);
   }
 
   @MessagePattern('user-unfollow-shop')
   unfollowShop(@Payload() payload: { userId: string; shopId: string }) {
-    return this.appService.unfollowShop(payload.userId, payload.shopId);
+    return this.shopFollowService.unfollowShop(payload.userId, payload.shopId);
   }
 
   @MessagePattern('user-get-shop-followers-count')
   getShopFollowersCount(@Payload() shopId: string) {
-    return this.appService.getShopFollowersCount(shopId);
+    return this.shopFollowService.getShopFollowersCount(shopId);
   }
 
   @MessagePattern('user-check-shop-follow')
   checkUserFollowsShop(@Payload() payload: { userId: string; shopId: string }) {
-    return this.appService.checkUserFollowsShop(payload.userId, payload.shopId);
+    return this.shopFollowService.checkUserFollowsShop(payload.userId, payload.shopId);
   }
 
   @MessagePattern('user-get-followed-shops')
   getUserFollowedShops(@Payload() userId: string) {
-    return this.appService.getUserFollowedShops(userId);
+    return this.shopFollowService.getUserFollowedShops(userId);
   }
 }

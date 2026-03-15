@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { RecommendationController } from './recommendation.controller';
@@ -22,24 +23,32 @@ function loadGatewayCerts(): { key: Buffer; cert: Buffer; ca: Buffer; rejectUnau
 
 @Module({
   imports: [
-    ClientsModule.register([
+    ClientsModule.registerAsync([
       {
         name: 'RECOMMENDATION_SERVICE',
-        transport: Transport.TCP,
-        options: {
-          host: process.env.RECOMMENDATION_SERVICE_HOST || 'localhost',
-          port: parseInt(process.env.RECOMMENDATION_SERVICE_PORT || '6009', 10),
-          tlsOptions: loadGatewayCerts(),
-        },
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: (config: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: config.get('RECOMMENDATION_SERVICE_HOST', 'localhost'),
+            port: parseInt(config.get('RECOMMENDATION_SERVICE_PORT', '6009'), 10),
+            tlsOptions: loadGatewayCerts(),
+          },
+        }),
       },
       {
         name: 'PRODUCT_SERVICE',
-        transport: Transport.TCP,
-        options: {
-          host: process.env.PRODUCT_SERVICE_HOST || 'localhost',
-          port: parseInt(process.env.PRODUCT_SERVICE_PORT || '6004', 10),
-          tlsOptions: loadGatewayCerts(),
-        },
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: (config: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: config.get('PRODUCT_SERVICE_HOST', 'localhost'),
+            port: parseInt(config.get('PRODUCT_SERVICE_PORT', '6004'), 10),
+            tlsOptions: loadGatewayCerts(),
+          },
+        }),
       },
     ]),
   ],

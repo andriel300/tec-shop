@@ -11,7 +11,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
-import { Injectable, Logger, UsePipes, ValidationPipe, Inject } from '@nestjs/common';
+import { Injectable, Logger, UsePipes, ValidationPipe, Inject, OnApplicationShutdown } from '@nestjs/common';
 import type { Redis } from 'ioredis';
 import { JwtService } from '@nestjs/jwt';
 import { KafkaService } from '../kafka/kafka.service';
@@ -69,7 +69,7 @@ interface TypingPayload {
   },
 })
 @UsePipes(new ValidationPipe())
-export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnApplicationShutdown {
   @WebSocketServer()
   server!: Server;
 
@@ -89,6 +89,11 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     const subClient = this.redisClient.duplicate();
     server.adapter(createAdapter(pubClient, subClient));
     this.logger.log('Socket.IO Redis adapter initialized');
+  }
+
+  onApplicationShutdown(): void {
+    this.server.disconnectSockets();
+    this.logger.log('WebSocket server disconnected all clients');
   }
 
   /**

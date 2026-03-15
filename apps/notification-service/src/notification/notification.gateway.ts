@@ -11,7 +11,8 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
-import { Injectable, Logger, UsePipes, ValidationPipe, Inject } from '@nestjs/common';
+import { Injectable, Logger, UsePipes, ValidationPipe, Inject, OnApplicationShutdown } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import type { Redis } from 'ioredis';
 import { JwtService } from '@nestjs/jwt';
 import type { NotificationResponseDto } from '@tec-shop/dto';
@@ -69,7 +70,7 @@ const COOKIE_NAMES = [
 })
 @UsePipes(new ValidationPipe())
 export class NotificationGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnApplicationShutdown
 {
   @WebSocketServer()
   server!: Server;
@@ -80,7 +81,8 @@ export class NotificationGateway
   constructor(
     private readonly jwtService: JwtService,
     private readonly notificationCore: NotificationCoreService,
-    @Inject('REDIS_CLIENT') private readonly redisClient: Redis
+    @Inject('REDIS_CLIENT') private readonly redisClient: Redis,
+    private readonly configService: ConfigService
   ) {}
 
   afterInit(server: Server) {
@@ -90,8 +92,13 @@ export class NotificationGateway
     this.logger.log('Socket.IO Redis adapter initialized');
   }
 
+  onApplicationShutdown(): void {
+    this.server.disconnectSockets();
+    this.logger.log('WebSocket server disconnected all clients');
+  }
+
   private extractTokenFromCookies(cookieHeader: string): string | null {
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction = this.configService.get('NODE_ENV') === 'production';
     const prefix = isProduction ? '__Host-' : '';
 
     const cookies = cookieHeader.split(';');

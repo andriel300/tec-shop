@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AppService } from './app.service';
+import { UserProfileService } from './user-profile.service';
 import { UserPrismaService } from '../prisma/prisma.service';
 import { LogProducerService } from '@tec-shop/logger-producer';
 import { CreateUserProfileDto, UpdateUserDto } from '@tec-shop/dto';
 
-describe('AppService', () => {
-  let service: AppService;
+describe('UserProfileService', () => {
+  let service: UserProfileService;
   let prisma: UserPrismaService;
 
   const mockUserProfile = {
@@ -25,7 +25,7 @@ describe('AppService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        AppService,
+        UserProfileService,
         {
           provide: UserPrismaService,
           useValue: {
@@ -50,7 +50,7 @@ describe('AppService', () => {
       ],
     }).compile();
 
-    service = module.get<AppService>(AppService);
+    service = module.get<UserProfileService>(UserProfileService);
     prisma = module.get<UserPrismaService>(UserPrismaService);
   });
 
