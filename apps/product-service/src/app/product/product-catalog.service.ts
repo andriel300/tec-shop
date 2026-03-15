@@ -11,8 +11,6 @@ import type {
   CreateProductDto,
   UpdateProductDto,
   ProductVariantDto,
-  CreateRatingDto,
-  UpdateRatingDto,
 } from '@tec-shop/dto';
 import { ProductPrismaService } from '../../prisma/prisma.service';
 import {
@@ -22,17 +20,15 @@ import {
 } from '@tec-shop/product-client';
 import { SellerServiceClient } from '../../clients/seller.client';
 import { LogProducerService } from '@tec-shop/logger-producer';
-import { NotificationProducerService } from '@tec-shop/notification-producer';
 
 @Injectable()
-export class ProductService {
-  private readonly logger = new Logger(ProductService.name);
+export class ProductCatalogService {
+  private readonly logger = new Logger(ProductCatalogService.name);
 
   constructor(
     private readonly prisma: ProductPrismaService,
     private readonly sellerClient: SellerServiceClient,
     private readonly logProducer: LogProducerService,
-    private readonly notificationProducer: NotificationProducerService,
   ) {}
 
   async create(
@@ -43,7 +39,6 @@ export class ProductService {
     try {
       this.logger.log(`Starting product creation for seller: ${sellerId}`);
 
-      // Extract shopId from productData (added by API Gateway)
       const { shopId } = createProductDto;
 
       if (!shopId) {
@@ -53,7 +48,6 @@ export class ProductService {
 
       this.logger.debug(`Verifying shop ownership - shopId: ${shopId}`);
 
-      // Verify shop exists and seller owns it
       const [shopExists, ownsShop] = await Promise.all([
         this.sellerClient.verifyShopExists(shopId),
         this.sellerClient.verifyShopOwnership(sellerId, shopId),
@@ -83,7 +77,6 @@ export class ProductService {
         throw new ForbiddenException('You do not have access to this shop');
       }
 
-      // Verify category exists
       this.logger.debug(
         `Verifying category exists - categoryId: ${createProductDto.categoryId}`
       );
@@ -100,7 +93,6 @@ export class ProductService {
         );
       }
 
-      // Verify brand if provided
       if (createProductDto.brandId) {
         this.logger.debug(
           `Verifying brand exists - brandId: ${createProductDto.brandId}`
@@ -117,7 +109,6 @@ export class ProductService {
         }
       }
 
-      // Sanitize data types FIRST (multipart/form-data sends everything as strings)
       this.logger.debug(`Sanitizing product data - price: ${createProductDto.price} (${typeof createProductDto.price}), stock: ${createProductDto.stock} (${typeof createProductDto.stock})`);
       const sanitizedData = this.sanitizeProductData(createProductDto) as CreateProductDto & {
         price: number | undefined;
@@ -128,18 +119,15 @@ export class ProductService {
         isActive: boolean;
       };
 
-      // Validate required numeric fields
       if (!sanitizedData.price || sanitizedData.price <= 0) {
         this.logger.error('Invalid price value');
         throw new BadRequestException('Product price is required and must be greater than 0');
       }
 
-      // Generate slug from SEO slug or product name
       this.logger.debug(`Generating slug for product: ${sanitizedData.name}`);
       const slug =
         sanitizedData.seo?.slug || this.generateSlug(sanitizedData.name);
 
-      // Check if slug already exists
       this.logger.debug(`Checking if slug already exists: ${slug}`);
       const existingProduct = await this.prisma.product.findUnique({
         where: { slug },
@@ -152,7 +140,6 @@ export class ProductService {
         );
       }
 
-      // Validate variants for variable products
       if (sanitizedData.productType === 'variable') {
         this.logger.debug('Validating variants for variable product');
         if (
@@ -165,7 +152,6 @@ export class ProductService {
           );
         }
 
-        // Validate unique SKUs
         const skus = sanitizedData.variants.map((v: { sku: string }) => v.sku);
         const duplicates = skus.filter(
           (sku: string, index: number) => skus.indexOf(sku) !== index
@@ -177,7 +163,6 @@ export class ProductService {
           );
         }
 
-        // Check if SKUs already exist
         const existingSkus = await this.prisma.productVariant.findMany({
           where: { sku: { in: skus } },
         });
@@ -192,15 +177,12 @@ export class ProductService {
         }
       }
 
-      // Create product with variants in a transaction
       this.logger.log('Creating product in database transaction');
 
-      // Automatically set hasVariants based on variants array
       const hasVariants =
         sanitizedData.variants && sanitizedData.variants.length > 0;
 
       const product = await this.prisma.$transaction(async (tx) => {
-        // Create the product
         this.logger.debug('Creating product record');
         const newProduct = await tx.product.create({
           data: {
@@ -227,13 +209,12 @@ export class ProductService {
             publishDate: sanitizedData.publishDate,
             isFeatured: sanitizedData.isFeatured,
             isActive: sanitizedData.isActive,
-            deletedAt: null, // Explicitly set to null for soft-delete support
+            deletedAt: null,
           },
         });
 
         this.logger.debug(`Product record created - ID: ${newProduct.id}`);
 
-        // Create variants if it's a variable product
         if (hasVariants && Array.isArray(sanitizedData.variants)) {
           this.logger.debug(
             `Creating ${sanitizedData.variants.length} product variants`
@@ -262,7 +243,6 @@ export class ProductService {
         metadata: { action: 'create_product', productId: product.id, shopId },
       });
 
-      // Fetch the complete product with variants
       this.logger.debug('Fetching complete product with relations');
       return this.findOne(product.id, sellerId);
     } catch (error) {
@@ -301,7 +281,6 @@ export class ProductService {
     const products = await this.prisma.product.findMany({
       where: {
         shopId,
-        // Only show non-deleted products
         deletedAt: null,
         ...(filters?.categoryId && { categoryId: filters.categoryId }),
         ...(filters?.brandId && { brandId: filters.brandId }),
@@ -354,7 +333,6 @@ export class ProductService {
     const products = await this.prisma.product.findMany({
       where: {
         shopId,
-        // Only show deleted products (deletedAt is not null)
         deletedAt: { not: null },
         ...(filters?.categoryId && { categoryId: filters.categoryId }),
         ...(filters?.brandId && { brandId: filters.brandId }),
@@ -370,7 +348,7 @@ export class ProductService {
         brand: true,
         variants: true,
       },
-      orderBy: { deletedAt: 'desc' }, // Most recently deleted first
+      orderBy: { deletedAt: 'desc' },
     });
 
     this.logger.debug(`findDeleted returning ${products.length} deleted products`);
@@ -394,7 +372,6 @@ export class ProductService {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
 
-    // Verify ownership via seller-service
     const ownsShop = await this.sellerClient.verifyShopOwnership(
       sellerId,
       product.shopId
@@ -412,15 +389,12 @@ export class ProductService {
     updateProductDto: UpdateProductDto,
     newImagePaths?: string[]
   ) {
-    // Verify ownership first (throws if not owner)
     await this.findOne(id, sellerId);
 
     const updateData: Record<string, unknown> = {};
 
-    // Map all updatable fields
     if (updateProductDto.name !== undefined) {
       updateData.name = updateProductDto.name;
-      // Update slug if name changed and no custom SEO slug
       if (!updateProductDto.seo?.slug) {
         updateData.slug = this.generateSlug(updateProductDto.name);
       }
@@ -429,7 +403,6 @@ export class ProductService {
     if (updateProductDto.description !== undefined)
       updateData.description = updateProductDto.description;
     if (updateProductDto.categoryId !== undefined) {
-      // Verify category exists
       const category = await this.prisma.category.findUnique({
         where: { id: updateProductDto.categoryId },
       });
@@ -443,7 +416,6 @@ export class ProductService {
 
     if (updateProductDto.brandId !== undefined) {
       if (updateProductDto.brandId) {
-        // Verify brand exists
         const brand = await this.prisma.brand.findUnique({
           where: { id: updateProductDto.brandId },
         });
@@ -497,29 +469,23 @@ export class ProductService {
     if (updateProductDto.isActive !== undefined)
       updateData.isActive = updateProductDto.isActive;
 
-    // If new images provided, replace old ones
     if (newImagePaths && newImagePaths.length > 0) {
       updateData.images = newImagePaths;
     }
 
-    // Handle variants update in transaction
     if (updateProductDto.variants !== undefined) {
-      // Automatically set hasVariants based on variants array
       updateData.hasVariants = updateProductDto.variants.length > 0;
 
       return this.prisma.$transaction(async (tx) => {
-        // Update product
         const updatedProduct = await tx.product.update({
           where: { id },
           data: updateData,
         });
 
-        // Delete existing variants
         await tx.productVariant.deleteMany({
           where: { productId: id },
         });
 
-        // Create new variants
         if (updateProductDto.variants && updateProductDto.variants.length > 0) {
           await tx.productVariant.createMany({
             data: updateProductDto.variants.map(
@@ -560,11 +526,8 @@ export class ProductService {
   }
 
   async remove(id: string, sellerId: string) {
-    // Verify ownership first
     await this.findOne(id, sellerId);
 
-    // Soft delete product (set deletedAt timestamp)
-    // Product will be permanently deleted after 24 hours by scheduled task
     const result = await this.prisma.product.update({
       where: { id },
       data: { deletedAt: new Date() },
@@ -579,7 +542,6 @@ export class ProductService {
   }
 
   async restore(id: string, sellerId: string) {
-    // Find the product (including deleted ones)
     const product = await this.prisma.product.findUnique({
       where: { id },
     });
@@ -588,7 +550,6 @@ export class ProductService {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
 
-    // Verify ownership via seller-service
     const ownsShop = await this.sellerClient.verifyShopOwnership(
       sellerId,
       product.shopId
@@ -597,12 +558,10 @@ export class ProductService {
       throw new ForbiddenException('You do not have access to this product');
     }
 
-    // Check if product is actually deleted
     if (!product.deletedAt) {
       throw new BadRequestException('Product is not deleted');
     }
 
-    // Restore product by setting deletedAt to null
     this.logger.log(`Restoring product ${id} for seller ${sellerId}`);
     const restored = await this.prisma.product.update({
       where: { id },
@@ -622,10 +581,6 @@ export class ProductService {
     return restored;
   }
 
-  /**
-   * Find multiple products by their IDs (for recommendation enrichment).
-   * Returns only active, non-deleted products with fields needed by ProductCard.
-   */
   async findByIds(ids: string[]) {
     return this.prisma.product.findMany({
       where: {
@@ -660,11 +615,6 @@ export class ProductService {
     });
   }
 
-  /**
-   * Find public products for marketplace frontend
-   * Returns only published, public, active, non-deleted products
-   * Supports comprehensive filtering, sorting, and pagination
-   */
   async findPublicProducts(filters: {
     categoryId?: string;
     brandId?: string;
@@ -720,15 +670,12 @@ export class ProductService {
       })}`
     );
 
-    // Build where clause with public visibility rules
     const where: Record<string, unknown> = {
-      // Public visibility rules (only return products visible to public)
       status: ProductStatus.PUBLISHED,
       visibility: ProductVisibility.PUBLIC,
       isActive: true,
       deletedAt: null,
 
-      // Filters
       ...(categoryId && {
         categoryId: categoryId.includes(',')
           ? { in: categoryId.split(',').map((id) => id.trim()) }
@@ -743,7 +690,6 @@ export class ProductService {
         ),
       }),
 
-      // Price range
       ...(minPrice !== undefined &&
         maxPrice !== undefined && {
           price: { gte: minPrice, lte: maxPrice },
@@ -757,10 +703,8 @@ export class ProductService {
           price: { lte: maxPrice },
         }),
 
-      // Tags filter (array contains any of the provided tags)
       ...(tags && tags.length > 0 && { tags: { hasSome: tags } }),
 
-      // Search (case-insensitive search in name, description, and tags)
       ...(search && {
         OR: [
           { name: { contains: search, mode: 'insensitive' as const } },
@@ -770,7 +714,6 @@ export class ProductService {
       }),
     };
 
-    // Filter for products on sale (salePrice exists and is less than regular price)
     if (onSale === true) {
       where.AND = [
         ...(Array.isArray(where.AND) ? where.AND : []),
@@ -780,15 +723,10 @@ export class ProductService {
       ];
     }
 
-    // Variant filtering for colors and sizes
-    // Note: MongoDB has limited JSON query support in Prisma
-    // We'll filter products with variants and then filter results in memory
     if ((colors && colors.length > 0) || (sizes && sizes.length > 0)) {
-      // Only get products that have variants
       where.hasVariants = true;
     }
 
-    // Sort mapping
     const orderByMap: Record<string, Record<string, string>> = {
       newest: { createdAt: 'desc' },
       'price-asc': { price: 'asc' },
@@ -805,13 +743,10 @@ export class ProductService {
     const hasVariantFilters =
       (colors && colors.length > 0) || (sizes && sizes.length > 0);
 
-    // If we have variant filters, we need to fetch all products and filter in-memory
-    // Otherwise, use normal pagination
     let products;
     let total: number;
 
     if (hasVariantFilters) {
-      // Fetch ALL matching products (without pagination) for accurate filtering
       const allProducts = await this.prisma.product.findMany({
         where,
         include: {
@@ -824,7 +759,6 @@ export class ProductService {
         orderBy,
       });
 
-      // Filter by variant attributes in-memory
       let filteredProducts = allProducts;
 
       if (colors && colors.length > 0) {
@@ -858,11 +792,9 @@ export class ProductService {
         });
       }
 
-      // Now paginate the filtered results
       total = filteredProducts.length;
       products = filteredProducts.slice(offset, offset + limit);
     } else {
-      // No variant filters - use efficient database pagination
       const [fetchedProducts, count] = await Promise.all([
         this.prisma.product.findMany({
           where,
@@ -897,14 +829,9 @@ export class ProductService {
     };
   }
 
-  /**
-   * Get available filter options from actual product variants
-   * Returns unique colors and sizes that exist in active product variants
-   */
   async getAvailableFilters() {
     this.logger.debug('Getting available filter options from product variants');
 
-    // Get all active variants from published, public, active products
     const variants = await this.prisma.productVariant.findMany({
       where: {
         isActive: true,
@@ -920,14 +847,12 @@ export class ProductService {
       },
     });
 
-    // Extract unique colors and sizes from variant attributes
     const colorsSet = new Set<string>();
     const sizesSet = new Set<string>();
 
     variants.forEach((variant) => {
       const attrs = variant.attributes as Record<string, unknown>;
 
-      // Check for Color attribute (case-insensitive)
       Object.keys(attrs).forEach((key) => {
         const lowerKey = key.toLowerCase();
         const value = attrs[key];
@@ -953,17 +878,12 @@ export class ProductService {
     };
   }
 
-  /**
-   * Find a single public product by slug
-   * Returns only published, public, active, non-deleted products
-   */
   async findPublicProductBySlug(slug: string) {
     this.logger.debug(`findPublicProductBySlug called with slug: ${slug}`);
 
     const product = await this.prisma.product.findFirst({
       where: {
         slug,
-        // Public visibility rules (only return products visible to public)
         status: ProductStatus.PUBLISHED,
         visibility: ProductVisibility.PUBLIC,
         isActive: true,
@@ -1013,425 +933,6 @@ export class ProductService {
     return product;
   }
 
-  // ============================================
-  // Rating Methods
-  // ============================================
-
-  /**
-   * Create or update a product rating
-   * Users can only have one rating per product (enforced by unique constraint)
-   * Recalculates product averageRating and ratingCount in a transaction
-   */
-  async createRating(
-    productId: string,
-    userId: string,
-    createRatingDto: CreateRatingDto,
-    reviewData?: {
-      title?: string;
-      content?: string;
-      images?: string[];
-      reviewerName?: string;
-      reviewerAvatar?: string;
-    }
-  ) {
-    this.logger.log(
-      `Creating rating for product ${productId} by user ${userId} with ${createRatingDto.rating} stars`
-    );
-
-    // Verify product exists and is published
-    const product = await this.prisma.product.findUnique({
-      where: { id: productId },
-    });
-
-    if (!product) {
-      this.logger.error(`Product not found: ${productId}`);
-      throw new NotFoundException('Product not found');
-    }
-
-    if (product.status !== ProductStatus.PUBLISHED) {
-      this.logger.error(`Cannot rate unpublished product: ${productId}`);
-      throw new BadRequestException('Cannot rate unpublished products');
-    }
-
-    // Use transaction to ensure consistency
-    try {
-      const result = await this.prisma.$transaction(async (tx) => {
-        // Try to create new rating, or update if exists (upsert)
-        const rating = await tx.productRating.upsert({
-          where: {
-            productId_userId: {
-              productId,
-              userId,
-            },
-          },
-          create: {
-            productId,
-            userId,
-            rating: createRatingDto.rating,
-            title: reviewData?.title,
-            content: reviewData?.content,
-            images: reviewData?.images ?? [],
-            reviewerName: reviewData?.reviewerName,
-            reviewerAvatar: reviewData?.reviewerAvatar,
-          },
-          update: {
-            rating: createRatingDto.rating,
-            title: reviewData?.title,
-            content: reviewData?.content,
-            images: reviewData?.images ?? [],
-            reviewerName: reviewData?.reviewerName,
-            reviewerAvatar: reviewData?.reviewerAvatar,
-          },
-        });
-
-        // Recalculate product rating aggregates
-        const aggregates = await tx.productRating.aggregate({
-          where: { productId },
-          _avg: { rating: true },
-          _count: { rating: true },
-        });
-
-        // Update product with new aggregates
-        await tx.product.update({
-          where: { id: productId },
-          data: {
-            averageRating: aggregates._avg.rating || 0,
-            ratingCount: aggregates._count.rating || 0,
-          },
-        });
-
-        return rating;
-      });
-
-      this.logger.log(
-        `Rating created/updated successfully - ratingId: ${result.id}`
-      );
-      this.logProducer.info('product-service', LogCategory.PRODUCT, 'Product rating created', {
-        userId,
-        metadata: { action: 'create_rating', productId, rating: createRatingDto.rating },
-      });
-
-      // Send notification to seller when review has content
-      if (reviewData?.content) {
-        try {
-          const shopInfo = await this.sellerClient.getShop(product.shopId);
-          // notifySeller expects the auth User ID (authId), not the Seller record ID
-          const seller = shopInfo?.seller as Record<string, unknown> | undefined;
-          const sellerAuthId = seller?.authId as string | undefined;
-          if (sellerAuthId) {
-            await this.notificationProducer.notifySeller(
-              sellerAuthId,
-              'product.new_rating',
-              {
-                productName: product.name,
-                rating: String(createRatingDto.rating),
-                reviewerName: reviewData?.reviewerName || 'A customer',
-              },
-              { productId, ratingId: result.id, productSlug: product.slug }
-            );
-          }
-        } catch (notifError) {
-          this.logger.warn(
-            `Failed to send review notification: ${notifError instanceof Error ? notifError.message : 'Unknown error'}`
-          );
-        }
-      }
-
-      return result;
-    } catch (error) {
-      this.logger.error(
-        `Failed to create rating: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        error instanceof Error ? error.stack : undefined
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Update an existing rating
-   * Users can only update their own ratings
-   */
-  async updateRating(
-    ratingId: string,
-    userId: string,
-    updateRatingDto: UpdateRatingDto
-  ) {
-    this.logger.log(`Updating rating ${ratingId} by user ${userId}`);
-
-    // Find existing rating
-    const existingRating = await this.prisma.productRating.findUnique({
-      where: { id: ratingId },
-    });
-
-    if (!existingRating) {
-      this.logger.error(`Rating not found: ${ratingId}`);
-      throw new NotFoundException('Rating not found');
-    }
-
-    // Verify ownership
-    if (existingRating.userId !== userId) {
-      this.logger.error(
-        `User ${userId} attempted to update rating ${ratingId} owned by ${existingRating.userId}`
-      );
-      throw new ForbiddenException('You can only update your own ratings');
-    }
-
-    // Use transaction to update rating and recalculate aggregates
-    try {
-      const result = await this.prisma.$transaction(async (tx) => {
-        // Update rating
-        const updatedRating = await tx.productRating.update({
-          where: { id: ratingId },
-          data: { rating: updateRatingDto.rating },
-        });
-
-        // Recalculate product rating aggregates
-        const aggregates = await tx.productRating.aggregate({
-          where: { productId: existingRating.productId },
-          _avg: { rating: true },
-          _count: { rating: true },
-        });
-
-        // Update product with new aggregates
-        await tx.product.update({
-          where: { id: existingRating.productId },
-          data: {
-            averageRating: aggregates._avg.rating || 0,
-            ratingCount: aggregates._count.rating || 0,
-          },
-        });
-
-        return updatedRating;
-      });
-
-      this.logger.log(`Rating updated successfully - ratingId: ${result.id}`);
-      this.logProducer.info('product-service', LogCategory.PRODUCT, 'Product rating updated', {
-        userId,
-        metadata: { action: 'update_rating', ratingId, productId: existingRating.productId, rating: updateRatingDto.rating },
-      });
-
-      return result;
-    } catch (error) {
-      this.logger.error(
-        `Failed to update rating: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        error instanceof Error ? error.stack : undefined
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Delete a rating
-   * Users can only delete their own ratings
-   */
-  async deleteRating(ratingId: string, userId: string) {
-    this.logger.log(`Deleting rating ${ratingId} by user ${userId}`);
-
-    // Find existing rating
-    const existingRating = await this.prisma.productRating.findUnique({
-      where: { id: ratingId },
-    });
-
-    if (!existingRating) {
-      this.logger.error(`Rating not found: ${ratingId}`);
-      throw new NotFoundException('Rating not found');
-    }
-
-    // Verify ownership
-    if (existingRating.userId !== userId) {
-      this.logger.error(
-        `User ${userId} attempted to delete rating ${ratingId} owned by ${existingRating.userId}`
-      );
-      throw new ForbiddenException('You can only delete your own ratings');
-    }
-
-    // Use transaction to delete rating and recalculate aggregates
-    try {
-      await this.prisma.$transaction(async (tx) => {
-        // Delete rating
-        await tx.productRating.delete({
-          where: { id: ratingId },
-        });
-
-        // Recalculate product rating aggregates
-        const aggregates = await tx.productRating.aggregate({
-          where: { productId: existingRating.productId },
-          _avg: { rating: true },
-          _count: { rating: true },
-        });
-
-        // Update product with new aggregates
-        await tx.product.update({
-          where: { id: existingRating.productId },
-          data: {
-            averageRating: aggregates._avg.rating || 0,
-            ratingCount: aggregates._count.rating || 0,
-          },
-        });
-      });
-
-      this.logger.log(`Rating deleted successfully - ratingId: ${ratingId}`);
-      this.logProducer.info('product-service', LogCategory.PRODUCT, 'Product rating deleted', {
-        userId,
-        metadata: { action: 'delete_rating', ratingId, productId: existingRating.productId },
-      });
-
-      return { message: 'Rating deleted successfully' };
-    } catch (error) {
-      this.logger.error(
-        `Failed to delete rating: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        error instanceof Error ? error.stack : undefined
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Get user's rating for a specific product
-   * Returns null if user hasn't rated the product
-   */
-  async getUserRating(productId: string, userId: string) {
-    this.logger.debug(
-      `Getting rating for product ${productId} by user ${userId}`
-    );
-
-    const rating = await this.prisma.productRating.findUnique({
-      where: {
-        productId_userId: {
-          productId,
-          userId,
-        },
-      },
-    });
-
-    return rating;
-  }
-
-  /**
-   * Get paginated reviews for a product with rating distribution
-   */
-  async getProductReviews(
-    productId: string,
-    page = 1,
-    limit = 10,
-    sort: 'newest' | 'highest' | 'lowest' = 'newest'
-  ) {
-    this.logger.log(
-      `Getting reviews for product ${productId} - page: ${page}, limit: ${limit}, sort: ${sort}`
-    );
-
-    const skip = (page - 1) * limit;
-
-    const orderBy: Record<string, string> =
-      sort === 'highest'
-        ? { rating: 'desc' }
-        : sort === 'lowest'
-          ? { rating: 'asc' }
-          : { createdAt: 'desc' };
-
-    const [reviews, total, aggregates, distribution] = await Promise.all([
-      this.prisma.productRating.findMany({
-        where: { productId },
-        orderBy,
-        skip,
-        take: limit,
-      }),
-      this.prisma.productRating.count({
-        where: { productId },
-      }),
-      this.prisma.productRating.aggregate({
-        where: { productId },
-        _avg: { rating: true },
-        _count: { rating: true },
-      }),
-      this.prisma.productRating.groupBy({
-        by: ['rating'],
-        where: { productId },
-        _count: { rating: true },
-      }),
-    ]);
-
-    // Build rating distribution object { "1": 0, "2": 0, "3": 5, "4": 10, "5": 20 }
-    const ratingDistribution: Record<string, number> = {
-      '1': 0,
-      '2': 0,
-      '3': 0,
-      '4': 0,
-      '5': 0,
-    };
-    distribution.forEach((group) => {
-      ratingDistribution[String(group.rating)] = group._count.rating;
-    });
-
-    return {
-      reviews,
-      total,
-      page,
-      limit,
-      averageRating: aggregates._avg.rating || 0,
-      ratingCount: aggregates._count.rating || 0,
-      ratingDistribution,
-    };
-  }
-
-  /**
-   * Add a seller response to a review
-   * Verifies the review belongs to a product in the seller's shop
-   */
-  async addSellerResponse(
-    ratingId: string,
-    sellerId: string,
-    response: string
-  ) {
-    this.logger.log(`Seller ${sellerId} responding to rating ${ratingId}`);
-
-    // Find the rating and its product
-    const rating = await this.prisma.productRating.findUnique({
-      where: { id: ratingId },
-      include: { product: true },
-    });
-
-    if (!rating) {
-      throw new NotFoundException('Review not found');
-    }
-
-    // Verify the seller owns the shop that owns this product
-    const ownsShop = await this.sellerClient.verifyShopOwnership(
-      sellerId,
-      rating.product.shopId
-    );
-
-    if (!ownsShop) {
-      throw new ForbiddenException(
-        'You can only respond to reviews on your own products'
-      );
-    }
-
-    const updatedRating = await this.prisma.productRating.update({
-      where: { id: ratingId },
-      data: {
-        sellerResponse: response,
-        sellerResponseAt: new Date(),
-      },
-    });
-
-    this.logger.log(`Seller response added to rating ${ratingId}`);
-    this.logProducer.info('product-service', LogCategory.PRODUCT, 'Seller responded to review', {
-      userId: sellerId,
-      metadata: { action: 'seller_response', ratingId, productId: rating.productId },
-    });
-
-    return updatedRating;
-  }
-
-  // ============================================
-  // Helper Methods
-  // ============================================
-
-  /**
-   * Sanitize product data types from multipart/form-data
-   * Form data sends everything as strings, need to convert to proper types
-   */
   private sanitizeProductData(dto: Record<string, unknown>): Record<string, unknown> & {
     price: number | undefined;
     salePrice: number | undefined;
@@ -1440,7 +941,6 @@ export class ProductService {
     isFeatured: boolean;
     isActive: boolean;
   } {
-    // Helper to parse JSON strings safely
     const parseJSON = (value: unknown) => {
       if (typeof value === 'string') {
         try {
@@ -1452,14 +952,12 @@ export class ProductService {
       return value;
     };
 
-    // Helper to convert to number
     const toNumber = (value: unknown): number | undefined => {
       if (value === null || value === undefined || value === '') return undefined;
       const num = typeof value === 'string' ? parseFloat(value) : Number(value);
       return isNaN(num) ? undefined : num;
     };
 
-    // Helper to convert to boolean
     const toBoolean = (value: unknown): boolean => {
       if (typeof value === 'boolean') return value;
       if (typeof value === 'string') {
@@ -1470,44 +968,34 @@ export class ProductService {
 
     return {
       ...dto,
-      // Numbers
       price: toNumber(dto.price),
       salePrice: toNumber(dto.salePrice),
       stock: toNumber(dto.stock) || 0,
 
-      // Booleans
       hasVariants: toBoolean(dto.hasVariants),
       isFeatured: toBoolean(dto.isFeatured),
       isActive: dto.isActive !== undefined ? toBoolean(dto.isActive) : true,
 
-      // JSON objects
       attributes: parseJSON(dto.attributes) || undefined,
       shipping: parseJSON(dto.shipping) || undefined,
       seo: parseJSON(dto.seo) || undefined,
       inventory: parseJSON(dto.inventory) || undefined,
 
-      // Arrays
       tags: parseJSON(dto.tags) || [],
       variants: parseJSON(dto.variants) || [],
     };
   }
 
-  /**
-   * Generate URL-friendly slug from product name
-   */
   private generateSlug(name: string): string {
     return name
       .toLowerCase()
       .trim()
-      .replace(/[^\w\s-]/g, '') // Remove special characters
-      .replace(/\s+/g, '-') // Replace spaces with hyphens
-      .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
-      .concat(`-${Date.now()}`); // Add timestamp for uniqueness
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .concat(`-${Date.now()}`);
   }
 
-  /**
-   * Map product type from DTO to Prisma enum
-   */
   private mapProductType(
     type?: 'simple' | 'variable' | 'digital'
   ): ProductType {
@@ -1522,9 +1010,6 @@ export class ProductService {
     return mapping[type] || ProductType.SIMPLE;
   }
 
-  /**
-   * Map product status from DTO to Prisma enum
-   */
   private mapProductStatus(
     status?: 'draft' | 'published' | 'scheduled'
   ): ProductStatus {
@@ -1539,9 +1024,6 @@ export class ProductService {
     return mapping[status] || ProductStatus.DRAFT;
   }
 
-  /**
-   * Map product visibility from DTO to Prisma enum
-   */
   private mapProductVisibility(
     visibility?: 'public' | 'private' | 'password_protected'
   ): ProductVisibility {

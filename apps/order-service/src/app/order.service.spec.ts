@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { OrderService } from './order.service';
+import { OrderCheckoutService } from './order-checkout.service';
 import { OrderPrismaService } from '../prisma/prisma.service';
 import { PaymentService } from '../services/payment.service';
 import { EmailService } from './email/email.service';
@@ -130,13 +130,13 @@ const mockNotificationProducer = {
 // Suite
 // ---------------------------------------------------------------------------
 
-describe('OrderService', () => {
-  let service: OrderService;
+describe('OrderCheckoutService', () => {
+  let service: OrderCheckoutService;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       providers: [
-        OrderService,
+        OrderCheckoutService,
         { provide: OrderPrismaService, useValue: mockPrisma },
         { provide: RedisService, useValue: mockRedis },
         { provide: PaymentService, useValue: mockPaymentService },
@@ -149,7 +149,7 @@ describe('OrderService', () => {
       ],
     }).compile();
 
-    service = module.get(OrderService);
+    service = module.get(OrderCheckoutService);
   });
 
   afterEach(() => jest.clearAllMocks());

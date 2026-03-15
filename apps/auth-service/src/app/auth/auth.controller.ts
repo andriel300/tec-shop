@@ -14,71 +14,66 @@ import {
   ChangePasswordDto,
   UpgradeToSellerDto,
 } from '@tec-shop/dto';
-import { AuthService } from './auth.service';
+import { AuthCoreService } from './auth-core.service';
+import { AuthRegistrationService } from './auth-registration.service';
 
 @Controller()
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authCore: AuthCoreService,
+    private readonly authRegistration: AuthRegistrationService,
+  ) {}
 
   @MessagePattern('auth-signup')
-  // Throttle decorator removed - rate limiting handled at API Gateway
   async signup(@Payload() signupDto: SignupDto) {
-    return this.authService.signup(signupDto);
+    return this.authRegistration.signup(signupDto);
   }
 
   @MessagePattern('seller-auth-signup')
-  // Throttle decorator removed - rate limiting handled at API Gateway
   async sellerSignup(@Payload() sellerSignupDto: SellerSignupDto) {
-    return this.authService.sellerSignup(sellerSignupDto);
+    return this.authRegistration.sellerSignup(sellerSignupDto);
   }
 
   @MessagePattern('auth-verify-email')
-  // Throttle decorator removed - rate limiting handled at API Gateway
   async verifyEmail(@Payload() verifyEmailDto: VerifyEmailDto) {
-    return this.authService.verifyEmail(verifyEmailDto);
+    return this.authRegistration.verifyEmail(verifyEmailDto);
   }
 
   @MessagePattern('seller-auth-verify-email')
-  // Throttle decorator removed - rate limiting handled at API Gateway
   async verifySellerEmail(@Payload() verifyEmailDto: VerifyEmailDto) {
-    return this.authService.verifySellerEmail(verifyEmailDto);
+    return this.authRegistration.verifySellerEmail(verifyEmailDto);
   }
 
   @MessagePattern('auth-login')
-  // Throttle decorator removed - rate limiting handled at API Gateway
   async login(@Payload() credential: LoginDto) {
-    return this.authService.login(credential);
+    return this.authCore.login(credential);
   }
 
   @MessagePattern('admin-auth-login')
-  // Throttle decorator removed - rate limiting handled at API Gateway
   async adminLogin(@Payload() credential: LoginDto) {
-    return this.authService.adminLogin(credential);
+    return this.authCore.adminLogin(credential);
   }
 
   @MessagePattern('seller-auth-login')
-  // Throttle decorator removed - rate limiting handled at API Gateway
   async sellerLogin(@Payload() credential: LoginDto) {
-    return this.authService.sellerLogin(credential);
+    return this.authCore.sellerLogin(credential);
   }
 
   @MessagePattern('auth-google-login')
-  // Throttle decorator removed - rate limiting handled at API Gateway
   async googleLogin(@Payload() googleAuthDto: GoogleAuthDto) {
-    return this.authService.googleLogin(googleAuthDto);
+    return this.authCore.googleLogin(googleAuthDto);
   }
 
   @MessagePattern('validate-token')
   async validateToken(@Payload() token: string) {
-    return this.authService.validateToken(token);
+    return this.authCore.validateToken(token);
   }
 
   @MessagePattern('auth-refresh-token')
-  // Rate limiting handled at API Gateway level
   async refreshToken(
     @Payload() payload: { refreshToken: string; currentAccessToken?: string }
   ) {
-    return this.authService.refreshToken(
+    return this.authCore.refreshToken(
       payload.refreshToken,
       payload.currentAccessToken
     );
@@ -86,53 +81,50 @@ export class AuthController {
 
   @MessagePattern('auth-revoke-refresh-token')
   async revokeRefreshToken(@Payload() userId: string) {
-    return this.authService.revokeRefreshToken(userId);
+    return this.authCore.revokeRefreshToken(userId);
   }
 
   @MessagePattern('auth-forgot-password')
-  // Throttle decorator removed - rate limiting handled at API Gateway
   async forgotPassword(@Payload() forgotPasswordDto: ForgotPasswordDto) {
-    return this.authService.forgotPassword(forgotPasswordDto);
+    return this.authRegistration.forgotPassword(forgotPasswordDto);
   }
 
   @MessagePattern('auth-validate-reset-token')
   async validateResetToken(
     @Payload() validateResetTokenDto: ValidateResetTokenDto
   ) {
-    return this.authService.validateResetToken(validateResetTokenDto);
+    return this.authRegistration.validateResetToken(validateResetTokenDto);
   }
 
   @MessagePattern('auth-reset-password')
-  // Throttle decorator removed - rate limiting handled at API Gateway
   async resetPassword(@Payload() resetPasswordDto: ResetPasswordDto) {
-    return this.authService.resetPassword(resetPasswordDto);
+    return this.authRegistration.resetPassword(resetPasswordDto);
   }
 
   @MessagePattern('auth-reset-password-with-code')
-  // Legacy endpoint for backward compatibility
   async resetPasswordWithCode(
     @Payload() resetPasswordDto: ResetPasswordWithCodeDto
   ) {
-    return this.authService.resetPasswordWithCode(resetPasswordDto);
+    return this.authRegistration.resetPasswordWithCode(resetPasswordDto);
   }
 
   @MessagePattern('auth-revoke-token')
   async revokeToken(@Payload() payload: { token: string; reason?: string }) {
-    return this.authService.revokeToken(payload.token, payload.reason);
+    return this.authCore.revokeToken(payload.token, payload.reason);
   }
 
   @MessagePattern('auth-revoke-all-user-tokens')
   async revokeAllUserTokens(
     @Payload() payload: { userId: string; reason?: string }
   ) {
-    return this.authService.revokeAllUserTokens(payload.userId, payload.reason);
+    return this.authCore.revokeAllUserTokens(payload.userId, payload.reason);
   }
 
   @MessagePattern('auth-change-password')
   async changePassword(
     @Payload() payload: { userId: string; changePasswordDto: ChangePasswordDto }
   ) {
-    return this.authService.changePassword(
+    return this.authCore.changePassword(
       payload.userId,
       payload.changePasswordDto
     );
@@ -142,6 +134,6 @@ export class AuthController {
   async upgradeToSeller(
     @Payload() payload: { userId: string; upgradeDto: UpgradeToSellerDto }
   ) {
-    return this.authService.upgradeToSeller(payload.userId, payload.upgradeDto);
+    return this.authCore.upgradeToSeller(payload.userId, payload.upgradeDto);
   }
 }

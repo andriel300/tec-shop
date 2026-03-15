@@ -3,7 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 // Rate limiting moved to API Gateway level for proper microservices architecture
 import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
+import { AuthCoreService } from './auth-core.service';
+import { AuthRegistrationService } from './auth-registration.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { RedisModule } from '@tec-shop/redis-client';
@@ -79,7 +80,8 @@ import { join } from 'path';
   ],
   controllers: [AuthController],
   providers: [
-    AuthService,
+    AuthCoreService,
+    AuthRegistrationService,
     // ThrottlerGuard removed - rate limiting handled at API Gateway
   ],
 })

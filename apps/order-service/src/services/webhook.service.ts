@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { OrderService } from '../app/order.service';
+import { OrderCheckoutService } from '../app/order-checkout.service';
 import Stripe from 'stripe';
 
 @Injectable()
@@ -7,7 +7,7 @@ export class WebhookService {
   private readonly logger = new Logger(WebhookService.name);
 
   constructor(
-    private readonly orderService: OrderService
+    private readonly orderCheckout: OrderCheckoutService
   ) {}
 
   async handleWebhookEvent(
@@ -60,7 +60,7 @@ export class WebhookService {
 
     if (session.payment_status === 'paid') {
       try {
-        await this.orderService.handleSuccessfulPayment(session.id);
+        await this.orderCheckout.handleSuccessfulPayment(session.id);
         this.logger.log(`Order created successfully for session: ${session.id}`);
       } catch (error) {
         this.logger.error(

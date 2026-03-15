@@ -1,13 +1,15 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { OrderService } from './order.service';
+import { OrderCheckoutService } from './order-checkout.service';
+import { OrderQueryService } from './order-query.service';
 import { WebhookService } from '../services/webhook.service';
 import { CreateCheckoutSessionDto, GetSellerOrdersDto, OrderStatus } from '@tec-shop/dto';
 
 @Controller()
 export class AppController {
   constructor(
-    private readonly orderService: OrderService,
+    private readonly orderCheckout: OrderCheckoutService,
+    private readonly orderQuery: OrderQueryService,
     private readonly webhookService: WebhookService
   ) {}
 
@@ -15,7 +17,7 @@ export class AppController {
   async createCheckoutSession(
     @Payload() payload: { userId: string; data: CreateCheckoutSessionDto }
   ) {
-    return this.orderService.createCheckoutSession(
+    return this.orderCheckout.createCheckoutSession(
       payload.userId,
       payload.data
     );
@@ -23,24 +25,24 @@ export class AppController {
 
   @MessagePattern('handle-successful-payment')
   async handleSuccessfulPayment(@Payload() sessionId: string) {
-    return this.orderService.handleSuccessfulPayment(sessionId);
+    return this.orderCheckout.handleSuccessfulPayment(sessionId);
   }
 
   @MessagePattern('get-user-orders')
   async getUserOrders(@Payload() userId: string) {
-    return this.orderService.getUserOrders(userId);
+    return this.orderQuery.getUserOrders(userId);
   }
 
   @MessagePattern('get-order-by-id')
   async getOrderById(@Payload() payload: { userId: string; orderId: string }) {
-    return this.orderService.getOrderById(payload.userId, payload.orderId);
+    return this.orderQuery.getOrderById(payload.userId, payload.orderId);
   }
 
   @MessagePattern('get-order-by-number')
   async getOrderByNumber(
     @Payload() payload: { userId: string; orderNumber: string }
   ) {
-    return this.orderService.getOrderByNumber(
+    return this.orderQuery.getOrderByNumber(
       payload.userId,
       payload.orderNumber
     );
@@ -54,14 +56,14 @@ export class AppController {
 
   @MessagePattern('get-seller-orders')
   async getSellerOrders(@Payload() query: GetSellerOrdersDto) {
-    return this.orderService.getSellerOrders(query);
+    return this.orderQuery.getSellerOrders(query);
   }
 
   @MessagePattern('get-seller-order-details')
   async getSellerOrderDetails(
     @Payload() payload: { sellerId: string | null; orderId: string }
   ) {
-    return this.orderService.getOrderDetailsForSeller(
+    return this.orderQuery.getOrderDetailsForSeller(
       payload.sellerId ?? null,
       payload.orderId
     );
@@ -77,7 +79,7 @@ export class AppController {
       trackingNumber?: string;
     }
   ) {
-    return this.orderService.updateDeliveryStatus(
+    return this.orderQuery.updateDeliveryStatus(
       payload.sellerId ?? null,
       payload.orderId,
       payload.status as OrderStatus,

@@ -1,6 +1,7 @@
 import { Controller, BadRequestException, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { ProductService } from './product.service';
+import { ProductCatalogService } from './product-catalog.service';
+import { ProductRatingService } from './product-rating.service';
 import type {
   CreateProductDto,
   UpdateProductDto,
@@ -12,12 +13,11 @@ import type {
 export class ProductController {
   private readonly logger = new Logger(ProductController.name);
 
-  constructor(private readonly productService: ProductService) {}
+  constructor(
+    private readonly catalogService: ProductCatalogService,
+    private readonly ratingService: ProductRatingService,
+  ) {}
 
-  /**
-   * Create a new product with ImageKit URLs
-   * Receives image URLs from API Gateway after ImageKit upload
-   */
   @MessagePattern('product-create-product')
   async create(
     @Payload()
@@ -47,23 +47,21 @@ export class ProductController {
 
       const { sellerId, shopId, productData, imageUrls } = payload;
 
-      // Validate at least one image URL
       if (!imageUrls || imageUrls.length === 0) {
         this.logger.error('Product creation failed: No image URLs provided');
         throw new BadRequestException('At least one product image is required');
       }
 
-      // Add shopId to product data for service
       const productDataWithShop = {
         ...productData,
         shopId,
       };
 
       this.logger.debug(
-        `Calling product service create method with shopId: ${shopId}`
+        `Calling product catalog service create method with shopId: ${shopId}`
       );
 
-      const result = await this.productService.create(
+      const result = await this.catalogService.create(
         sellerId,
         productDataWithShop,
         imageUrls
@@ -85,17 +83,11 @@ export class ProductController {
     }
   }
 
-  /**
-   * Get multiple products by IDs (for recommendation enrichment)
-   */
   @MessagePattern('product-get-by-ids')
   async findByIds(@Payload() data: { ids: string[] }) {
-    return this.productService.findByIds(data.ids);
+    return this.catalogService.findByIds(data.ids);
   }
 
-  /**
-   * Get all products for a shop
-   */
   @MessagePattern('product-get-products')
   async findAll(
     @Payload()
@@ -116,7 +108,7 @@ export class ProductController {
       }, filters: ${JSON.stringify(payload.filters)}`
     );
 
-    const products = await this.productService.findAll(
+    const products = await this.catalogService.findAll(
       payload.shopId,
       payload.filters,
       payload.sellerId
@@ -129,17 +121,11 @@ export class ProductController {
     return products;
   }
 
-  /**
-   * Get single product by ID
-   */
   @MessagePattern('product-get-product')
   async findOne(@Payload() payload: { id: string; sellerId: string }) {
-    return this.productService.findOne(payload.id, payload.sellerId);
+    return this.catalogService.findOne(payload.id, payload.sellerId);
   }
 
-  /**
-   * Update product with optional new ImageKit URLs
-   */
   @MessagePattern('product-update-product')
   async update(
     @Payload()
@@ -159,7 +145,7 @@ export class ProductController {
 
       const { id, sellerId, productData, imageUrls } = payload;
 
-      const result = await this.productService.update(
+      const result = await this.catalogService.update(
         id,
         sellerId,
         productData,
@@ -180,17 +166,11 @@ export class ProductController {
     }
   }
 
-  /**
-   * Delete product
-   */
   @MessagePattern('product-delete-product')
   async remove(@Payload() payload: { id: string; sellerId: string }) {
-    return this.productService.remove(payload.id, payload.sellerId);
+    return this.catalogService.remove(payload.id, payload.sellerId);
   }
 
-  /**
-   * Get deleted products (trash)
-   */
   @MessagePattern('product-get-deleted-products')
   async findDeleted(
     @Payload()
@@ -207,7 +187,7 @@ export class ProductController {
       `Received product-get-deleted-products request - shopId: ${payload.shopId}`
     );
 
-    const products = await this.productService.findDeleted(
+    const products = await this.catalogService.findDeleted(
       payload.shopId,
       payload.filters
     );
@@ -219,16 +199,13 @@ export class ProductController {
     return products;
   }
 
-  /**
-   * Restore deleted product
-   */
   @MessagePattern('product-restore-product')
   async restore(@Payload() payload: { id: string; sellerId: string }) {
     this.logger.log(
       `Received product-restore-product request - productId: ${payload.id}, sellerId: ${payload.sellerId}`
     );
 
-    const result = await this.productService.restore(
+    const result = await this.catalogService.restore(
       payload.id,
       payload.sellerId
     );
@@ -238,19 +215,11 @@ export class ProductController {
     return result;
   }
 
-  /**
-   * Increment product views
-   */
   @MessagePattern('product-increment-product-views')
   async incrementViews(@Payload() payload: { id: string }) {
-    return this.productService.incrementViews(payload.id);
+    return this.catalogService.incrementViews(payload.id);
   }
 
-  /**
-   * Get all public products for marketplace frontend
-   * Returns only published, public, active, non-deleted products
-   * Supports comprehensive filtering, sorting, and pagination
-   */
   @MessagePattern('product-get-public-products')
   async findPublicProducts(
     @Payload()
@@ -283,7 +252,7 @@ export class ProductController {
       )}`
     );
 
-    const result = await this.productService.findPublicProducts(payload);
+    const result = await this.catalogService.findPublicProducts(payload);
 
     this.logger.log(
       `Returning ${result.products.length} products out of ${result.total} total (offset: ${result.offset}, limit: ${result.limit})`
@@ -292,17 +261,13 @@ export class ProductController {
     return result;
   }
 
-  /**
-   * Get a single public product by slug
-   * Public endpoint - returns only published, active products
-   */
   @MessagePattern('product-get-by-slug')
   async findProductBySlug(@Payload() payload: { slug: string }) {
     this.logger.log(
       `Received product-get-by-slug request for slug: ${payload.slug}`
     );
 
-    const product = await this.productService.findPublicProductBySlug(
+    const product = await this.catalogService.findPublicProductBySlug(
       payload.slug
     );
 
@@ -311,9 +276,6 @@ export class ProductController {
     return { product };
   }
 
-  /**
-   * Create or update a product rating with optional review data
-   */
   @MessagePattern('product-create-rating')
   async createRating(
     @Payload()
@@ -334,7 +296,7 @@ export class ProductController {
       `Received product-create-rating request - productId: ${payload.productId}, userId: ${payload.userId}, rating: ${payload.rating.rating}`
     );
 
-    const result = await this.productService.createRating(
+    const result = await this.ratingService.createRating(
       payload.productId,
       payload.userId,
       payload.rating,
@@ -348,9 +310,6 @@ export class ProductController {
     return result;
   }
 
-  /**
-   * Update an existing product rating
-   */
   @MessagePattern('product-update-rating')
   async updateRating(
     @Payload()
@@ -364,7 +323,7 @@ export class ProductController {
       `Received product-update-rating request - ratingId: ${payload.ratingId}, userId: ${payload.userId}, rating: ${payload.rating.rating}`
     );
 
-    const result = await this.productService.updateRating(
+    const result = await this.ratingService.updateRating(
       payload.ratingId,
       payload.userId,
       payload.rating
@@ -375,9 +334,6 @@ export class ProductController {
     return result;
   }
 
-  /**
-   * Delete a product rating
-   */
   @MessagePattern('product-delete-rating')
   async deleteRating(
     @Payload()
@@ -390,7 +346,7 @@ export class ProductController {
       `Received product-delete-rating request - ratingId: ${payload.ratingId}, userId: ${payload.userId}`
     );
 
-    const result = await this.productService.deleteRating(
+    const result = await this.ratingService.deleteRating(
       payload.ratingId,
       payload.userId
     );
@@ -402,9 +358,6 @@ export class ProductController {
     return result;
   }
 
-  /**
-   * Get a user's rating for a specific product
-   */
   @MessagePattern('product-get-user-rating')
   async getUserRating(
     @Payload()
@@ -417,7 +370,7 @@ export class ProductController {
       `Received product-get-user-rating request - productId: ${payload.productId}, userId: ${payload.userId}`
     );
 
-    const result = await this.productService.getUserRating(
+    const result = await this.ratingService.getUserRating(
       payload.productId,
       payload.userId
     );
@@ -431,9 +384,6 @@ export class ProductController {
     return result;
   }
 
-  /**
-   * Get paginated reviews for a product
-   */
   @MessagePattern('product-get-reviews')
   async getProductReviews(
     @Payload()
@@ -448,7 +398,7 @@ export class ProductController {
       `Received product-get-reviews request - productId: ${payload.productId}, page: ${payload.page}, sort: ${payload.sort}`
     );
 
-    const result = await this.productService.getProductReviews(
+    const result = await this.ratingService.getProductReviews(
       payload.productId,
       payload.page,
       payload.limit,
@@ -462,9 +412,6 @@ export class ProductController {
     return result;
   }
 
-  /**
-   * Add seller response to a review
-   */
   @MessagePattern('product-add-seller-response')
   async addSellerResponse(
     @Payload()
@@ -478,7 +425,7 @@ export class ProductController {
       `Received product-add-seller-response request - ratingId: ${payload.ratingId}, sellerId: ${payload.sellerId}`
     );
 
-    const result = await this.productService.addSellerResponse(
+    const result = await this.ratingService.addSellerResponse(
       payload.ratingId,
       payload.sellerId,
       payload.response
@@ -489,15 +436,11 @@ export class ProductController {
     return result;
   }
 
-  /**
-   * Get available filter options (colors, sizes) from active product variants
-   * Used for dynamically populating filter options in the frontend
-   */
   @MessagePattern('product-get-available-filters')
   async getAvailableFilters() {
     this.logger.log('Received product-get-available-filters request');
 
-    const result = await this.productService.getAvailableFilters();
+    const result = await this.catalogService.getAvailableFilters();
 
     this.logger.log(
       `Returning available filters - colors: ${result.colors.length}, sizes: ${result.sizes.length}`

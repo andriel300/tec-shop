@@ -2,7 +2,8 @@ import { Module } from '@nestjs/common';
 import { APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
 import { LoggingInterceptor, ErrorInterceptor, AllExceptionsFilter } from '@tec-shop/interceptor';
 import { AppController } from './app.controller';
-import { OrderService } from './order.service';
+import { OrderCheckoutService } from './order-checkout.service';
+import { OrderQueryService } from './order-query.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { RedisModule } from '@tec-shop/redis-client';
 import { EmailModule } from './email/email.module';
@@ -68,7 +69,8 @@ import { MetricsModule, HealthModule } from '@tec-shop/metrics';
   ],
   controllers: [AppController],
   providers: [
-    OrderService,
+    OrderCheckoutService,
+    OrderQueryService,
     PaymentService,
     KafkaProducerService,
     WebhookService,

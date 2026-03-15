@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthService } from './auth.service';
-import { JwtService } from '@nestjs/jwt';
+import { AuthRegistrationService } from './auth-registration.service';
 import { AuthPrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '@tec-shop/redis-client';
 import { EmailService } from '../email/email.service';
@@ -10,12 +9,11 @@ import { ClientProxy } from '@nestjs/microservices';
 import * as bcrypt from 'bcrypt';
 import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { LoginDto, SignupDto, VerifyEmailDto } from '@tec-shop/dto';
+import { SignupDto, VerifyEmailDto } from '@tec-shop/dto';
 import { of } from 'rxjs';
 
-describe('AuthService', () => {
-  let service: AuthService;
-  let jwtService: JwtService;
+describe('AuthRegistrationService', () => {
+  let service: AuthRegistrationService;
   let prismaService: AuthPrismaService;
   let redisService: RedisService;
   let emailService: EmailService;
@@ -38,7 +36,7 @@ describe('AuthService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        AuthService,
+        AuthRegistrationService,
         {
           provide: ConfigService,
           useValue: {
@@ -49,13 +47,6 @@ describe('AuthService', () => {
               };
               return config[key];
             }),
-          },
-        },
-        {
-          provide: JwtService,
-          useValue: {
-            sign: jest.fn(() => 'mockAccessToken'),
-            verify: jest.fn(),
           },
         },
         {
@@ -135,8 +126,7 @@ describe('AuthService', () => {
       ],
     }).compile();
 
-    service = module.get<AuthService>(AuthService);
-    jwtService = module.get<JwtService>(JwtService);
+    service = module.get<AuthRegistrationService>(AuthRegistrationService);
     prismaService = module.get<AuthPrismaService>(AuthPrismaService);
     redisService = module.get<RedisService>(RedisService);
     emailService = module.get<EmailService>(EmailService);
@@ -200,108 +190,12 @@ describe('AuthService', () => {
     });
   });
 
-  describe('login', () => {
-    const loginDto: LoginDto = {
-      email: 'test@example.com',
-      password: 'password123',
-    };
-
-    it('should successfully log in a user and return a token', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
-
-      jest
-        .spyOn(bcrypt, 'compare')
-        .mockImplementation(
-          async (password, hash) => `hashed-${password}` === hash
-        );
-
-      const result = await service.login(loginDto);
-
-      expect(result).toEqual({
-        access_token: 'mockAccessToken',
-        refresh_token: expect.any(String),
-        rememberMe: false,
-      });
-    });
-
-    it('should throw UnauthorizedException if credentials are invalid', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(null);
-      await expect(service.login(loginDto)).rejects.toThrow(
-        UnauthorizedException
-      );
-    });
-
-    it('should throw UnauthorizedException when email is not verified', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue({
-        ...mockUser,
-        isEmailVerified: false,
-      });
-
-      await expect(service.login(loginDto)).rejects.toThrow(
-        UnauthorizedException
-      );
-    });
-
-    it('should throw UnauthorizedException when password does not match', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
-      jest.spyOn(bcrypt, 'compare').mockResolvedValue(false as never);
-
-      await expect(service.login(loginDto)).rejects.toThrow(
-        UnauthorizedException
-      );
-    });
-
-    it('should query with userType CUSTOMER filter to prevent cross-role token issuance', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
-
-      await service.login(loginDto);
-
-      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
-        where: { email: loginDto.email, userType: 'CUSTOMER' },
-      });
-    });
-
-    it('should reject a SELLER user attempting to use the customer login endpoint', async () => {
-      // The userType filter means findUnique returns null for a SELLER email
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(null);
-
-      await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException);
-    });
-
-    it('should persist rememberMe=true to Redis so token refresh can restore a 30-day session', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
-      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockUser);
-      jest.spyOn(redisService, 'set').mockResolvedValue(undefined);
-
-      await service.login({ ...loginDto, rememberMe: true });
-
-      expect(redisService.set).toHaveBeenCalledWith(
-        `session-remember-me:${mockUser.id}`,
-        '1',
-        30 * 24 * 60 * 60
-      );
-    });
-
-    it('should persist rememberMe=false to Redis for a normal 7-day session', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
-      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockUser);
-      jest.spyOn(redisService, 'set').mockResolvedValue(undefined);
-
-      await service.login({ ...loginDto, rememberMe: false });
-
-      expect(redisService.set).toHaveBeenCalledWith(
-        `session-remember-me:${mockUser.id}`,
-        '0',
-        7 * 24 * 60 * 60
-      );
-    });
-  });
-
   describe('verifyEmail', () => {
     const verifyEmailDto: VerifyEmailDto = {
       email: 'test@example.com',
       otp: '123456',
     };
+
     it('should verify email correctly', async () => {
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
       jest
@@ -321,10 +215,10 @@ describe('AuthService', () => {
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
       jest
         .spyOn(redisService, 'get')
-        .mockResolvedValueOnce('0') // attempts key
+        .mockResolvedValueOnce('0')
         .mockResolvedValueOnce(
           JSON.stringify({ otp: '999999', name: 'John Doe' })
-        ); // wrong stored OTP
+        );
       jest.spyOn(redisService, 'set').mockResolvedValue(undefined);
 
       await expect(service.verifyEmail(verifyEmailDto)).rejects.toThrow(
@@ -341,8 +235,8 @@ describe('AuthService', () => {
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
       jest
         .spyOn(redisService, 'get')
-        .mockResolvedValueOnce('0') // attempts key
-        .mockResolvedValueOnce(null); // OTP expired
+        .mockResolvedValueOnce('0')
+        .mockResolvedValueOnce(null);
 
       await expect(service.verifyEmail(verifyEmailDto)).rejects.toThrow(
         UnauthorizedException
@@ -351,7 +245,7 @@ describe('AuthService', () => {
 
     it('should throw and delete OTP when max attempts are reached', async () => {
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
-      jest.spyOn(redisService, 'get').mockResolvedValueOnce('3'); // attempts >= 3
+      jest.spyOn(redisService, 'get').mockResolvedValueOnce('3');
       jest.spyOn(redisService, 'del').mockResolvedValue(undefined);
 
       await expect(service.verifyEmail(verifyEmailDto)).rejects.toThrow(
@@ -379,55 +273,6 @@ describe('AuthService', () => {
       });
     });
   });
-
-  describe('validateToken', () => {
-    it('should return valid info for a valid token', async () => {
-      jest
-        .spyOn(jwtService, 'verify')
-        .mockReturnValue({ sub: '123', role: 'user' });
-      const result = await service.validateToken('token');
-      expect(result).toEqual({ valid: true, userId: '123', role: 'user' });
-    });
-
-    it('should return invalid info for an invalid token', async () => {
-      jest.spyOn(jwtService, 'verify').mockImplementation(() => {
-        throw new Error('Invalid');
-      });
-      const result = await service.validateToken('token');
-      expect(result).toEqual({
-        valid: false,
-        userId: null,
-        role: null,
-        reason: 'token_invalid',
-      });
-    });
-
-    it('should return token_revoked when token is on the blacklist', async () => {
-      jest.spyOn(jwtService, 'verify').mockReturnValue({
-        sub: '123',
-        role: 'CUSTOMER',
-        iat: 0,
-        exp: 9999999999,
-      });
-      // First Redis.get call is for the blacklist entry — return a value to simulate a hit
-      jest
-        .spyOn(redisService, 'get')
-        .mockResolvedValue(JSON.stringify({ reason: 'logout' }));
-
-      const result = await service.validateToken('blacklisted-token');
-
-      expect(result).toEqual({
-        valid: false,
-        userId: null,
-        role: null,
-        reason: 'token_revoked',
-      });
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  // forgotPassword
-  // -------------------------------------------------------------------------
 
   describe('forgotPassword', () => {
     const forgotDto = { email: 'test@example.com' };
@@ -505,10 +350,6 @@ describe('AuthService', () => {
     });
   });
 
-  // -------------------------------------------------------------------------
-  // resetPassword
-  // -------------------------------------------------------------------------
-
   describe('resetPassword', () => {
     const mockResetToken = {
       id: 'reset-id-1',
@@ -562,78 +403,16 @@ describe('AuthService', () => {
     });
   });
 
-  // -------------------------------------------------------------------------
-  // refreshToken
-  // -------------------------------------------------------------------------
-
-  describe('refreshToken', () => {
-    it('returns new tokens when the refresh token is valid', async () => {
-      jest.spyOn(prismaService.user, 'findFirst').mockResolvedValue(mockUser);
-      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockUser);
-
-      const result = await service.refreshToken('valid-refresh-token');
-
-      expect(result).toEqual(
-        expect.objectContaining({ userId: mockUser.id, email: mockUser.email })
-      );
-    });
-
-    it('throws UnauthorizedException when the refresh token does not match any user', async () => {
-      jest.spyOn(prismaService.user, 'findFirst').mockResolvedValue(null);
-
-      await expect(service.refreshToken('invalid-token')).rejects.toThrow(
-        UnauthorizedException
-      );
-    });
-
-    it('recovers rememberMe=true from Redis and issues a 30-day refresh token', async () => {
-      jest.spyOn(prismaService.user, 'findFirst').mockResolvedValue(mockUser);
-      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockUser);
-      jest.spyOn(redisService, 'get').mockResolvedValue('1'); // rememberMe=true
-      jest.spyOn(redisService, 'set').mockResolvedValue(undefined);
-
-      await service.refreshToken('valid-refresh-token');
-
-      expect(redisService.get).toHaveBeenCalledWith(`session-remember-me:${mockUser.id}`);
-      // new tokens should re-persist rememberMe=true with the 30-day TTL
-      expect(redisService.set).toHaveBeenCalledWith(
-        `session-remember-me:${mockUser.id}`,
-        '1',
-        30 * 24 * 60 * 60
-      );
-    });
-
-    it('defaults to rememberMe=false (7-day session) when no Redis key is present', async () => {
-      jest.spyOn(prismaService.user, 'findFirst').mockResolvedValue(mockUser);
-      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockUser);
-      jest.spyOn(redisService, 'get').mockResolvedValue(null); // no key
-      jest.spyOn(redisService, 'set').mockResolvedValue(undefined);
-
-      await service.refreshToken('valid-refresh-token');
-
-      expect(redisService.set).toHaveBeenCalledWith(
-        `session-remember-me:${mockUser.id}`,
-        '0',
-        7 * 24 * 60 * 60
-      );
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  // resetPasswordWithCode (legacy)
-  // -------------------------------------------------------------------------
-
   describe('resetPasswordWithCode', () => {
     const dto = { email: 'test@example.com', code: '123456', newPassword: 'NewPass123!' };
 
     it('throws immediately when attempt count is already at 3 (attempt limit checked before code)', async () => {
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
-      jest.spyOn(redisService, 'get').mockResolvedValueOnce('3'); // attempts = 3
+      jest.spyOn(redisService, 'get').mockResolvedValueOnce('3');
 
       await expect(service.resetPasswordWithCode(dto)).rejects.toThrow(
         'Too many failed attempts. Please request a new reset code.'
       );
-      // Must not proceed to code lookup
       expect(redisService.get).toHaveBeenCalledTimes(1);
     });
 
@@ -641,8 +420,8 @@ describe('AuthService', () => {
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
       jest
         .spyOn(redisService, 'get')
-        .mockResolvedValueOnce('1')  // attempts = 1
-        .mockResolvedValueOnce(null); // no matching code in Redis
+        .mockResolvedValueOnce('1')
+        .mockResolvedValueOnce(null);
       jest.spyOn(redisService, 'set').mockResolvedValue(undefined);
 
       await expect(service.resetPasswordWithCode(dto)).rejects.toThrow(
@@ -659,8 +438,8 @@ describe('AuthService', () => {
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
       jest
         .spyOn(redisService, 'get')
-        .mockResolvedValueOnce('0')          // attempts = 0
-        .mockResolvedValueOnce(mockUser.id); // matching userId stored for this code hash
+        .mockResolvedValueOnce('0')
+        .mockResolvedValueOnce(mockUser.id);
       jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockUser);
       jest.spyOn(redisService, 'del').mockResolvedValue(undefined);
       jest.spyOn(emailService, 'sendPasswordChangedNotification').mockResolvedValue(undefined);
