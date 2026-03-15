@@ -28,16 +28,18 @@ export class MockLogisticsService {
         },
       });
 
-      for (const order of paidOrders) {
-        await this.prisma.order.update({
-          where: { id: order.id },
-          data: {
-            status: OrderStatus.SHIPPED,
-            trackingNumber: this.generateTrackingNumber(),
-          },
-        });
-        this.logger.log(`Order ${order.orderNumber} marked as SHIPPED`);
-      }
+      await Promise.all(
+        paidOrders.map((order) => {
+          this.logger.log(`Order ${order.orderNumber} marked as SHIPPED`);
+          return this.prisma.order.update({
+            where: { id: order.id },
+            data: {
+              status: OrderStatus.SHIPPED,
+              trackingNumber: this.generateTrackingNumber(),
+            },
+          });
+        })
+      );
 
       // Find orders that are SHIPPED and older than 10 minutes -> mark as DELIVERED
       const shippedOrders = await this.prisma.order.findMany({
@@ -49,16 +51,16 @@ export class MockLogisticsService {
         },
       });
 
-      for (const order of shippedOrders) {
-        await this.prisma.order.update({
-          where: { id: order.id },
-          data: {
-            status: OrderStatus.DELIVERED,
-            deliveredAt: new Date(),
-          },
-        });
-        this.logger.log(`Order ${order.orderNumber} marked as DELIVERED`);
-      }
+      const deliveredAt = new Date();
+      await Promise.all(
+        shippedOrders.map((order) => {
+          this.logger.log(`Order ${order.orderNumber} marked as DELIVERED`);
+          return this.prisma.order.update({
+            where: { id: order.id },
+            data: { status: OrderStatus.DELIVERED, deliveredAt },
+          });
+        })
+      );
     } catch (error) {
       this.logger.error('Error in mock logistics service', error);
     }

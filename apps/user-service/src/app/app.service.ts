@@ -278,27 +278,29 @@ export class AppService {
     const shouldBeDefault = existingCount === 0 || data.isDefault === true;
 
     // If setting as default, unset other defaults first
-    if (shouldBeDefault) {
-      await this.prisma.shippingAddress.updateMany({
-        where: { userId, isDefault: true },
-        data: { isDefault: false },
-      });
-    }
+    return this.prisma.$transaction(async (tx) => {
+      if (shouldBeDefault) {
+        await tx.shippingAddress.updateMany({
+          where: { userId, isDefault: true },
+          data: { isDefault: false },
+        });
+      }
 
-    return this.prisma.shippingAddress.create({
-      data: {
-        userId,
-        userProfileId: userProfile.id,
-        label: data.label,
-        name: data.name,
-        street: data.street,
-        city: data.city,
-        state: data.state,
-        zipCode: data.zipCode,
-        country: data.country,
-        phoneNumber: data.phoneNumber,
-        isDefault: shouldBeDefault,
-      },
+      return tx.shippingAddress.create({
+        data: {
+          userId,
+          userProfileId: userProfile.id,
+          label: data.label,
+          name: data.name,
+          street: data.street,
+          city: data.city,
+          state: data.state,
+          zipCode: data.zipCode,
+          country: data.country,
+          phoneNumber: data.phoneNumber,
+          isDefault: shouldBeDefault,
+        },
+      });
     });
   }
 
@@ -336,16 +338,18 @@ export class AppService {
     }
 
     // If setting as default, unset other defaults first
-    if (data.isDefault === true) {
-      await this.prisma.shippingAddress.updateMany({
-        where: { userId, isDefault: true, id: { not: addressId } },
-        data: { isDefault: false },
-      });
-    }
+    return this.prisma.$transaction(async (tx) => {
+      if (data.isDefault === true) {
+        await tx.shippingAddress.updateMany({
+          where: { userId, isDefault: true, id: { not: addressId } },
+          data: { isDefault: false },
+        });
+      }
 
-    return this.prisma.shippingAddress.update({
-      where: { id: addressId },
-      data,
+      return tx.shippingAddress.update({
+        where: { id: addressId },
+        data,
+      });
     });
   }
 
@@ -361,25 +365,24 @@ export class AppService {
 
     const wasDefault = existingAddress.isDefault;
 
-    // Delete the address
-    await this.prisma.shippingAddress.delete({
-      where: { id: addressId },
-    });
+    await this.prisma.$transaction(async (tx) => {
+      await tx.shippingAddress.delete({ where: { id: addressId } });
 
-    // If the deleted address was default, set another address as default
-    if (wasDefault) {
-      const remainingAddresses = await this.prisma.shippingAddress.findFirst({
-        where: { userId },
-        orderBy: { createdAt: 'desc' },
-      });
-
-      if (remainingAddresses) {
-        await this.prisma.shippingAddress.update({
-          where: { id: remainingAddresses.id },
-          data: { isDefault: true },
+      // If the deleted address was default, promote the most recent remaining
+      if (wasDefault) {
+        const next = await tx.shippingAddress.findFirst({
+          where: { userId },
+          orderBy: { createdAt: 'desc' },
         });
+
+        if (next) {
+          await tx.shippingAddress.update({
+            where: { id: next.id },
+            data: { isDefault: true },
+          });
+        }
       }
-    }
+    });
 
     return { message: 'Shipping address deleted successfully' };
   }
@@ -394,16 +397,16 @@ export class AppService {
       throw new RpcException({ statusCode: 404, message: 'Shipping address not found' });
     }
 
-    // Unset all other defaults
-    await this.prisma.shippingAddress.updateMany({
-      where: { userId, isDefault: true },
-      data: { isDefault: false },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      await tx.shippingAddress.updateMany({
+        where: { userId, isDefault: true },
+        data: { isDefault: false },
+      });
 
-    // Set this address as default
-    return this.prisma.shippingAddress.update({
-      where: { id: addressId },
-      data: { isDefault: true },
+      return tx.shippingAddress.update({
+        where: { id: addressId },
+        data: { isDefault: true },
+      });
     });
   }
 

@@ -378,25 +378,26 @@ export class AuthRegistrationService {
       return { message: successMessage };
     }
 
-    await this.prisma.passwordResetToken.deleteMany({
-      where: {
-        userId: user.id,
-        OR: [{ used: true }, { expiresAt: { lt: new Date() } }],
-      },
-    });
+    const resetToken = randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await this.prisma.$transaction([
+      this.prisma.passwordResetToken.deleteMany({
+        where: {
+          userId: user.id,
+          OR: [{ used: true }, { expiresAt: { lt: new Date() } }],
+        },
+      }),
+      this.prisma.passwordResetToken.create({
+        data: {
+          token: resetToken,
+          userId: user.id,
+          expiresAt,
+        },
+      }),
+    ]);
 
     await this.redisService.del(`reset-attempts:${user.id}`);
-
-    const resetToken = randomBytes(32).toString('hex');
-
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-    await this.prisma.passwordResetToken.create({
-      data: {
-        token: resetToken,
-        userId: user.id,
-        expiresAt,
-      },
-    });
 
     const resetLink = `${this.frontendUrl}/reset-password?token=${resetToken}`;
 

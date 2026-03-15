@@ -12,6 +12,27 @@
       },
       "outputs": ["{workspaceRoot}/node_modules/.prisma/notification-client"]
     },
+    "migrate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma migrate dev --schema=prisma/schema.prisma",
+        "cwd": "libs/prisma-schemas/notification-schema"
+      }
+    },
+    "migrate-deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma migrate deploy --schema=prisma/schema.prisma",
+        "cwd": "libs/prisma-schemas/notification-schema"
+      }
+    },
+    "migrate-reset": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma migrate reset --schema=prisma/schema.prisma --force",
+        "cwd": "libs/prisma-schemas/notification-schema"
+      }
+    },
     "db-push": {
       "executor": "nx:run-commands",
       "options": {

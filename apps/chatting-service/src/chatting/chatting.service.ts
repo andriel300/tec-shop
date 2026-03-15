@@ -213,19 +213,15 @@ export class ChattingService {
     // Get paginated conversations
     const paginatedIds = conversationIds.slice(skip, skip + limit);
 
-    // Get conversation details with enriched data
-    const conversations: ConversationResult[] = [];
-
-    for (const conversationId of paginatedIds) {
-      const conversation = await this.getConversationResponse(
-        conversationId,
-        participantId,
-        participantType
-      );
-      if (conversation) {
-        conversations.push(conversation);
-      }
-    }
+    // Get conversation details with enriched data — run in parallel to avoid N+1
+    const settled = await Promise.all(
+      paginatedIds.map((id) =>
+        this.getConversationResponse(id, participantId, participantType)
+      )
+    );
+    const conversations = settled.filter(
+      (c): c is ConversationResult => c !== null
+    );
 
     // Sort by last message time (most recent first)
     conversations.sort((a, b) => {
