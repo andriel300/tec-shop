@@ -452,8 +452,13 @@ export class OrderCheckoutService {
     sellerGroups: Record<string, CartItemDto[]>
   ): Promise<Map<string, string>> {
     const accountMap = new Map<string, string>();
-    for (const sellerId of Object.keys(sellerGroups)) {
-      const seller = await this.sellerClient.getSellerByAuthId(sellerId);
+    const sellerIds = Object.keys(sellerGroups);
+    const sellers = await Promise.all(
+      sellerIds.map((sellerId) => this.sellerClient.getSellerByAuthId(sellerId))
+    );
+    for (let i = 0; i < sellerIds.length; i++) {
+      const sellerId = sellerIds[i];
+      const seller = sellers[i];
       if (seller && seller.stripeAccountId) {
         accountMap.set(sellerId, seller.stripeAccountId as string);
       } else {
@@ -591,52 +596,59 @@ export class OrderCheckoutService {
 
       const shippingAddr = order.shippingAddress as Record<string, unknown>;
 
-      // Send email to each seller
-      for (const [sellerId, sellerItems] of Object.entries(sellerGroups)) {
-        const seller = await this.sellerClient.getSellerByAuthId(sellerId);
-        if (!seller || !seller.email) {
-          continue;
-        }
+      // Fetch all seller profiles in parallel then send notifications
+      const sellerEntries = Object.entries(sellerGroups);
+      const sellerProfiles = await Promise.all(
+        sellerEntries.map(([sellerId]) => this.sellerClient.getSellerByAuthId(sellerId))
+      );
 
-        const totalPayout = sellerItems.reduce(
-          (sum, item) => sum + item.subtotal,
-          0
-        );
-        const platformFee = sellerItems.reduce(
-          (sum, item) => sum + item.platformFee,
-          0
-        );
-        const netPayout = sellerItems.reduce(
-          (sum, item) => sum + item.sellerPayout,
-          0
-        );
-
-        await this.emailService.sendSellerOrderNotification(
-          seller.email as string,
-          {
-            sellerName: seller.name as string,
-            orderNumber: order.orderNumber,
-            orderDate: order.createdAt.toLocaleDateString(),
-            items: sellerItems.map((item) => ({
-              productName: item.productName,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              subtotal: item.subtotal,
-            })),
-            totalPayout,
-            platformFee,
-            netPayout,
-            shippingAddress: {
-              name: shippingAddr.name as string,
-              street: shippingAddr.street as string,
-              city: shippingAddr.city as string,
-              state: shippingAddr.state as string | undefined,
-              zipCode: shippingAddr.zipCode as string,
-              country: shippingAddr.country as string,
-            },
+      await Promise.all(
+        sellerEntries.map(async ([, sellerItems], index) => {
+          const seller = sellerProfiles[index];
+          if (!seller || !seller.email) {
+            return;
           }
-        );
-      }
+
+          const totalPayout = sellerItems.reduce(
+            (sum, item) => sum + item.subtotal,
+            0
+          );
+          const platformFee = sellerItems.reduce(
+            (sum, item) => sum + item.platformFee,
+            0
+          );
+          const netPayout = sellerItems.reduce(
+            (sum, item) => sum + item.sellerPayout,
+            0
+          );
+
+          await this.emailService.sendSellerOrderNotification(
+            seller.email as string,
+            {
+              sellerName: seller.name as string,
+              orderNumber: order.orderNumber,
+              orderDate: order.createdAt.toLocaleDateString(),
+              items: sellerItems.map((item) => ({
+                productName: item.productName,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                subtotal: item.subtotal,
+              })),
+              totalPayout,
+              platformFee,
+              netPayout,
+              shippingAddress: {
+                name: shippingAddr.name as string,
+                street: shippingAddr.street as string,
+                city: shippingAddr.city as string,
+                state: shippingAddr.state as string | undefined,
+                zipCode: shippingAddr.zipCode as string,
+                country: shippingAddr.country as string,
+              },
+            }
+          );
+        })
+      );
 
       this.logger.log(
         `Seller notifications sent for order ${order.orderNumber}`

@@ -3,12 +3,11 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { randomInt, randomBytes, createHash } from 'crypto';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { AuthPrismaService } from '../../prisma/prisma.service';
 import { LogCategory } from '@tec-shop/dto';
@@ -196,7 +195,7 @@ export class AuthRegistrationService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Invalid verification details');
+      throw new RpcException({ statusCode: 401, message: 'Invalid verification details' });
     }
 
     const attemptKey = `otp-attempts:${user.id}`;
@@ -205,9 +204,7 @@ export class AuthRegistrationService {
 
     if (attempts >= 3) {
       await this.redisService.del(`verification-otp:${user.id}`);
-      throw new UnauthorizedException(
-        'Too many failed attempts. Please request a new OTP.'
-      );
+      throw new RpcException({ statusCode: 401, message: 'Too many failed attempts. Please request a new OTP.' });
     }
 
     const redisPayload = await this.redisService.get(
@@ -215,14 +212,14 @@ export class AuthRegistrationService {
     );
 
     if (!redisPayload) {
-      throw new UnauthorizedException('Invalid verification details');
+      throw new RpcException({ statusCode: 401, message: 'Invalid verification details' });
     }
 
     const { otp: storedOtp, name } = JSON.parse(redisPayload);
 
     if (storedOtp !== otp) {
       await this.redisService.set(attemptKey, (attempts + 1).toString(), 600);
-      throw new UnauthorizedException('Invalid verification details');
+      throw new RpcException({ statusCode: 401, message: 'Invalid verification details' });
     }
 
     await this.prisma.user.update({
@@ -272,7 +269,7 @@ export class AuthRegistrationService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Invalid verification details');
+      throw new RpcException({ statusCode: 401, message: 'Invalid verification details' });
     }
 
     const attemptKey = `otp-attempts:${user.id}`;
@@ -281,9 +278,7 @@ export class AuthRegistrationService {
 
     if (attempts >= 3) {
       await this.redisService.del(`verification-otp:${user.id}`);
-      throw new UnauthorizedException(
-        'Too many failed attempts. Please request a new OTP.'
-      );
+      throw new RpcException({ statusCode: 401, message: 'Too many failed attempts. Please request a new OTP.' });
     }
 
     const redisPayload = await this.redisService.get(
@@ -291,7 +286,7 @@ export class AuthRegistrationService {
     );
 
     if (!redisPayload) {
-      throw new UnauthorizedException('Invalid verification details');
+      throw new RpcException({ statusCode: 401, message: 'Invalid verification details' });
     }
 
     const {
@@ -304,11 +299,11 @@ export class AuthRegistrationService {
 
     if (storedOtp !== otp) {
       await this.redisService.set(attemptKey, (attempts + 1).toString(), 600);
-      throw new UnauthorizedException('Invalid verification details');
+      throw new RpcException({ statusCode: 401, message: 'Invalid verification details' });
     }
 
     if (userType !== 'SELLER') {
-      throw new UnauthorizedException('Invalid verification type');
+      throw new RpcException({ statusCode: 401, message: 'Invalid verification type' });
     }
 
     await this.prisma.user.update({
@@ -432,7 +427,7 @@ export class AuthRegistrationService {
     });
 
     if (!resetToken || !resetToken.user.isEmailVerified) {
-      throw new UnauthorizedException('Invalid or expired reset token');
+      throw new RpcException({ statusCode: 401, message: 'Invalid or expired reset token' });
     }
 
     return {
@@ -458,7 +453,7 @@ export class AuthRegistrationService {
     });
 
     if (!resetToken || !resetToken.user.isEmailVerified) {
-      throw new UnauthorizedException('Invalid or expired reset token');
+      throw new RpcException({ statusCode: 401, message: 'Invalid or expired reset token' });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -502,7 +497,7 @@ export class AuthRegistrationService {
     });
 
     if (!user || !user.isEmailVerified) {
-      throw new UnauthorizedException('Invalid reset credentials');
+      throw new RpcException({ statusCode: 401, message: 'Invalid reset credentials' });
     }
 
     const attemptKey = `reset-attempts:${user.id}`;
@@ -510,9 +505,7 @@ export class AuthRegistrationService {
     const attempts = attemptsStr ? parseInt(attemptsStr) : 0;
 
     if (attempts >= 3) {
-      throw new UnauthorizedException(
-        'Too many failed attempts. Please request a new reset code.'
-      );
+      throw new RpcException({ statusCode: 401, message: 'Too many failed attempts. Please request a new reset code.' });
     }
 
     const codeHash = createHash('sha256').update(code).digest('hex');
@@ -523,7 +516,7 @@ export class AuthRegistrationService {
 
     if (!storedUserId || storedUserId !== user.id) {
       await this.redisService.set(attemptKey, (attempts + 1).toString(), 600);
-      throw new UnauthorizedException('Invalid or expired reset code');
+      throw new RpcException({ statusCode: 401, message: 'Invalid or expired reset code' });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);

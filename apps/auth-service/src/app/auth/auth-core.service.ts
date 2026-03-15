@@ -1,18 +1,15 @@
 import {
-  BadRequestException,
-  ConflictException,
   Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
   OnModuleInit,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { randomBytes, createHash } from 'crypto';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { AuthPrismaService } from '../../prisma/prisma.service';
 import { LogCategory } from '@tec-shop/dto';
@@ -82,7 +79,7 @@ export class AuthCoreService implements OnModuleInit {
         this.logProducer.warn('auth-service', LogCategory.SECURITY, 'Customer login failed - invalid credentials', {
           metadata: { action: 'login', reason: !user ? 'user_not_found' : !user.isEmailVerified ? 'unverified_email' : 'no_password', userType: 'CUSTOMER' },
         });
-        throw new UnauthorizedException(genericError);
+        throw new RpcException({ statusCode: 401, message: genericError });
       }
 
       this.logger.debug(`Verifying password for user: ${user.id}`);
@@ -97,7 +94,7 @@ export class AuthCoreService implements OnModuleInit {
           userId: user.id,
           metadata: { action: 'login', reason: 'wrong_password', userType: 'CUSTOMER' },
         });
-        throw new UnauthorizedException(genericError);
+        throw new RpcException({ statusCode: 401, message: genericError });
       }
 
       this.logger.log(`Customer login successful - userId: ${user.id}, email: ${credential.email}`);
@@ -134,7 +131,7 @@ export class AuthCoreService implements OnModuleInit {
         this.logProducer.warn('auth-service', LogCategory.SECURITY, 'Seller login failed - invalid credentials', {
           metadata: { action: 'login', reason: !user ? 'user_not_found' : !user.isEmailVerified ? 'unverified_email' : 'no_password', userType: 'SELLER' },
         });
-        throw new UnauthorizedException(genericError);
+        throw new RpcException({ statusCode: 401, message: genericError });
       }
 
       this.logger.debug(`Verifying password for seller: ${user.id}`);
@@ -149,7 +146,7 @@ export class AuthCoreService implements OnModuleInit {
           userId: user.id,
           metadata: { action: 'login', reason: 'wrong_password', userType: 'SELLER' },
         });
-        throw new UnauthorizedException(genericError);
+        throw new RpcException({ statusCode: 401, message: genericError });
       }
 
       this.logger.log(`Seller login successful - userId: ${user.id}, email: ${credential.email}`);
@@ -186,7 +183,7 @@ export class AuthCoreService implements OnModuleInit {
         this.logProducer.warn('auth-service', LogCategory.SECURITY, 'Admin login failed - invalid credentials', {
           metadata: { action: 'login', reason: !user ? 'user_not_found' : !user.isEmailVerified ? 'unverified_email' : 'no_password', userType: 'ADMIN' },
         });
-        throw new UnauthorizedException(genericError);
+        throw new RpcException({ statusCode: 401, message: genericError });
       }
 
       this.logger.debug(`Verifying password for admin: ${user.id}`);
@@ -201,7 +198,7 @@ export class AuthCoreService implements OnModuleInit {
           userId: user.id,
           metadata: { action: 'login', reason: 'wrong_password', userType: 'ADMIN' },
         });
-        throw new UnauthorizedException(genericError);
+        throw new RpcException({ statusCode: 401, message: genericError });
       }
 
       this.logger.log(`Admin login successful - userId: ${user.id}, email: ${credential.email}`);
@@ -252,7 +249,7 @@ export class AuthCoreService implements OnModuleInit {
             await this.emailService.sendGoogleAccountLinkedNotification(user.email);
           } else if (user.googleId && user.googleId !== googleId) {
             this.logger.warn(`Email already linked to different Google account: ${email}`);
-            throw new ConflictException('Email already associated with another Google account');
+            throw new RpcException({ statusCode: 409, message: 'Email already associated with another Google account' });
           }
         } else {
           this.logger.log(`Creating new Google OAuth user - email: ${email}`);
@@ -415,7 +412,7 @@ export class AuthCoreService implements OnModuleInit {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new RpcException({ statusCode: 401, message: 'Invalid refresh token' });
     }
 
     const rememberMeStr = await this.redisService.get(`session-remember-me:${user.id}`);
@@ -512,28 +509,24 @@ export class AuthCoreService implements OnModuleInit {
 
     if (!user) {
       this.logger.warn(`Change password failed - user not found: ${userId}`);
-      throw new UnauthorizedException('User not found');
+      throw new RpcException({ statusCode: 401, message: 'User not found' });
     }
 
     if (!user.password) {
       this.logger.warn(`Change password failed - user authenticated via Google: ${userId}`);
-      throw new UnauthorizedException(
-        'Cannot change password for accounts authenticated via Google. Please use Google to manage your account security.'
-      );
+      throw new RpcException({ statusCode: 401, message: 'Cannot change password for accounts authenticated via Google. Please use Google to manage your account security.' });
     }
 
     const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
     if (!isPasswordValid) {
       this.logger.warn(`Change password failed - invalid current password for user: ${userId}`);
-      throw new UnauthorizedException('Current password is incorrect');
+      throw new RpcException({ statusCode: 401, message: 'Current password is incorrect' });
     }
 
     const isSamePassword = await bcrypt.compare(newPassword, user.password);
     if (isSamePassword) {
       this.logger.warn(`Change password failed - new password same as current for user: ${userId}`);
-      throw new UnauthorizedException(
-        'New password must be different from current password'
-      );
+      throw new RpcException({ statusCode: 401, message: 'New password must be different from current password' });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -560,18 +553,16 @@ export class AuthCoreService implements OnModuleInit {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new RpcException({ statusCode: 401, message: 'User not found' });
     }
 
     if (user.userType !== 'CUSTOMER') {
-      throw new BadRequestException('Only CUSTOMER accounts can be upgraded to SELLER');
+      throw new RpcException({ statusCode: 400, message: 'Only CUSTOMER accounts can be upgraded to SELLER' });
     }
 
     if (user.password) {
       if (!dto.currentPassword) {
-        throw new BadRequestException(
-          'Current password is required to upgrade account. Please provide your current password.'
-        );
+        throw new RpcException({ statusCode: 400, message: 'Current password is required to upgrade account. Please provide your current password.' });
       }
       const isPasswordValid = await bcrypt.compare(dto.currentPassword, user.password);
       if (!isPasswordValid) {
@@ -580,7 +571,7 @@ export class AuthCoreService implements OnModuleInit {
           userId,
           metadata: { action: 'upgrade_to_seller' },
         });
-        throw new UnauthorizedException('Current password is incorrect');
+        throw new RpcException({ statusCode: 401, message: 'Current password is incorrect' });
       }
     }
 

@@ -1,10 +1,8 @@
 import {
   Injectable,
-  NotFoundException,
-  ForbiddenException,
-  BadRequestException,
   Logger,
 } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { LogCategory } from '@tec-shop/dto';
 import type {
   CreateProductDto,
@@ -42,7 +40,7 @@ export class ProductCatalogService {
 
       if (!shopId) {
         this.logger.error('Product creation failed: No shopId provided');
-        throw new BadRequestException('Shop ID is required');
+        throw new RpcException({ statusCode: 400, message: 'Shop ID is required' });
       }
 
       this.logger.debug(`Verifying shop ownership - shopId: ${shopId}`);
@@ -62,7 +60,7 @@ export class ProductCatalogService {
           sellerId,
           metadata: { action: 'create_product', shopId },
         });
-        throw new NotFoundException('Shop not found');
+        throw new RpcException({ statusCode: 404, message: 'Shop not found' });
       }
 
       if (!ownsShop) {
@@ -71,7 +69,7 @@ export class ProductCatalogService {
           sellerId,
           metadata: { action: 'create_product', shopId },
         });
-        throw new ForbiddenException('You do not have access to this shop');
+        throw new RpcException({ statusCode: 403, message: 'You do not have access to this shop' });
       }
 
       this.logger.debug(
@@ -83,9 +81,7 @@ export class ProductCatalogService {
 
       if (!category) {
         this.logger.error(`Category not found: ${createProductDto.categoryId}`);
-        throw new NotFoundException(
-          `Category with ID ${createProductDto.categoryId} not found`
-        );
+        throw new RpcException({ statusCode: 404, message: `Category with ID ${createProductDto.categoryId} not found` });
       }
 
       if (createProductDto.brandId) {
@@ -98,9 +94,7 @@ export class ProductCatalogService {
 
         if (!brand) {
           this.logger.error(`Brand not found: ${createProductDto.brandId}`);
-          throw new NotFoundException(
-            `Brand with ID ${createProductDto.brandId} not found`
-          );
+          throw new RpcException({ statusCode: 404, message: `Brand with ID ${createProductDto.brandId} not found` });
         }
       }
 
@@ -116,7 +110,7 @@ export class ProductCatalogService {
 
       if (!sanitizedData.price || sanitizedData.price <= 0) {
         this.logger.error('Invalid price value');
-        throw new BadRequestException('Product price is required and must be greater than 0');
+        throw new RpcException({ statusCode: 400, message: 'Product price is required and must be greater than 0' });
       }
 
       this.logger.debug(`Generating slug for product: ${sanitizedData.name}`);
@@ -130,9 +124,7 @@ export class ProductCatalogService {
 
       if (existingProduct) {
         this.logger.error(`Product with slug '${slug}' already exists`);
-        throw new BadRequestException(
-          `Product with slug '${slug}' already exists`
-        );
+        throw new RpcException({ statusCode: 400, message: `Product with slug '${slug}' already exists` });
       }
 
       if (sanitizedData.productType === 'variable') {
@@ -142,9 +134,7 @@ export class ProductCatalogService {
           sanitizedData.variants.length === 0
         ) {
           this.logger.error('Variable product has no variants');
-          throw new BadRequestException(
-            'Variable products must have at least one variant'
-          );
+          throw new RpcException({ statusCode: 400, message: 'Variable products must have at least one variant' });
         }
 
         const skus = sanitizedData.variants.map((v: { sku: string }) => v.sku);
@@ -153,9 +143,7 @@ export class ProductCatalogService {
         );
         if (duplicates.length > 0) {
           this.logger.error(`Duplicate SKUs found: ${duplicates.join(', ')}`);
-          throw new BadRequestException(
-            `Duplicate SKUs found: ${duplicates.join(', ')}`
-          );
+          throw new RpcException({ statusCode: 400, message: `Duplicate SKUs found: ${duplicates.join(', ')}` });
         }
 
         const existingSkus = await this.prisma.productVariant.findMany({
@@ -166,9 +154,7 @@ export class ProductCatalogService {
           this.logger.error(
             `SKUs already exist: ${existingSkus.map((v) => v.sku).join(', ')}`
           );
-          throw new BadRequestException(
-            `SKUs already exist: ${existingSkus.map((v) => v.sku).join(', ')}`
-          );
+          throw new RpcException({ statusCode: 400, message: `SKUs already exist: ${existingSkus.map((v) => v.sku).join(', ')}` });
         }
       }
 
@@ -269,7 +255,7 @@ export class ProductCatalogService {
     if (sellerId) {
       const isOwner = await this.sellerClient.verifyShopOwnership(sellerId, shopId);
       if (!isOwner) {
-        throw new ForbiddenException('You do not have access to this shop');
+        throw new RpcException({ statusCode: 403, message: 'You do not have access to this shop' });
       }
     }
 
@@ -360,7 +346,7 @@ export class ProductCatalogService {
     });
 
     if (!product) {
-      throw new NotFoundException(`Product with ID ${id} not found`);
+      throw new RpcException({ statusCode: 404, message: `Product with ID ${id} not found` });
     }
 
     const ownsShop = await this.sellerClient.verifyShopOwnership(
@@ -368,7 +354,7 @@ export class ProductCatalogService {
       product.shopId
     );
     if (!ownsShop) {
-      throw new ForbiddenException('You do not have access to this product');
+      throw new RpcException({ statusCode: 403, message: 'You do not have access to this product' });
     }
 
     return product;
@@ -398,9 +384,7 @@ export class ProductCatalogService {
         where: { id: updateProductDto.categoryId },
       });
       if (!category) {
-        throw new NotFoundException(
-          `Category with ID ${updateProductDto.categoryId} not found`
-        );
+        throw new RpcException({ statusCode: 404, message: `Category with ID ${updateProductDto.categoryId} not found` });
       }
       updateData.categoryId = updateProductDto.categoryId;
     }
@@ -411,9 +395,7 @@ export class ProductCatalogService {
           where: { id: updateProductDto.brandId },
         });
         if (!brand) {
-          throw new NotFoundException(
-            `Brand with ID ${updateProductDto.brandId} not found`
-          );
+          throw new RpcException({ statusCode: 404, message: `Brand with ID ${updateProductDto.brandId} not found` });
         }
       }
       updateData.brandId = updateProductDto.brandId;
@@ -530,7 +512,7 @@ export class ProductCatalogService {
     const product = await this.prisma.product.findUnique({ where: { id } });
 
     if (!product) {
-      throw new NotFoundException(`Product with ID ${id} not found`);
+      throw new RpcException({ statusCode: 404, message: `Product with ID ${id} not found` });
     }
 
     const ownsShop = await this.sellerClient.verifyShopOwnership(
@@ -538,11 +520,11 @@ export class ProductCatalogService {
       product.shopId
     );
     if (!ownsShop) {
-      throw new ForbiddenException('You do not have access to this product');
+      throw new RpcException({ statusCode: 403, message: 'You do not have access to this product' });
     }
 
     if (!product.deletedAt) {
-      throw new BadRequestException('Product is not deleted');
+      throw new RpcException({ statusCode: 400, message: 'Product is not deleted' });
     }
 
     this.logger.log(`Restoring product ${id} for seller ${sellerId}`);

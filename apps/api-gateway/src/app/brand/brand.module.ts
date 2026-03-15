@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { RedisModule } from '@tec-shop/redis-client';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { BrandController } from './brand.controller';
 
 @Module({
   imports: [
+    RedisModule.forRoot(),
     ClientsModule.register([
       {
         name: 'PRODUCT_SERVICE',

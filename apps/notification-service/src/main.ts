@@ -95,4 +95,14 @@ async function bootstrap() {
   Logger.log(`Notification Service TCP running on port ${tcpPort} with mTLS`);
 }
 
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
 bootstrap();

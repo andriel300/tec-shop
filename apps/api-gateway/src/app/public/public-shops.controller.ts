@@ -16,12 +16,17 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { RedisService } from '@tec-shop/redis-client';
+
+const SHOP_LIST_TTL = 300; // seconds
+const SHOP_DETAIL_TTL = 60; // seconds
 
 @ApiTags('Public Shops')
 @Controller('public/shops')
 export class PublicShopsController {
   constructor(
-    @Inject('SELLER_SERVICE') private sellerService: ClientProxy
+    @Inject('SELLER_SERVICE') private sellerService: ClientProxy,
+    private readonly redisService: RedisService
   ) {}
 
   /**
@@ -155,16 +160,24 @@ Retrieves all active shops for the marketplace frontend.
     // Validate and cap limit
     const validatedLimit = Math.min(Math.max(limit, 1), 100);
 
-    return firstValueFrom(
-      this.sellerService.send('seller-get-filtered-shops', {
-        search,
-        category,
-        country,
-        minRating,
-        limit: validatedLimit,
-        offset,
-      })
+    const params = { search, category, country, minRating, limit: validatedLimit, offset };
+    const cacheKey = `cache:shops:list:${JSON.stringify(params)}`;
+    try {
+      const cached = await this.redisService.getJson<unknown>(cacheKey);
+      if (cached !== null) return cached;
+    } catch (_err) {
+      // Redis unavailable — fall through to service call
+    }
+
+    const result = await firstValueFrom(
+      this.sellerService.send('seller-get-filtered-shops', params)
     );
+    try {
+      await this.redisService.setJson(cacheKey, result, SHOP_LIST_TTL);
+    } catch (_err) {
+      // Redis unavailable — ignore write failure
+    }
+    return result;
   }
 
   @Get(':shopId')
@@ -188,10 +201,23 @@ Retrieves all active shops for the marketplace frontend.
     description: 'Shop not found.',
   })
   async getShopById(@Param('shopId') shopId: string) {
+    const cacheKey = `cache:shops:detail:${shopId}`;
+    try {
+      const cached = await this.redisService.getJson<unknown>(cacheKey);
+      if (cached !== null) return cached;
+    } catch (_err) {
+      // Redis unavailable — fall through to service call
+    }
+
     try {
       const shop = await firstValueFrom(
         this.sellerService.send('seller-get-shop-by-id', { shopId })
       );
+      try {
+        await this.redisService.setJson(cacheKey, shop, SHOP_DETAIL_TTL);
+      } catch (_err) {
+        // Redis unavailable — ignore write failure
+      }
       return shop;
     } catch (_error) {
       throw new NotFoundException('Shop not found');

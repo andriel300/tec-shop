@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { UserPrismaService } from '../prisma/prisma.service';
 import { LogCategory } from '@tec-shop/dto';
 import type {
@@ -152,7 +153,7 @@ export class AppService {
     });
 
     if (existingFollow) {
-      throw new BadRequestException('You are already following this shop');
+      throw new RpcException({ statusCode: 400, message: 'You are already following this shop' });
     }
 
     const result = await this.prisma.shopFollower.create({
@@ -179,7 +180,7 @@ export class AppService {
     });
 
     if (!existingFollow) {
-      throw new NotFoundException('You are not following this shop');
+      throw new RpcException({ statusCode: 404, message: 'You are not following this shop' });
     }
 
     const result = await this.prisma.shopFollower.delete({
@@ -261,9 +262,7 @@ export class AppService {
     });
 
     if (existingCount >= 5) {
-      throw new BadRequestException(
-        'Maximum limit of 5 shipping addresses reached. Please delete an existing address to add a new one.'
-      );
+      throw new RpcException({ statusCode: 400, message: 'Maximum limit of 5 shipping addresses reached. Please delete an existing address to add a new one.' });
     }
 
     // Get user profile to link the address
@@ -272,7 +271,7 @@ export class AppService {
     });
 
     if (!userProfile) {
-      throw new NotFoundException('User profile not found');
+      throw new RpcException({ statusCode: 404, message: 'User profile not found' });
     }
 
     // If this is the first address or isDefault is true, set it as default
@@ -316,7 +315,7 @@ export class AppService {
     });
 
     if (!address) {
-      throw new NotFoundException('Shipping address not found');
+      throw new RpcException({ statusCode: 404, message: 'Shipping address not found' });
     }
 
     return address;
@@ -333,7 +332,7 @@ export class AppService {
     });
 
     if (!existingAddress) {
-      throw new NotFoundException('Shipping address not found');
+      throw new RpcException({ statusCode: 404, message: 'Shipping address not found' });
     }
 
     // If setting as default, unset other defaults first
@@ -357,7 +356,7 @@ export class AppService {
     });
 
     if (!existingAddress) {
-      throw new NotFoundException('Shipping address not found');
+      throw new RpcException({ statusCode: 404, message: 'Shipping address not found' });
     }
 
     const wasDefault = existingAddress.isDefault;
@@ -392,7 +391,7 @@ export class AppService {
     });
 
     if (!existingAddress) {
-      throw new NotFoundException('Shipping address not found');
+      throw new RpcException({ statusCode: 404, message: 'Shipping address not found' });
     }
 
     // Unset all other defaults
@@ -415,9 +414,7 @@ export class AppService {
     });
 
     if (existingCount >= 5) {
-      throw new BadRequestException(
-        'Maximum limit of 5 shipping addresses reached. Please delete an existing address before copying.'
-      );
+      throw new RpcException({ statusCode: 400, message: 'Maximum limit of 5 shipping addresses reached. Please delete an existing address before copying.' });
     }
 
     // Get the address to copy
@@ -426,7 +423,7 @@ export class AppService {
     });
 
     if (!originalAddress) {
-      throw new NotFoundException('Shipping address not found');
+      throw new RpcException({ statusCode: 404, message: 'Shipping address not found' });
     }
 
     // Create a copy with "(Copy)" appended to the label

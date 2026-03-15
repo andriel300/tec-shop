@@ -1,5 +1,5 @@
-import { Controller, BadRequestException, Logger } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import { Controller, Logger } from '@nestjs/common';
+import { MessagePattern, Payload, RpcException } from '@nestjs/microservices';
 import { ProductCatalogService } from './product-catalog.service';
 import { ProductBrowseService } from './product-browse.service';
 import { ProductRatingService } from './product-rating.service';
@@ -51,7 +51,7 @@ export class ProductController {
 
       if (!imageUrls || imageUrls.length === 0) {
         this.logger.error('Product creation failed: No image URLs provided');
-        throw new BadRequestException('At least one product image is required');
+        throw new RpcException({ statusCode: 400, message: 'At least one product image is required' });
       }
 
       const productDataWithShop = {

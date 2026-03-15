@@ -8,12 +8,16 @@ import {
 } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { Throttle } from '@nestjs/throttler';
+import { RedisService } from '@tec-shop/redis-client';
+
+const CATEGORIES_TTL = 600; // seconds — categories rarely change
 
 @ApiTags('Public - Categories')
 @Controller('categories')
 export class PublicCategoriesController {
   constructor(
-    @Inject('PRODUCT_SERVICE') private readonly productService: ClientProxy
+    @Inject('PRODUCT_SERVICE') private readonly productService: ClientProxy,
+    private readonly redisService: RedisService
   ) {}
 
   /**
@@ -101,11 +105,25 @@ Returns only active categories by default.
     const onlyActive = onlyActiveStr === 'false' ? false : true; // Default true
     const includeChildren = includeChildrenStr === 'true' ? true : false; // Default false
 
-    return firstValueFrom(
+    const cacheKey = `cache:categories:list:onlyActive=${onlyActive}:includeChildren=${includeChildren}`;
+    try {
+      const cached = await this.redisService.getJson<unknown>(cacheKey);
+      if (cached !== null) return cached;
+    } catch (_err) {
+      // Redis unavailable — fall through to service call
+    }
+
+    const result = await firstValueFrom(
       this.productService.send('product-get-all-categories', {
         onlyActive,
         includeChildren,
       })
     );
+    try {
+      await this.redisService.setJson(cacheKey, result, CATEGORIES_TTL);
+    } catch (_err) {
+      // Redis unavailable — ignore write failure
+    }
+    return result;
   }
 }

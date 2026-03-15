@@ -25,13 +25,18 @@ import * as Dto from '@tec-shop/dto';
 
 import { Throttle } from '@nestjs/throttler';
 import { CircuitBreakerService } from '../../common/circuit-breaker.service';
+import { RedisService } from '@tec-shop/redis-client';
+
+const BRAND_LIST_TTL = 600; // seconds
+const BRAND_DETAIL_TTL = 300; // seconds
 
 @ApiTags('Brands')
 @Controller('brands')
 export class BrandController {
   constructor(
     @Inject('PRODUCT_SERVICE') private productService: ClientProxy,
-    private readonly cb: CircuitBreakerService
+    private readonly cb: CircuitBreakerService,
+    private readonly redisService: RedisService
   ) {}
 
   /**
@@ -87,14 +92,29 @@ export class BrandController {
     @Query('limit') limit?: number,
     @Query('offset') offset?: number
   ) {
-    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
-      this.productService.send('product-get-all-brands', {
-        onlyActive: onlyActive !== false, // Default to true
-        search,
-        limit: limit ? parseInt(String(limit), 10) : undefined,
-        offset: offset ? parseInt(String(offset), 10) : undefined,
-      })
+    const params = {
+      onlyActive: onlyActive !== false,
+      search,
+      limit: limit ? parseInt(String(limit), 10) : undefined,
+      offset: offset ? parseInt(String(offset), 10) : undefined,
+    };
+    const cacheKey = `cache:brands:list:${JSON.stringify(params)}`;
+    try {
+      const cached = await this.redisService.getJson<unknown>(cacheKey);
+      if (cached !== null) return cached;
+    } catch (_err) {
+      // Redis unavailable — fall through to service call
+    }
+
+    const result = await this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
+      this.productService.send('product-get-all-brands', params)
     ));
+    try {
+      await this.redisService.setJson(cacheKey, result, BRAND_LIST_TTL);
+    } catch (_err) {
+      // Redis unavailable — ignore write failure
+    }
+    return result;
   }
 
   /**
@@ -139,12 +159,24 @@ export class BrandController {
     },
   })
   async getPopularBrands(@Query('limit') limit?: number) {
-    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
-      this.productService.send(
-        'product-get-popular-brands',
-        limit ? parseInt(String(limit), 10) : 10
-      )
+    const parsedLimit = limit ? parseInt(String(limit), 10) : 10;
+    const cacheKey = `cache:brands:popular:limit=${parsedLimit}`;
+    try {
+      const cached = await this.redisService.getJson<unknown>(cacheKey);
+      if (cached !== null) return cached;
+    } catch (_err) {
+      // Redis unavailable — fall through to service call
+    }
+
+    const result = await this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
+      this.productService.send('product-get-popular-brands', parsedLimit)
     ));
+    try {
+      await this.redisService.setJson(cacheKey, result, BRAND_LIST_TTL);
+    } catch (_err) {
+      // Redis unavailable — ignore write failure
+    }
+    return result;
   }
 
   /**
@@ -159,12 +191,27 @@ export class BrandController {
     @Param('id') id: string,
     @Query('includeProducts') includeProducts?: boolean
   ) {
-    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
+    const includeProductsBool = includeProducts === true;
+    const cacheKey = `cache:brands:detail:${id}:includeProducts=${includeProductsBool}`;
+    try {
+      const cached = await this.redisService.getJson<unknown>(cacheKey);
+      if (cached !== null) return cached;
+    } catch (_err) {
+      // Redis unavailable — fall through to service call
+    }
+
+    const result = await this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-get-brand', {
         id,
-        includeProducts: includeProducts === true,
+        includeProducts: includeProductsBool,
       })
     ));
+    try {
+      await this.redisService.setJson(cacheKey, result, BRAND_DETAIL_TTL);
+    } catch (_err) {
+      // Redis unavailable — ignore write failure
+    }
+    return result;
   }
 
   /**
@@ -179,12 +226,27 @@ export class BrandController {
     @Param('slug') slug: string,
     @Query('includeProducts') includeProducts?: boolean
   ) {
-    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
+    const includeProductsBool = includeProducts === true;
+    const cacheKey = `cache:brands:slug:${slug}:includeProducts=${includeProductsBool}`;
+    try {
+      const cached = await this.redisService.getJson<unknown>(cacheKey);
+      if (cached !== null) return cached;
+    } catch (_err) {
+      // Redis unavailable — fall through to service call
+    }
+
+    const result = await this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-get-brand-by-slug', {
         slug,
-        includeProducts: includeProducts === true,
+        includeProducts: includeProductsBool,
       })
     ));
+    try {
+      await this.redisService.setJson(cacheKey, result, BRAND_DETAIL_TTL);
+    } catch (_err) {
+      // Redis unavailable — ignore write failure
+    }
+    return result;
   }
 
   /**

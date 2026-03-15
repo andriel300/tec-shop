@@ -1,4 +1,5 @@
-import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import { SellerPrismaService } from '../../prisma/prisma.service';
@@ -43,7 +44,7 @@ export class StripeService {
     });
 
     if (!seller) {
-      throw new NotFoundException('Seller not found');
+      throw new RpcException({ statusCode: 404, message: 'Seller not found' });
     }
 
     // Check if seller already has a Stripe account
@@ -85,7 +86,7 @@ export class StripeService {
     } catch (error) {
       // Log error without exposing sensitive Stripe API details
       this.logger.error('Stripe account creation failed for seller:', { authId, error: error instanceof Error ? error.message : 'Unknown error' });
-      throw new BadRequestException('Failed to create Stripe account. Please try again.');
+      throw new RpcException({ statusCode: 400, message: 'Failed to create Stripe account. Please try again.' });
     }
   }
 
@@ -167,7 +168,7 @@ export class StripeService {
     } catch (error) {
       // Log without exposing account details
       this.logger.error('Account link creation failed for seller:', { authId, error: error instanceof Error ? error.message : 'Unknown error' });
-      throw new BadRequestException('Failed to create onboarding link');
+      throw new RpcException({ statusCode: 400, message: 'Failed to create onboarding link' });
     }
   }
 
@@ -180,7 +181,7 @@ export class StripeService {
     });
 
     if (!seller) {
-      throw new NotFoundException('Seller not found');
+      throw new RpcException({ statusCode: 404, message: 'Seller not found' });
     }
 
     if (!seller.stripeAccountId) {
@@ -223,7 +224,7 @@ export class StripeService {
     } catch (error) {
       // Log without exposing account details
       this.logger.error('Failed to retrieve account status for seller:', { authId, error: error instanceof Error ? error.message : 'Unknown error' });
-      throw new BadRequestException('Failed to retrieve account status');
+      throw new RpcException({ statusCode: 400, message: 'Failed to retrieve account status' });
     }
   }
 
@@ -233,7 +234,7 @@ export class StripeService {
   async handleConnectReturn(authId: string, state: string) {
     // Validate state token first
     if (!this.validateSecureState(state, authId)) {
-      throw new BadRequestException('Invalid or expired state token');
+      throw new RpcException({ statusCode: 400, message: 'Invalid or expired state token' });
     }
 
     const seller = await this.prisma.seller.findUnique({
@@ -241,7 +242,7 @@ export class StripeService {
     });
 
     if (!seller || !seller.stripeAccountId) {
-      throw new NotFoundException('Seller or Stripe account not found');
+      throw new RpcException({ statusCode: 404, message: 'Seller or Stripe account not found' });
     }
 
     // Get updated account status
@@ -260,7 +261,7 @@ export class StripeService {
   async handleConnectRefresh(authId: string, state: string) {
     // Validate state token first
     if (!this.validateSecureState(state, authId)) {
-      throw new BadRequestException('Invalid or expired state token');
+      throw new RpcException({ statusCode: 400, message: 'Invalid or expired state token' });
     }
 
     const seller = await this.prisma.seller.findUnique({
@@ -268,7 +269,7 @@ export class StripeService {
     });
 
     if (!seller || !seller.stripeAccountId) {
-      throw new NotFoundException('Seller or Stripe account not found');
+      throw new RpcException({ statusCode: 404, message: 'Seller or Stripe account not found' });
     }
 
     // Create new account link with new state token

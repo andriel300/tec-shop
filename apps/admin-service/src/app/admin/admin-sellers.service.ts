@@ -1,8 +1,8 @@
 import {
   Injectable,
-  NotFoundException,
   Logger,
 } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import {
   AuthPrismaService,
   SellerPrismaService,
@@ -77,19 +77,22 @@ export class AdminSellersService {
       this.sellerPrisma.seller.count({ where }),
     ]);
 
-    const sellersWithAuth = await Promise.all(
-      sellers.map(async (seller) => {
-        const authUser = await this.authPrisma.user.findUnique({
-          where: { id: seller.authId },
-          select: {
-            email: true,
-            isEmailVerified: true,
-            createdAt: true,
-          },
-        });
-        return { ...seller, auth: authUser };
-      })
-    );
+    const authIds = sellers.map((seller) => seller.authId);
+    const authUsers = await this.authPrisma.user.findMany({
+      where: { id: { in: authIds } },
+      select: {
+        id: true,
+        email: true,
+        isEmailVerified: true,
+        createdAt: true,
+      },
+    });
+    const authUserMap = new Map(authUsers.map((u) => [u.id, u]));
+
+    const sellersWithAuth = sellers.map((seller) => ({
+      ...seller,
+      auth: authUserMap.get(seller.authId) ?? null,
+    }));
 
     return {
       data: sellersWithAuth,
@@ -110,7 +113,7 @@ export class AdminSellersService {
     });
 
     if (!seller) {
-      throw new NotFoundException('Seller not found');
+      throw new RpcException({ statusCode: 404, message: 'Seller not found' });
     }
 
     const updatedSeller = await this.sellerPrisma.seller.update({

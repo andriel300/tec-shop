@@ -25,13 +25,18 @@ import * as Dto from '@tec-shop/dto';
 
 import { Throttle } from '@nestjs/throttler';
 import { CircuitBreakerService } from '../../common/circuit-breaker.service';
+import { RedisService } from '@tec-shop/redis-client';
+
+const CATEGORY_LIST_TTL = 600; // seconds — tree/list rarely changes
+const CATEGORY_DETAIL_TTL = 300; // seconds — individual category
 
 @ApiTags('Categories')
 @Controller('categories')
 export class CategoryController {
   constructor(
     @Inject('PRODUCT_SERVICE') private productService: ClientProxy,
-    private readonly cb: CircuitBreakerService
+    private readonly cb: CircuitBreakerService,
+    private readonly redisService: RedisService
   ) {}
 
   /**
@@ -90,13 +95,28 @@ export class CategoryController {
     @Query('onlyActive') onlyActive?: boolean,
     @Query('parentId') parentId?: string
   ) {
-    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
-      this.productService.send('product-get-all-categories', {
-        includeChildren: includeChildren === true,
-        onlyActive: onlyActive !== false, // Default to true
-        parentId: parentId || null,
-      })
+    const params = {
+      includeChildren: includeChildren === true,
+      onlyActive: onlyActive !== false,
+      parentId: parentId || null,
+    };
+    const cacheKey = `cache:categories:list:${JSON.stringify(params)}`;
+    try {
+      const cached = await this.redisService.getJson<unknown>(cacheKey);
+      if (cached !== null) return cached;
+    } catch (_err) {
+      // Redis unavailable — fall through to service call
+    }
+
+    const result = await this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
+      this.productService.send('product-get-all-categories', params)
     ));
+    try {
+      await this.redisService.setJson(cacheKey, result, CATEGORY_LIST_TTL);
+    } catch (_err) {
+      // Redis unavailable — ignore write failure
+    }
+    return result;
   }
 
   /**
@@ -151,12 +171,24 @@ export class CategoryController {
     },
   })
   async getCategoryTree(@Query('onlyActive') onlyActive?: boolean) {
-    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
-      this.productService.send(
-        'product-get-category-tree',
-        onlyActive !== false
-      )
+    const onlyActiveBool = onlyActive !== false;
+    const cacheKey = `cache:categories:tree:onlyActive=${onlyActiveBool}`;
+    try {
+      const cached = await this.redisService.getJson<unknown>(cacheKey);
+      if (cached !== null) return cached;
+    } catch (_err) {
+      // Redis unavailable — fall through to service call
+    }
+
+    const result = await this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
+      this.productService.send('product-get-category-tree', onlyActiveBool)
     ));
+    try {
+      await this.redisService.setJson(cacheKey, result, CATEGORY_LIST_TTL);
+    } catch (_err) {
+      // Redis unavailable — ignore write failure
+    }
+    return result;
   }
 
   /**
@@ -172,13 +204,29 @@ export class CategoryController {
     @Query('includeChildren') includeChildren?: boolean,
     @Query('includeProducts') includeProducts?: boolean
   ) {
-    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
+    const includeChildrenBool = includeChildren === true;
+    const includeProductsBool = includeProducts === true;
+    const cacheKey = `cache:categories:detail:${id}:includeChildren=${includeChildrenBool}:includeProducts=${includeProductsBool}`;
+    try {
+      const cached = await this.redisService.getJson<unknown>(cacheKey);
+      if (cached !== null) return cached;
+    } catch (_err) {
+      // Redis unavailable — fall through to service call
+    }
+
+    const result = await this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-get-category', {
         id,
-        includeChildren: includeChildren === true,
-        includeProducts: includeProducts === true,
+        includeChildren: includeChildrenBool,
+        includeProducts: includeProductsBool,
       })
     ));
+    try {
+      await this.redisService.setJson(cacheKey, result, CATEGORY_DETAIL_TTL);
+    } catch (_err) {
+      // Redis unavailable — ignore write failure
+    }
+    return result;
   }
 
   /**

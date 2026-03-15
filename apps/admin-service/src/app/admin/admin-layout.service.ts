@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { UserPrismaService } from '../../prisma/prisma.service';
 import type {
   UpdateLayoutDto,
@@ -93,7 +94,7 @@ export class AdminLayoutService {
     });
 
     if (!existing) {
-      throw new NotFoundException('Hero slide not found');
+      throw new RpcException({ statusCode: 404, message: 'Hero slide not found' });
     }
 
     const updated = await this.userPrisma.heroSlide.update({
@@ -121,7 +122,7 @@ export class AdminLayoutService {
     });
 
     if (!existing) {
-      throw new NotFoundException('Hero slide not found');
+      throw new RpcException({ statusCode: 404, message: 'Hero slide not found' });
     }
 
     await this.userPrisma.heroSlide.delete({ where: { id: slideId } });

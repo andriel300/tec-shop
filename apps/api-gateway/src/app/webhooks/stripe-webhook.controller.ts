@@ -75,9 +75,13 @@ export class StripeWebhookController {
     // retry on slow downstream processing. Order/seller service must handle
     // idempotency (existing stripeSessionId unique guard covers this).
     if (orderEvents.includes(event.type)) {
-      this.orderService.emit('handle-stripe-webhook', event);
+      this.orderService.emit('handle-stripe-webhook', event).subscribe({
+        error: (err: unknown) => this.logger.error('Stripe webhook emit failed', err),
+      });
     } else {
-      this.sellerService.emit('stripe-webhook', event);
+      this.sellerService.emit('stripe-webhook', event).subscribe({
+        error: (err: unknown) => this.logger.error('Stripe webhook emit failed', err),
+      });
     }
 
     return { received: true };

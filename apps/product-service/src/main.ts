@@ -72,4 +72,14 @@ async function bootstrap() {
   Logger.log(`product-service TCP on port ${tcpPort} with mTLS, metrics on port ${metricsPort}`);
 }
 
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
 bootstrap();

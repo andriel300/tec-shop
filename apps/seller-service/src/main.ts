@@ -58,4 +58,14 @@ async function bootstrap() {
   await app.listen(metricsPort, '0.0.0.0');
   Logger.log(`seller-service TCP on port ${process.env.SELLER_SERVICE_PORT ?? 6003} with mTLS, metrics on port ${metricsPort}`);
 }
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
 bootstrap();

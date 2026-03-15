@@ -1,9 +1,8 @@
 import {
   Injectable,
   Logger,
-  BadRequestException,
-  NotFoundException,
 } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { Prisma } from '@tec-shop/order-client';
 import { OrderPrismaService } from '../prisma/prisma.service';
 import { NotificationProducerService } from '@tec-shop/notification-producer';
@@ -41,7 +40,7 @@ export class OrderQueryService {
     } = query;
 
     if (!sellerId) {
-      throw new BadRequestException('sellerId is required');
+      throw new RpcException({ statusCode: 400, message: 'sellerId is required' });
     }
 
     this.logger.log(`Fetching orders for sellerId: ${sellerId}`);
@@ -109,7 +108,7 @@ export class OrderQueryService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new RpcException({ statusCode: 404, message: 'Order not found' });
     }
 
     return order;
@@ -125,7 +124,7 @@ export class OrderQueryService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new RpcException({ statusCode: 404, message: 'Order not found' });
     }
 
     return order;
@@ -149,7 +148,7 @@ export class OrderQueryService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new RpcException({ statusCode: 404, message: 'Order not found' });
     }
 
     return order;
@@ -171,7 +170,7 @@ export class OrderQueryService {
     });
 
     if (!order) {
-      throw new NotFoundException('Order not found');
+      throw new RpcException({ statusCode: 404, message: 'Order not found' });
     }
 
     const updatedOrder = await this.prisma.order.update({

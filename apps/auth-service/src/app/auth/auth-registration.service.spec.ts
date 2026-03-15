@@ -5,9 +5,8 @@ import { RedisService } from '@tec-shop/redis-client';
 import { EmailService } from '../email/email.service';
 import { LogProducerService } from '@tec-shop/logger-producer';
 import { NotificationProducerService } from '@tec-shop/notification-producer';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import * as bcrypt from 'bcrypt';
-import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SignupDto, VerifyEmailDto } from '@tec-shop/dto';
 import { of } from 'rxjs';
@@ -211,7 +210,7 @@ describe('AuthRegistrationService', () => {
       expect(result).toEqual({ message: 'Email verified successfully.' });
     });
 
-    it('should throw UnauthorizedException when OTP does not match', async () => {
+    it('should throw RpcException when OTP does not match', async () => {
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
       jest
         .spyOn(redisService, 'get')
@@ -222,7 +221,7 @@ describe('AuthRegistrationService', () => {
       jest.spyOn(redisService, 'set').mockResolvedValue(undefined);
 
       await expect(service.verifyEmail(verifyEmailDto)).rejects.toThrow(
-        UnauthorizedException
+        RpcException
       );
       expect(redisService.set).toHaveBeenCalledWith(
         expect.stringContaining('otp-attempts:'),
@@ -231,7 +230,7 @@ describe('AuthRegistrationService', () => {
       );
     });
 
-    it('should throw UnauthorizedException when OTP has expired (no Redis entry)', async () => {
+    it('should throw RpcException when OTP has expired (no Redis entry)', async () => {
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
       jest
         .spyOn(redisService, 'get')
@@ -239,7 +238,7 @@ describe('AuthRegistrationService', () => {
         .mockResolvedValueOnce(null);
 
       await expect(service.verifyEmail(verifyEmailDto)).rejects.toThrow(
-        UnauthorizedException
+        RpcException
       );
     });
 
@@ -389,7 +388,7 @@ describe('AuthRegistrationService', () => {
       );
     });
 
-    it('throws UnauthorizedException for an invalid or expired token', async () => {
+    it('throws RpcException for an invalid or expired token', async () => {
       jest
         .spyOn(prismaService.passwordResetToken as unknown as Record<string, jest.Mock>, 'findUnique')
         .mockResolvedValue(null);
@@ -399,7 +398,7 @@ describe('AuthRegistrationService', () => {
           token: 'expired-or-invalid-token',
           newPassword: 'NewPass123!',
         })
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toThrow(RpcException);
     });
   });
 

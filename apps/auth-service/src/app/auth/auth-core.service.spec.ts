@@ -7,7 +7,7 @@ import { EmailService } from '../email/email.service';
 import { LogProducerService } from '@tec-shop/logger-producer';
 import { NotificationProducerService } from '@tec-shop/notification-producer';
 import * as bcrypt from 'bcrypt';
-import { UnauthorizedException } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { LoginDto } from '@tec-shop/dto';
 
@@ -168,30 +168,30 @@ describe('AuthCoreService', () => {
       });
     });
 
-    it('should throw UnauthorizedException if credentials are invalid', async () => {
+    it('should throw RpcException if credentials are invalid', async () => {
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(null);
       await expect(service.login(loginDto)).rejects.toThrow(
-        UnauthorizedException
+        RpcException
       );
     });
 
-    it('should throw UnauthorizedException when email is not verified', async () => {
+    it('should throw RpcException when email is not verified', async () => {
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue({
         ...mockUser,
         isEmailVerified: false,
       });
 
       await expect(service.login(loginDto)).rejects.toThrow(
-        UnauthorizedException
+        RpcException
       );
     });
 
-    it('should throw UnauthorizedException when password does not match', async () => {
+    it('should throw RpcException when password does not match', async () => {
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
       jest.spyOn(bcrypt, 'compare').mockResolvedValue(false as never);
 
       await expect(service.login(loginDto)).rejects.toThrow(
-        UnauthorizedException
+        RpcException
       );
     });
 
@@ -208,7 +208,7 @@ describe('AuthCoreService', () => {
     it('should reject a SELLER user attempting to use the customer login endpoint', async () => {
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(null);
 
-      await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException);
+      await expect(service.login(loginDto)).rejects.toThrow(RpcException);
     });
 
     it('should persist rememberMe=true to Redis so token refresh can restore a 30-day session', async () => {
@@ -296,11 +296,11 @@ describe('AuthCoreService', () => {
       );
     });
 
-    it('throws UnauthorizedException when the refresh token does not match any user', async () => {
+    it('throws RpcException when the refresh token does not match any user', async () => {
       jest.spyOn(prismaService.user, 'findFirst').mockResolvedValue(null);
 
       await expect(service.refreshToken('invalid-token')).rejects.toThrow(
-        UnauthorizedException
+        RpcException
       );
     });
 
