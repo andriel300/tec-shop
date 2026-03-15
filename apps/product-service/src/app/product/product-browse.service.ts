@@ -103,8 +103,41 @@ export class ProductBrowseService {
       ];
     }
 
-    if ((colors && colors.length > 0) || (sizes && sizes.length > 0)) {
-      where.hasVariants = true;
+    if (colors && colors.length > 0) {
+      where.AND = [
+        ...(Array.isArray(where.AND) ? where.AND : []),
+        {
+          variants: {
+            some: {
+              isActive: true,
+              OR: colors.flatMap((c) => [
+                { attributes: { path: ['color'], equals: c } },
+                { attributes: { path: ['Color'], equals: c } },
+                { attributes: { path: ['COLOR'], equals: c } },
+                { attributes: { path: ['colour'], equals: c } },
+              ]),
+            },
+          },
+        },
+      ];
+    }
+
+    if (sizes && sizes.length > 0) {
+      where.AND = [
+        ...(Array.isArray(where.AND) ? where.AND : []),
+        {
+          variants: {
+            some: {
+              isActive: true,
+              OR: sizes.flatMap((s) => [
+                { attributes: { path: ['size'], equals: s } },
+                { attributes: { path: ['Size'], equals: s } },
+                { attributes: { path: ['SIZE'], equals: s } },
+              ]),
+            },
+          },
+        },
+      ];
     }
 
     const orderByMap: Record<string, Record<string, string>> = {
@@ -116,13 +149,9 @@ export class ProductBrowseService {
     };
 
     const orderBy = orderByMap[sort] || orderByMap.newest;
-    const hasVariantFilters = (colors && colors.length > 0) || (sizes && sizes.length > 0);
 
-    let products;
-    let total: number;
-
-    if (hasVariantFilters) {
-      const allProducts = await this.prisma.product.findMany({
+    const [products, total] = await Promise.all([
+      this.prisma.product.findMany({
         where,
         include: {
           category: true,
@@ -130,53 +159,11 @@ export class ProductBrowseService {
           variants: { where: { isActive: true } },
         },
         orderBy,
-      });
-
-      let filteredProducts = allProducts;
-
-      if (colors && colors.length > 0) {
-        filteredProducts = filteredProducts.filter((product) =>
-          product.variants.some((variant) => {
-            const attrs = variant.attributes as Record<string, unknown>;
-            const colorValue = attrs.Color || attrs.color || attrs.COLOR || attrs.colour;
-            return typeof colorValue === 'string' &&
-              colors.some((c) => c.toLowerCase() === colorValue.toLowerCase());
-          })
-        );
-      }
-
-      if (sizes && sizes.length > 0) {
-        filteredProducts = filteredProducts.filter((product) =>
-          product.variants.some((variant) => {
-            const attrs = variant.attributes as Record<string, unknown>;
-            const sizeValue = attrs.Size || attrs.size || attrs.SIZE;
-            return typeof sizeValue === 'string' &&
-              sizes.some((s) => s.toLowerCase() === sizeValue.toLowerCase());
-          })
-        );
-      }
-
-      total = filteredProducts.length;
-      products = filteredProducts.slice(offset, offset + limit);
-    } else {
-      const [fetchedProducts, count] = await Promise.all([
-        this.prisma.product.findMany({
-          where,
-          include: {
-            category: true,
-            brand: true,
-            variants: { where: { isActive: true } },
-          },
-          orderBy,
-          take: limit,
-          skip: offset,
-        }),
-        this.prisma.product.count({ where }),
-      ]);
-
-      products = fetchedProducts;
-      total = count;
-    }
+        take: limit,
+        skip: offset,
+      }),
+      this.prisma.product.count({ where }),
+    ]);
 
     this.logger.log(
       `findPublicProducts returning ${products.length} products out of ${total} total`
