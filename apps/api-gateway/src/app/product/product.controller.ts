@@ -32,6 +32,7 @@ import { Roles } from '../../decorators/roles.decorator';
 import * as Dto from '@tec-shop/dto';
 import { ImageKitService } from '@tec-shop/shared/imagekit';
 import { CircuitBreakerService } from '../../common/circuit-breaker.service';
+import type { Request } from 'express';
 
 // File validation configuration
 const FILE_SIZE_LIMIT = 5 * 1024 * 1024; // 5MB
@@ -346,34 +347,24 @@ export class ProductController {
     description: 'Product not found or not published.',
   })
   async createRating(
-    @Req() req: Record<string, unknown>,
+    @Req() req: Request,
     @Param('productId') productId: string,
     @Body() body: Record<string, unknown>,
     @UploadedFiles() files?: Express.Multer.File[]
   ) {
-    const user = req.user as {
-      userId: string;
-      username: string;
-      role?: string;
-      userType?: 'CUSTOMER' | 'SELLER' | 'ADMIN';
-    };
+    const user = (req as Request & { user: { userId: string; username: string; role?: string; userType?: 'CUSTOMER' | 'SELLER' | 'ADMIN' } }).user;
 
-    // Parse rating from form-data (comes as string)
-    const rating = typeof body.rating === 'string' ? parseInt(body.rating as string, 10) : body.rating as number;
-    const title = body.title as string | undefined;
-    const content = body.content as string | undefined;
-
-    if (title && title.length > 100) {
-      throw new BadRequestException('Review title must not exceed 100 characters');
+    // Multipart form-data sends all fields as strings — coerce rating to number before schema validation
+    const rawRating = typeof body.rating === 'string' ? parseInt(body.rating, 10) : body.rating;
+    const validation = Dto.CreateRatingSchema.safeParse({
+      rating: rawRating,
+      title: body.title ?? undefined,
+      content: body.content ?? undefined,
+    });
+    if (!validation.success) {
+      throw new BadRequestException(validation.error.errors[0]?.message ?? 'Invalid rating data');
     }
-
-    if (content && content.length > 2000) {
-      throw new BadRequestException('Review content must not exceed 2000 characters');
-    }
-
-    if (!rating || rating < 1 || rating > 5) {
-      throw new BadRequestException('Rating must be between 1 and 5');
-    }
+    const { rating, title, content } = validation.data;
 
     // Verify purchase: user must have at least one DELIVERED order containing this product
     try {

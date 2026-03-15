@@ -3,6 +3,8 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  InternalServerErrorException,
+  HttpException,
 } from '@nestjs/common';
 import { SellerPrismaService } from '../../prisma/prisma.service';
 import type { CreateDiscountDto, UpdateDiscountDto } from '@tec-shop/dto';
@@ -81,66 +83,74 @@ export class DiscountService {
    * Get all discount codes for a specific seller
    */
   async findAll(authId: string) {
-    // Find seller by authId first
-    const seller = await this.prisma.seller.findUnique({
-      where: { authId },
-    });
+    try {
+      const seller = await this.prisma.seller.findUnique({
+        where: { authId },
+      });
 
-    if (!seller) {
-      throw new NotFoundException('Seller not found');
-    }
+      if (!seller) {
+        throw new NotFoundException('Seller not found');
+      }
 
-    return this.prisma.discountCode.findMany({
-      where: { sellerId: seller.id },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        seller: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+      return await this.prisma.discountCode.findMany({
+        where: { sellerId: seller.id },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          seller: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException('Database operation failed');
+    }
   }
 
   /**
    * Get a single discount code (with ownership check)
    */
   async findOne(id: string, authId: string) {
-    // Find seller by authId first
-    const seller = await this.prisma.seller.findUnique({
-      where: { authId },
-    });
+    try {
+      const seller = await this.prisma.seller.findUnique({
+        where: { authId },
+      });
 
-    if (!seller) {
-      throw new NotFoundException('Seller not found');
-    }
+      if (!seller) {
+        throw new NotFoundException('Seller not found');
+      }
 
-    const discount = await this.prisma.discountCode.findUnique({
-      where: { id },
-      include: {
-        seller: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+      const discount = await this.prisma.discountCode.findUnique({
+        where: { id },
+        include: {
+          seller: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    if (!discount) {
-      throw new NotFoundException('Discount code not found');
+      if (!discount) {
+        throw new NotFoundException('Discount code not found');
+      }
+
+      // Security: Verify ownership using seller.id
+      if (discount.sellerId !== seller.id) {
+        throw new ForbiddenException('You do not own this discount code');
+      }
+
+      return discount;
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException('Database operation failed');
     }
-
-    // Security: Verify ownership using seller.id
-    if (discount.sellerId !== seller.id) {
-      throw new ForbiddenException('You do not own this discount code');
-    }
-
-    return discount;
   }
 
   /**
@@ -188,19 +198,27 @@ export class DiscountService {
     if (dto.minimumPurchase !== undefined) cleanedData.minimumPurchase = dto.minimumPurchase ?? null;
     if (dto.isActive !== undefined) cleanedData.isActive = dto.isActive;
 
-    return this.prisma.discountCode.update({
-      where: { id },
-      data: cleanedData,
-      include: {
-        seller: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+    try {
+      return await this.prisma.discountCode.update({
+        where: { id },
+        data: cleanedData,
+        include: {
+          seller: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      if (error.code === 'P2002') {
+        throw new BadRequestException('Discount code already exists');
+      }
+      throw new InternalServerErrorException('Database operation failed');
+    }
   }
 
   /**
@@ -210,9 +228,14 @@ export class DiscountService {
     // Check ownership first (findOne now handles authId lookup)
     await this.findOne(id, authId);
 
-    return this.prisma.discountCode.delete({
-      where: { id },
-    });
+    try {
+      return await this.prisma.discountCode.delete({
+        where: { id },
+      });
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException('Database operation failed');
+    }
   }
 
   /**
@@ -220,9 +243,14 @@ export class DiscountService {
    * This will be used by the order service to check if a code is valid
    */
   async validateCode(code: string, orderValue: number) {
-    const discount = await this.prisma.discountCode.findUnique({
-      where: { code: code.toUpperCase() },
-    });
+    let discount: Awaited<ReturnType<typeof this.prisma.discountCode.findUnique>>;
+    try {
+      discount = await this.prisma.discountCode.findUnique({
+        where: { code: code.toUpperCase() },
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Database operation failed');
+    }
 
     if (!discount) {
       throw new NotFoundException('Invalid discount code');
@@ -260,14 +288,19 @@ export class DiscountService {
    * Increment usage count when a discount is applied
    */
   async incrementUsage(id: string) {
-    return this.prisma.discountCode.update({
-      where: { id },
-      data: {
-        usageCount: {
-          increment: 1,
+    try {
+      return await this.prisma.discountCode.update({
+        where: { id },
+        data: {
+          usageCount: {
+            increment: 1,
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException('Database operation failed');
+    }
   }
 
   /**
@@ -279,12 +312,17 @@ export class DiscountService {
     cartItems: { productId: string; sellerId: string; subtotal: number }[]
   ) {
     // Find discount code (case-insensitive)
-    const discount = await this.prisma.discountCode.findUnique({
-      where: { code: code.toUpperCase() },
-      include: {
-        seller: true,
-      },
-    });
+    let discount: Awaited<ReturnType<typeof this.prisma.discountCode.findUnique<{ include: { seller: true } }>>>;
+    try {
+      discount = await this.prisma.discountCode.findUnique({
+        where: { code: code.toUpperCase() },
+        include: {
+          seller: true,
+        },
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Database operation failed');
+    }
 
     if (!discount) {
       return {

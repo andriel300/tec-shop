@@ -9,6 +9,7 @@ import {
   Req,
   UseGuards,
   UnauthorizedException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
@@ -662,7 +663,10 @@ export class AuthController {
     // Redirect to frontend — tokens are already in httpOnly cookies above.
     // Do NOT pass user data in the URL (browser history, server logs, Referer header leakage).
     // The frontend will call /auth/refresh to retrieve user identity from the session cookie.
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+    if (!frontendUrl) {
+      throw new InternalServerErrorException('FRONTEND_URL is not configured');
+    }
     response.redirect(`${frontendUrl}?auth=success`);
   }
 }

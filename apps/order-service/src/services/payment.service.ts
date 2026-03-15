@@ -20,6 +20,7 @@ interface CheckoutSessionData {
 export class PaymentService {
   private readonly logger = new Logger(PaymentService.name);
   private readonly stripe: Stripe;
+  private readonly frontendUrl: string;
   private readonly platformFeePercentage = 0.1; // 10% platform fee
 
   constructor(private readonly configService: ConfigService) {
@@ -30,6 +31,12 @@ export class PaymentService {
     this.stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2025-08-27.basil',
     });
+
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+    if (!frontendUrl) {
+      throw new Error('FRONTEND_URL environment variable not set');
+    }
+    this.frontendUrl = frontendUrl;
   }
 
   async createCheckoutSession(data: CheckoutSessionData): Promise<{
@@ -65,10 +72,6 @@ export class PaymentService {
         });
       }
 
-      const frontendUrl =
-        this.configService.get<string>('FRONTEND_URL') ||
-        'http://localhost:3000';
-
       const idempotencyKey = createHash('sha256')
         .update(
           `${data.userId}:${data.items
@@ -83,8 +86,8 @@ export class PaymentService {
           payment_method_types: ['card'],
           line_items: lineItems,
           mode: 'payment',
-          success_url: `${frontendUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${frontendUrl}/cart?cancelled=true`,
+          success_url: `${this.frontendUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${this.frontendUrl}/cart?cancelled=true`,
           customer_email: undefined,
           metadata: {
             userId: data.userId,
