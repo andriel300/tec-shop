@@ -227,8 +227,8 @@ export class ChatController {
   async getMessages(
     @Req() req: AuthenticatedRequest,
     @Param('id') conversationId: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string
+    @Query('page') page?: number,
+    @Query('limit') limit?: number
   ) {
     const { userId, userType } = req.user;
     const participantType: ParticipantType =
@@ -239,8 +239,8 @@ export class ChatController {
         conversationId,
         participantId: userId,
         participantType,
-        page: page ? parseInt(page, 10) : 1,
-        limit: limit ? parseInt(limit, 10) : 20,
+        page: page ?? 1,
+        limit: limit ?? 20,
       })
     );
 

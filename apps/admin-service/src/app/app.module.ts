@@ -8,7 +8,8 @@ import { LoggerModule } from 'nestjs-pino';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AdminModule } from './admin/admin.module';
 import { NotificationProducerModule } from '@tec-shop/notification-producer';
-import { MetricsModule, HealthModule } from '@tec-shop/metrics';
+import { MetricsModule, HealthModule, PrismaHealthIndicator } from '@tec-shop/metrics';
+import { AuthPrismaService } from '../prisma/prisma.service';
 
 @Module({
   imports: [
@@ -59,6 +60,11 @@ import { MetricsModule, HealthModule } from '@tec-shop/metrics';
   controllers: [AppController],
   providers: [
     AppService,
+    {
+      provide: 'HEALTH_INDICATORS',
+      useFactory: (prisma: AuthPrismaService) => [new PrismaHealthIndicator(prisma)],
+      inject: [AuthPrismaService],
+    },
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,

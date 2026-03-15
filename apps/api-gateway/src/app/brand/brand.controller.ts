@@ -95,8 +95,8 @@ export class BrandController {
     const params = {
       onlyActive: onlyActive !== false,
       search,
-      limit: limit ? parseInt(String(limit), 10) : undefined,
-      offset: offset ? parseInt(String(offset), 10) : undefined,
+      limit: limit,
+      offset: offset,
     };
     const cacheKey = `cache:brands:list:${JSON.stringify(params)}`;
     try {
@@ -159,7 +159,7 @@ export class BrandController {
     },
   })
   async getPopularBrands(@Query('limit') limit?: number) {
-    const parsedLimit = limit ? parseInt(String(limit), 10) : 10;
+    const parsedLimit = limit ?? 10;
     const cacheKey = `cache:brands:popular:limit=${parsedLimit}`;
     try {
       const cached = await this.redisService.getJson<unknown>(cacheKey);

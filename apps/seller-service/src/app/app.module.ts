@@ -10,7 +10,8 @@ import { DiscountModule } from './discount/discount.module';
 import { EventModule } from './event/event.module';
 import { NotificationModule } from './notification/notification.module';
 import { LogProducerModule } from '@tec-shop/logger-producer';
-import { MetricsModule, HealthModule } from '@tec-shop/metrics';
+import { MetricsModule, HealthModule, PrismaHealthIndicator } from '@tec-shop/metrics';
+import { SellerPrismaService } from '../prisma/prisma.service';
 
 @Module({
   imports: [
@@ -64,6 +65,11 @@ import { MetricsModule, HealthModule } from '@tec-shop/metrics';
   ],
   controllers: [],
   providers: [
+    {
+      provide: 'HEALTH_INDICATORS',
+      useFactory: (prisma: SellerPrismaService) => [new PrismaHealthIndicator(prisma)],
+      inject: [SellerPrismaService],
+    },
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,

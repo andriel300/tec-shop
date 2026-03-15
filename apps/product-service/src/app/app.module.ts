@@ -12,7 +12,8 @@ import { CategoryModule } from './category/category.module';
 import { BrandModule } from './brand/brand.module';
 import { SellerClientModule } from '../clients/seller.client';
 import { LogProducerModule } from '@tec-shop/logger-producer';
-import { MetricsModule, HealthModule } from '@tec-shop/metrics';
+import { MetricsModule, HealthModule, PrismaHealthIndicator, PrismaLike } from '@tec-shop/metrics';
+import { ProductPrismaService } from '../prisma/prisma.service';
 import { NotificationProducerModule } from '@tec-shop/notification-producer';
 
 @Module({
@@ -69,6 +70,11 @@ import { NotificationProducerModule } from '@tec-shop/notification-producer';
   controllers: [AppController],
   providers: [
     AppService,
+    {
+      provide: 'HEALTH_INDICATORS',
+      useFactory: (prisma: ProductPrismaService) => [new PrismaHealthIndicator(prisma as unknown as PrismaLike)],
+      inject: [ProductPrismaService],
+    },
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,

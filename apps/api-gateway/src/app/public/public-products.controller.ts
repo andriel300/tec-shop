@@ -292,30 +292,18 @@ Retrieves all publicly available products for the marketplace frontend.
     @Query('brandId') brandId?: string,
     @Query('shopId') shopId?: string,
     @Query('search') search?: string,
-    @Query('minPrice') minPriceStr?: string,
-    @Query('maxPrice') maxPriceStr?: string,
+    @Query('minPrice') minPrice?: number,
+    @Query('maxPrice') maxPrice?: number,
     @Query('productType') productType?: string,
-    @Query('isFeatured') isFeaturedStr?: string,
-    @Query('onSale') onSaleStr?: string,
+    @Query('isFeatured') isFeatured?: boolean,
+    @Query('onSale') onSale?: boolean,
     @Query('tags') tags?: string,
     @Query('colors') colors?: string,
     @Query('sizes') sizes?: string,
     @Query('sort') sort?: string,
-    @Query('limit') limitStr?: string,
-    @Query('offset') offsetStr?: string
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number
   ) {
-    // Parse optional numeric and boolean values manually
-    const minPrice = minPriceStr ? parseFloat(minPriceStr) : undefined;
-    const maxPrice = maxPriceStr ? parseFloat(maxPriceStr) : undefined;
-    const isFeatured = isFeaturedStr
-      ? isFeaturedStr === 'true' || isFeaturedStr === '1'
-      : undefined;
-    const onSale = onSaleStr
-      ? onSaleStr === 'true' || onSaleStr === '1'
-      : undefined;
-    const limit = limitStr ? parseInt(limitStr, 10) : 20;
-    const offset = offsetStr ? parseInt(offsetStr, 10) : 0;
-
     // Parse comma-separated values
     const tagsArray = tags
       ? tags.split(',').map((tag) => tag.trim())
@@ -328,7 +316,7 @@ Retrieves all publicly available products for the marketplace frontend.
       : undefined;
 
     // Validate and cap limit
-    const validatedLimit = Math.min(Math.max(limit, 1), 100);
+    const validatedLimit = Math.min(Math.max(limit ?? 20, 1), 100);
 
     const params = {
       categoryId,
@@ -345,7 +333,7 @@ Retrieves all publicly available products for the marketplace frontend.
       sizes: sizesArray,
       sort: sort || 'newest',
       limit: validatedLimit,
-      offset,
+      offset: offset ?? 0,
     };
 
     const cacheKey = `cache:products:list:${JSON.stringify(params)}`;
@@ -439,18 +427,15 @@ Retrieves all available filter options (colors, sizes) dynamically extracted fro
   @ApiResponse({ status: 404, description: 'Product not found.' })
   async getProductReviews(
     @Param('productId') productId: string,
-    @Query('page') pageStr?: string,
-    @Query('limit') limitStr?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
     @Query('sort') sort?: string
   ) {
-    const page = pageStr ? parseInt(pageStr, 10) : 1;
-    const limit = limitStr ? Math.min(parseInt(limitStr, 10), 50) : 10;
-
     return firstValueFrom(
       this.productService.send('product-get-reviews', {
         productId,
-        page: Math.max(page, 1),
-        limit: Math.max(limit, 1),
+        page: Math.max(page ?? 1, 1),
+        limit: Math.min(Math.max(limit ?? 10, 1), 50),
         sort: sort || 'newest',
       })
     );

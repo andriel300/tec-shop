@@ -18,7 +18,9 @@ import { LoggerModule } from 'nestjs-pino';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { NotificationProducerModule } from '@tec-shop/notification-producer';
-import { MetricsModule, HealthModule } from '@tec-shop/metrics';
+import { MetricsModule, HealthModule, PrismaHealthIndicator, RedisHealthIndicator } from '@tec-shop/metrics';
+import { OrderPrismaService } from '../prisma/prisma.service';
+import { RedisService } from '@tec-shop/redis-client';
 
 @Module({
   imports: [
@@ -75,6 +77,14 @@ import { MetricsModule, HealthModule } from '@tec-shop/metrics';
     KafkaProducerService,
     WebhookService,
     MockLogisticsService,
+    {
+      provide: 'HEALTH_INDICATORS',
+      useFactory: (prisma: OrderPrismaService, redis: RedisService) => [
+        new PrismaHealthIndicator(prisma),
+        new RedisHealthIndicator(redis),
+      ],
+      inject: [OrderPrismaService, RedisService],
+    },
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,

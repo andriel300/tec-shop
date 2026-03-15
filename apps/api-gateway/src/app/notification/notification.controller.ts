@@ -90,8 +90,8 @@ export class NotificationController {
     @Req() req: Record<string, unknown>,
     @Query('isRead') isRead?: string,
     @Query('type') type?: string,
-    @Query('limit') limit?: string,
-    @Query('offset') offset?: string
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number
   ) {
     const user = req.user as { userId: string };
     this.logger.log(`Fetching notifications for seller authId: ${user.userId}`);
@@ -99,8 +99,8 @@ export class NotificationController {
     const filters: Record<string, unknown> = {};
     if (isRead !== undefined) filters.isRead = isRead === 'true';
     if (type) filters.type = type;
-    if (limit) filters.limit = parseInt(limit, 10);
-    if (offset) filters.offset = parseInt(offset, 10);
+    if (limit) filters.limit = limit;
+    if (offset) filters.offset = offset;
 
     return firstValueFrom(
       this.sellerService.send('seller-get-notifications', {

@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
 import { LoggingInterceptor, ErrorInterceptor, AllExceptionsFilter } from '@tec-shop/interceptor';
-import { MetricsModule, HealthModule } from '@tec-shop/metrics';
+import { MetricsModule, HealthModule, PrismaHealthIndicator, PrismaLike } from '@tec-shop/metrics';
+import { AnalyticsPrismaService } from '../prisma/prisma.service';
 import { LoggerModule } from 'nestjs-pino';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -51,6 +52,11 @@ import { RecommendationModule } from '../recommendation/recommendation.module';
     RecommendationModule,
   ],
   providers: [
+    {
+      provide: 'HEALTH_INDICATORS',
+      useFactory: (prisma: AnalyticsPrismaService) => [new PrismaHealthIndicator(prisma as unknown as PrismaLike)],
+      inject: [AnalyticsPrismaService],
+    },
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,

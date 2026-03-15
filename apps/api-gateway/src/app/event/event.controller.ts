@@ -87,8 +87,8 @@ export class EventController {
     @Req() req: Record<string, unknown>,
     @Query('status') status?: string,
     @Query('isActive') isActive?: string,
-    @Query('limit') limit?: string,
-    @Query('offset') offset?: string
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number
   ) {
     const user = req.user as { userId: string };
     this.logger.log(`Fetching events for seller authId: ${user.userId}`);
@@ -96,8 +96,8 @@ export class EventController {
     const filters: Record<string, unknown> = {};
     if (status) filters.status = status;
     if (isActive !== undefined) filters.isActive = isActive === 'true';
-    if (limit) filters.limit = parseInt(limit, 10);
-    if (offset) filters.offset = parseInt(offset, 10);
+    if (limit) filters.limit = limit;
+    if (offset) filters.offset = offset;
 
     return firstValueFrom(
       this.sellerService.send('seller-get-events', {
