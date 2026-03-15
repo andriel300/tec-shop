@@ -1,9 +1,13 @@
 {
   "name": "@tec-shop/kafka-service",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "nx": {
-    "tags": ["type:app", "scope:backend", "domain:analytics"],
+    "tags": [
+      "type:app",
+      "scope:backend",
+      "domain:analytics"
+    ],
     "targets": {
       "build": {
         "executor": "nx:run-commands",

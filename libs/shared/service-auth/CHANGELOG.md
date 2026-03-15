@@ -1,0 +1,9 @@
+## 0.1.0 (2026-03-15)
+
+### Bug Fixes
+
+- **security:** harden authentication, XSS protection, and container security ([76284b4](https://github.com/andriel300/tec-shop/commit/76284b4))
+
+### ❤️ Thank You
+
+- andrieljose @andriel300

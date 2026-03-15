@@ -554,17 +554,11 @@ importers:
 
   apps/api-gateway: {}
 
-  apps/api-gateway-e2e: {}
-
   apps/auth-service: {}
-
-  apps/auth-service-e2e: {}
 
   apps/chatting-service: {}
 
   apps/kafka-service: {}
-
-  apps/kafka-service-e2e: {}
 
   apps/logger-service: {}
 
@@ -581,8 +575,6 @@ importers:
         version: 6.19.2(typescript@5.9.3)
 
   apps/product-service: {}
-
-  apps/product-service-e2e: {}
 
   apps/recommendation-service: {}
 
@@ -617,8 +609,6 @@ importers:
       prisma:
         specifier: ^6.16.2
         version: 6.19.2(typescript@5.9.3)
-
-  apps/user-service-e2e: {}
 
   apps/user-ui:
     dependencies:

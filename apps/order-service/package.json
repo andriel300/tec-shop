@@ -1,12 +1,16 @@
 {
   "name": "@tec-shop/order-service",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "prisma:generate": "npx prisma generate --schema=./prisma/schema.prisma"
   },
   "nx": {
-    "tags": ["type:app", "scope:backend", "domain:order"],
+    "tags": [
+      "type:app",
+      "scope:backend",
+      "domain:order"
+    ],
     "targets": {
       "build": {
         "executor": "nx:run-commands",

@@ -1,9 +1,13 @@
 {
   "name": "@tec-shop/logger-service",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "nx": {
-    "tags": ["type:app", "scope:backend", "domain:logger"],
+    "tags": [
+      "type:app",
+      "scope:backend",
+      "domain:logger"
+    ],
     "targets": {
       "build": {
         "executor": "nx:run-commands",
