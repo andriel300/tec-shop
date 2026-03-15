@@ -3,10 +3,12 @@ import {
   ConflictException,
   Inject,
   Injectable,
+  InternalServerErrorException,
   Logger,
   OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { randomInt, randomBytes, createHash } from 'crypto';
@@ -36,8 +38,11 @@ import { NotificationProducerService } from '@tec-shop/notification-producer';
 @Injectable()
 export class AuthService implements OnModuleInit {
   private readonly logger = new Logger(AuthService.name);
+  private readonly serviceMasterSecret: string;
+  private readonly frontendUrl: string;
 
   constructor(
+    private readonly configService: ConfigService,
     private jwtService: JwtService,
     private prisma: AuthPrismaService,
     private redisService: RedisService,
@@ -46,7 +51,15 @@ export class AuthService implements OnModuleInit {
     private readonly notificationProducer: NotificationProducerService,
     @Inject('USER_SERVICE') private readonly userClient: ClientProxy,
     @Inject('SELLER_SERVICE') private readonly sellerClient: ClientProxy
-  ) {}
+  ) {
+    const secret = this.configService.get<string>('SERVICE_MASTER_SECRET');
+    if (!secret) {
+      throw new InternalServerErrorException('SERVICE_MASTER_SECRET environment variable is not configured');
+    }
+    this.serviceMasterSecret = secret;
+
+    this.frontendUrl = this.configService.get<string>('FRONTEND_URL') ?? 'http://localhost:3000';
+  }
 
   async onModuleInit() {
     this.logger.log('Initializing AuthService module...');
@@ -441,14 +454,8 @@ export class AuthService implements OnModuleInit {
                 country: '', // Will be filled in later by seller
               };
 
-              if (!process.env.SERVICE_MASTER_SECRET) {
-                throw new Error(
-                  'SERVICE_MASTER_SECRET environment variable is not configured'
-                );
-              }
-
               const serviceSecret = ServiceAuthUtil.deriveServiceSecret(
-                process.env.SERVICE_MASTER_SECRET,
+                this.serviceMasterSecret,
                 'auth-service'
               );
 
@@ -663,14 +670,8 @@ export class AuthService implements OnModuleInit {
         country,
       };
 
-      if (!process.env.SERVICE_MASTER_SECRET) {
-        throw new Error(
-          'SERVICE_MASTER_SECRET environment variable is not configured. This is required for secure service-to-service communication.'
-        );
-      }
-
       const serviceSecret = ServiceAuthUtil.deriveServiceSecret(
-        process.env.SERVICE_MASTER_SECRET,
+        this.serviceMasterSecret,
         'auth-service'
       );
 
@@ -928,13 +929,7 @@ export class AuthService implements OnModuleInit {
       },
     });
 
-    // Generate reset link with frontend URL — FRONTEND_URL is required in production
-    const frontendUrl = process.env.FRONTEND_URL;
-    if (!frontendUrl && process.env.NODE_ENV === 'production') {
-      this.logger.error('FRONTEND_URL environment variable is not configured — password reset links will be broken');
-      throw new Error('FRONTEND_URL is required in production');
-    }
-    const resetLink = `${frontendUrl || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+    const resetLink = `${this.frontendUrl}/reset-password?token=${resetToken}`;
 
     // Send reset email with secure link
     await this.emailService.sendPasswordResetLink(user.email, resetLink);
@@ -1225,12 +1220,8 @@ export class AuthService implements OnModuleInit {
       country: dto.country,
     };
 
-    if (!process.env.SERVICE_MASTER_SECRET) {
-      throw new Error('SERVICE_MASTER_SECRET environment variable is not configured');
-    }
-
     const serviceSecret = ServiceAuthUtil.deriveServiceSecret(
-      process.env.SERVICE_MASTER_SECRET,
+      this.serviceMasterSecret,
       'auth-service'
     );
 

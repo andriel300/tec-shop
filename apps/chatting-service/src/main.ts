@@ -79,6 +79,7 @@ async function bootstrap() {
   });
 
   // Start all microservices (TCP)
+  app.enableShutdownHooks();
   await app.startAllMicroservices();
 
   // Start HTTP server for WebSocket (Socket.io)

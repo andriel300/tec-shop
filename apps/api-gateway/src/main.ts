@@ -237,6 +237,7 @@ For issues or questions, please contact our development team.
   }
 
   const port = process.env.PORT || 8080;
+  app.enableShutdownHooks();
   await app.listen(port);
   Logger.log(
     `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`

@@ -76,6 +76,7 @@ async function bootstrap() {
     },
   });
 
+  app.enableShutdownHooks();
   await app.startAllMicroservices();
 
   const httpPort = parseInt(process.env.LOGGER_SERVICE_PORT || '6008', 10);

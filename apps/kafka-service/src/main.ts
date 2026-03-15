@@ -92,6 +92,7 @@ async function bootstrap() {
       },
     });
 
+    app.enableShutdownHooks();
     await app.startAllMicroservices();
     const metricsPort = parseInt(process.env.KAFKA_SERVICE_METRICS_PORT ?? '9009', 10);
     await app.listen(metricsPort, '0.0.0.0');

@@ -9,7 +9,8 @@ import { NotificationProducerService } from '@tec-shop/notification-producer';
 import { ClientProxy } from '@nestjs/microservices';
 import * as bcrypt from 'bcrypt';
 import { UnauthorizedException } from '@nestjs/common';
-import { LoginDto, SignupDto, VerifyEmailDto, ForgotPasswordDto } from '@tec-shop/dto';
+import { ConfigService } from '@nestjs/config';
+import { LoginDto, SignupDto, VerifyEmailDto } from '@tec-shop/dto';
 import { of } from 'rxjs';
 
 describe('AuthService', () => {
@@ -38,6 +39,18 @@ describe('AuthService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn((key: string) => {
+              const config: Record<string, string> = {
+                SERVICE_MASTER_SECRET: 'test-master-secret-for-unit-tests',
+                FRONTEND_URL: 'http://localhost:3000',
+              };
+              return config[key];
+            }),
+          },
+        },
         {
           provide: JwtService,
           useValue: {
