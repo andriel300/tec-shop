@@ -1,3 +1,11 @@
+# 1.0.0 (2026-03-15)
+
+### 🧱 Updated Dependencies
+
+- Updated @tec-shop/analytics-client to 1.0.0
+- Updated @tec-shop/metrics to 1.0.0
+- Updated @tec-shop/tracing to 1.0.0
+
 ## 0.1.0 (2026-03-15)
 
 ### Features

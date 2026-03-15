@@ -205,9 +205,10 @@
   },
   "release": {
     "projects": [
+      "apps/api-gateway",
       "apps/*-service",
       "apps/*-ui",
-      "libs/*"
+      "libs/**"
     ],
     "projectsRelationship": "independent",
     "version": {
@@ -234,6 +235,12 @@
             "title": "Performance Improvements"
           }
         },
+        "security": {
+          "semverBump": "patch",
+          "changelog": {
+            "title": "Security Fixes"
+          }
+        },
         "docs": {
           "semverBump": "none",
           "changelog": {
@@ -252,9 +259,7 @@
         },
         "test": {
           "semverBump": "none",
-          "changelog": {
-            "title": "Tests"
-          }
+          "changelog": false
         }
       }
     },

@@ -1,3 +1,15 @@
+# 1.0.0 (2026-03-15)
+
+### 🧱 Updated Dependencies
+
+- Updated @tec-shop/seller-client to 1.0.0
+- Updated @tec-shop/logger-producer to 1.0.0
+- Updated @tec-shop/service-auth to 1.0.0
+- Updated @tec-shop/interceptor to 1.0.0
+- Updated @tec-shop/metrics to 1.0.0
+- Updated @tec-shop/tracing to 1.0.0
+- Updated @tec-shop/dto to 1.0.0
+
 ## 0.1.0 (2026-03-15)
 
 ### Features
