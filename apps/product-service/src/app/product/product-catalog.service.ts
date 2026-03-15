@@ -5,7 +5,6 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
-import { RpcException } from '@nestjs/microservices';
 import { LogCategory } from '@tec-shop/dto';
 import type {
   CreateProductDto,
@@ -67,9 +66,7 @@ export class ProductCatalogService {
       }
 
       if (!ownsShop) {
-        this.logger.error(
-          `Seller ${sellerId} does not own shop ${shopId}`
-        );
+        this.logger.error(`Seller ${sellerId} does not own shop ${shopId}`);
         this.logProducer.warn('product-service', LogCategory.PRODUCT, 'Product creation failed - shop ownership verification failed', {
           sellerId,
           metadata: { action: 'create_product', shopId },
@@ -85,9 +82,7 @@ export class ProductCatalogService {
       });
 
       if (!category) {
-        this.logger.error(
-          `Category not found: ${createProductDto.categoryId}`
-        );
+        this.logger.error(`Category not found: ${createProductDto.categoryId}`);
         throw new NotFoundException(
           `Category with ID ${createProductDto.categoryId} not found`
         );
@@ -295,9 +290,7 @@ export class ProductCatalogService {
           ),
         }),
         ...(filters?.isActive !== undefined && { isActive: filters.isActive }),
-        ...(filters?.isFeatured !== undefined && {
-          isFeatured: filters.isFeatured,
-        }),
+        ...(filters?.isFeatured !== undefined && { isFeatured: filters.isFeatured }),
         ...(filters?.search && {
           OR: [
             { name: { contains: filters.search, mode: 'insensitive' } },
@@ -362,9 +355,7 @@ export class ProductCatalogService {
       include: {
         category: true,
         brand: true,
-        variants: {
-          orderBy: { createdAt: 'asc' },
-        },
+        variants: { orderBy: { createdAt: 'asc' } },
       },
     });
 
@@ -429,9 +420,7 @@ export class ProductCatalogService {
     }
 
     if (updateProductDto.productType !== undefined)
-      updateData.productType = this.mapProductType(
-        updateProductDto.productType
-      );
+      updateData.productType = this.mapProductType(updateProductDto.productType);
     if (updateProductDto.price !== undefined)
       updateData.price = updateProductDto.price;
     if (updateProductDto.salePrice !== undefined)
@@ -459,9 +448,7 @@ export class ProductCatalogService {
     if (updateProductDto.status !== undefined)
       updateData.status = this.mapProductStatus(updateProductDto.status);
     if (updateProductDto.visibility !== undefined)
-      updateData.visibility = this.mapProductVisibility(
-        updateProductDto.visibility
-      );
+      updateData.visibility = this.mapProductVisibility(updateProductDto.visibility);
     if (updateProductDto.publishDate !== undefined)
       updateData.publishDate = updateProductDto.publishDate;
     if (updateProductDto.isFeatured !== undefined)
@@ -482,9 +469,7 @@ export class ProductCatalogService {
           data: updateData,
         });
 
-        await tx.productVariant.deleteMany({
-          where: { productId: id },
-        });
+        await tx.productVariant.deleteMany({ where: { productId: id } });
 
         if (updateProductDto.variants && updateProductDto.variants.length > 0) {
           await tx.productVariant.createMany({
@@ -542,9 +527,7 @@ export class ProductCatalogService {
   }
 
   async restore(id: string, sellerId: string) {
-    const product = await this.prisma.product.findUnique({
-      where: { id },
-    });
+    const product = await this.prisma.product.findUnique({ where: { id } });
 
     if (!product) {
       throw new NotFoundException(`Product with ID ${id} not found`);
@@ -583,17 +566,10 @@ export class ProductCatalogService {
 
   async findByIds(ids: string[]) {
     return this.prisma.product.findMany({
-      where: {
-        id: { in: ids },
-        deletedAt: null,
-      },
+      where: { id: { in: ids }, deletedAt: null },
       include: {
-        category: {
-          select: { id: true, name: true, slug: true },
-        },
-        brand: {
-          select: { id: true, name: true, slug: true },
-        },
+        category: { select: { id: true, name: true, slug: true } },
+        brand: { select: { id: true, name: true, slug: true } },
         variants: {
           select: { id: true, price: true, salePrice: true, stock: true, isActive: true },
         },
@@ -613,324 +589,6 @@ export class ProductCatalogService {
       where: { id },
       data: { sales: { increment: 1 } },
     });
-  }
-
-  async findPublicProducts(filters: {
-    categoryId?: string;
-    brandId?: string;
-    shopId?: string;
-    search?: string;
-    minPrice?: number;
-    maxPrice?: number;
-    productType?: string;
-    isFeatured?: boolean;
-    onSale?: boolean;
-    tags?: string[];
-    colors?: string[];
-    sizes?: string[];
-    sort?: string;
-    limit?: number;
-    offset?: number;
-  }) {
-    const {
-      categoryId,
-      brandId,
-      shopId,
-      search,
-      minPrice,
-      maxPrice,
-      productType,
-      isFeatured,
-      onSale,
-      tags,
-      colors,
-      sizes,
-      sort = 'newest',
-      limit = 20,
-      offset = 0,
-    } = filters;
-
-    this.logger.debug(
-      `findPublicProducts called with filters: ${JSON.stringify({
-        categoryId,
-        brandId,
-        shopId,
-        search,
-        minPrice,
-        maxPrice,
-        productType,
-        isFeatured,
-        onSale,
-        tags,
-        colors,
-        sizes,
-        sort,
-        limit,
-        offset,
-      })}`
-    );
-
-    const where: Record<string, unknown> = {
-      status: ProductStatus.PUBLISHED,
-      visibility: ProductVisibility.PUBLIC,
-      isActive: true,
-      deletedAt: null,
-
-      ...(categoryId && {
-        categoryId: categoryId.includes(',')
-          ? { in: categoryId.split(',').map((id) => id.trim()) }
-          : categoryId,
-      }),
-      ...(brandId && { brandId }),
-      ...(shopId && { shopId }),
-      ...(isFeatured !== undefined && { isFeatured }),
-      ...(productType && {
-        productType: this.mapProductType(
-          productType as 'simple' | 'variable' | 'digital'
-        ),
-      }),
-
-      ...(minPrice !== undefined &&
-        maxPrice !== undefined && {
-          price: { gte: minPrice, lte: maxPrice },
-        }),
-      ...(minPrice !== undefined &&
-        maxPrice === undefined && {
-          price: { gte: minPrice },
-        }),
-      ...(minPrice === undefined &&
-        maxPrice !== undefined && {
-          price: { lte: maxPrice },
-        }),
-
-      ...(tags && tags.length > 0 && { tags: { hasSome: tags } }),
-
-      ...(search && {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' as const } },
-          { description: { contains: search, mode: 'insensitive' as const } },
-          { tags: { hasSome: [search] } },
-        ],
-      }),
-    };
-
-    if (onSale === true) {
-      where.AND = [
-        ...(Array.isArray(where.AND) ? where.AND : []),
-        {
-          salePrice: { not: null },
-        },
-      ];
-    }
-
-    if ((colors && colors.length > 0) || (sizes && sizes.length > 0)) {
-      where.hasVariants = true;
-    }
-
-    const orderByMap: Record<string, Record<string, string>> = {
-      newest: { createdAt: 'desc' },
-      'price-asc': { price: 'asc' },
-      'price-desc': { price: 'desc' },
-      popular: { views: 'desc' },
-      'top-sales': { sales: 'desc' },
-    };
-
-    const orderBy = orderByMap[sort] || orderByMap.newest;
-
-    this.logger.debug(`Query where clause: ${JSON.stringify(where)}`);
-    this.logger.debug(`Query orderBy: ${JSON.stringify(orderBy)}`);
-
-    const hasVariantFilters =
-      (colors && colors.length > 0) || (sizes && sizes.length > 0);
-
-    let products;
-    let total: number;
-
-    if (hasVariantFilters) {
-      const allProducts = await this.prisma.product.findMany({
-        where,
-        include: {
-          category: true,
-          brand: true,
-          variants: {
-            where: { isActive: true },
-          },
-        },
-        orderBy,
-      });
-
-      let filteredProducts = allProducts;
-
-      if (colors && colors.length > 0) {
-        filteredProducts = filteredProducts.filter((product) => {
-          return product.variants.some((variant) => {
-            const attrs = variant.attributes as Record<string, unknown>;
-            const colorValue =
-              attrs.Color || attrs.color || attrs.COLOR || attrs.colour;
-            if (typeof colorValue === 'string') {
-              return colors.some(
-                (c) => c.toLowerCase() === colorValue.toLowerCase()
-              );
-            }
-            return false;
-          });
-        });
-      }
-
-      if (sizes && sizes.length > 0) {
-        filteredProducts = filteredProducts.filter((product) => {
-          return product.variants.some((variant) => {
-            const attrs = variant.attributes as Record<string, unknown>;
-            const sizeValue = attrs.Size || attrs.size || attrs.SIZE;
-            if (typeof sizeValue === 'string') {
-              return sizes.some(
-                (s) => s.toLowerCase() === sizeValue.toLowerCase()
-              );
-            }
-            return false;
-          });
-        });
-      }
-
-      total = filteredProducts.length;
-      products = filteredProducts.slice(offset, offset + limit);
-    } else {
-      const [fetchedProducts, count] = await Promise.all([
-        this.prisma.product.findMany({
-          where,
-          include: {
-            category: true,
-            brand: true,
-            variants: {
-              where: { isActive: true },
-            },
-          },
-          orderBy,
-          take: limit,
-          skip: offset,
-        }),
-        this.prisma.product.count({ where }),
-      ]);
-
-      products = fetchedProducts;
-      total = count;
-    }
-
-    this.logger.log(
-      `findPublicProducts returning ${products.length} products out of ${total} total`
-    );
-
-    return {
-      products,
-      total,
-      limit,
-      offset,
-      sort,
-    };
-  }
-
-  async getAvailableFilters() {
-    this.logger.debug('Getting available filter options from product variants');
-
-    const variants = await this.prisma.productVariant.findMany({
-      where: {
-        isActive: true,
-        product: {
-          status: ProductStatus.PUBLISHED,
-          visibility: ProductVisibility.PUBLIC,
-          isActive: true,
-          deletedAt: null,
-        },
-      },
-      select: {
-        attributes: true,
-      },
-    });
-
-    const colorsSet = new Set<string>();
-    const sizesSet = new Set<string>();
-
-    variants.forEach((variant) => {
-      const attrs = variant.attributes as Record<string, unknown>;
-
-      Object.keys(attrs).forEach((key) => {
-        const lowerKey = key.toLowerCase();
-        const value = attrs[key];
-
-        if (lowerKey === 'color' && typeof value === 'string') {
-          colorsSet.add(value);
-        } else if (lowerKey === 'size' && typeof value === 'string') {
-          sizesSet.add(value);
-        }
-      });
-    });
-
-    const colors = Array.from(colorsSet).sort();
-    const sizes = Array.from(sizesSet).sort();
-
-    this.logger.log(
-      `Found ${colors.length} unique colors and ${sizes.length} unique sizes`
-    );
-
-    return {
-      colors,
-      sizes,
-    };
-  }
-
-  async findPublicProductBySlug(slug: string) {
-    this.logger.debug(`findPublicProductBySlug called with slug: ${slug}`);
-
-    const product = await this.prisma.product.findFirst({
-      where: {
-        slug,
-        status: ProductStatus.PUBLISHED,
-        visibility: ProductVisibility.PUBLIC,
-        isActive: true,
-        deletedAt: null,
-      },
-      include: {
-        category: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-        brand: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            logo: true,
-          },
-        },
-        variants: {
-          where: { isActive: true },
-          select: {
-            id: true,
-            sku: true,
-            attributes: true,
-            price: true,
-            salePrice: true,
-            stock: true,
-            image: true,
-          },
-        },
-      },
-    });
-
-    if (!product) {
-      this.logger.warn(`Product with slug ${slug} not found or not public`);
-      throw new RpcException({
-        statusCode: 404,
-        message: 'Product not found',
-      });
-    }
-
-    this.logger.log(`Returning product: ${product.id} (${product.name})`);
-
-    return product;
   }
 
   private sanitizeProductData(dto: Record<string, unknown>): Record<string, unknown> & {
@@ -971,16 +629,13 @@ export class ProductCatalogService {
       price: toNumber(dto.price),
       salePrice: toNumber(dto.salePrice),
       stock: toNumber(dto.stock) || 0,
-
       hasVariants: toBoolean(dto.hasVariants),
       isFeatured: toBoolean(dto.isFeatured),
       isActive: dto.isActive !== undefined ? toBoolean(dto.isActive) : true,
-
       attributes: parseJSON(dto.attributes) || undefined,
       shipping: parseJSON(dto.shipping) || undefined,
       seo: parseJSON(dto.seo) || undefined,
       inventory: parseJSON(dto.inventory) || undefined,
-
       tags: parseJSON(dto.tags) || [],
       variants: parseJSON(dto.variants) || [],
     };
@@ -996,31 +651,23 @@ export class ProductCatalogService {
       .concat(`-${Date.now()}`);
   }
 
-  private mapProductType(
-    type?: 'simple' | 'variable' | 'digital'
-  ): ProductType {
+  private mapProductType(type?: 'simple' | 'variable' | 'digital'): ProductType {
     if (!type) return ProductType.SIMPLE;
-
     const mapping: Record<string, ProductType> = {
       simple: ProductType.SIMPLE,
       variable: ProductType.VARIABLE,
       digital: ProductType.DIGITAL,
     };
-
     return mapping[type] || ProductType.SIMPLE;
   }
 
-  private mapProductStatus(
-    status?: 'draft' | 'published' | 'scheduled'
-  ): ProductStatus {
+  private mapProductStatus(status?: 'draft' | 'published' | 'scheduled'): ProductStatus {
     if (!status) return ProductStatus.DRAFT;
-
     const mapping: Record<string, ProductStatus> = {
       draft: ProductStatus.DRAFT,
       published: ProductStatus.PUBLISHED,
       scheduled: ProductStatus.SCHEDULED,
     };
-
     return mapping[status] || ProductStatus.DRAFT;
   }
 
@@ -1028,13 +675,11 @@ export class ProductCatalogService {
     visibility?: 'public' | 'private' | 'password_protected'
   ): ProductVisibility {
     if (!visibility) return ProductVisibility.PUBLIC;
-
     const mapping: Record<string, ProductVisibility> = {
       public: ProductVisibility.PUBLIC,
       private: ProductVisibility.PRIVATE,
       password_protected: ProductVisibility.PASSWORD_PROTECTED,
     };
-
     return mapping[visibility] || ProductVisibility.PUBLIC;
   }
 }

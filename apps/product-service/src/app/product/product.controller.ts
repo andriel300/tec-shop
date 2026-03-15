@@ -1,6 +1,7 @@
 import { Controller, BadRequestException, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ProductCatalogService } from './product-catalog.service';
+import { ProductBrowseService } from './product-browse.service';
 import { ProductRatingService } from './product-rating.service';
 import type {
   CreateProductDto,
@@ -15,6 +16,7 @@ export class ProductController {
 
   constructor(
     private readonly catalogService: ProductCatalogService,
+    private readonly browseService: ProductBrowseService,
     private readonly ratingService: ProductRatingService,
   ) {}
 
@@ -252,7 +254,7 @@ export class ProductController {
       )}`
     );
 
-    const result = await this.catalogService.findPublicProducts(payload);
+    const result = await this.browseService.findPublicProducts(payload);
 
     this.logger.log(
       `Returning ${result.products.length} products out of ${result.total} total (offset: ${result.offset}, limit: ${result.limit})`
@@ -267,7 +269,7 @@ export class ProductController {
       `Received product-get-by-slug request for slug: ${payload.slug}`
     );
 
-    const product = await this.catalogService.findPublicProductBySlug(
+    const product = await this.browseService.findPublicProductBySlug(
       payload.slug
     );
 
@@ -440,7 +442,7 @@ export class ProductController {
   async getAvailableFilters() {
     this.logger.log('Received product-get-available-filters request');
 
-    const result = await this.catalogService.getAvailableFilters();
+    const result = await this.browseService.getAvailableFilters();
 
     this.logger.log(
       `Returning available filters - colors: ${result.colors.length}, sizes: ${result.sizes.length}`

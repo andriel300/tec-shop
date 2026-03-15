@@ -1,25 +1,12 @@
-import { Injectable, Logger, NotFoundException, ForbiddenException, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { PrismaClient } from '@tec-shop/seller-client';
+import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { SellerPrismaService } from '../../prisma/prisma.service';
 import type { CreateEventDto, UpdateEventDto, EventResponse } from '@tec-shop/dto';
 
 @Injectable()
-export class EventService implements OnModuleInit, OnModuleDestroy {
+export class EventService {
   private readonly logger = new Logger(EventService.name);
-  private prisma: PrismaClient;
 
-  constructor() {
-    this.prisma = new PrismaClient();
-  }
-
-  async onModuleInit() {
-    await this.prisma.$connect();
-    this.logger.log('Event Service - Prisma connected');
-  }
-
-  async onModuleDestroy() {
-    await this.prisma.$disconnect();
-    this.logger.log('Event Service - Prisma disconnected');
-  }
+  constructor(private readonly prisma: SellerPrismaService) {}
 
   /**
    * Create a new event for a shop

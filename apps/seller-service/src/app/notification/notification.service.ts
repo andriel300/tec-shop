@@ -1,25 +1,12 @@
-import { Injectable, Logger, NotFoundException, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { PrismaClient } from '@tec-shop/seller-client';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { SellerPrismaService } from '../../prisma/prisma.service';
 import type { CreateNotificationDto, NotificationResponse } from '@tec-shop/dto';
 
 @Injectable()
-export class NotificationService implements OnModuleInit, OnModuleDestroy {
+export class NotificationService {
   private readonly logger = new Logger(NotificationService.name);
-  private prisma: PrismaClient;
 
-  constructor() {
-    this.prisma = new PrismaClient();
-  }
-
-  async onModuleInit() {
-    await this.prisma.$connect();
-    this.logger.log('Notification Service - Prisma connected');
-  }
-
-  async onModuleDestroy() {
-    await this.prisma.$disconnect();
-    this.logger.log('Notification Service - Prisma disconnected');
-  }
+  constructor(private readonly prisma: SellerPrismaService) {}
 
   /**
    * Create a notification for a seller

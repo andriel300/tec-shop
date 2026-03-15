@@ -1,6 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { SellerService } from './seller.service';
+import { SellerProfileService } from './seller-profile.service';
+import { ShopService } from './shop.service';
 import { ServiceAuthUtil } from '@tec-shop/service-auth';
 import type { SignedRequest } from '@tec-shop/service-auth';
 import type {
@@ -11,16 +12,18 @@ import type {
 
 @Controller()
 export class SellerController {
-  constructor(private readonly sellerService: SellerService) {}
+  constructor(
+    private readonly sellerProfile: SellerProfileService,
+    private readonly shopService: ShopService
+  ) {}
 
   @MessagePattern('create-seller-profile')
   async createProfile(@Payload() createProfileDto: CreateSellerProfileDto) {
-    return this.sellerService.createProfile(createProfileDto);
+    return this.sellerProfile.createProfile(createProfileDto);
   }
 
   @MessagePattern('create-seller-profile-signed')
   async createProfileSigned(@Payload() signedRequest: SignedRequest) {
-    // Verify the signed request from auth-service (Security Hardened)
     if (!process.env.SERVICE_MASTER_SECRET) {
       throw new Error(
         'SERVICE_MASTER_SECRET environment variable is not configured. This is required for secure service-to-service communication.'
@@ -42,15 +45,14 @@ export class SellerController {
       throw new Error(`Invalid service request: ${verification.reason}`);
     }
 
-    // Process the verified request
-    return this.sellerService.createProfile(
+    return this.sellerProfile.createProfile(
       signedRequest.payload as unknown as CreateSellerProfileDto
     );
   }
 
   @MessagePattern('get-seller-profile')
   async getProfile(@Payload() authId: string) {
-    return this.sellerService.getProfile(authId);
+    return this.sellerProfile.getProfile(authId);
   }
 
   @MessagePattern('update-seller-profile')
@@ -61,60 +63,58 @@ export class SellerController {
       updateData: Partial<CreateSellerProfileDto>;
     }
   ) {
-    return this.sellerService.updateProfile(payload.authId, payload.updateData);
+    return this.sellerProfile.updateProfile(payload.authId, payload.updateData);
+  }
+
+  @MessagePattern('get-seller-dashboard')
+  async getDashboardData(@Payload() authId: string) {
+    return this.sellerProfile.getDashboardData(authId);
+  }
+
+  @MessagePattern('update-seller-notification-preferences')
+  async updateNotificationPreferences(
+    @Payload() payload: { authId: string; preferences: Record<string, boolean> }
+  ) {
+    return this.sellerProfile.updateNotificationPreferences(
+      payload.authId,
+      payload.preferences
+    );
+  }
+
+  @MessagePattern('get-seller-notification-preferences')
+  async getNotificationPreferences(@Payload() authId: string) {
+    return this.sellerProfile.getNotificationPreferences(authId);
   }
 
   @MessagePattern('create-shop')
   async createShop(
     @Payload() payload: { authId: string; shopData: CreateShopDto }
   ) {
-    return this.sellerService.createShop(payload.authId, payload.shopData);
+    return this.shopService.createShop(payload.authId, payload.shopData);
   }
 
   @MessagePattern('create-or-update-shop')
   async createOrUpdateShop(
     @Payload() payload: { authId: string; shopData: UpdateShopDto }
   ) {
-    return this.sellerService.createOrUpdateShop(
-      payload.authId,
-      payload.shopData
-    );
+    return this.shopService.createOrUpdateShop(payload.authId, payload.shopData);
   }
 
   @MessagePattern('get-seller-shop')
   async getShop(@Payload() authId: string) {
-    return this.sellerService.getShop(authId);
+    return this.shopService.getShop(authId);
   }
 
-  @MessagePattern('get-seller-dashboard')
-  async getDashboardData(@Payload() authId: string) {
-    return this.sellerService.getDashboardData(authId);
-  }
-
-  // Product Service Integration Endpoints
-
-  /**
-   * Verify that a shop exists by its ID
-   * Used by product-service to validate shopId references
-   */
   @MessagePattern('seller-verify-shop')
   async verifyShop(@Payload() payload: { shopId: string }): Promise<boolean> {
-    return this.sellerService.verifyShopExists(payload.shopId);
+    return this.shopService.verifyShopExists(payload.shopId);
   }
 
-  /**
-   * Get shop details by shop ID
-   * Used by product-service to fetch shop information
-   */
   @MessagePattern('seller-get-shop-by-id')
   async getShopById(@Payload() payload: { shopId: string }) {
-    return this.sellerService.getShopById(payload.shopId);
+    return this.shopService.getShopById(payload.shopId);
   }
 
-  /**
-   * Get filtered shops for public marketplace
-   * Supports search, category, country, and rating filters
-   */
   @MessagePattern('seller-get-filtered-shops')
   async getFilteredShops(
     @Payload()
@@ -127,42 +127,18 @@ export class SellerController {
       offset?: number;
     }
   ) {
-    return this.sellerService.getFilteredShops(payload);
+    return this.shopService.getFilteredShops(payload);
   }
 
-  /**
-   * Verify that a seller owns a specific shop
-   * Used by product-service for authorization checks
-   */
   @MessagePattern('seller-verify-shop-ownership')
   async verifyShopOwnership(
     @Payload() payload: { sellerId: string; shopId: string }
   ): Promise<boolean> {
-    return this.sellerService.verifyShopOwnership(
-      payload.sellerId,
-      payload.shopId
-    );
+    return this.shopService.verifyShopOwnership(payload.sellerId, payload.shopId);
   }
 
   @MessagePattern('seller-get-statistics')
   async getStatistics(@Payload() authId: string) {
-    return this.sellerService.getStatistics(authId);
-  }
-
-  // Notification Preferences
-
-  @MessagePattern('update-seller-notification-preferences')
-  async updateNotificationPreferences(
-    @Payload() payload: { authId: string; preferences: Record<string, boolean> }
-  ) {
-    return this.sellerService.updateNotificationPreferences(
-      payload.authId,
-      payload.preferences
-    );
-  }
-
-  @MessagePattern('get-seller-notification-preferences')
-  async getNotificationPreferences(@Payload() authId: string) {
-    return this.sellerService.getNotificationPreferences(authId);
+    return this.shopService.getStatistics(authId);
   }
 }
