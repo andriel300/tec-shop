@@ -910,6 +910,11 @@ export class AuthService implements OnModuleInit {
       },
     });
 
+    // Clear the attempt counter so the new code starts with a clean slate.
+    // Without this, a user who exhausted their 3 attempts would be permanently
+    // locked out even after requesting a new code (user trap).
+    await this.redisService.del(`reset-attempts:${user.id}`);
+
     // Generate cryptographically secure token (128-bit entropy)
     const resetToken = randomBytes(32).toString('hex');
 
