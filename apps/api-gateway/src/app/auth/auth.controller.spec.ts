@@ -384,6 +384,15 @@ describe('AuthController', () => {
         'seller_refresh_token',
         expect.any(Object)
       );
+      // Admin cookies must also be cleared
+      expect(res.clearCookie).toHaveBeenCalledWith(
+        'admin_access_token',
+        expect.any(Object)
+      );
+      expect(res.clearCookie).toHaveBeenCalledWith(
+        'admin_refresh_token',
+        expect.any(Object)
+      );
       // Legacy cookies cleared for backward compat
       expect(res.clearCookie).toHaveBeenCalledWith(
         'access_token',
@@ -411,7 +420,7 @@ describe('AuthController', () => {
       const result = await controller.logout(req, res);
 
       // Assert
-      expect(res.clearCookie).toHaveBeenCalledTimes(6); // Clears customer, seller, and legacy cookies
+      expect(res.clearCookie).toHaveBeenCalledTimes(8); // Clears customer, seller, admin, and legacy cookies
       expect(result).toEqual({ message: 'Logout successful' });
     });
   });

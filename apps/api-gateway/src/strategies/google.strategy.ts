@@ -22,6 +22,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       clientSecret: googleClientSecret,
       callbackURL: googleCallbackUrl || 'http://localhost:8080/api/auth/google/callback',
       scope: ['email', 'profile'],
+      state: true,
     });
   }
 

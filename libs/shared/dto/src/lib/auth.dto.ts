@@ -7,6 +7,7 @@ import {
   Matches,
   IsBoolean,
   IsOptional,
+  Length,
   registerDecorator,
   ValidationOptions,
   ValidationArguments,
@@ -177,11 +178,12 @@ export class ForgotPasswordDto {
 
 export class ResetPasswordDto {
   @ApiProperty({
-    example: 'abc123-def456-ghi789',
-    description: 'Password reset token from email link'
+    example: 'a3f1c2...64-char-hex',
+    description: 'Password reset token from email link (64-character hex string)'
   })
   @IsString()
-  @IsNotEmpty()
+  @Length(64, 64, { message: 'Invalid token format' })
+  @Matches(/^[0-9a-f]{64}$/, { message: 'Invalid token format' })
   token!: string;
 
   @ApiProperty({
@@ -226,11 +228,12 @@ export class ResetPasswordWithCodeDto {
 
 export class ValidateResetTokenDto {
   @ApiProperty({
-    example: 'abc123-def456-ghi789',
-    description: 'Password reset token to validate'
+    example: 'a3f1c2...64-char-hex',
+    description: 'Password reset token to validate (64-character hex string)'
   })
   @IsString()
-  @IsNotEmpty()
+  @Length(64, 64, { message: 'Invalid token format' })
+  @Matches(/^[0-9a-f]{64}$/, { message: 'Invalid token format' })
   token!: string;
 }
 

@@ -116,6 +116,20 @@ export class EmailService {
     });
   }
 
+  async sendGoogleAccountLinkedNotification(to: string): Promise<void> {
+    await this.mailerService.sendMail({
+      to,
+      subject: 'Your Tec-Shop Account Has Been Linked to Google',
+      html: `
+        <div style="font-family: sans-serif; text-align: center; padding: 20px;">
+          <h2>Google Account Linked</h2>
+          <p>Your Tec-Shop account has been linked to a Google account.</p>
+          <p>If you did not initiate this action, please contact our support team immediately and change your password.</p>
+        </div>
+      `,
+    });
+  }
+
   async sendPasswordChangedNotification(to: string): Promise<void> {
     await this.mailerService.sendMail({
       to,

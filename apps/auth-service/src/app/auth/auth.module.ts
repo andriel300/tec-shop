@@ -22,7 +22,7 @@ import { join } from 'path';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '1d' },
+        signOptions: { expiresIn: '15m' },
       }),
       inject: [ConfigService],
     }),
@@ -37,7 +37,7 @@ import { join } from 'path';
             key: readFileSync(join(certsPath, 'auth-service/auth-service-key.pem')),
             cert: readFileSync(join(certsPath, 'auth-service/auth-service-cert.pem')),
             ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
-            checkServerIdentity: () => undefined, // Allow self-signed certificates
+            rejectUnauthorized: true,
           };
 
           return {
@@ -61,7 +61,7 @@ import { join } from 'path';
             key: readFileSync(join(certsPath, 'auth-service/auth-service-key.pem')),
             cert: readFileSync(join(certsPath, 'auth-service/auth-service-cert.pem')),
             ca: readFileSync(join(certsPath, 'ca/ca-cert.pem')),
-            checkServerIdentity: () => undefined, // Allow self-signed certificates
+            rejectUnauthorized: true,
           };
 
           return {

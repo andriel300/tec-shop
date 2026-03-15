@@ -217,7 +217,7 @@ export class AuthService implements OnModuleInit {
       this.logger.log(`Customer login attempt - email: ${credential.email}`);
 
       const user = await this.prisma.user.findUnique({
-        where: { email: credential.email },
+        where: { email: credential.email, userType: 'CUSTOMER' },
       });
 
       // Generic error message to prevent email enumeration
@@ -253,7 +253,7 @@ export class AuthService implements OnModuleInit {
       });
 
       // Pass rememberMe flag to token generation for extended session
-      return this.generateTokens(user.id, user.email, credential.rememberMe);
+      return this.generateTokens(user.id, user.email, 'CUSTOMER', credential.rememberMe);
     } catch (error) {
       this.logger.error(
         `Customer login failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -308,11 +308,7 @@ export class AuthService implements OnModuleInit {
       });
 
       // Generate tokens for seller with proper role and userType
-      return this.generateSellerTokens(
-        user.id,
-        user.email,
-        credential.rememberMe
-      );
+      return this.generateTokens(user.id, user.email, 'SELLER', credential.rememberMe);
     } catch (error) {
       this.logger.error(
         `Seller login failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -367,11 +363,7 @@ export class AuthService implements OnModuleInit {
       });
 
       // Generate tokens for admin with proper role and userType
-      return this.generateAdminTokens(
-        user.id,
-        user.email,
-        credential.rememberMe
-      );
+      return this.generateTokens(user.id, user.email, 'ADMIN', credential.rememberMe);
     } catch (error) {
       this.logger.error(
         `Admin login failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -413,6 +405,8 @@ export class AuthService implements OnModuleInit {
               },
             });
             this.logger.log(`Account linked successfully - userId: ${user.id}`);
+            // Notify account owner so they can react if this was not initiated by them
+            await this.emailService.sendGoogleAccountLinkedNotification(user.email);
           } else if (user.googleId && user.googleId !== googleId) {
             // Email exists but with different googleId - security issue
             this.logger.warn(`Email already linked to different Google account: ${email}`);
@@ -492,9 +486,12 @@ export class AuthService implements OnModuleInit {
       // Generate appropriate tokens based on userType
       this.logger.log(`Generating tokens for Google user - userId: ${user.id}, userType: ${user.userType}`);
 
-      const tokens = user.userType === 'SELLER'
-        ? await this.generateSellerTokens(user.id, user.email, false)
-        : await this.generateTokens(user.id, user.email, false);
+      const tokens = await this.generateTokens(
+        user.id,
+        user.email,
+        user.userType as 'CUSTOMER' | 'SELLER' | 'ADMIN',
+        false
+      );
 
       this.logProducer.info('auth-service', LogCategory.AUTH, 'Google OAuth login successful', {
         userId: user.id,
@@ -521,7 +518,7 @@ export class AuthService implements OnModuleInit {
     const { email, otp } = verifyEmailDto;
 
     const user = await this.prisma.user.findUnique({
-      where: { email },
+      where: { email, userType: 'CUSTOMER' },
     });
 
     if (!user) {
@@ -794,34 +791,17 @@ export class AuthService implements OnModuleInit {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    // Determine if this was a "remember me" session by checking token expiration
-    let wasRememberMe = false;
-    if (currentAccessToken) {
-      try {
-        const decoded = this.jwtService.decode(currentAccessToken) as {
-          exp: number;
-          iat: number;
-        } | null;
-        if (decoded && decoded.exp) {
-          const tokenDuration = decoded.exp - decoded.iat;
-          wasRememberMe = tokenDuration > 2 * 24 * 60 * 60; // More than 2 days = remember me
-        }
-      } catch (_error) {
-        // If we can't decode, default to normal session
-        this.logger.debug('Could not decode token for remember me detection');
-      }
-    }
+    // Recover the rememberMe preference from Redis (stored when tokens were originally generated)
+    const rememberMeStr = await this.redisService.get(`session-remember-me:${user.id}`);
+    const wasRememberMe = rememberMeStr === '1';
 
     // Generate new token pair maintaining the remember me preference
-    // Use the appropriate token generator based on userType
-    let tokens;
-    if (user.userType === 'ADMIN') {
-      tokens = await this.generateAdminTokens(user.id, user.email, wasRememberMe);
-    } else if (user.userType === 'SELLER') {
-      tokens = await this.generateSellerTokens(user.id, user.email, wasRememberMe);
-    } else {
-      tokens = await this.generateTokens(user.id, user.email, wasRememberMe);
-    }
+    const tokens = await this.generateTokens(
+      user.id,
+      user.email,
+      user.userType as 'CUSTOMER' | 'SELLER' | 'ADMIN',
+      wasRememberMe
+    );
 
     this.logProducer.info('auth-service', LogCategory.AUTH, 'Token refreshed', {
       userId: user.id,
@@ -943,10 +923,13 @@ export class AuthService implements OnModuleInit {
       },
     });
 
-    // Generate reset link with frontend URL
-    const resetLink = `${
-      process.env.FRONTEND_URL || 'http://localhost:3000'
-    }/reset-password?token=${resetToken}`;
+    // Generate reset link with frontend URL — FRONTEND_URL is required in production
+    const frontendUrl = process.env.FRONTEND_URL;
+    if (!frontendUrl && process.env.NODE_ENV === 'production') {
+      this.logger.error('FRONTEND_URL environment variable is not configured — password reset links will be broken');
+      throw new Error('FRONTEND_URL is required in production');
+    }
+    const resetLink = `${frontendUrl || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
 
     // Send reset email with secure link
     await this.emailService.sendPasswordResetLink(user.email, resetLink);
@@ -1055,10 +1038,16 @@ export class AuthService implements OnModuleInit {
       throw new UnauthorizedException('Invalid reset credentials');
     }
 
-    // Check reset attempt limiting per user (not per code, for better UX)
+    // Check reset attempt limiting before validating the code
     const attemptKey = `reset-attempts:${user.id}`;
     const attemptsStr = await this.redisService.get(attemptKey);
     const attempts = attemptsStr ? parseInt(attemptsStr) : 0;
+
+    if (attempts >= 3) {
+      throw new UnauthorizedException(
+        'Too many failed attempts. Please request a new reset code.'
+      );
+    }
 
     // Hash the provided code to look up in Redis
     const codeHash = createHash('sha256').update(code).digest('hex');
@@ -1069,18 +1058,8 @@ export class AuthService implements OnModuleInit {
     );
 
     if (!storedUserId || storedUserId !== user.id) {
-      // Increment failed attempts for this user
-      const newAttempts = attempts + 1;
-      await this.redisService.set(attemptKey, newAttempts.toString(), 600);
+      await this.redisService.set(attemptKey, (attempts + 1).toString(), 600);
       throw new UnauthorizedException('Invalid or expired reset code');
-    }
-
-    if (attempts >= 3) {
-      // Clean up code after max attempts (stricter limit for security)
-      await this.redisService.del(`password-reset:${codeHash}`);
-      throw new UnauthorizedException(
-        'Too many failed attempts. Please request a new reset code.'
-      );
     }
 
     // Hash the new password
@@ -1105,121 +1084,31 @@ export class AuthService implements OnModuleInit {
   private async generateTokens(
     userId: string,
     email: string,
+    role: 'CUSTOMER' | 'SELLER' | 'ADMIN',
     rememberMe = false
   ) {
-    const payload = {
-      sub: userId,
-      username: email,
-      role: 'CUSTOMER',
-      userType: 'CUSTOMER' as const,
-    };
+    const payload = { sub: userId, username: email, role, userType: role };
 
-    // Set token expiration based on rememberMe preference
-    const accessTokenExpiry = '15m'; // Short-lived — refresh token handles session continuity
+    const access_token = this.jwtService.sign(payload, { expiresIn: '15m' });
 
-    // Generate access token with appropriate expiration
-    const access_token = this.jwtService.sign(payload, {
-      expiresIn: accessTokenExpiry,
-    });
-
-    // Generate refresh token (cryptographically secure)
+    // Generate cryptographically secure refresh token and store its hash
     const refresh_token = randomBytes(32).toString('hex');
-
-    // Store refresh token in database (hashed for security)
-    const hashedRefreshToken = createHash('sha256')
-      .update(refresh_token)
-      .digest('hex');
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { refreshToken: hashedRefreshToken },
-    });
-
-    return {
-      access_token,
-      refresh_token,
-      rememberMe, // Return the flag for cookie configuration
-    };
-  }
-
-  private async generateSellerTokens(
-    userId: string,
-    email: string,
-    rememberMe = false
-  ) {
-    const payload = {
-      sub: userId,
-      username: email,
-      role: 'SELLER',
-      userType: 'SELLER' as const,
-    };
-
-    // Set token expiration based on rememberMe preference
-    const accessTokenExpiry = '15m'; // Short-lived — refresh token handles session continuity
-
-    // Generate access token with appropriate expiration
-    const access_token = this.jwtService.sign(payload, {
-      expiresIn: accessTokenExpiry,
-    });
-
-    // Generate refresh token (cryptographically secure)
-    const refresh_token = randomBytes(32).toString('hex');
-
-    // Store refresh token in database (hashed for security)
-    // For sellers, we use the same User table since they are Users with userType: SELLER
-    const hashedRefreshToken = createHash('sha256')
-      .update(refresh_token)
-      .digest('hex');
+    const hashedRefreshToken = createHash('sha256').update(refresh_token).digest('hex');
 
     await this.prisma.user.update({
       where: { id: userId },
       data: { refreshToken: hashedRefreshToken },
     });
 
-    return {
-      access_token,
-      refresh_token,
-      rememberMe, // Return the flag for cookie configuration
-    };
-  }
+    // Persist rememberMe preference so token refresh can restore the correct session duration
+    const sessionTtl = rememberMe ? 30 * 24 * 60 * 60 : 7 * 24 * 60 * 60;
+    await this.redisService.set(
+      `session-remember-me:${userId}`,
+      rememberMe ? '1' : '0',
+      sessionTtl
+    );
 
-  private async generateAdminTokens(
-    userId: string,
-    email: string,
-    rememberMe = false
-  ) {
-    const payload = {
-      sub: userId,
-      username: email,
-      role: 'ADMIN',
-      userType: 'ADMIN' as const,
-    };
-
-    // Set token expiration based on rememberMe preference
-    const accessTokenExpiry = '15m'; // Short-lived — refresh token handles session continuity
-
-    // Generate access token with appropriate expiration
-    const access_token = this.jwtService.sign(payload, {
-      expiresIn: accessTokenExpiry,
-    });
-
-    // Generate refresh token (cryptographically secure)
-    const refresh_token = randomBytes(32).toString('hex');
-
-    // Store refresh token in database (hashed for security)
-    const hashedRefreshToken = createHash('sha256')
-      .update(refresh_token)
-      .digest('hex');
-
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { refreshToken: hashedRefreshToken },
-    });
-
-    return {
-      access_token,
-      refresh_token,
-      rememberMe, // Return the flag for cookie configuration
-    };
+    return { access_token, refresh_token, rememberMe };
   }
 
   async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
@@ -1263,16 +1152,10 @@ export class AuthService implements OnModuleInit {
     // Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Update the password
+    // Update the password and invalidate all existing refresh tokens in one operation
     await this.prisma.user.update({
       where: { id: userId },
-      data: { password: hashedPassword },
-    });
-
-    // Invalidate all existing refresh tokens for security
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { refreshToken: null },
+      data: { password: hashedPassword, refreshToken: null },
     });
 
     this.logger.log(`Password changed successfully for user: ${userId}`);
@@ -1366,7 +1249,7 @@ export class AuthService implements OnModuleInit {
     await this.revokeRefreshToken(userId);
 
     // Generate new seller tokens
-    const tokens = await this.generateSellerTokens(userId, user.email, false);
+    const tokens = await this.generateTokens(userId, user.email, 'SELLER', false);
 
     this.logger.log(`Account upgraded to seller - userId: ${userId}`);
     this.logProducer.info('auth-service', LogCategory.AUTH, 'Account upgraded to seller', {

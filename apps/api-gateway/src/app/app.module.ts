@@ -37,18 +37,39 @@ import { CircuitBreakerModule } from '../common/circuit-breaker.module';
     ImageKitModule.forRoot(),
     LogProducerModule.forRoot({ clientId: 'api-gateway' }),
     RedisModule.forRoot(),
+
+    // Define the ThrottlerStorageModule inline or in a separate file
     ThrottlerModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
+      imports: [
+        ConfigModule,
+        // Define a dynamic module to provide the Redis Storage Service
+        {
+          module: class ThrottlerStorageModule { },
+          providers: [
+            {
+              provide: ThrottlerStorageRedisService,
+              useFactory: (config: ConfigService) => {
+                const redisUrl = config.get<string>('REDIS_URL');
+                if (!redisUrl) {
+                  throw new Error('REDIS_URL environment variable not set');
+                }
+                return new ThrottlerStorageRedisService(redisUrl);
+              },
+              inject: [ConfigService],
+            },
+          ],
+          exports: [ThrottlerStorageRedisService],
+        },
+      ],
+      inject: [ThrottlerStorageRedisService, ConfigService],
+      useFactory: (
+        storage: ThrottlerStorageRedisService,
+        config: ConfigService,
+      ) => {
         const isDevelopment = config.get<string>('NODE_ENV') !== 'production';
-        const redisUrl = config.get<string>('REDIS_URL');
-        if (!redisUrl) {
-          throw new Error('REDIS_URL environment variable not set');
-        }
 
         return {
-          storage: new ThrottlerStorageRedisService(redisUrl),
+          storage: storage, // Injected instance
           throttlers: [
             {
               name: 'short',
@@ -69,6 +90,7 @@ import { CircuitBreakerModule } from '../common/circuit-breaker.module';
         };
       },
     }),
+
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -90,14 +112,14 @@ import { CircuitBreakerModule } from '../common/circuit-breaker.module';
           transport:
             config.get<string>('NODE_ENV') !== 'production'
               ? {
-                  target: 'pino-pretty',
-                  options: {
-                    colorize: true,
-                    levelFirst: true,
-                    translateTime: 'SYS:standard',
-                    ignore: 'pid,hostname,req.headers,res.headers',
-                  },
-                }
+                target: 'pino-pretty',
+                options: {
+                  colorize: true,
+                  levelFirst: true,
+                  translateTime: 'SYS:standard',
+                  ignore: 'pid,hostname,req.headers,res.headers',
+                },
+              }
               : undefined,
         },
       }),
@@ -137,4 +159,4 @@ import { CircuitBreakerModule } from '../common/circuit-breaker.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

@@ -25,6 +25,7 @@ import type {
   ChangePasswordDto,
   UpgradeToSellerDto,
 } from '@tec-shop/dto';
+import { IsIn, IsOptional, IsString } from 'class-validator';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CircuitBreakerService } from '../../common/circuit-breaker.service';
 import { Throttle } from '@nestjs/throttler';
@@ -33,6 +34,13 @@ import { JwtAuthGuard, GoogleAuthGuard } from '../../guards/auth';
 
 type UserType = 'customer' | 'seller' | 'admin';
 type TokenType = 'access' | 'refresh';
+
+class RefreshTokenBodyDto {
+  @IsOptional()
+  @IsString()
+  @IsIn(['customer', 'seller', 'admin'])
+  userType?: UserType;
+}
 
 interface CookieConfig {
   name: string;
@@ -175,7 +183,7 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: 'Authentication failed.' })
   async refreshToken(
-    @Body() body: { userType?: UserType },
+    @Body() body: RefreshTokenBodyDto,
     @Req() request: Request,
     @Res({ passthrough: true }) response: Response
   ) {
@@ -273,9 +281,12 @@ export class AuthController {
         request.cookies?.[`${prefix}customer_access_token`];
       const sellerAccessToken =
         request.cookies?.[`${prefix}seller_access_token`];
+      const adminAccessToken =
+        request.cookies?.[`${prefix}admin_access_token`];
       const accessToken =
         customerAccessToken ||
         sellerAccessToken ||
+        adminAccessToken ||
         request.cookies?.access_token;
 
       // Revoke the current access token (Security Hardened)
@@ -320,13 +331,15 @@ export class AuthController {
 
     // Seller cookies
     const sellerAccessCookie = this.getCookieConfig('seller', 'access', false);
-    const sellerRefreshCookie = this.getCookieConfig(
-      'seller',
-      'refresh',
-      false
-    );
+    const sellerRefreshCookie = this.getCookieConfig('seller', 'refresh', false);
     response.clearCookie(sellerAccessCookie.name, sellerAccessCookie.options);
     response.clearCookie(sellerRefreshCookie.name, sellerRefreshCookie.options);
+
+    // Admin cookies
+    const adminAccessCookie = this.getCookieConfig('admin', 'access', false);
+    const adminRefreshCookie = this.getCookieConfig('admin', 'refresh', false);
+    response.clearCookie(adminAccessCookie.name, adminAccessCookie.options);
+    response.clearCookie(adminRefreshCookie.name, adminRefreshCookie.options);
 
     // Legacy cookies (for backward compatibility during migration)
     response.clearCookie('access_token', {
@@ -339,7 +352,7 @@ export class AuthController {
       httpOnly: true,
       secure: isProduction,
       sameSite: 'strict',
-      path: '/api/auth/refresh',
+      path: '/',
     });
 
     return { message: 'Logout successful' };
