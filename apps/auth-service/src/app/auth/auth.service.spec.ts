@@ -9,7 +9,7 @@ import { NotificationProducerService } from '@tec-shop/notification-producer';
 import { ClientProxy } from '@nestjs/microservices';
 import * as bcrypt from 'bcrypt';
 import { UnauthorizedException } from '@nestjs/common';
-import { LoginDto, SignupDto, VerifyEmailDto } from '@tec-shop/dto';
+import { LoginDto, SignupDto, VerifyEmailDto, ForgotPasswordDto } from '@tec-shop/dto';
 import { of } from 'rxjs';
 
 describe('AuthService', () => {
@@ -81,6 +81,7 @@ describe('AuthService', () => {
             sendOtp: jest.fn(),
             sendPasswordResetLink: jest.fn(),
             sendPasswordChangedNotification: jest.fn(),
+            sendGoogleAccountLinkedNotification: jest.fn(),
           },
         },
         {
@@ -236,6 +237,51 @@ describe('AuthService', () => {
         UnauthorizedException
       );
     });
+
+    it('should query with userType CUSTOMER filter to prevent cross-role token issuance', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
+
+      await service.login(loginDto);
+
+      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { email: loginDto.email, userType: 'CUSTOMER' },
+      });
+    });
+
+    it('should reject a SELLER user attempting to use the customer login endpoint', async () => {
+      // The userType filter means findUnique returns null for a SELLER email
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(null);
+
+      await expect(service.login(loginDto)).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should persist rememberMe=true to Redis so token refresh can restore a 30-day session', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
+      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockUser);
+      jest.spyOn(redisService, 'set').mockResolvedValue(undefined);
+
+      await service.login({ ...loginDto, rememberMe: true });
+
+      expect(redisService.set).toHaveBeenCalledWith(
+        `session-remember-me:${mockUser.id}`,
+        '1',
+        30 * 24 * 60 * 60
+      );
+    });
+
+    it('should persist rememberMe=false to Redis for a normal 7-day session', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
+      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockUser);
+      jest.spyOn(redisService, 'set').mockResolvedValue(undefined);
+
+      await service.login({ ...loginDto, rememberMe: false });
+
+      expect(redisService.set).toHaveBeenCalledWith(
+        `session-remember-me:${mockUser.id}`,
+        '0',
+        7 * 24 * 60 * 60
+      );
+    });
   });
 
   describe('verifyEmail', () => {
@@ -301,6 +347,23 @@ describe('AuthService', () => {
       expect(redisService.del).toHaveBeenCalledWith(
         expect.stringContaining('verification-otp:')
       );
+    });
+
+    it('should query with userType CUSTOMER filter to prevent a seller from verifying via the customer endpoint', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
+      jest
+        .spyOn(redisService, 'get')
+        .mockResolvedValueOnce('0')
+        .mockResolvedValueOnce(JSON.stringify({ otp: '123456', name: 'John Doe' }));
+      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockUser);
+      jest.spyOn(redisService, 'del').mockResolvedValue(undefined);
+      jest.spyOn(userClient, 'send').mockReturnValue(of({ success: true }));
+
+      await service.verifyEmail(verifyEmailDto);
+
+      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { email: verifyEmailDto.email, userType: 'CUSTOMER' },
+      });
     });
   });
 
@@ -405,6 +468,28 @@ describe('AuthService', () => {
       expect(result).toEqual({ message: successMessage });
       expect(emailService.sendPasswordResetLink).not.toHaveBeenCalled();
     });
+
+    it('clears reset-attempts counter so the new code does not immediately lock the user out (user-trap fix)', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
+      jest
+        .spyOn(prismaService.passwordResetToken as unknown as Record<string, jest.Mock>, 'deleteMany')
+        .mockResolvedValue({ count: 0 });
+      jest
+        .spyOn(prismaService.passwordResetToken as unknown as Record<string, jest.Mock>, 'create')
+        .mockResolvedValue({
+          id: 'tok-2',
+          token: 'new-token',
+          userId: mockUser.id,
+          used: false,
+          expiresAt: new Date(Date.now() + 3600000),
+        });
+      jest.spyOn(emailService, 'sendPasswordResetLink').mockResolvedValue(undefined);
+      jest.spyOn(redisService, 'del').mockResolvedValue(undefined);
+
+      await service.forgotPassword(forgotDto);
+
+      expect(redisService.del).toHaveBeenCalledWith(`reset-attempts:${mockUser.id}`);
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -486,6 +571,93 @@ describe('AuthService', () => {
       await expect(service.refreshToken('invalid-token')).rejects.toThrow(
         UnauthorizedException
       );
+    });
+
+    it('recovers rememberMe=true from Redis and issues a 30-day refresh token', async () => {
+      jest.spyOn(prismaService.user, 'findFirst').mockResolvedValue(mockUser);
+      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockUser);
+      jest.spyOn(redisService, 'get').mockResolvedValue('1'); // rememberMe=true
+      jest.spyOn(redisService, 'set').mockResolvedValue(undefined);
+
+      await service.refreshToken('valid-refresh-token');
+
+      expect(redisService.get).toHaveBeenCalledWith(`session-remember-me:${mockUser.id}`);
+      // new tokens should re-persist rememberMe=true with the 30-day TTL
+      expect(redisService.set).toHaveBeenCalledWith(
+        `session-remember-me:${mockUser.id}`,
+        '1',
+        30 * 24 * 60 * 60
+      );
+    });
+
+    it('defaults to rememberMe=false (7-day session) when no Redis key is present', async () => {
+      jest.spyOn(prismaService.user, 'findFirst').mockResolvedValue(mockUser);
+      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockUser);
+      jest.spyOn(redisService, 'get').mockResolvedValue(null); // no key
+      jest.spyOn(redisService, 'set').mockResolvedValue(undefined);
+
+      await service.refreshToken('valid-refresh-token');
+
+      expect(redisService.set).toHaveBeenCalledWith(
+        `session-remember-me:${mockUser.id}`,
+        '0',
+        7 * 24 * 60 * 60
+      );
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // resetPasswordWithCode (legacy)
+  // -------------------------------------------------------------------------
+
+  describe('resetPasswordWithCode', () => {
+    const dto = { email: 'test@example.com', code: '123456', newPassword: 'NewPass123!' };
+
+    it('throws immediately when attempt count is already at 3 (attempt limit checked before code)', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
+      jest.spyOn(redisService, 'get').mockResolvedValueOnce('3'); // attempts = 3
+
+      await expect(service.resetPasswordWithCode(dto)).rejects.toThrow(
+        'Too many failed attempts. Please request a new reset code.'
+      );
+      // Must not proceed to code lookup
+      expect(redisService.get).toHaveBeenCalledTimes(1);
+    });
+
+    it('increments attempt counter and throws on a wrong code', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
+      jest
+        .spyOn(redisService, 'get')
+        .mockResolvedValueOnce('1')  // attempts = 1
+        .mockResolvedValueOnce(null); // no matching code in Redis
+      jest.spyOn(redisService, 'set').mockResolvedValue(undefined);
+
+      await expect(service.resetPasswordWithCode(dto)).rejects.toThrow(
+        'Invalid or expired reset code'
+      );
+      expect(redisService.set).toHaveBeenCalledWith(
+        `reset-attempts:${mockUser.id}`,
+        '2',
+        600
+      );
+    });
+
+    it('resets the password and cleans up Redis on a valid code', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
+      jest
+        .spyOn(redisService, 'get')
+        .mockResolvedValueOnce('0')          // attempts = 0
+        .mockResolvedValueOnce(mockUser.id); // matching userId stored for this code hash
+      jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockUser);
+      jest.spyOn(redisService, 'del').mockResolvedValue(undefined);
+      jest.spyOn(emailService, 'sendPasswordChangedNotification').mockResolvedValue(undefined);
+
+      const result = await service.resetPasswordWithCode(dto);
+
+      expect(result).toEqual({ message: 'Password has been reset successfully.' });
+      expect(redisService.del).toHaveBeenCalledWith(expect.stringContaining('password-reset:'));
+      expect(redisService.del).toHaveBeenCalledWith(`reset-attempts:${mockUser.id}`);
+      expect(emailService.sendPasswordChangedNotification).toHaveBeenCalledWith(mockUser.email);
     });
   });
 });
