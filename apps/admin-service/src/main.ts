@@ -51,6 +51,7 @@ async function bootstrap() {
     }),
   );
 
+  app.enableShutdownHooks();
   await app.startAllMicroservices();
   const metricsPort = parseInt(process.env.ADMIN_METRICS_PORT ?? '9006', 10);
   await app.listen(metricsPort, '0.0.0.0');
