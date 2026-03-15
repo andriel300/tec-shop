@@ -210,7 +210,7 @@
       "apps/*-ui",
       "libs/**"
     ],
-    "projectsRelationship": "independent",
+    "projectsRelationship": "fixed",
     "version": {
       "preVersionCommand": "npx nx run-many -t build",
       "conventionalCommits": true
@@ -264,15 +264,14 @@
       }
     },
     "changelog": {
-      "projectChangelogs": {
+      "workspaceChangelog": {
         "renderOptions": {
           "authors": true,
           "applyUsernameToAuthors": true,
           "commitReferences": true,
           "versionTitleDate": true
         }
-      },
-      "workspaceChangelog": false
+      }
     }
   },
   "generators": {
