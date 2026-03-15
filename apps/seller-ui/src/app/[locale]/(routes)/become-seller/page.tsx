@@ -4,7 +4,6 @@
 export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { ProtectedRoute } from '../../../../components/auth/protected-route';
 import CreateShop from '../../../../shared/modules/auth/create-shop';
 import { StripeIcon } from '../../../../assets/svgs/stripe-logo';
 import { Button } from '../../../../components/ui/core/Button';
@@ -139,8 +138,7 @@ function BecomeSellerPageContent() {
   // Unauthenticated screen
   if (isAuthError || !refreshData) {
     return (
-      <ProtectedRoute requireAuth={false}>
-        <main className="w-full flex flex-col justify-center min-h-screen bg-gradient-to-br from-brand-primary-50 via-white to-brand-accent-50 px-4 py-4 sm:px-6 lg:px-8">
+      <main className="w-full flex flex-col justify-center min-h-screen bg-gradient-to-br from-brand-primary-50 via-white to-brand-accent-50 px-4 py-4 sm:px-6 lg:px-8">
           <div className="max-w-md mx-auto w-full">
             <div className="w-full bg-white shadow-elev-lg rounded-lg border border-ui-divider p-6 sm:p-8 text-center space-y-6">
               <div>
@@ -174,12 +172,10 @@ function BecomeSellerPageContent() {
             </div>
           </div>
         </main>
-      </ProtectedRoute>
     );
   }
 
   return (
-    <ProtectedRoute requireAuth={false}>
       <main className="w-full flex flex-col justify-center min-h-screen bg-gradient-to-br from-brand-primary-50 via-white to-brand-accent-50 px-4 py-4 sm:px-6 lg:px-8">
         <div className="max-w-md mx-auto w-full">
           {/* Stepper */}
@@ -388,7 +384,6 @@ function BecomeSellerPageContent() {
           </div>
         </div>
       </main>
-    </ProtectedRoute>
   );
 }
 

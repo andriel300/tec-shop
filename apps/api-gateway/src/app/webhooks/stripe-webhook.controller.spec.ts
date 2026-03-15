@@ -5,6 +5,7 @@ import { BadRequestException } from '@nestjs/common';
 import type { RawBodyRequest } from '@nestjs/common';
 import type { Request } from 'express';
 import Stripe from 'stripe';
+import { of } from 'rxjs';
 
 describe('StripeWebhookController', () => {
   let controller: StripeWebhookController;
@@ -35,13 +36,13 @@ describe('StripeWebhookController', () => {
         {
           provide: 'SELLER_SERVICE',
           useValue: {
-            emit: jest.fn(),
+            emit: jest.fn().mockReturnValue(of(undefined)),
           },
         },
         {
           provide: 'ORDER_SERVICE',
           useValue: {
-            emit: jest.fn(),
+            emit: jest.fn().mockReturnValue(of(undefined)),
           },
         },
       ],

@@ -248,7 +248,7 @@ export class DiscountService {
       discount = await this.prisma.discountCode.findUnique({
         where: { code: code.toUpperCase() },
       });
-    } catch (error) {
+    } catch (_error) {
       throw new InternalServerErrorException('Database operation failed');
     }
 
@@ -320,7 +320,7 @@ export class DiscountService {
           seller: true,
         },
       });
-    } catch (error) {
+    } catch (_error) {
       throw new InternalServerErrorException('Database operation failed');
     }
 

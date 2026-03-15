@@ -399,7 +399,7 @@ export class AuthCoreService implements OnModuleInit {
     }
   }
 
-  async refreshToken(refreshToken: string, currentAccessToken?: string) {
+  async refreshToken(refreshToken: string, _currentAccessToken?: string) {
     const hashedRefreshToken = createHash('sha256')
       .update(refreshToken)
       .digest('hex');

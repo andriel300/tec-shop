@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import React, { useState } from 'react';
 import CategoriesTab from './_components/categories/CategoriesTab';
 import BrandsTab from './_components/brands/BrandsTab';

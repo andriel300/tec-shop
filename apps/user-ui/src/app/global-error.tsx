@@ -1,16 +1,13 @@
 'use client';
 
-import * as Sentry from '@sentry/nextjs';
-import { useEffect } from 'react';
+// Sentry captures global errors automatically via instrumentation.ts.
+// Hooks cannot be used here — this component renders outside the provider
+// tree and replaces the root layout during catastrophic failures.
 
 export default function GlobalError(props: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    Sentry.captureException(props.error);
-  }, [props.error]);
-
   return (
     <html>
       <body>
