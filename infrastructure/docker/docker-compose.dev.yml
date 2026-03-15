@@ -1,6 +1,26 @@
 version: '3.9'
 
-# TODO: Update image tags and registry URLs before deploying
+# Local dev — builds all images from source and runs the full stack.
+#
+# Prerequisites (run once from project root):
+#   1. Copy .env.example to .env and fill required secrets
+#   2. ./generate-certs.sh  (mTLS certificates — required by all backend services)
+#
+# Usage (from infrastructure/docker/):
+#   docker compose -f docker-compose.dev.yml up --build
+#   docker compose -f docker-compose.dev.yml down -v   # tear down + wipe volumes
+#
+# After first start, run Prisma migrations on the host while postgresql is up:
+#   ORDER_SERVICE_DB_URL=postgresql://postgres:postgres@localhost:5432/tec-shop-orders \
+#     npx nx run @tec-shop/order-schema:db-push
+#
+# Service URLs:
+#   user-ui     http://localhost:3000
+#   seller-ui   http://localhost:3001
+#   admin-ui    http://localhost:3002
+#   api-gateway http://localhost:8080
+#   MongoDB     mongodb://localhost:27017
+#   PostgreSQL  postgresql://localhost:5432
 
 networks:
   tec-shop-network:
@@ -10,6 +30,8 @@ volumes:
   redis-data:
   kafka-data:
   zookeeper-data:
+  mongodb-data:
+  postgresql-data:
 
 services:
   # ─── Infrastructure ───────────────────────────────────────────────────────────
@@ -29,6 +51,44 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  mongodb:
+    image: mongo:7
+    container_name: tec-shop-mongodb
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', 'db.adminCommand("ping")']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  postgresql:
+    image: postgres:16-alpine
+    container_name: tec-shop-postgresql
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: tec-shop
+    volumes:
+      - postgresql-data:/var/lib/postgresql/data
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
@@ -56,9 +116,17 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      # PLAINTEXT   — Docker-internal (kafka:29092) — used by containerised services
+      # PLAINTEXT_HOST — host-accessible (localhost:9092) — used by Kafka UI / host tools
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
     volumes:
       - kafka-data:/var/lib/kafka/data
     depends_on:
@@ -77,46 +145,26 @@ services:
       retries: 5
       start_period: 30s
 
-  # ─── Backend Services ─────────────────────────────────────────────────────────
-
-  api-gateway:
-    build:
-      context: ../..
-      dockerfile: infrastructure/docker/services/api-gateway.Dockerfile
-    container_name: tec-shop-api-gateway
-    restart: unless-stopped
-    ports:
-      - '8080:8080'
-    env_file:
-      - ../../.env
-    environment:
-      NODE_ENV: development
-      PORT: 8080
+  kafka-init:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: tec-shop-kafka-init
     depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      auth-service:
-        condition: service_healthy
-      user-service:
-        condition: service_healthy
-      seller-service:
-        condition: service_healthy
-      product-service:
-        condition: service_healthy
-      order-service:
-        condition: service_healthy
-      admin-service:
+      kafka:
         condition: service_healthy
     networks:
       - tec-shop-network
-    healthcheck:
-      test: ['CMD-SHELL', 'curl -f http://localhost:8080/health || exit 1']
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+    restart: 'no'
+    command: >
+      bash -c "
+        echo 'Creating Kafka topics...'
+        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic chat.new_message --partitions 3 --replication-factor 1 --config retention.ms=604800000
+        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic users-event --partitions 3 --replication-factor 1 --config retention.ms=2592000000
+        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic log-events --partitions 3 --replication-factor 1 --config retention.ms=604800000
+        echo 'Topics ready:'
+        kafka-topics --bootstrap-server kafka:29092 --list
+      "
+
+  # ─── Backend Services ─────────────────────────────────────────────────────────
 
   auth-service:
     build:
@@ -129,6 +177,11 @@ services:
     environment:
       NODE_ENV: development
       PORT: 6001
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKER: kafka:29092
+      AUTH_SERVICE_DB_URL: mongodb://mongodb:27017/tec-shop-auth
+    volumes:
+      - ../../certs:/app/certs:ro
     depends_on:
       mongodb:
         condition: service_healthy
@@ -154,6 +207,9 @@ services:
     environment:
       NODE_ENV: development
       PORT: 6002
+      USER_SERVICE_DB_URL: mongodb://mongodb:27017/tec-shop-users
+    volumes:
+      - ../../certs:/app/certs:ro
     depends_on:
       mongodb:
         condition: service_healthy
@@ -177,6 +233,9 @@ services:
     environment:
       NODE_ENV: development
       PORT: 6003
+      SELLER_SERVICE_DB_URL: mongodb://mongodb:27017/tec-shop-sellers
+    volumes:
+      - ../../certs:/app/certs:ro
     depends_on:
       mongodb:
         condition: service_healthy
@@ -200,6 +259,9 @@ services:
     environment:
       NODE_ENV: development
       PORT: 6004
+      PRODUCT_SERVICE_DB_URL: mongodb://mongodb:27017/tec-shop-products
+    volumes:
+      - ../../certs:/app/certs:ro
     depends_on:
       mongodb:
         condition: service_healthy
@@ -223,7 +285,13 @@ services:
     environment:
       NODE_ENV: development
       PORT: 6005
+      ORDER_SERVICE_DB_URL: postgresql://postgres:postgres@postgresql:5432/tec-shop-orders
+      KAFKA_BROKER: kafka:29092
+    volumes:
+      - ../../certs:/app/certs:ro
     depends_on:
+      postgresql:
+        condition: service_healthy
       kafka:
         condition: service_healthy
     networks:
@@ -246,8 +314,16 @@ services:
     environment:
       NODE_ENV: development
       PORT: 6006
+      AUTH_SERVICE_DB_URL: mongodb://mongodb:27017/tec-shop-auth
+      USER_SERVICE_DB_URL: mongodb://mongodb:27017/tec-shop-users
+      SELLER_SERVICE_DB_URL: mongodb://mongodb:27017/tec-shop-sellers
+      ORDER_SERVICE_DB_URL: postgresql://postgres:postgres@postgresql:5432/tec-shop-orders
+    volumes:
+      - ../../certs:/app/certs:ro
     depends_on:
       mongodb:
+        condition: service_healthy
+      postgresql:
         condition: service_healthy
     networks:
       - tec-shop-network
@@ -264,11 +340,17 @@ services:
       dockerfile: infrastructure/docker/services/chatting-service.Dockerfile
     container_name: tec-shop-chatting-service
     restart: unless-stopped
+    ports:
+      - '6007:6007'
     env_file:
       - ../../.env
     environment:
       NODE_ENV: development
       PORT: 6007
+      CHATTING_SERVICE_DB_URL: mongodb://mongodb:27017/tec-shop-chatting
+      REDIS_URL: redis://redis:6379
+    volumes:
+      - ../../certs:/app/certs:ro
     depends_on:
       mongodb:
         condition: service_healthy
@@ -289,15 +371,55 @@ services:
       dockerfile: infrastructure/docker/services/logger-service.Dockerfile
     container_name: tec-shop-logger-service
     restart: unless-stopped
+    ports:
+      - '6008:6008'
     env_file:
       - ../../.env
     environment:
       NODE_ENV: development
       PORT: 6008
+      LOGGER_SERVICE_DB_URL: mongodb://mongodb:27017/tec-shop-logger
+    volumes:
+      - ../../certs:/app/certs:ro
+    depends_on:
+      mongodb:
+        condition: service_healthy
     networks:
       - tec-shop-network
     healthcheck:
       test: ['CMD-SHELL', 'curl -f http://localhost:6008/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  notification-service:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/services/notification-service.Dockerfile
+    container_name: tec-shop-notification-service
+    restart: unless-stopped
+    ports:
+      - '6012:6012'
+    env_file:
+      - ../../.env
+    environment:
+      NODE_ENV: development
+      NOTIFICATION_SERVICE_PORT: '6012'
+      NOTIFICATION_SERVICE_TCP_PORT: '6014'
+      NOTIFICATION_SERVICE_DB_URL: mongodb://mongodb:27017/tec-shop-notifications
+      REDIS_URL: redis://redis:6379
+    volumes:
+      - ../../certs:/app/certs:ro
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:6012/health || exit 1']
       interval: 15s
       timeout: 5s
       retries: 5
@@ -313,7 +435,10 @@ services:
       - ../../.env
     environment:
       NODE_ENV: development
-      PORT: 6009
+      KAFKA_BROKER: kafka:29092
+      ANALYTICS_SERVICE_DB_URL: mongodb://mongodb:27017/tec-shop-analytics
+    volumes:
+      - ../../certs:/app/certs:ro
     depends_on:
       kafka:
         condition: service_healthy
@@ -338,7 +463,10 @@ services:
       - ../../.env
     environment:
       NODE_ENV: development
-      PORT: 6010
+      PORT: 6009
+      KAFKA_BROKER: kafka:29092
+    volumes:
+      - ../../certs:/app/certs:ro
     depends_on:
       mongodb:
         condition: service_healthy
@@ -353,7 +481,65 @@ services:
       retries: 5
       start_period: 30s
 
+  api-gateway:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/services/api-gateway.Dockerfile
+    container_name: tec-shop-api-gateway
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+    env_file:
+      - ../../.env
+    environment:
+      NODE_ENV: development
+      PORT: 8080
+      REDIS_URL: redis://redis:6379
+      KAFKA_BROKER: kafka:29092
+      CORS_ORIGINS: 'http://localhost:3000,http://localhost:3001,http://localhost:3002'
+      FRONTEND_URL: 'http://localhost:3000'
+      SELLER_UI_URL: 'http://localhost:3001'
+      # Override service hosts to Docker container names
+      AUTH_SERVICE_HOST: auth-service
+      USER_SERVICE_HOST: user-service
+      SELLER_SERVICE_HOST: seller-service
+      PRODUCT_SERVICE_HOST: product-service
+      ORDER_SERVICE_HOST: order-service
+      ADMIN_SERVICE_HOST: admin-service
+      CHATTING_SERVICE_HOST: chatting-service
+      LOGGER_SERVICE_HOST: logger-service
+      RECOMMENDATION_SERVICE_HOST: recommendation-service
+      NOTIFICATION_SERVICE_HOST: notification-service
+    volumes:
+      - ../../certs:/app/certs:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      seller-service:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      admin-service:
+        condition: service_healthy
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:8080/health || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   # ─── Frontend Applications ────────────────────────────────────────────────────
+  # NEXT_PUBLIC_* vars are baked into the Next.js client bundle at build time.
+  # They are read from .env at build time (via COPY . . in the builder stage).
+  # Ensure your .env has NEXT_PUBLIC_API_URL=http://localhost:8080 for browser access.
 
   user-ui:
     build:
@@ -366,8 +552,9 @@ services:
     env_file:
       - ../../.env
     environment:
-      NODE_ENV: development
-      NEXT_PUBLIC_API_URL: http://api-gateway:8080
+      NODE_ENV: production
+      # Server-side rendering: route through Docker network
+      BACKEND_URL: http://api-gateway:8080
     depends_on:
       api-gateway:
         condition: service_healthy
@@ -385,8 +572,8 @@ services:
     env_file:
       - ../../.env
     environment:
-      NODE_ENV: development
-      NEXT_PUBLIC_API_URL: http://api-gateway:8080
+      NODE_ENV: production
+      BACKEND_URL: http://api-gateway:8080
     depends_on:
       api-gateway:
         condition: service_healthy
@@ -404,8 +591,8 @@ services:
     env_file:
       - ../../.env
     environment:
-      NODE_ENV: development
-      NEXT_PUBLIC_API_URL: http://api-gateway:8080
+      NODE_ENV: production
+      BACKEND_URL: http://api-gateway:8080
     depends_on:
       api-gateway:
         condition: service_healthy

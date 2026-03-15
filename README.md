@@ -191,100 +191,154 @@ The project is managed using the Kanban methodology via Jira, with tasks tracked
 
 ### Prerequisites
 
-- Node.js 18+
-- MongoDB instance (or Atlas)
-- Redis instance
-- Apache Kafka (for analytics events)
-- SMTP server (for email OTPs)
+- Node.js 22+
+- pnpm 10+
+- Docker + Docker Compose (for infrastructure / full stack)
+- SMTP server (for email OTPs — Mailtrap works for local dev)
 
-### Installation
+### Initial setup (required for both workflows)
 
-1. Clone the repository
+1. Clone and install
 
 ```bash
 git clone <repository-url>
 cd tec-shop
-```
-
-1. Install dependencies
-
-```bash
 pnpm install
 ```
 
-1. Set up environment variables
+2. Set up environment variables
 
 ```bash
 cp .env.example .env
-# Edit .env with your configuration
+# Fill in: JWT_SECRET, SERVICE_MASTER_SECRET, OTP_SALT (required)
+# Fill in: SMTP credentials, Google OAuth, Stripe, ImageKit (optional for basic testing)
 ```
 
-1. Generate Prisma clients
+3. Generate Prisma clients
 
 ```bash
-pnpm run prisma:generate
+pnpm prisma:generate
 ```
 
-1. Push database schemas
+4. Generate mTLS certificates (required by all backend services)
 
 ```bash
-pnpm run prisma:db-push
+./generate-certs.sh
 ```
 
-1. Generate mTLS certificates (optional for development)
+---
+
+### Workflow A — Host-based development (recommended)
+
+Services run directly on your machine with hot reload. Docker only provides Redis, Kafka, and Zookeeper.
+
+Requires: MongoDB (Atlas `mongodb+srv://` or a local instance) and PostgreSQL (Neon or local) configured in `.env`.
 
 ```bash
-./generate-certs.sh --all
+# Start infrastructure (Redis + Kafka + Zookeeper)
+pnpm infra:up
+
+# Push Prisma schemas to your databases (first time only)
+pnpm prisma:db-push
+
+# Start all services with hot reload
+pnpm dev
 ```
 
-1. Start all services
+Individual services:
 
 ```bash
-pnpm run dev
+PORT=3000 npx nx dev user-ui       # User storefront
+PORT=3001 npx nx dev seller-ui     # Seller dashboard
+PORT=3002 npx nx dev admin-ui      # Admin panel
+npx nx serve api-gateway           # API Gateway
+npx nx serve auth-service          # Any backend service
 ```
+
+---
+
+### Workflow B — Full Docker stack (deployment validation)
+
+Builds all services into containers. No external databases needed — MongoDB and PostgreSQL run as local containers.
+
+```bash
+# First run: build all images and start (takes several minutes)
+pnpm stack:up:build
+
+# Subsequent runs (no rebuild)
+pnpm stack:up
+```
+
+The startup script handles sequencing automatically: infrastructure → Prisma migration → all services.
+
+```bash
+pnpm stack:logs    # Tail all logs
+pnpm stack:down    # Tear down and wipe volumes
+```
+
+---
 
 The application will be available at:
 
-- API Gateway: <http://localhost:8080/api>
-- API Documentation: <http://localhost:8080/api-docs>
-- User UI: <http://localhost:3000>
-- Seller UI: <http://localhost:3001>
-- Admin UI: <http://localhost:3002>
+| Service | URL |
+|---|---|
+| User UI | <http://localhost:3000> |
+| Seller UI | <http://localhost:3001> |
+| Admin UI | <http://localhost:3002> |
+| API Gateway | <http://localhost:8080> |
+| API Documentation | <http://localhost:8080/api-docs> |
 
 ## Development Commands
 
-### Service Management
+### Host-based dev (Workflow A)
 
 ```bash
-pnpm run dev                          # Start all services
-npx nx serve <service-name>          # Start specific service
-npx nx build <service-name>          # Build specific service
-npx nx run-many --target=serve --all # Start all services
+pnpm infra:up                         # Start Redis + Kafka + Zookeeper
+pnpm infra:down                       # Stop infrastructure
+pnpm infra:logs                       # Tail infrastructure logs
+pnpm dev                              # Start all services with hot reload
+npx nx serve <service-name>           # Start a single backend service
+PORT=3000 npx nx dev user-ui          # Start a single frontend
+```
+
+### Full Docker stack (Workflow B)
+
+```bash
+pnpm stack:up:build                   # Build all images and start
+pnpm stack:up                         # Start without rebuilding
+pnpm stack:down                       # Tear down and wipe volumes
+pnpm stack:logs                       # Tail all container logs
+```
+
+### Build, lint, test
+
+```bash
+npx nx build <service>                # Build a single service
+npx nx test <service>                 # Run tests for a service
+npx nx lint <service>                 # Lint a service
+npx nx typecheck <service>            # Type-check a service
+pnpm build / pnpm test / pnpm lint    # Run across all projects
+npx nx affected -t build,lint,test    # Only projects affected by current changes
 ```
 
 ### Database Operations
 
 ```bash
-pnpm run prisma:generate  # Generate all Prisma clients
-pnpm run prisma:db-push   # Push schema changes to database
-pnpm run prisma:studio    # Open Prisma Studio
+pnpm prisma:generate                  # Regenerate all Prisma clients
+pnpm prisma:db-push                   # Push all schemas to their databases
+pnpm prisma:format                    # Format all .prisma files
+
+# Single schema
+npx nx run @tec-shop/auth-schema:db-push
+npx nx run @tec-shop/order-schema:studio
 ```
 
 ### Certificate Management
 
 ```bash
-./generate-certs.sh --all                      # Generate all certificates
-./generate-certs.sh --service <service-name>   # Generate for specific service
+./generate-certs.sh                            # Generate all certificates (first-time setup)
+./generate-certs.sh --service <service-name>   # Regenerate for a specific service
 ./generate-certs.sh --clean                    # Remove all certificates
-```
-
-### Testing & Quality
-
-```bash
-npx nx test <service>                    # Run tests for specific service
-npx nx lint <service>                    # Lint specific service
-npx nx typecheck <service>               # Type check specific service
-npx nx run-many --target=test --all      # Run all tests
 ```
 
 ## Environment Variables
@@ -506,13 +560,19 @@ k6 run load-testing/scenarios/soak.js
 
 ## Deployment
 
-### Docker
+### Local Docker stack
 
-Multi-stage Dockerfiles for all services are in `infrastructure/docker/services/`.
+Multi-stage Dockerfiles for all services are in `infrastructure/docker/services/`. The full stack compose is at `infrastructure/docker/docker-compose.dev.yml`.
 
 ```bash
-docker-compose up -d
+pnpm stack:up:build    # build images + start (first run)
+pnpm stack:up          # start without rebuilding
+pnpm stack:down        # stop and remove all containers + volumes
 ```
+
+The compose file includes local MongoDB and PostgreSQL containers, so no external databases are required. Environment variables from `.env` are loaded via `env_file`, with infrastructure URLs (DB hosts, Redis, Kafka) overridden per-service to use Docker container names.
+
+**Note on `NEXT_PUBLIC_*` variables:** Next.js bakes these into the client bundle at build time. They are read from `.env` during `docker build` (via `COPY . .` in the builder stage). Ensure your `.env` has `NEXT_PUBLIC_API_URL=http://localhost:8080` before building.
 
 ### Kubernetes / Helm
 
@@ -545,11 +605,18 @@ Helm chart and per-environment values files are in `infrastructure/helm/tec-shop
 
 ### Common Issues
 
-**Services not starting**
+**Services not starting (host-based)**
 
-- Check that required ports are available (8080, 6001–6009)
-- Verify all environment variables are set (services fail-secure on missing secrets)
-- Ensure MongoDB, Redis, and Kafka are running
+- Check that required ports are available (8080, 6001–6012)
+- Verify all environment variables are set — services fail on missing secrets (`JWT_SECRET`, `SERVICE_MASTER_SECRET`, `OTP_SALT`)
+- Confirm `pnpm infra:up` is running (Redis + Kafka required)
+
+**Docker stack not starting**
+
+- Run `pnpm stack:up:build` to force a full image rebuild after code changes
+- Confirm `certs/` directory exists with all service certificates — run `./generate-certs.sh` if missing
+- Check individual service logs: `docker logs tec-shop-auth-service`
+- Services wait for health checks before starting dependents; allow 2–3 minutes on first boot
 
 **Authentication issues**
 
@@ -560,14 +627,23 @@ Helm chart and per-environment values files are in `infrastructure/helm/tec-shop
 
 **mTLS certificate errors**
 
-- Regenerate: `./generate-certs.sh --clean && ./generate-certs.sh --all`
-- Ensure certificate file permissions are correct (readable by the service process)
+- Regenerate: `./generate-certs.sh --clean && ./generate-certs.sh`
+- For the Docker stack, certs are bind-mounted from `./certs/` — ensure files exist on the host before `docker compose up`
 
 **Kafka events not processing**
 
-- Confirm `KAFKA_BROKER` points to a reachable broker
+- Host-based: confirm `KAFKA_BROKER=localhost:9092` in `.env` and `pnpm infra:up` is running
+- Docker stack: `KAFKA_BROKER` is overridden to `kafka:29092` automatically — no change needed
 - Check that the `kafka-service` consumer is running
 - Verify topic names match `KafkaTopics` constants in `@tec-shop/kafka-events`
+
+**order-service fails to connect to PostgreSQL (Docker stack)**
+
+- The startup script runs `prisma db-push` automatically, but if it failed, run manually:
+  ```bash
+  ORDER_SERVICE_DB_URL=postgresql://postgres:postgres@localhost:5432/tec-shop-orders \
+    npx nx run @tec-shop/order-schema:db-push
+  ```
 
 ## Acknowledgments
 
