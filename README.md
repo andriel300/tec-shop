@@ -65,6 +65,18 @@ I will add a video demo link later.
 - **Load Testing** : K6s
 - **Package Management**: pnpm workspaces
 
+### Security Features
+
+- **Mutual TLS (mTLS)**: Certificate-based service-to-service authentication
+- **JWT Authentication**: Stateless access + refresh token rotation with httpOnly cookies
+- **HMAC Inter-Service Auth**: `SERVICE_MASTER_SECRET`-derived signatures for cross-service calls
+- **Role-Based Access Control**: `ADMIN`, `SELLER`, `CUSTOMER` roles enforced via `RolesGuard`
+- **Rate Limiting**: Three-tier throttling (short / medium / long), environment-aware limits
+- **Security Headers**: Helmet (CSP, HSTS, XSS protection)
+- **Input Validation**: class-validator + class-transformer DTOs
+- **Password Security**: bcrypt with configurable salt rounds
+- **Token Blacklisting**: Redis-backed refresh token revocation
+
 ## Kanban Project Management Methodology
 
 The project is managed using the Kanban methodology via Jira, with tasks tracked across backlog, in-progress, review, and done columns.
@@ -126,18 +138,6 @@ The project is managed using the Kanban methodology via Jira, with tasks tracked
 - Real-time features use **Socket.IO** (chatting-service, logger-service, notification-service)
 - **mTLS** certificates available for encrypted service-to-service transport in production
 
-### Security Features
-
-- **Mutual TLS (mTLS)**: Certificate-based service-to-service authentication
-- **JWT Authentication**: Stateless access + refresh token rotation with httpOnly cookies
-- **HMAC Inter-Service Auth**: `SERVICE_MASTER_SECRET`-derived signatures for cross-service calls
-- **Role-Based Access Control**: `ADMIN`, `SELLER`, `CUSTOMER` roles enforced via `RolesGuard`
-- **Rate Limiting**: Three-tier throttling (short / medium / long), environment-aware limits
-- **Security Headers**: Helmet (CSP, HSTS, XSS protection)
-- **Input Validation**: class-validator + class-transformer DTOs
-- **Password Security**: bcrypt with configurable salt rounds
-- **Token Blacklisting**: Redis-backed refresh token revocation
-
 ## Key Features
 
 ### Authentication & Security
@@ -191,12 +191,17 @@ The project is managed using the Kanban methodology via Jira, with tasks tracked
 
 ### Prerequisites
 
-- Node.js 22+
-- pnpm 10+
-- Docker + Docker Compose (for infrastructure / full stack)
-- SMTP server (for email OTPs — Mailtrap works for local dev)
+| Requirement | Purpose |
+|---|---|
+| Node.js 22+ | Running services and Nx CLI |
+| pnpm 10+ | Package management |
+| Docker + Docker Compose | Infrastructure and full stack |
+| kubectl | Kubernetes CLI (Workflow C) |
+| kind | Local Kubernetes cluster (Workflow C) |
+| helm | Kubernetes package manager (Workflow C) |
+| SMTP server | Email OTPs — Mailtrap works for local dev |
 
-### Initial setup (required for both workflows)
+### Initial setup (required for all workflows)
 
 1. Clone and install
 
@@ -206,12 +211,12 @@ cd tec-shop
 pnpm install
 ```
 
-2. Set up environment variables
+2. Configure environment variables
 
 ```bash
 cp .env.example .env
-# Fill in: JWT_SECRET, SERVICE_MASTER_SECRET, OTP_SALT (required)
-# Fill in: SMTP credentials, Google OAuth, Stripe, ImageKit (optional for basic testing)
+# Required: JWT_SECRET, SERVICE_MASTER_SECRET, OTP_SALT
+# Optional: SMTP credentials, Google OAuth, Stripe, ImageKit
 ```
 
 3. Generate Prisma clients
@@ -223,7 +228,8 @@ pnpm prisma:generate
 4. Generate mTLS certificates (required by all backend services)
 
 ```bash
-./generate-certs.sh
+pnpm certs:generate
+# or: ./generate-certs.sh --all
 ```
 
 ---
@@ -239,7 +245,7 @@ Requires: MongoDB (Atlas `mongodb+srv://` or a local instance) and PostgreSQL (N
 pnpm infra:up
 
 # Push Prisma schemas to your databases (first time only)
-pnpm prisma:db-push
+pnpm prisma:push
 
 # Start all services with hot reload
 pnpm dev
@@ -257,51 +263,109 @@ npx nx serve auth-service          # Any backend service
 
 ---
 
-### Workflow B — Full Docker stack (deployment validation)
+### Workflow B — Full Docker stack (container validation)
 
-Builds all services into containers. No external databases needed — MongoDB and PostgreSQL run as local containers.
+Builds all services into containers and runs them with Docker Compose. No external databases required — MongoDB and PostgreSQL run as local containers.
 
 ```bash
 # First run: build all images and start (takes several minutes)
 pnpm stack:up:build
 
-# Subsequent runs (no rebuild)
+# Subsequent runs: start without rebuilding
 pnpm stack:up
+
+# Logs and teardown
+pnpm stack:logs
+pnpm stack:down
 ```
 
 The startup script handles sequencing automatically: infrastructure → Prisma migration → all services.
 
+---
+
+### Workflow C — Local Kubernetes with kind (pre-production validation)
+
+Runs all backend services inside a single-node [kind](https://kind.sigs.k8s.io/) cluster on your machine with MongoDB, Redis, and Kafka deployed as Bitnami Helm subcharts. This validates Helm chart configuration, readiness probes, mTLS cert mounts, Kubernetes service discovery, and HPA definitions before any cloud spend.
+
+**One-time cluster setup:**
+
 ```bash
-pnpm stack:logs    # Tail all logs
-pnpm stack:down    # Tear down and wipe volumes
+# Create the kind cluster
+kind create cluster --name tec-shop
+
+# Fetch Bitnami chart dependencies (mongodb, redis, kafka)
+helm dependency update infrastructure/helm/tec-shop
 ```
+
+**Deploy:**
+
+```bash
+# 1. Build all 11 service images and load into kind
+pnpm k8s:build
+
+# 2. Create K8s secrets from your .env and certs/ directory
+pnpm k8s:secrets
+
+# 3. Install the Helm release (infra + all services)
+pnpm k8s:deploy
+
+# 4. Monitor pod startup
+pnpm k8s:status
+```
+
+**Access the API gateway:**
+
+```bash
+kubectl port-forward svc/api-gateway 8080:8080 -n tec-shop
+# API:  http://localhost:8080
+# Docs: http://localhost:8080/api-docs
+```
+
+**Teardown:**
+
+```bash
+pnpm k8s:teardown                # uninstall Helm release
+kind delete cluster --name tec-shop
+```
+
+**Key design decisions:**
+
+| Decision | Reason |
+|---|---|
+| Bitnami in-cluster infra | kind nodes run in a separate Docker network. Pods cannot reach `localhost`, and `host.docker.internal` is not auto-available on Linux. Running MongoDB, Redis, and Kafka as Helm subcharts inside the cluster eliminates host-networking complexity entirely. |
+| `imagePullPolicy: Never` | Images are loaded directly from the local Docker daemon into kind via `kind load docker-image`. Without this, Kubernetes tries to pull `tec-shop-local/...` from the internet and fails with `ErrImagePull`. |
+| `KAFKA_SSL=false` | The code auto-disables SSL for brokers starting with `kafka:` or `localhost:`. The Bitnami subchart names its service `tec-shop-kafka:9092`, which does not match either prefix. Setting `KAFKA_SSL=false` explicitly disables SSL so all services connect to the PLAINTEXT listener. |
+| mTLS certs as K8s Secrets | Cert files from `./certs/` are packed into a single `tec-shop-certs` Secret. The Helm deployment template mounts each service's key and cert via `subPath` into `/app/certs/<service>/`, replicating the same path structure services expect at runtime. |
 
 ---
 
 The application will be available at:
 
-| Service | URL |
-|---|---|
-| User UI | <http://localhost:3000> |
-| Seller UI | <http://localhost:3001> |
-| Admin UI | <http://localhost:3002> |
-| API Gateway | <http://localhost:8080> |
+| Service           | URL                              |
+| ----------------- | -------------------------------- |
+| User UI           | <http://localhost:3000>          |
+| Seller UI         | <http://localhost:3001>          |
+| Admin UI          | <http://localhost:3002>          |
+| API Gateway       | <http://localhost:8080>          |
 | API Documentation | <http://localhost:8080/api-docs> |
 
 ## Development Commands
 
-### Host-based dev (Workflow A)
+### Workflow A — Host-based dev
 
 ```bash
 pnpm infra:up                         # Start Redis + Kafka + Zookeeper
 pnpm infra:down                       # Stop infrastructure
+pnpm infra:restart                    # Restart infrastructure
 pnpm infra:logs                       # Tail infrastructure logs
 pnpm dev                              # Start all services with hot reload
 npx nx serve <service-name>           # Start a single backend service
-PORT=3000 npx nx dev user-ui          # Start a single frontend
+pnpm dev:ui:user                      # User storefront  (localhost:3000)
+pnpm dev:ui:seller                    # Seller dashboard (localhost:3001)
+pnpm dev:ui:admin                     # Admin panel      (localhost:3002)
 ```
 
-### Full Docker stack (Workflow B)
+### Workflow B — Full Docker stack
 
 ```bash
 pnpm stack:up:build                   # Build all images and start
@@ -310,35 +374,62 @@ pnpm stack:down                       # Tear down and wipe volumes
 pnpm stack:logs                       # Tail all container logs
 ```
 
+### Workflow C — Local Kubernetes (kind)
+
+```bash
+pnpm k8s:build                        # Build images + load into kind cluster
+pnpm k8s:secrets                      # Create K8s secrets from .env + certs/
+pnpm k8s:deploy                       # Helm install/upgrade (local)
+pnpm k8s:deploy:dev                   # Helm deploy to dev environment
+pnpm k8s:deploy:prod                  # Helm deploy to production
+pnpm k8s:status                       # List all pods in tec-shop namespace
+pnpm k8s:logs                         # Follow logs for all tec-shop pods
+pnpm k8s:teardown                     # Uninstall Helm release
+```
+
 ### Build, lint, test
 
 ```bash
-npx nx build <service>                # Build a single service
-npx nx test <service>                 # Run tests for a service
-npx nx lint <service>                 # Lint a service
-npx nx typecheck <service>            # Type-check a service
-pnpm build / pnpm test / pnpm lint    # Run across all projects
-npx nx affected -t build,lint,test    # Only projects affected by current changes
+pnpm build                            # Build all projects
+pnpm lint                             # Lint all projects
+pnpm typecheck                        # Type-check all projects
+pnpm test                             # Test all projects
+pnpm ci                               # All checks on affected projects only (CI)
+
+npx nx build <service>                # Single project
+npx nx test <service>
+npx nx lint <service>
+npx nx typecheck <service>
 ```
 
-### Database Operations
+### Database
 
 ```bash
 pnpm prisma:generate                  # Regenerate all Prisma clients
-pnpm prisma:db-push                   # Push all schemas to their databases
+pnpm prisma:push                      # Push all schemas to databases
 pnpm prisma:format                    # Format all .prisma files
+pnpm prisma:studio                    # Open Prisma Studio for all schemas
 
-# Single schema
-npx nx run @tec-shop/auth-schema:db-push
-npx nx run @tec-shop/order-schema:studio
+npx nx run @tec-shop/auth-schema:db-push     # Single schema push
+npx nx run @tec-shop/order-schema:studio     # Single schema studio
 ```
 
-### Certificate Management
+### Seeding
 
 ```bash
-./generate-certs.sh                            # Generate all certificates (first-time setup)
-./generate-certs.sh --service <service-name>   # Regenerate for a specific service
-./generate-certs.sh --clean                    # Remove all certificates
+pnpm seed                             # Seed brands, categories, and products
+pnpm seed:admin                       # Create admin user (uses SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD)
+pnpm seed:recommendations             # Seed recommendation training data
+```
+
+### Certificate management
+
+```bash
+pnpm certs:generate                   # Generate CA + all service certificates
+pnpm certs:clean                      # Remove all certificates
+
+./generate-certs.sh --service <name>  # Generate cert for a single service
+./generate-certs.sh --clean && ./generate-certs.sh --all  # Full rotation
 ```
 
 ## Environment Variables
@@ -560,30 +651,48 @@ k6 run load-testing/scenarios/soak.js
 
 ## Deployment
 
-### Local Docker stack
+Three deployment targets are supported. All use the same multi-stage Dockerfiles in `infrastructure/docker/services/`.
 
-Multi-stage Dockerfiles for all services are in `infrastructure/docker/services/`. The full stack compose is at `infrastructure/docker/docker-compose.dev.yml`.
+### Workflow B — Docker Compose
+
+Full stack including local MongoDB and PostgreSQL. No external databases required. Environment variables from `.env` are loaded via `env_file`; infrastructure hostnames (DB, Redis, Kafka) are overridden per-service to Docker container names.
 
 ```bash
-pnpm stack:up:build    # build images + start (first run)
-pnpm stack:up          # start without rebuilding
-pnpm stack:down        # stop and remove all containers + volumes
+pnpm stack:up:build    # first run: build all images then start
+pnpm stack:up          # subsequent runs: start without rebuilding
+pnpm stack:down        # stop and remove all containers and volumes
+pnpm stack:logs        # tail all service logs
 ```
 
-The compose file includes local MongoDB and PostgreSQL containers, so no external databases are required. Environment variables from `.env` are loaded via `env_file`, with infrastructure URLs (DB hosts, Redis, Kafka) overridden per-service to use Docker container names.
+> **Note on `NEXT_PUBLIC_*` variables:** Next.js bakes these into the client bundle at build time, during `docker build`. Ensure `.env` contains `NEXT_PUBLIC_API_URL=http://localhost:8080` before running `pnpm stack:up:build`.
 
-**Note on `NEXT_PUBLIC_*` variables:** Next.js bakes these into the client bundle at build time. They are read from `.env` during `docker build` (via `COPY . .` in the builder stage). Ensure your `.env` has `NEXT_PUBLIC_API_URL=http://localhost:8080` before building.
+### Workflow C — Local Kubernetes (kind)
 
-### Kubernetes / Helm
+Helm chart and values files are in `infrastructure/helm/tec-shop/`. Three values overlays are provided:
 
-Helm chart and per-environment values files are in `infrastructure/helm/tec-shop/`.
+| Values file | Purpose |
+|---|---|
+| `values.yaml` | Base defaults shared across all environments |
+| `values.local.yaml` | kind cluster — `imagePullPolicy: Never`, 1 replica, Bitnami infra |
+| `values.dev.yaml` | Remote dev cluster — reduced replicas and resources |
+| `values.prod.yaml` | Production — autoscaling enabled, security hardening, TLS |
 
 ```bash
-# Deploy
-./infrastructure/scripts/deploy.sh
+# Local kind cluster
+pnpm k8s:build      # docker build + kind load docker-image for all services
+pnpm k8s:secrets    # create tec-shop-secrets + tec-shop-certs in K8s
+pnpm k8s:deploy     # helm upgrade --install with values.local.yaml
 
-# Rollback
+# Remote environments (requires correct kubectl context)
+pnpm k8s:deploy:dev
+pnpm k8s:deploy:prod
+```
+
+### Production rollback
+
+```bash
 ./infrastructure/scripts/rollback.sh
+# or: helm rollback tec-shop -n tec-shop
 ```
 
 ### Production Checklist
@@ -614,7 +723,7 @@ Helm chart and per-environment values files are in `infrastructure/helm/tec-shop
 **Docker stack not starting**
 
 - Run `pnpm stack:up:build` to force a full image rebuild after code changes
-- Confirm `certs/` directory exists with all service certificates — run `./generate-certs.sh` if missing
+- Confirm `certs/` directory exists with all service certificates — run `pnpm certs:generate` if missing
 - Check individual service logs: `docker logs tec-shop-auth-service`
 - Services wait for health checks before starting dependents; allow 2–3 minutes on first boot
 
@@ -627,8 +736,9 @@ Helm chart and per-environment values files are in `infrastructure/helm/tec-shop
 
 **mTLS certificate errors**
 
-- Regenerate: `./generate-certs.sh --clean && ./generate-certs.sh`
+- Regenerate: `pnpm certs:clean && pnpm certs:generate`
 - For the Docker stack, certs are bind-mounted from `./certs/` — ensure files exist on the host before `docker compose up`
+- For Kubernetes, re-run `pnpm k8s:secrets` after regenerating certs, then restart affected deployments: `kubectl rollout restart deployment -n tec-shop`
 
 **Kafka events not processing**
 
@@ -640,10 +750,26 @@ Helm chart and per-environment values files are in `infrastructure/helm/tec-shop
 **order-service fails to connect to PostgreSQL (Docker stack)**
 
 - The startup script runs `prisma db-push` automatically, but if it failed, run manually:
+
   ```bash
   ORDER_SERVICE_DB_URL=postgresql://postgres:postgres@localhost:5432/tec-shop-orders \
     npx nx run @tec-shop/order-schema:db-push
   ```
+
+**Kubernetes pods stuck in `ErrImagePull` or `ImagePullBackOff`**
+
+- Images were not loaded into kind. Run `pnpm k8s:build` to build and load all images.
+- Confirm `imagePullPolicy: Never` is set — check with `kubectl describe pod <pod-name> -n tec-shop`.
+
+**Kubernetes pods crash-looping (`CrashLoopBackOff`)**
+
+- Check pod logs: `kubectl logs <pod-name> -n tec-shop --previous`
+- Most common causes: missing secret key (re-run `pnpm k8s:secrets`), missing cert file, or wrong service hostname in ConfigMap.
+- Verify the ConfigMap is populated: `kubectl describe configmap tec-shop-config -n tec-shop`
+
+**Kafka pods not ready in kind**
+
+- Bitnami Kafka (KRaft mode) can take 60–90 seconds to elect a controller. Wait for `kafka-controller-0` to show `Running` before deploying services: `pnpm k8s:status`
 
 ## Acknowledgments
 

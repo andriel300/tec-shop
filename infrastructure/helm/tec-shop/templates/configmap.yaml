@@ -10,34 +10,34 @@ data:
 
   # Internal cluster service URLs (auto-resolved via Kubernetes DNS)
   AUTH_SERVICE_HOST: "auth-service"
-  AUTH_SERVICE_PORT: {{ .Values.services.auth-service.port | quote }}
+  AUTH_SERVICE_PORT: {{ (index .Values.services "auth-service").port | quote }}
 
   USER_SERVICE_HOST: "user-service"
-  USER_SERVICE_PORT: {{ .Values.services.user-service.port | quote }}
+  USER_SERVICE_PORT: {{ (index .Values.services "user-service").port | quote }}
 
   SELLER_SERVICE_HOST: "seller-service"
-  SELLER_SERVICE_PORT: {{ .Values.services.seller-service.port | quote }}
+  SELLER_SERVICE_PORT: {{ (index .Values.services "seller-service").port | quote }}
 
   PRODUCT_SERVICE_HOST: "product-service"
-  PRODUCT_SERVICE_PORT: {{ .Values.services.product-service.port | quote }}
+  PRODUCT_SERVICE_PORT: {{ (index .Values.services "product-service").port | quote }}
 
   ORDER_SERVICE_HOST: "order-service"
-  ORDER_SERVICE_PORT: {{ .Values.services.order-service.port | quote }}
+  ORDER_SERVICE_PORT: {{ (index .Values.services "order-service").port | quote }}
 
   ADMIN_SERVICE_HOST: "admin-service"
-  ADMIN_SERVICE_PORT: {{ .Values.services.admin-service.port | quote }}
+  ADMIN_SERVICE_PORT: {{ (index .Values.services "admin-service").port | quote }}
 
   CHATTING_SERVICE_HOST: "chatting-service"
-  CHATTING_SERVICE_PORT: {{ .Values.services.chatting-service.port | quote }}
+  CHATTING_SERVICE_PORT: {{ (index .Values.services "chatting-service").port | quote }}
 
   LOGGER_SERVICE_HOST: "logger-service"
-  LOGGER_SERVICE_PORT: {{ .Values.services.logger-service.port | quote }}
+  LOGGER_SERVICE_PORT: {{ (index .Values.services "logger-service").port | quote }}
 
   KAFKA_SERVICE_HOST: "kafka-service"
-  KAFKA_SERVICE_PORT: {{ .Values.services.kafka-service.port | quote }}
+  KAFKA_SERVICE_PORT: {{ (index .Values.services "kafka-service").port | quote }}
 
   RECOMMENDATION_SERVICE_HOST: "recommendation-service"
-  RECOMMENDATION_SERVICE_PORT: {{ .Values.services.recommendation-service.port | quote }}
+  RECOMMENDATION_SERVICE_PORT: {{ (index .Values.services "recommendation-service").port | quote }}
 
   # Infrastructure
   REDIS_HOST: {{ .Values.config.redisHost | quote }}
@@ -45,6 +45,9 @@ data:
   MONGO_HOST: {{ .Values.config.mongoHost | quote }}
   MONGO_PORT: {{ .Values.config.mongoPort | quote }}
   KAFKA_BROKER: {{ .Values.config.kafkaBroker | quote }}
+  {{- if .Values.config.kafkaSsl }}
+  KAFKA_SSL: {{ .Values.config.kafkaSsl | quote }}
+  {{- end }}
 
   # CORS
   CORS_ORIGIN: {{ .Values.config.corsOrigin | quote }}

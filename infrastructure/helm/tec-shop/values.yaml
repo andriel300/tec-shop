@@ -287,4 +287,10 @@ config:
   mongoHost: "mongodb"
   mongoPort: "27017"
   kafkaBroker: "kafka:9092"
+  kafkaSsl: ""
   corsOrigin: "https://tec-shop.com,https://seller.tec-shop.com,https://admin.tec-shop.com"
+
+# ─── mTLS Certificates ────────────────────────────────────────────────────────
+
+certsEnabled: true
+certsSecretName: "tec-shop-certs"

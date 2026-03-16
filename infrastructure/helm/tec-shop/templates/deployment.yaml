@@ -71,6 +71,27 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 15
             failureThreshold: 3
+          {{- if $.Values.certsEnabled }}
+          volumeMounts:
+            - name: certs
+              mountPath: /app/certs/{{ $serviceName }}/{{ $serviceName }}-key.pem
+              subPath: {{ $serviceName }}-key.pem
+              readOnly: true
+            - name: certs
+              mountPath: /app/certs/{{ $serviceName }}/{{ $serviceName }}-cert.pem
+              subPath: {{ $serviceName }}-cert.pem
+              readOnly: true
+            - name: certs
+              mountPath: /app/certs/ca/ca-cert.pem
+              subPath: ca-cert.pem
+              readOnly: true
+          {{- end }}
+      {{- if $.Values.certsEnabled }}
+      volumes:
+        - name: certs
+          secret:
+            secretName: {{ $.Values.certsSecretName | default "tec-shop-certs" }}
+      {{- end }}
       # TODO: Add imagePullSecrets if using private registry
       # imagePullSecrets:
       #   - name: registry-credentials

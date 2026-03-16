@@ -21,9 +21,9 @@ NAMESPACE="tec-shop"
 ENVIRONMENT="${1:-dev}"
 IMAGE_TAG="${2:-latest}"
 
-if [[ "${ENVIRONMENT}" != "dev" && "${ENVIRONMENT}" != "prod" ]]; then
-  echo "ERROR: Environment must be 'dev' or 'prod'"
-  echo "Usage: $0 [dev|prod] [IMAGE_TAG]"
+if [[ "${ENVIRONMENT}" != "dev" && "${ENVIRONMENT}" != "prod" && "${ENVIRONMENT}" != "local" ]]; then
+  echo "ERROR: Environment must be 'dev', 'prod', or 'local'"
+  echo "Usage: $0 [dev|prod|local] [IMAGE_TAG]"
   exit 1
 fi
 
@@ -49,6 +49,18 @@ if ! command -v kubectl &>/dev/null; then
 fi
 
 # TODO: Add check for correct kubectl context before deploying to prod
+if [[ "${ENVIRONMENT}" == "local" ]]; then
+  CURRENT_CONTEXT=$(kubectl config current-context)
+  if [[ "${CURRENT_CONTEXT}" != "kind-tec-shop" ]]; then
+    echo "WARNING: Current kubectl context is '${CURRENT_CONTEXT}', expected 'kind-tec-shop'."
+    read -r -p "Continue anyway? (yes/no): " CONFIRM
+    if [[ "${CONFIRM}" != "yes" ]]; then
+      echo "Deployment cancelled. Switch context: kubectl config use-context kind-tec-shop"
+      exit 0
+    fi
+  fi
+fi
+
 if [[ "${ENVIRONMENT}" == "prod" ]]; then
   CURRENT_CONTEXT=$(kubectl config current-context)
   echo "WARNING: Deploying to PRODUCTION using context: ${CURRENT_CONTEXT}"

@@ -19,20 +19,17 @@ maintainers:
     # TODO: Add maintainer email
 
 dependencies:
-  # TODO: Add MongoDB dependency if deploying MongoDB via Helm
-  # - name: mongodb
-  #   version: "14.x.x"
-  #   repository: "https://charts.bitnami.com/bitnami"
-  #   condition: mongodb.enabled
+  - name: mongodb
+    version: ">=14.0.0"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: mongodb.enabled
 
-  # TODO: Add Redis dependency if deploying Redis via Helm
-  # - name: redis
-  #   version: "18.x.x"
-  #   repository: "https://charts.bitnami.com/bitnami"
-  #   condition: redis.enabled
+  - name: redis
+    version: ">=17.0.0"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: redis.enabled
 
-  # TODO: Add Kafka dependency if deploying Kafka via Helm
-  # - name: kafka
-  #   version: "26.x.x"
-  #   repository: "https://charts.bitnami.com/bitnami"
-  #   condition: kafka.enabled
+  - name: kafka
+    version: ">=26.0.0"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: kafka.enabled

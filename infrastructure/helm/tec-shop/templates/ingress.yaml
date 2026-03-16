@@ -33,7 +33,7 @@ spec:
               service:
                 name: api-gateway
                 port:
-                  number: {{ .Values.services.api-gateway.port }}
+                  number: {{ (index .Values.services "api-gateway").port }}
 
     - host: {{ .Values.ingress.hosts.userUi }}
       http:

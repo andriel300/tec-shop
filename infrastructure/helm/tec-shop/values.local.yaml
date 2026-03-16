@@ -1,0 +1,204 @@
+# Local kind cluster overrides
+# Usage: ./infrastructure/scripts/deploy.sh local
+#
+# Prerequisites:
+#   1. kind create cluster --name tec-shop
+#   2. ./infrastructure/scripts/build-and-load.sh
+#   3. ./infrastructure/scripts/create-k8s-secrets.sh local
+#   4. helm dependency update ./infrastructure/helm/tec-shop
+
+global:
+  registry: "tec-shop-local"
+  imageTag: "local"
+  imagePullPolicy: Never
+  namespace: tec-shop
+
+# ─── In-cluster Infrastructure (Bitnami) ─────────────────────────────────────
+# These replace Docker Compose infra services inside kind.
+
+mongodb:
+  enabled: true
+  auth:
+    enabled: false
+  architecture: standalone
+  persistence:
+    enabled: false
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+    limits:
+      cpu: "1000m"
+      memory: "512Mi"
+
+redis:
+  enabled: true
+  auth:
+    enabled: false
+  architecture: standalone
+  master:
+    persistence:
+      enabled: false
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "64Mi"
+      limits:
+        cpu: "500m"
+        memory: "128Mi"
+
+kafka:
+  enabled: true
+  controller:
+    replicaCount: 1
+    persistence:
+      enabled: false
+  listeners:
+    client:
+      protocol: PLAINTEXT
+    interbroker:
+      protocol: PLAINTEXT
+    controller:
+      protocol: PLAINTEXT
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+
+# ─── ConfigMap Overrides ──────────────────────────────────────────────────────
+# Service names match Bitnami subcharts: <release-name>-<chart-name>
+# With release name "tec-shop": tec-shop-mongodb, tec-shop-redis-master, tec-shop-kafka
+
+config:
+  nodeEnv: "development"
+  redisHost: "tec-shop-redis-master"
+  redisPort: "6379"
+  mongoHost: "tec-shop-mongodb"
+  mongoPort: "27017"
+  kafkaBroker: "tec-shop-kafka:9092"
+  kafkaSsl: "false"
+  corsOrigin: "http://localhost:3000,http://localhost:3001,http://localhost:3002"
+
+# ─── mTLS Certificates ───────────────────────────────────────────────────────
+
+certsEnabled: true
+certsSecretName: "tec-shop-certs"
+
+# ─── Services (1 replica each, reduced resources) ────────────────────────────
+
+services:
+  api-gateway:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+
+  auth-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "64Mi"
+      limits:
+        cpu: "250m"
+        memory: "128Mi"
+
+  user-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "64Mi"
+      limits:
+        cpu: "250m"
+        memory: "128Mi"
+
+  seller-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "64Mi"
+      limits:
+        cpu: "250m"
+        memory: "128Mi"
+
+  product-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "128Mi"
+      limits:
+        cpu: "250m"
+        memory: "256Mi"
+
+  order-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "128Mi"
+      limits:
+        cpu: "250m"
+        memory: "256Mi"
+
+  admin-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "64Mi"
+      limits:
+        cpu: "250m"
+        memory: "128Mi"
+
+  chatting-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "64Mi"
+      limits:
+        cpu: "250m"
+        memory: "128Mi"
+
+  logger-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "64Mi"
+      limits:
+        cpu: "250m"
+        memory: "128Mi"
+
+  kafka-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "64Mi"
+      limits:
+        cpu: "250m"
+        memory: "128Mi"
+
+  recommendation-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+
+ingress:
+  enabled: false

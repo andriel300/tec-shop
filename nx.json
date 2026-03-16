@@ -211,6 +211,11 @@
       "libs/**"
     ],
     "projectsRelationship": "fixed",
+    "git": {
+      "commit": true,
+      "tag": true,
+      "push": true
+    },
     "version": {
       "preVersionCommand": "npx nx run-many -t build",
       "conventionalCommits": true

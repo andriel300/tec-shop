@@ -76,3 +76,7 @@ tsconfig.tsbuildinfo
 
 # Load test result files (large JSON exports — analyse locally, never commit)
 load-testing/results/
+
+# Helm chart dependencies — reproduced by: helm dependency update infrastructure/helm/tec-shop
+# Chart.lock is committed (pins exact versions); the .tgz archives are not
+infrastructure/helm/tec-shop/charts/
