@@ -11,26 +11,24 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
-import { Injectable, Logger, UsePipes, ValidationPipe, Inject, OnApplicationShutdown } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  UsePipes,
+  UseFilters,
+  ValidationPipe,
+  Inject,
+  OnApplicationShutdown,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import type { Redis } from 'ioredis';
 import { JwtService } from '@nestjs/jwt';
 import { KafkaService } from '../kafka/kafka.service';
 import { ParticipantType, SenderType } from '@tec-shop/dto';
-import type {
-  ChatMessageEventDto,
-  MarkAsSeenDto,
-} from '@tec-shop/dto';
+import type { ChatMessageEventDto, MarkAsSeenDto } from '@tec-shop/dto';
 import { MessageRedisService } from '../redis/message.redis.service';
 import { OnlineRedisService } from '../redis/online.redis.service';
-
-interface JwtPayload {
-  userId: string;
-  username: string;
-  userType?: 'CUSTOMER' | 'SELLER' | 'ADMIN';
-  role?: string;
-  iat?: number;
-  exp?: number;
-}
+import { WsJwtPayload, extractWsToken, WsExceptionFilter } from '@tec-shop/ws-auth';
 
 interface SocketUserInfo {
   userId: string;
@@ -49,27 +47,12 @@ interface TypingPayload {
 }
 
 @Injectable()
-@WebSocketGateway({
-  cors: {
-    origin: (origin: string, callback: (err: Error | null, allow?: boolean) => void) => {
-      // Allow connections from configured origins or localhost in development
-      const allowedOrigins = process.env['CORS_ORIGINS']?.split(',') || [
-        'http://localhost:3000',
-        'http://localhost:3001',
-        'http://localhost:4200',
-      ];
-
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-  },
-})
+@WebSocketGateway()
+@UseFilters(WsExceptionFilter)
 @UsePipes(new ValidationPipe())
-export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnApplicationShutdown {
+export class ChatGateway
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnApplicationShutdown
+{
   @WebSocketServer()
   server!: Server;
 
@@ -81,10 +64,11 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     private readonly messageRedisService: MessageRedisService,
     private readonly onlineRedisService: OnlineRedisService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
     @Inject('REDIS_CLIENT') private readonly redisClient: Redis
   ) {}
 
-  afterInit(server: Server) {
+  afterInit(server: Server): void {
     const pubClient = this.redisClient.duplicate();
     const subClient = this.redisClient.duplicate();
     server.adapter(createAdapter(pubClient, subClient));
@@ -96,24 +80,18 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     this.logger.log('WebSocket server disconnected all clients');
   }
 
-  /**
-   * Handle new WebSocket connections with JWT authentication
-   */
-  async handleConnection(client: Socket) {
+  async handleConnection(client: Socket): Promise<void> {
     try {
-      // Extract token from handshake auth or authorization header
-      const token =
-        client.handshake.auth?.token ||
-        client.handshake.headers?.authorization?.replace('Bearer ', '');
+      const isProduction = this.configService.get('NODE_ENV') === 'production';
+      const token = extractWsToken(client, isProduction);
 
       if (!token) {
-        this.logger.warn(`Connection rejected: No token provided (${client.id})`);
+        this.logger.warn(`Connection rejected: No token (${client.id})`);
         client.emit('error', { message: 'Authentication required' });
         client.disconnect();
         return;
       }
 
-      // Verify JWT token
       const payload = this.verifyToken(token);
       if (!payload) {
         this.logger.warn(`Connection rejected: Invalid token (${client.id})`);
@@ -122,26 +100,19 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         return;
       }
 
-      // Determine user type (seller or user)
       const userType: ParticipantType =
         payload.userType === 'SELLER' ? ParticipantType.SELLER : ParticipantType.USER;
 
-      // Store user info in map
-      this.socketToUser.set(client.id, {
-        userId: payload.userId,
-        userType,
-      });
+      // payload.sub is the canonical user ID — matches JwtStrategy (sub → userId)
+      this.socketToUser.set(client.id, { userId: payload.sub, userType });
 
-      // Set user online in Redis
-      await this.onlineRedisService.setUserOnline(payload.userId, client.id);
+      await this.onlineRedisService.setUserOnline(payload.sub, client.id);
 
-      this.logger.log(
-        `Client connected: ${payload.userId} (${userType}) - Socket: ${client.id}`
-      );
+      this.logger.log(`Client connected: ${payload.sub} (${userType}) - Socket: ${client.id}`);
 
       client.emit('connected', {
         message: 'WebSocket connected successfully',
-        userId: payload.userId,
+        userId: payload.sub,
         userType,
       });
     } catch (error) {
@@ -151,30 +122,19 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     }
   }
 
-  /**
-   * Handle WebSocket disconnections
-   */
-  async handleDisconnect(client: Socket) {
+  async handleDisconnect(client: Socket): Promise<void> {
     const userInfo = this.socketToUser.get(client.id);
     if (userInfo) {
       this.socketToUser.delete(client.id);
       await this.onlineRedisService.setUserOffline(userInfo.userId);
-      this.logger.log(
-        `Client disconnected: ${userInfo.userId} (${userInfo.userType})`
-      );
+      this.logger.log(`Client disconnected: ${userInfo.userId} (${userInfo.userType})`);
     }
   }
 
-  /**
-   * Emit a message to all clients in a conversation room
-   */
-  emitMessage(message: ChatMessageEventDto) {
+  emitMessage(message: ChatMessageEventDto): void {
     this.server.to(message.conversationId).emit('chat_message', message);
   }
 
-  /**
-   * Emit a saved message (with DB id and resolved attachments) to conversation room
-   */
   emitBroadcast(message: {
     id: string;
     conversationId: string;
@@ -183,76 +143,53 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     content: string;
     attachments: { url: string; type?: string }[];
     createdAt: string;
-  }) {
+  }): void {
     this.server.to(message.conversationId).emit('chat_message', message);
   }
 
-  /**
-   * Join a conversation room to receive messages
-   */
   @SubscribeMessage('join_conversation')
   handleJoinConversation(
     @MessageBody() conversationId: string,
     @ConnectedSocket() client: Socket
-  ) {
+  ): void {
     const userInfo = this.socketToUser.get(client.id);
-    if (!userInfo) {
-      throw new WsException('Not authenticated');
-    }
+    if (!userInfo) throw new WsException('Not authenticated');
 
     client.join(conversationId);
-    this.logger.log(
-      `User ${userInfo.userId} joined conversation: ${conversationId}`
-    );
+    this.logger.log(`User ${userInfo.userId} joined conversation: ${conversationId}`);
     client.emit('joined_conversation', { conversationId });
   }
 
-  /**
-   * Leave a conversation room
-   */
   @SubscribeMessage('leave_conversation')
   handleLeaveConversation(
     @MessageBody() conversationId: string,
     @ConnectedSocket() client: Socket
-  ) {
+  ): void {
     const userInfo = this.socketToUser.get(client.id);
-    if (!userInfo) {
-      throw new WsException('Not authenticated');
-    }
+    if (!userInfo) throw new WsException('Not authenticated');
 
     client.leave(conversationId);
-    this.logger.log(
-      `User ${userInfo.userId} left conversation: ${conversationId}`
-    );
+    this.logger.log(`User ${userInfo.userId} left conversation: ${conversationId}`);
     client.emit('left_conversation', { conversationId });
   }
 
-  /**
-   * Handle heartbeat to refresh online status
-   */
   @SubscribeMessage('heartbeat')
-  async handleHeartbeat(@ConnectedSocket() client: Socket) {
+  async handleHeartbeat(@ConnectedSocket() client: Socket): Promise<void> {
     const userInfo = this.socketToUser.get(client.id);
     if (userInfo) {
       await this.onlineRedisService.refreshUserOnline(userInfo.userId);
     }
   }
 
-  /**
-   * Send a message - senderId is extracted from JWT, not from payload
-   */
   @SubscribeMessage('send_message')
   async handleChatMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: SendMessagePayload
-  ) {
+  ): Promise<void> {
     const userInfo = this.socketToUser.get(client.id);
-    if (!userInfo) {
-      throw new WsException('Not authenticated');
-    }
+    if (!userInfo) throw new WsException('Not authenticated');
 
     const { conversationId, content, attachments } = data;
-
     const hasContent = content && content.trim().length > 0;
     const hasAttachments = attachments && attachments.length > 0;
 
@@ -264,24 +201,17 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       const now = new Date().toISOString();
       const payload: ChatMessageEventDto = {
         conversationId,
-        senderId: userInfo.userId, // From JWT, not from client
+        senderId: userInfo.userId,
         senderType: userInfo.userType as unknown as SenderType,
         content: content || '',
         createdAt: now,
         attachments: attachments?.map((a) => ({ url: a.url, type: a.type })),
       };
 
-      await this.kafkaService.sendMessage(
-        'chat.new_message',
-        conversationId,
-        payload
-      );
+      await this.kafkaService.sendMessage('chat.new_message', conversationId, payload);
 
-      this.logger.log(
-        `Message queued: ${userInfo.userId} -> ${conversationId}`
-      );
+      this.logger.log(`Message queued: ${userInfo.userId} -> ${conversationId}`);
 
-      // Acknowledge message was queued
       client.emit('message_sent', {
         conversationId,
         tempId: data,
@@ -294,33 +224,20 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     }
   }
 
-  /**
-   * Mark messages as seen
-   */
   @SubscribeMessage('mark_as_seen')
   async markAsSeen(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: MarkAsSeenDto
-  ) {
+  ): Promise<{ status: string }> {
     const userInfo = this.socketToUser.get(client.id);
-    if (!userInfo) {
-      throw new WsException('Not authenticated');
-    }
+    if (!userInfo) throw new WsException('Not authenticated');
 
-    const { conversationId } = data;
+    await this.messageRedisService.clearUnseenCount(userInfo.userId, data.conversationId);
 
-    await this.messageRedisService.clearUnseenCount(
-      userInfo.userId,
-      conversationId
-    );
+    this.logger.log(`Cleared unseen count for ${userInfo.userId} in ${data.conversationId}`);
 
-    this.logger.log(
-      `Cleared unseen count for ${userInfo.userId} in ${conversationId}`
-    );
-
-    // Notify other participants that messages were seen
-    this.server.to(conversationId).emit('messages_seen', {
-      conversationId,
+    this.server.to(data.conversationId).emit('messages_seen', {
+      conversationId: data.conversationId,
       userId: userInfo.userId,
       userType: userInfo.userType,
       seenAt: new Date().toISOString(),
@@ -329,54 +246,37 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     return { status: 'seen' };
   }
 
-  /**
-   * Handle typing indicator
-   */
   @SubscribeMessage('typing')
   handleTyping(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: TypingPayload
-  ) {
+  ): void {
     const userInfo = this.socketToUser.get(client.id);
-    if (!userInfo) {
-      throw new WsException('Not authenticated');
-    }
+    if (!userInfo) throw new WsException('Not authenticated');
 
-    const { conversationId, isTyping } = data;
-
-    // Broadcast typing status to other participants in the conversation
-    client.to(conversationId).emit('user_typing', {
-      conversationId,
+    client.to(data.conversationId).emit('user_typing', {
+      conversationId: data.conversationId,
       userId: userInfo.userId,
       userType: userInfo.userType,
-      isTyping,
+      isTyping: data.isTyping,
     });
   }
 
-  /**
-   * Check if a user is online
-   */
   @SubscribeMessage('check_online')
   async handleCheckOnline(
     @ConnectedSocket() client: Socket,
     @MessageBody() userId: string
-  ) {
+  ): Promise<{ userId: string; isOnline: boolean }> {
     const userInfo = this.socketToUser.get(client.id);
-    if (!userInfo) {
-      throw new WsException('Not authenticated');
-    }
+    if (!userInfo) throw new WsException('Not authenticated');
 
     const isOnline = await this.onlineRedisService.isUserOnline(userId);
     return { userId, isOnline };
   }
 
-  /**
-   * Verify JWT token and extract payload
-   */
-  private verifyToken(token: string): JwtPayload | null {
+  private verifyToken(token: string): WsJwtPayload | null {
     try {
-      const decoded = this.jwtService.verify<JwtPayload>(token);
-      return decoded;
+      return this.jwtService.verify<WsJwtPayload>(token);
     } catch (error) {
       this.logger.warn(`Token verification failed: ${error}`);
       return null;
