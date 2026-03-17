@@ -35,8 +35,7 @@ spec:
               value: "6005"
             - name: NODE_ENV
               value: "production"
-            # ORDER_SERVICE_DB_URL and ORDER_SERVICE_DIRECT_URL (Neon PostgreSQL)
-            # are injected via secretRef above from tec-shop-secrets
+            # ORDER_SERVICE_DB_URL (Neon PostgreSQL) is injected via secretRef above from tec-shop-secrets
           # TODO: Tune resource limits based on load testing results
           resources:
             requests:

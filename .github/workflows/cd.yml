@@ -1,0 +1,116 @@
+name: CD
+
+# Triggered automatically after CI passes on main.
+# Deploys to staging automatically; production requires manual approval
+# via GitHub Environments (Settings > Environments > production).
+#
+# Required GitHub Actions secrets (Settings > Secrets > Actions):
+#   KUBECONFIG_STAGING    — base64-encoded kubeconfig for staging cluster
+#   KUBECONFIG_PROD       — base64-encoded kubeconfig for production cluster
+#   K8S_SECRETS_STAGING   — base64-encoded app-secrets.yaml for staging
+#   K8S_SECRETS_PROD      — base64-encoded app-secrets.yaml for production
+#
+# Required GitHub Actions variables (Settings > Variables > Actions):
+#   NEXT_PUBLIC_API_URL   — already used in ci.yml
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}
+  HELM_CHART: infrastructure/helm/tec-shop
+  NAMESPACE: tec-shop
+  RELEASE_NAME: tec-shop
+
+jobs:
+  # ── Deploy to staging (automatic) ───────────────────────────────────────────
+  deploy-staging:
+    name: Deploy to staging
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Set up kubeconfig (staging)
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_STAGING }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Apply k8s secrets (staging)
+        run: |
+          echo "${{ secrets.K8S_SECRETS_STAGING }}" | base64 -d | \
+            kubectl apply -f - --namespace=${{ env.NAMESPACE }}
+
+      - name: Helm upgrade (staging)
+        run: |
+          helm upgrade --install ${{ env.RELEASE_NAME }} ${{ env.HELM_CHART }} \
+            --namespace ${{ env.NAMESPACE }} \
+            --create-namespace \
+            --values ${{ env.HELM_CHART }}/values.yaml \
+            --values ${{ env.HELM_CHART }}/values.dev.yaml \
+            --set global.imageTag=${{ github.event.workflow_run.head_sha }} \
+            --timeout 10m \
+            --wait \
+            --atomic
+
+      - name: Smoke test (staging)
+        run: |
+          kubectl wait --for=condition=ready pod \
+            -l app.kubernetes.io/name=api-gateway \
+            -n ${{ env.NAMESPACE }} \
+            --timeout=120s
+          echo "Staging deploy complete: ${{ github.event.workflow_run.head_sha }}"
+
+  # ── Deploy to production (manual approval required) ─────────────────────────
+  deploy-production:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    environment: production       # GitHub will pause here for a reviewer to approve
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Set up kubeconfig (production)
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_PROD }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Apply k8s secrets (production)
+        run: |
+          echo "${{ secrets.K8S_SECRETS_PROD }}" | base64 -d | \
+            kubectl apply -f - --namespace=${{ env.NAMESPACE }}
+
+      - name: Helm upgrade (production)
+        run: |
+          helm upgrade --install ${{ env.RELEASE_NAME }} ${{ env.HELM_CHART }} \
+            --namespace ${{ env.NAMESPACE }} \
+            --create-namespace \
+            --values ${{ env.HELM_CHART }}/values.yaml \
+            --values ${{ env.HELM_CHART }}/values.prod.yaml \
+            --set global.imageTag=${{ github.event.workflow_run.head_sha }} \
+            --timeout 10m \
+            --wait \
+            --atomic
+
+      - name: Smoke test (production)
+        run: |
+          kubectl wait --for=condition=ready pod \
+            -l app.kubernetes.io/name=api-gateway \
+            -n ${{ env.NAMESPACE }} \
+            --timeout=120s
+          echo "Production deploy complete: ${{ github.event.workflow_run.head_sha }}"

@@ -33,6 +33,7 @@
     "k8s:secrets": "./infrastructure/scripts/create-k8s-secrets.sh local",
     "k8s:deploy": "./infrastructure/scripts/deploy.sh local",
     "k8s:deploy:dev": "./infrastructure/scripts/deploy.sh dev",
+    "k8s:deploy:demo": "./infrastructure/scripts/deploy.sh demo",
     "k8s:deploy:prod": "./infrastructure/scripts/deploy.sh prod",
     "k8s:status": "kubectl get pods -n tec-shop",
     "k8s:logs": "kubectl logs -n tec-shop -l app.kubernetes.io/part-of=tec-shop --prefix --follow",

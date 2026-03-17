@@ -35,7 +35,7 @@ services:
     replicas: 2
     port: 8080
     metricsPort: 8080
-    serviceType: LoadBalancer
+    serviceType: ClusterIP
     image:
       name: tec-shop-api-gateway
     resources:
@@ -267,7 +267,8 @@ ingress:
   enabled: true
   className: "nginx"
   annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+  certManagerIssuer: "letsencrypt-prod"
   hosts:
     api: api.tec-shop.com
     userUi: tec-shop.com
@@ -275,8 +276,97 @@ ingress:
     adminUi: admin.tec-shop.com
   tls:
     enabled: false
-    # TODO: Enable TLS and configure cert-manager
     secretName: tec-shop-tls
+  # WebSocket service hostnames (chatting, notification, logger connect directly from the browser)
+  wsHosts:
+    chat: chat.tec-shop.com
+    notify: notify.tec-shop.com
+
+# ─── Application Services (continued) ────────────────────────────────────────
+
+  notification-service:
+    enabled: true
+    replicas: 2
+    port: 6012
+    metricsPort: 6012
+    serviceType: ClusterIP
+    image:
+      name: tec-shop-notification-service
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "64Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+    autoscaling:
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 5
+      targetCPUUtilizationPercentage: 70
+
+  user-ui:
+    enabled: true
+    replicas: 2
+    port: 3000
+    metricsPort: 3000
+    serviceType: ClusterIP
+    image:
+      name: tec-shop-user-ui
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+    autoscaling:
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPUUtilizationPercentage: 70
+
+  seller-ui:
+    enabled: true
+    replicas: 2
+    port: 3000
+    metricsPort: 3000
+    serviceType: ClusterIP
+    image:
+      name: tec-shop-seller-ui
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+    autoscaling:
+      enabled: false
+      minReplicas: 2
+      maxReplicas: 4
+      targetCPUUtilizationPercentage: 70
+
+  admin-ui:
+    enabled: true
+    replicas: 1
+    port: 3000
+    metricsPort: 3000
+    serviceType: ClusterIP
+    image:
+      name: tec-shop-admin-ui
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+    autoscaling:
+      enabled: false
+      minReplicas: 1
+      maxReplicas: 3
+      targetCPUUtilizationPercentage: 70
 
 # ─── ConfigMap ────────────────────────────────────────────────────────────────
 
@@ -289,6 +379,8 @@ config:
   kafkaBroker: "kafka:9092"
   kafkaSsl: ""
   corsOrigin: "https://tec-shop.com,https://seller.tec-shop.com,https://admin.tec-shop.com"
+  # Internal K8s URL used by Next.js server-side rendering to reach the API gateway
+  backendUrl: "http://api-gateway:8080"
 
 # ─── mTLS Certificates ────────────────────────────────────────────────────────
 

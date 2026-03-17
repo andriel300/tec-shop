@@ -96,8 +96,7 @@ kubectl create secret generic tec-shop-secrets \
   --from-literal=LOGGER_SERVICE_DB_URL="${LOGGER_DB}" \
   --from-literal=NOTIFICATION_SERVICE_DB_URL="${NOTIFICATION_DB}" \
   --from-literal=ANALYTICS_SERVICE_DB_URL="${ANALYTICS_DB}" \
-  --from-literal=ORDER_SERVICE_DB_URL="${ORDER_SERVICE_DB_URL:?ORDER_SERVICE_DB_URL is required in .env (Neon PostgreSQL pooler)}" \
-  --from-literal=ORDER_SERVICE_DIRECT_URL="${ORDER_SERVICE_DIRECT_URL:?ORDER_SERVICE_DIRECT_URL is required in .env (Neon PostgreSQL direct)}" \
+  --from-literal=ORDER_SERVICE_DB_URL="${ORDER_SERVICE_DB_URL:?ORDER_SERVICE_DB_URL is required in .env (Neon PostgreSQL)}" \
   --from-literal=REDIS_URL="${REDIS_URL_VALUE}" \
   --from-literal=IMAGEKIT_PRIVATE_KEY="${IMAGEKIT_PRIVATE_KEY:-placeholder}" \
   --from-literal=IMAGEKIT_PUBLIC_KEY="${IMAGEKIT_PUBLIC_KEY:-placeholder}" \
@@ -142,6 +141,7 @@ BACKEND_SERVICES=(
   admin-service
   chatting-service
   logger-service
+  notification-service
   kafka-service
   recommendation-service
 )

@@ -51,3 +51,7 @@ data:
 
   # CORS
   CORS_ORIGIN: {{ .Values.config.corsOrigin | quote }}
+
+  # Next.js frontend — server-side rendering uses this URL to reach the API gateway
+  # from inside the cluster. NEXT_PUBLIC_API_URL is baked at image build time (CI build-arg).
+  BACKEND_URL: {{ .Values.config.backendUrl | default "http://api-gateway:8080" | quote }}

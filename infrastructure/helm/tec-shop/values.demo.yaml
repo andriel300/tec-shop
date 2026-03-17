@@ -1,0 +1,218 @@
+# Oracle Cloud Always Free (k3s) demo environment overrides
+# Usage: helm upgrade --install tec-shop ./infrastructure/helm/tec-shop \
+#          -f values.yaml -f values.demo.yaml \
+#          --set global.registry=ghcr.io/YOUR_GITHUB_USERNAME \
+#          --set global.imageTag=YOUR_GIT_SHA
+#
+# Prerequisites:
+#   1. k3s running on Oracle Cloud ARM VM (see infrastructure/scripts/setup-k3s.sh)
+#   2. cert-manager installed (kubectl apply -f infrastructure/k8s/cert-manager/cluster-issuer.yaml)
+#   3. Secrets created (./infrastructure/scripts/create-k8s-secrets.sh demo)
+#
+# External managed services (not deployed in-cluster to conserve the 24 GB RAM budget):
+#   - MongoDB Atlas free tier (M0)
+#   - Upstash Redis free tier
+#   - Upstash Kafka free tier
+
+global:
+  # Replace with your GitHub username after forking
+  registry: "ghcr.io/REPLACE_WITH_GITHUB_USERNAME"
+  # Set to the git SHA or release tag, e.g. a1b2c3d or v1.0.0
+  imageTag: "latest"
+  imagePullPolicy: Always
+
+config:
+  nodeEnv: "production"
+  # Point to your managed external services (values come from K8s Secret, not ConfigMap)
+  # redisHost and mongoHost are set via tec-shop-secrets
+  kafkaSsl: "true"
+  # CORS: update with your actual domain
+  corsOrigin: "https://tec-shop.example.com,https://seller.tec-shop.example.com,https://admin.tec-shop.example.com"
+  backendUrl: "http://api-gateway:8080"
+
+# Bitnami subcharts disabled — using managed external services
+mongodb:
+  enabled: false
+
+redis:
+  enabled: false
+
+kafka:
+  enabled: false
+
+# All services: 1 replica, HPA disabled, lean resources
+# The free ARM VM has 4 cores / 24 GB RAM across ~15 pods total.
+
+services:
+  api-gateway:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "200m"
+        memory: "128Mi"
+      limits:
+        cpu: "1000m"
+        memory: "512Mi"
+    autoscaling:
+      enabled: false
+
+  auth-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "96Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+    autoscaling:
+      enabled: false
+
+  user-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "96Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+    autoscaling:
+      enabled: false
+
+  seller-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "96Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+    autoscaling:
+      enabled: false
+
+  product-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "150m"
+        memory: "128Mi"
+      limits:
+        cpu: "750m"
+        memory: "384Mi"
+    autoscaling:
+      enabled: false
+
+  order-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "150m"
+        memory: "128Mi"
+      limits:
+        cpu: "750m"
+        memory: "384Mi"
+    autoscaling:
+      enabled: false
+
+  admin-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "96Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+    autoscaling:
+      enabled: false
+
+  chatting-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "96Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+    autoscaling:
+      enabled: false
+
+  logger-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "96Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+    autoscaling:
+      enabled: false
+
+  notification-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "75m"
+        memory: "64Mi"
+      limits:
+        cpu: "300m"
+        memory: "192Mi"
+    autoscaling:
+      enabled: false
+
+  kafka-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "96Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+    autoscaling:
+      enabled: false
+
+  recommendation-service:
+    replicas: 1
+    resources:
+      requests:
+        cpu: "200m"
+        memory: "256Mi"
+      limits:
+        cpu: "1000m"
+        memory: "768Mi"
+    autoscaling:
+      enabled: false
+
+  # user-ui, seller-ui, admin-ui are deployed externally:
+  #   user-ui   → Vercel
+  #   seller-ui → Vercel
+  #   admin-ui  → Render
+  # Disable them here to save ~400 MB RAM on the VM.
+  user-ui:
+    enabled: false
+
+  seller-ui:
+    enabled: false
+
+  admin-ui:
+    enabled: false
+
+ingress:
+  enabled: true
+  tls:
+    enabled: true
+    secretName: tec-shop-tls
+  # Only the API gateway is exposed via ingress.
+  # Frontend apps are hosted externally (Vercel / Render).
+  # Replace with your actual domain.
+  hosts:
+    api: api.tec-shop.example.com
+    # These are required by the template but unused — frontends are external.
+    userUi: tec-shop.example.com
+    sellerUi: seller.tec-shop.example.com
+    adminUi: admin.tec-shop.example.com

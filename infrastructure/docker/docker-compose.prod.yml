@@ -214,6 +214,29 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  notification-service:
+    image: ${REGISTRY}/tec-shop-notification-service:${IMAGE_TAG}
+    restart: always
+    environment:
+      NODE_ENV: production
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   kafka-service:
     image: ${REGISTRY}/tec-shop-kafka-service:${IMAGE_TAG}
     restart: always
@@ -328,30 +351,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-  mongodb:
-    restart: always
-    # TODO: Use MongoDB Atlas or managed MongoDB in production instead of self-hosted
-    deploy:
-      resources:
-        limits:
-          cpus: "2.0"
-          memory: 2G
-        reservations:
-          cpus: "0.5"
-          memory: 512M
-
-  redis:
-    restart: always
-    # TODO: Use Redis Sentinel or Redis Cluster in production
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 256M
-        reservations:
-          cpus: "0.1"
-          memory: 64M
 
   kafka:
     restart: always

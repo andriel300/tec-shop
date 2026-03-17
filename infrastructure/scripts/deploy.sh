@@ -2,14 +2,15 @@
 set -euo pipefail
 
 # TecShop Helm deploy script
-# Usage: ./infrastructure/scripts/deploy.sh [dev|prod] [IMAGE_TAG]
+# Usage: ./infrastructure/scripts/deploy.sh [dev|prod|demo|local] [IMAGE_TAG]
 #
 # Examples:
-#   ./infrastructure/scripts/deploy.sh dev
-#   ./infrastructure/scripts/deploy.sh prod v1.2.3
+#   ./infrastructure/scripts/deploy.sh local           # kind cluster (images pre-loaded)
+#   ./infrastructure/scripts/deploy.sh dev             # staging cluster
+#   ./infrastructure/scripts/deploy.sh demo v1.2.3    # Oracle Cloud k3s (free tier)
+#   ./infrastructure/scripts/deploy.sh prod v1.2.3    # production cluster
 #
 # TODO: Add --dry-run flag support
-# TODO: Integrate with CI/CD pipeline (GitHub Actions, GitLab CI)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CHART_DIR="${SCRIPT_DIR}/../helm/tec-shop"
@@ -21,9 +22,9 @@ NAMESPACE="tec-shop"
 ENVIRONMENT="${1:-dev}"
 IMAGE_TAG="${2:-latest}"
 
-if [[ "${ENVIRONMENT}" != "dev" && "${ENVIRONMENT}" != "prod" && "${ENVIRONMENT}" != "local" ]]; then
-  echo "ERROR: Environment must be 'dev', 'prod', or 'local'"
-  echo "Usage: $0 [dev|prod|local] [IMAGE_TAG]"
+if [[ "${ENVIRONMENT}" != "dev" && "${ENVIRONMENT}" != "prod" && "${ENVIRONMENT}" != "demo" && "${ENVIRONMENT}" != "local" ]]; then
+  echo "ERROR: Environment must be 'dev', 'prod', 'demo', or 'local'"
+  echo "Usage: $0 [dev|prod|demo|local] [IMAGE_TAG]"
   exit 1
 fi
 
@@ -61,9 +62,10 @@ if [[ "${ENVIRONMENT}" == "local" ]]; then
   fi
 fi
 
-if [[ "${ENVIRONMENT}" == "prod" ]]; then
+if [[ "${ENVIRONMENT}" == "demo" || "${ENVIRONMENT}" == "prod" ]]; then
   CURRENT_CONTEXT=$(kubectl config current-context)
-  echo "WARNING: Deploying to PRODUCTION using context: ${CURRENT_CONTEXT}"
+  ENV_LABEL=$(echo "${ENVIRONMENT}" | tr '[:lower:]' '[:upper:]')
+  echo "WARNING: Deploying to ${ENV_LABEL} using context: ${CURRENT_CONTEXT}"
   read -r -p "Are you sure? (yes/no): " CONFIRM
   if [[ "${CONFIRM}" != "yes" ]]; then
     echo "Deployment cancelled."

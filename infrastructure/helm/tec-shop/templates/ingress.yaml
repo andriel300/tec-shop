@@ -11,8 +11,12 @@ metadata:
     {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-    # TODO: Add cert-manager annotation when TLS is configured
-    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    {{- if .Values.ingress.tls.enabled }}
+    cert-manager.io/cluster-issuer: {{ .Values.ingress.certManagerIssuer | default "letsencrypt-prod" | quote }}
+    {{- end }}
+    # WebSocket proxy timeouts — required for long-lived Socket.IO connections
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
 spec:
   {{- if .Values.ingress.tls.enabled }}
   tls:
@@ -21,6 +25,10 @@ spec:
         - {{ .Values.ingress.hosts.userUi }}
         - {{ .Values.ingress.hosts.sellerUi }}
         - {{ .Values.ingress.hosts.adminUi }}
+        {{- if .Values.ingress.wsHosts }}
+        - {{ .Values.ingress.wsHosts.chat }}
+        - {{ .Values.ingress.wsHosts.notify }}
+        {{- end }}
       secretName: {{ .Values.ingress.tls.secretName }}
   {{- end }}
   rules:
@@ -66,8 +74,32 @@ spec:
             pathType: Prefix
             backend:
               service:
-                # TODO: Add admin-ui to services values and deploy as K8s service
                 name: admin-ui
                 port:
                   number: 3000
+
+    {{- if .Values.ingress.wsHosts }}
+    # ── WebSocket services (browsers connect directly, not via api-gateway) ───
+    - host: {{ .Values.ingress.wsHosts.chat }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: chatting-service
+                port:
+                  number: {{ (index .Values.services "chatting-service").port }}
+
+    - host: {{ .Values.ingress.wsHosts.notify }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: notification-service
+                port:
+                  number: {{ (index .Values.services "notification-service").port }}
+    {{- end }}
 {{- end }}

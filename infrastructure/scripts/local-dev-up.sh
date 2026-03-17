@@ -76,24 +76,22 @@ check_env_var() {
 check_env_var "JWT_SECRET"
 check_env_var "SERVICE_MASTER_SECRET"
 check_env_var "OTP_SALT"
+check_env_var "ORDER_SERVICE_DB_URL"
+check_env_var "ANALYTICS_SERVICE_DB_URL"
+check_env_var "REDIS_URL"
 
-# ─── Start infra first, wait for DBs, run migrations ─────────────────────────
+# ─── Start infra first, wait for Kafka, run migrations ───────────────────────
+# MongoDB (Atlas), PostgreSQL (Neon), and Redis (Upstash) are cloud-managed.
+# Only Kafka runs locally in Docker.
 
-echo "[local-dev] Starting infrastructure services (MongoDB, PostgreSQL, Redis, Kafka)..."
-docker compose -f "$COMPOSE_FILE" up -d mongodb postgresql redis zookeeper kafka
+echo "[local-dev] Starting Kafka..."
+docker compose -f "$COMPOSE_FILE" up -d zookeeper kafka
 
-echo "[local-dev] Waiting for PostgreSQL to be ready..."
-until docker compose -f "$COMPOSE_FILE" exec -T postgresql pg_isready -U postgres &>/dev/null; do
-  printf '.'
-  sleep 2
-done
-echo " ready."
-
-echo "[local-dev] Running order-service Prisma schema push..."
-ORDER_SERVICE_DB_URL="postgresql://postgres:postgres@localhost:5432/tec-shop-orders" \
+echo "[local-dev] Running order-service Prisma schema push (Neon)..."
+ORDER_SERVICE_DB_URL="$(grep -E "^ORDER_SERVICE_DB_URL=" "$PROJECT_ROOT/.env" | head -1 | cut -d'=' -f2-)" \
   npx nx run @tec-shop/order-schema:db-push --skip-nx-cache || {
     echo "[local-dev] WARNING: Prisma db-push failed. Order service may not start correctly."
-    echo "  You can retry manually: ORDER_SERVICE_DB_URL=postgresql://postgres:postgres@localhost:5432/tec-shop-orders npx nx run @tec-shop/order-schema:db-push"
+    echo "  Check ORDER_SERVICE_DB_URL in .env and retry: npx nx run @tec-shop/order-schema:db-push"
   }
 
 echo "[local-dev] Waiting for Kafka to be ready..."

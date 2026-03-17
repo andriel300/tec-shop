@@ -4,9 +4,9 @@
 # via `npx nx serve` with hot reload.
 #
 # Usage:
-#   npm run infra:up    (start detached)
-#   npm run infra:down  (stop and remove containers)
-#   npm run infra:logs  (tail logs)
+#   pnpm run infra:up    (start detached)
+#   pnpm run infra:down  (stop and remove containers)
+#   pnpm run infra:logs  (tail logs)
 #
 # Kafka UI:     http://localhost:8090
 # Prometheus:   http://localhost:9090
@@ -91,7 +91,11 @@ services:
     networks:
       - tec-shop-infra
     healthcheck:
-      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092"]
+      test:
+        [
+          "CMD-SHELL",
+          "kafka-broker-api-versions --bootstrap-server localhost:9092",
+        ]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -176,9 +180,9 @@ services:
       - ../tracing/tempo/tempo.yaml:/etc/tempo.yaml:ro
       - tempo-data:/var/tempo
     ports:
-      - "3200:3200"   # Tempo HTTP API
-      - "4317:4317"   # OTLP gRPC
-      - "4318:4318"   # OTLP HTTP
+      - "3200:3200" # Tempo HTTP API
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
     networks:
       - tec-shop-infra
 

@@ -2,7 +2,10 @@
 # Usage: helm upgrade --install tec-shop ./infrastructure/helm/tec-shop -f values.yaml -f values.prod.yaml
 
 global:
-  # TODO: Set IMAGE_TAG to the specific release version (e.g., 1.2.3) - never use 'latest' in prod
+  # Set to your GitHub username/org. Images are pushed to GHCR by CI.
+  # Example: ghcr.io/your-github-username
+  registry: "ghcr.io/REPLACE_WITH_GITHUB_USERNAME"
+  # Set to the git SHA or release tag from CI, e.g. a1b2c3d or v1.0.0
   imageTag: "REPLACE_WITH_RELEASE_TAG"
   imagePullPolicy: IfNotPresent
 
@@ -160,6 +163,51 @@ services:
       maxReplicas: 5
       targetCPUUtilizationPercentage: 70
 
+  user-ui:
+    replicas: 3
+    resources:
+      requests:
+        cpu: "200m"
+        memory: "256Mi"
+      limits:
+        cpu: "1000m"
+        memory: "512Mi"
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 60
+
+  seller-ui:
+    replicas: 2
+    resources:
+      requests:
+        cpu: "150m"
+        memory: "256Mi"
+      limits:
+        cpu: "750m"
+        memory: "512Mi"
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPUUtilizationPercentage: 60
+
+  admin-ui:
+    replicas: 2
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 4
+      targetCPUUtilizationPercentage: 70
+
   kafka-service:
     replicas: 3
     resources:
@@ -192,6 +240,11 @@ services:
 
 ingress:
   enabled: true
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
   tls:
     enabled: true
     secretName: tec-shop-tls
+  wsHosts:
+    chat: chat.tec-shop.com
+    notify: notify.tec-shop.com

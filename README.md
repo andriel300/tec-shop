@@ -111,6 +111,51 @@ The project is managed using the Kanban methodology via Jira, with tasks tracked
 | **Seller UI**              | 3001 | Next.js  | Seller dashboard and shop management                        |
 | **Admin UI**               | 3002 | Next.js  | Platform administration panel                               |
 
+### Database Architecture
+
+Most services use **MongoDB** (via Prisma). The **order-service** is the deliberate exception — it uses **PostgreSQL** (Neon).
+
+#### Why MongoDB for most services
+
+MongoDB's flexible document model is a natural fit for domains where the data shape varies or evolves:
+
+| Service | Why document model fits |
+|---|---|
+| auth | User credentials + OTP state — flat, self-contained documents |
+| user | Profiles with nested addresses, follower lists — no joins needed |
+| seller | Shop config, discount codes, events — each seller's data is isolated |
+| product | Variants, specs, and images differ per category — no fixed schema |
+| chatting | Messages are append-only streams per conversation |
+| logger | Log entries are write-once, schema-free by nature |
+| notification | Event payloads vary by notification type |
+| recommendation | Interaction vectors and model snapshots — document-shaped |
+
+#### Why PostgreSQL for order-service
+
+Orders are the one domain where relational guarantees are non-negotiable:
+
+**1. ACID transactions across multiple tables**
+A single checkout touches orders, order items, payment records, and per-seller payout rows simultaneously. PostgreSQL's multi-row transactions ensure either all of it commits or none of it does. MongoDB's multi-document transactions exist but are more limited and carry higher overhead.
+
+**2. Financial data integrity**
+Payment state transitions (pending → paid → refunded) driven by Stripe webhooks must never leave the database in a partial state. Foreign key constraints and row-level locking in PostgreSQL prevent orphaned payment records or double-applied payouts — something a document store cannot enforce at the schema level.
+
+**3. Complex relational queries**
+Order history, revenue aggregation by seller, payout calculations, and refund reconciliation all require JOINs across orders, items, and payments. These are natural SQL queries. Reproducing them in MongoDB requires `$lookup` pipelines that are harder to read, optimise, and maintain.
+
+**4. Neon PostgreSQL for the free tier**
+Neon is a serverless PostgreSQL provider with a generous free tier and built-in connection pooling. It eliminates the need to run a Postgres container locally or pay for a managed instance, while still providing a production-grade relational database. Only `ORDER_SERVICE_DB_URL` is required — `directUrl` was deprecated in Prisma 6 and is no longer used.
+
+#### Summary
+
+```
+MongoDB  — user profiles, catalog, chat, logs, notifications
+           (flexible schema, document-shaped data, no cross-document transactions)
+
+PostgreSQL — orders, payments, payouts
+             (relational integrity, ACID transactions, financial auditability)
+```
+
 ### Shared Libraries
 
 | Library                           | Path                                | Purpose                                                         |
@@ -381,6 +426,7 @@ pnpm k8s:build                        # Build images + load into kind cluster
 pnpm k8s:secrets                      # Create K8s secrets from .env + certs/
 pnpm k8s:deploy                       # Helm install/upgrade (local)
 pnpm k8s:deploy:dev                   # Helm deploy to dev environment
+pnpm k8s:deploy:demo                  # Helm deploy to Oracle Cloud free tier
 pnpm k8s:deploy:prod                  # Helm deploy to production
 pnpm k8s:status                       # List all pods in tec-shop namespace
 pnpm k8s:logs                         # Follow logs for all tec-shop pods
@@ -675,6 +721,7 @@ Helm chart and values files are in `infrastructure/helm/tec-shop/`. Three values
 | `values.yaml` | Base defaults shared across all environments |
 | `values.local.yaml` | kind cluster — `imagePullPolicy: Never`, 1 replica, Bitnami infra |
 | `values.dev.yaml` | Remote dev cluster — reduced replicas and resources |
+| `values.demo.yaml` | Oracle Cloud free tier — 1 replica, HPA off, external managed services |
 | `values.prod.yaml` | Production — autoscaling enabled, security hardening, TLS |
 
 ```bash
@@ -685,8 +732,56 @@ pnpm k8s:deploy     # helm upgrade --install with values.local.yaml
 
 # Remote environments (requires correct kubectl context)
 pnpm k8s:deploy:dev
+pnpm k8s:deploy:demo
 pnpm k8s:deploy:prod
 ```
+
+### Live demo — Oracle Cloud Always Free (k3s)
+
+The `demo` environment runs all 15 services on a single Oracle Cloud Ampere A1 ARM VM (4 cores / 24 GB RAM) using k3s. External managed free-tier services handle the databases: MongoDB Atlas M0, Upstash Redis, and Upstash Kafka. This eliminates in-cluster infrastructure pods, leaving the entire RAM budget for application workloads.
+
+**One-time VM provisioning:**
+
+```bash
+# Upload and run the setup script on the Oracle Cloud VM
+scp infrastructure/scripts/setup-k3s.sh ubuntu@<VM_IP>:~/
+ssh ubuntu@<VM_IP> "chmod +x setup-k3s.sh && ./setup-k3s.sh"
+```
+
+The script installs k3s, Helm, nginx ingress controller, and cert-manager. Follow the printed next steps to copy the kubeconfig and configure DNS.
+
+**Configure CI/CD (GitHub Actions):**
+
+Set these in `Settings > Secrets and variables > Actions` on your GitHub repository:
+
+| Name | Type | Value |
+|---|---|---|
+| `NEXT_PUBLIC_API_URL` | Variable | `https://api.your-domain.com` |
+
+This value is baked into the Next.js client bundle at Docker build time — it cannot be changed at runtime.
+
+**Deploy to Oracle Cloud:**
+
+```bash
+# Edit values.demo.yaml: set real domain and GitHub username
+# Edit infrastructure/k8s/cert-manager/cluster-issuer.yaml: set real email and domain
+kubectl apply -f infrastructure/k8s/cert-manager/cluster-issuer.yaml
+kubectl apply -f infrastructure/k8s/namespaces/tec-shop.yaml
+./infrastructure/scripts/create-k8s-secrets.sh demo
+pnpm k8s:deploy:demo
+```
+
+TLS certificates are provisioned automatically by cert-manager + Let's Encrypt within 1–3 minutes of the first deployment.
+
+**Key design decisions for demo:**
+
+| Decision | Reason |
+|---|---|
+| External managed services | MongoDB Atlas M0, Upstash Redis, and Upstash Kafka all have free tiers. Running them in-cluster on a 24 GB VM would leave insufficient memory for the 15 application pods. |
+| `imagePullPolicy: Always` | Images are pushed to GHCR by CI. The VM always pulls the latest image on pod restart — no image pre-loading step. |
+| ARM64 multi-arch builds | Oracle Cloud free tier uses Ampere A1 (ARM64). CI builds `linux/amd64,linux/arm64` images via QEMU so the same tag works everywhere. |
+| cert-manager + Let's Encrypt | Free automated TLS renewal. No manual certificate management. |
+| k3s over full k3d/kind | k3s is designed for single-node production deployments. It includes a built-in ingress controller slot, ServiceLB, and runs with minimal overhead (~512 MB). |
 
 ### Production rollback
 

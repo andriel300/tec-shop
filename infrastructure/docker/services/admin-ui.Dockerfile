@@ -19,9 +19,10 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-# TODO: Pass NEXT_PUBLIC_ env vars as build args if needed at build time
-# ARG NEXT_PUBLIC_API_URL
-# ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+# NEXT_PUBLIC_API_URL is baked into the Next.js client bundle at build time.
+# Pass via: docker build --build-arg NEXT_PUBLIC_API_URL=https://api.yourdomain.com
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
 RUN npx nx build admin-ui --prod
 

@@ -1,0 +1,45 @@
+# Let's Encrypt ClusterIssuer for TLS certificates
+#
+# Apply AFTER cert-manager is installed:
+#   kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
+#   # Wait for cert-manager pods to be ready
+#   kubectl wait --for=condition=ready pod -l app.kubernetes.io/instance=cert-manager -n cert-manager --timeout=120s
+#   kubectl apply -f infrastructure/k8s/cert-manager/cluster-issuer.yaml
+#
+# Two issuers are provided:
+#   letsencrypt-staging  — use first to avoid rate limits while testing
+#   letsencrypt-prod     — switch to this once staging works
+
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    # Replace with your real email address — Let's Encrypt sends expiry warnings here
+    email: your-email@example.com
+    privateKeySecretRef:
+      name: letsencrypt-staging-account-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: traefik
+
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    # Replace with your real email address — Let's Encrypt sends expiry warnings here
+    email: your-email@example.com
+    privateKeySecretRef:
+      name: letsencrypt-prod-account-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: traefik

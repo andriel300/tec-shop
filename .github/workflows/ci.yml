@@ -6,12 +6,23 @@ on:
       - main
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 permissions:
   actions: read
   contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}
 
 jobs:
-  main:
+  # ── Quality checks ──────────────────────────────────────────────────────────
+  quality:
+    name: Quality checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,29 +30,23 @@ jobs:
           filter: tree:0
           fetch-depth: 0
 
-      # This enables task distribution via Nx Cloud
-      # Run this command as early as possible, before dependencies are installed
-      # Learn more at https://nx.dev/ci/reference/nx-cloud-cli#npx-nxcloud-startcirun
-      # Connect your workspace by running "nx connect" and uncomment this line to enable task distribution
-      # Temporarily disabled distributed execution to avoid hanging issues with Prisma dependencies
-      # - run: npx nx start-ci-run --distribute-on="1 linux-medium-js" --stop-agents-after="build"
-
       - uses: pnpm/action-setup@v4
         with:
           run_install: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 20
-          cache: 'pnpm'
+          node-version: 24
+          cache: "pnpm"
 
       - run: pnpm install --frozen-lockfile
+
       - uses: nrwl/nx-set-shas@v4.3.3
 
-      # Generate Prisma clients before running tests/builds
-      # Run for all schemas (not just affected) since generated files in node_modules/.prisma/*
-      # are required by all services regardless of what changed
-      - name: Generate Prisma Clients
+      # Generate all Prisma clients before running any dependent tasks.
+      # Must run for all schemas (not just affected) because generated files
+      # in node_modules/.prisma/ are required by every service at typecheck time.
+      - name: Generate Prisma clients
         run: |
           npx nx run @tec-shop/auth-schema:generate-types
           npx nx run @tec-shop/user-schema:generate-types
@@ -53,9 +58,107 @@ jobs:
           npx nx run @tec-shop/logger-schema:generate-types
           npx nx run @tec-shop/notification-schema:generate-types
 
-      # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
-      # - run: npx nx-cloud record -- echo Hello World
-      - run: npx nx affected -t lint test build typecheck
-      # Nx Cloud recommends fixes for failures to help you get CI green faster. Learn more: https://nx.dev/ci/features/self-healing-ci
-      - run: npx nx fix-ci
+      - name: Lint, test, build, typecheck (affected)
+        run: npx nx affected -t lint test build typecheck
+
+      - name: Nx self-healing CI
+        run: npx nx fix-ci
         if: always()
+
+  # ── Docker build & push (main branch only) ─────────────────────────────────
+  #
+  # Builds all 15 service images and pushes to GitHub Container Registry (GHCR).
+  # Images are tagged with both the git SHA (immutable) and "latest" (rolling).
+  # Built for linux/amd64 + linux/arm64 so images run on Oracle Cloud ARM VMs.
+  #
+  # Required GitHub Actions variable (Settings > Variables > Actions):
+  #   NEXT_PUBLIC_API_URL  — public API gateway URL, e.g. https://api.yourdomain.com
+  #
+  docker:
+    name: Build & push — ${{ matrix.service }}
+    needs: quality
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # ── Backend services ──────────────────────────────────────────────
+          - service: api-gateway
+            dockerfile: infrastructure/docker/services/api-gateway.Dockerfile
+          - service: auth-service
+            dockerfile: infrastructure/docker/services/auth-service.Dockerfile
+          - service: user-service
+            dockerfile: infrastructure/docker/services/user-service.Dockerfile
+          - service: seller-service
+            dockerfile: infrastructure/docker/services/seller-service.Dockerfile
+          - service: product-service
+            dockerfile: infrastructure/docker/services/product-service.Dockerfile
+          - service: order-service
+            dockerfile: infrastructure/docker/services/order-service.Dockerfile
+          - service: admin-service
+            dockerfile: infrastructure/docker/services/admin-service.Dockerfile
+          - service: chatting-service
+            dockerfile: infrastructure/docker/services/chatting-service.Dockerfile
+          - service: logger-service
+            dockerfile: infrastructure/docker/services/logger-service.Dockerfile
+          - service: notification-service
+            dockerfile: infrastructure/docker/services/notification-service.Dockerfile
+          - service: kafka-service
+            dockerfile: infrastructure/docker/services/kafka-service.Dockerfile
+          - service: recommendation-service
+            dockerfile: infrastructure/docker/services/recommendation-service.Dockerfile
+          # ── Frontend services (require NEXT_PUBLIC_API_URL at build time) ──
+          - service: user-ui
+            dockerfile: infrastructure/docker/services/user-ui.Dockerfile
+            is_frontend: true
+          - service: seller-ui
+            dockerfile: infrastructure/docker/services/seller-ui.Dockerfile
+            is_frontend: true
+          - service: admin-ui
+            dockerfile: infrastructure/docker/services/admin-ui.Dockerfile
+            is_frontend: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Enable QEMU to emulate ARM64 on x86 GitHub runners
+      - uses: docker/setup-qemu-action@v3
+
+      # Buildx is required for multi-platform builds
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.service }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          # SHA tag only — never push 'latest' to production registry.
+          # Use the SHA tag in Helm deployments for full traceability.
+          tags: ${{ env.IMAGE_PREFIX }}/tec-shop-${{ matrix.service }}:${{ github.sha }}
+          # NEXT_PUBLIC_API_URL is baked into the Next.js bundle at build time.
+          # It has no effect on backend service images (build-args are ignored
+          # if the Dockerfile does not declare the ARG).
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
+          # Layer caching per service — dramatically speeds up rebuilds
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+      - name: Scan ${{ matrix.service }} for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.IMAGE_PREFIX }}/tec-shop-${{ matrix.service }}:${{ github.sha }}
+          format: table
+          exit-code: 1
+          severity: CRITICAL
+          ignore-unfixed: true
