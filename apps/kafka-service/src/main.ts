@@ -1,8 +1,8 @@
 import { initializeTracing } from '@tec-shop/tracing';
 initializeTracing('kafka-service');
 
-import { initializeSentry } from './instrumentation';
-initializeSentry('kafka-service');
+import { initializeSentryForService } from './instrumentation';
+initializeSentryForService('kafka-service');
 
 import { NestFactory } from '@nestjs/core';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';

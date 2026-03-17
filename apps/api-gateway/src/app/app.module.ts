@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { z } from 'zod';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -24,6 +25,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { ConditionalThrottlerGuard } from '../guards/conditional-throttler.guard';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { SentryModule, SentryInterceptor, SentryContextMiddleware } from '@tec-shop/sentry';
 import { RedisModule } from '@tec-shop/redis-client';
 import { MetricsModule, HttpMetricsInterceptor, HealthModule } from '@tec-shop/metrics';
 import { ImageKitModule } from '@tec-shop/shared/imagekit';
@@ -33,7 +36,24 @@ import { CircuitBreakerModule } from '../common/circuit-breaker.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validate: (config: Record<string, unknown>) => {
+        if (config['NODE_ENV'] === 'test') return config;
+        const schema = z.object({
+          NODE_ENV: z.enum(['development', 'production']).default('development'),
+          PORT: z.coerce.number().default(8080),
+          JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
+          REDIS_URL: z.string().min(1, 'REDIS_URL is required'),
+          CORS_ORIGINS: z.string().optional(),
+        });
+        const result = schema.safeParse(config);
+        if (!result.success) {
+          throw new Error(`Config validation failed:\n${result.error.issues.map((i) => `  ${i.path.join('.')}: ${i.message}`).join('\n')}`);
+        }
+        return result.data;
+      },
+    }),
     ImageKitModule.forRoot(),
     LogProducerModule.forRoot({ clientId: 'api-gateway' }),
     RedisModule.forRoot(),
@@ -145,6 +165,7 @@ import { CircuitBreakerModule } from '../common/circuit-breaker.module';
     CircuitBreakerModule,
     MetricsModule,
     HealthModule,
+    SentryModule.forRoot({ serviceName: 'api-gateway', transport: 'HTTP' }),
   ],
   controllers: [AppController],
   providers: [
@@ -157,6 +178,14 @@ import { CircuitBreakerModule } from '../common/circuit-breaker.module';
       provide: APP_INTERCEPTOR,
       useClass: HttpMetricsInterceptor,
     },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: SentryInterceptor,
+    },
   ],
 })
-export class AppModule { }
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(SentryContextMiddleware).forRoutes('*');
+  }
+}

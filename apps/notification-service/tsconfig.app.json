@@ -16,13 +16,19 @@
       "path": "../../libs/shared/redis-client/tsconfig.lib.json"
     },
     {
-      "path": "../../libs/shared/tracing/tsconfig.lib.json"
-    },
-    {
       "path": "../../libs/shared/dto/tsconfig.lib.json"
     },
     {
       "path": "../../libs/prisma-clients/notification-client/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared/ws-auth/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared/tracing/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared/sentry/tsconfig.lib.json"
     },
     {
       "path": "../../libs/shared/metrics/tsconfig.lib.json"

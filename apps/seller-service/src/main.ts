@@ -1,9 +1,8 @@
 import { initializeTracing } from '@tec-shop/tracing';
 initializeTracing('seller-service');
 
-// Initialize Sentry before any other imports
-import { initializeSentry } from './instrumentation';
-initializeSentry('seller-service', 6003);
+import { initializeSentryForService } from './instrumentation';
+initializeSentryForService('seller-service', 6003);
 
 import { NestFactory } from '@nestjs/core';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';

@@ -11,21 +11,21 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
-import { Injectable, Logger, UsePipes, ValidationPipe, Inject, OnApplicationShutdown } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  UsePipes,
+  UseFilters,
+  ValidationPipe,
+  Inject,
+  OnApplicationShutdown,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Redis } from 'ioredis';
 import { JwtService } from '@nestjs/jwt';
 import type { NotificationResponseDto } from '@tec-shop/dto';
 import { NotificationCoreService } from './notification-core.service';
-
-interface JwtPayload {
-  sub: string;
-  username: string;
-  userType?: 'CUSTOMER' | 'SELLER' | 'ADMIN';
-  role?: string;
-  iat?: number;
-  exp?: number;
-}
+import { WsJwtPayload, extractWsToken, WsExceptionFilter } from '@tec-shop/ws-auth';
 
 interface ConnectedUserInfo {
   userId: string;
@@ -39,35 +39,9 @@ const USER_TYPE_MAP: Record<string, string> = {
   ADMIN: 'admin',
 };
 
-const COOKIE_NAMES = [
-  'admin_access_token',
-  'seller_access_token',
-  'customer_access_token',
-];
-
 @Injectable()
-@WebSocketGateway({
-  cors: {
-    origin: (
-      origin: string,
-      callback: (err: Error | null, allow?: boolean) => void
-    ) => {
-      const allowedOrigins = process.env['CORS_ORIGINS']?.split(',') || [
-        'http://localhost:3000',
-        'http://localhost:3001',
-        'http://localhost:3002',
-        'http://localhost:4200',
-      ];
-
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-  },
-})
+@WebSocketGateway()
+@UseFilters(WsExceptionFilter)
 @UsePipes(new ValidationPipe())
 export class NotificationGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnApplicationShutdown
@@ -81,11 +55,11 @@ export class NotificationGateway
   constructor(
     private readonly jwtService: JwtService,
     private readonly notificationCore: NotificationCoreService,
-    @Inject('REDIS_CLIENT') private readonly redisClient: Redis,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    @Inject('REDIS_CLIENT') private readonly redisClient: Redis
   ) {}
 
-  afterInit(server: Server) {
+  afterInit(server: Server): void {
     const pubClient = this.redisClient.duplicate();
     const subClient = this.redisClient.duplicate();
     server.adapter(createAdapter(pubClient, subClient));
@@ -97,32 +71,10 @@ export class NotificationGateway
     this.logger.log('WebSocket server disconnected all clients');
   }
 
-  private extractTokenFromCookies(cookieHeader: string): string | null {
-    const isProduction = this.configService.get('NODE_ENV') === 'production';
-    const prefix = isProduction ? '__Host-' : '';
-
-    const cookies = cookieHeader.split(';');
-    for (const cookie of cookies) {
-      const [name, ...valueParts] = cookie.trim().split('=');
-      const cookieName = name.trim();
-
-      for (const baseName of COOKIE_NAMES) {
-        if (cookieName === `${prefix}${baseName}`) {
-          return decodeURIComponent(valueParts.join('='));
-        }
-      }
-    }
-    return null;
-  }
-
-  async handleConnection(client: Socket) {
+  async handleConnection(client: Socket): Promise<void> {
     try {
-      const token =
-        client.handshake.auth?.token ||
-        client.handshake.headers?.authorization?.replace('Bearer ', '') ||
-        (client.handshake.headers?.cookie
-          ? this.extractTokenFromCookies(client.handshake.headers.cookie)
-          : null);
+      const isProduction = this.configService.get('NODE_ENV') === 'production';
+      const token = extractWsToken(client, isProduction);
 
       if (!token) {
         this.logger.warn(`Notification WS rejected: No token (${client.id})`);
@@ -133,16 +85,14 @@ export class NotificationGateway
 
       const payload = this.verifyToken(token);
       if (!payload) {
-        this.logger.warn(
-          `Notification WS rejected: Invalid token (${client.id})`
-        );
+        this.logger.warn(`Notification WS rejected: Invalid token (${client.id})`);
         client.emit('error', { message: 'Invalid or expired token' });
         client.disconnect();
         return;
       }
 
-      const rawType = payload.userType || payload.role || '';
-      const targetType = USER_TYPE_MAP[rawType.toUpperCase()] || 'customer';
+      const rawType = payload.userType ?? payload.role ?? '';
+      const targetType = USER_TYPE_MAP[rawType.toUpperCase()] ?? 'customer';
       const room = `${targetType}:${payload.sub}`;
 
       await client.join(room);
@@ -151,20 +101,11 @@ export class NotificationGateway
         await client.join('admin:all');
       }
 
-      this.socketToUser.set(client.id, {
-        userId: payload.sub,
-        userType: targetType,
-        room,
-      });
+      this.socketToUser.set(client.id, { userId: payload.sub, userType: targetType, room });
 
-      const unreadCount = await this.notificationCore.getUnreadCount(
-        targetType,
-        payload.sub
-      );
+      const unreadCount = await this.notificationCore.getUnreadCount(targetType, payload.sub);
 
-      this.logger.log(
-        `Notification WS connected: ${targetType}:${payload.sub} (${client.id})`
-      );
+      this.logger.log(`Notification WS connected: ${targetType}:${payload.sub} (${client.id})`);
 
       client.emit('connected', {
         message: 'Notification WebSocket connected',
@@ -179,23 +120,16 @@ export class NotificationGateway
     }
   }
 
-  handleDisconnect(client: Socket) {
+  handleDisconnect(client: Socket): void {
     const userInfo = this.socketToUser.get(client.id);
     if (userInfo) {
       this.socketToUser.delete(client.id);
-      this.logger.log(
-        `Notification WS disconnected: ${userInfo.room} (${client.id})`
-      );
+      this.logger.log(`Notification WS disconnected: ${userInfo.room} (${client.id})`);
     }
   }
 
-  broadcastToUser(
-    targetType: string,
-    targetId: string,
-    notification: NotificationResponseDto
-  ): void {
-    const room = `${targetType}:${targetId}`;
-    this.server.to(room).emit('notification', notification);
+  broadcastToUser(targetType: string, targetId: string, notification: NotificationResponseDto): void {
+    this.server.to(`${targetType}:${targetId}`).emit('notification', notification);
   }
 
   broadcastToAllAdmins(notification: NotificationResponseDto): void {
@@ -206,23 +140,14 @@ export class NotificationGateway
   async handleMarkAsRead(
     @MessageBody() data: { notificationId: string },
     @ConnectedSocket() client: Socket
-  ) {
+  ): Promise<{ status: string }> {
     const userInfo = this.socketToUser.get(client.id);
-    if (!userInfo) {
-      throw new WsException('Not authenticated');
-    }
+    if (!userInfo) throw new WsException('Not authenticated');
 
     try {
-      await this.notificationCore.markAsRead(
-        userInfo.userType,
-        userInfo.userId,
-        data.notificationId
-      );
+      await this.notificationCore.markAsRead(userInfo.userType, userInfo.userId, data.notificationId);
 
-      const unreadCount = await this.notificationCore.getUnreadCount(
-        userInfo.userType,
-        userInfo.userId
-      );
+      const unreadCount = await this.notificationCore.getUnreadCount(userInfo.userType, userInfo.userId);
 
       client.emit('unread_count', { count: unreadCount });
       return { status: 'ok' };
@@ -233,18 +158,14 @@ export class NotificationGateway
   }
 
   @SubscribeMessage('mark_all_read')
-  async handleMarkAllRead(@ConnectedSocket() client: Socket) {
+  async handleMarkAllRead(
+    @ConnectedSocket() client: Socket
+  ): Promise<{ status: string }> {
     const userInfo = this.socketToUser.get(client.id);
-    if (!userInfo) {
-      throw new WsException('Not authenticated');
-    }
+    if (!userInfo) throw new WsException('Not authenticated');
 
     try {
-      await this.notificationCore.markAllAsRead(
-        userInfo.userType,
-        userInfo.userId
-      );
-
+      await this.notificationCore.markAllAsRead(userInfo.userType, userInfo.userId);
       client.emit('unread_count', { count: 0 });
       return { status: 'ok' };
     } catch (error) {
@@ -253,9 +174,9 @@ export class NotificationGateway
     }
   }
 
-  private verifyToken(token: string): JwtPayload | null {
+  private verifyToken(token: string): WsJwtPayload | null {
     try {
-      return this.jwtService.verify<JwtPayload>(token);
+      return this.jwtService.verify<WsJwtPayload>(token);
     } catch (error) {
       this.logger.warn(`Token verification failed: ${error}`);
       return null;

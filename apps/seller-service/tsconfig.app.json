@@ -26,10 +26,13 @@
       "path": "../../libs/shared/tracing/tsconfig.lib.json"
     },
     {
-      "path": "../../libs/shared/service-auth/tsconfig.lib.json"
+      "path": "../../libs/shared/sentry/tsconfig.lib.json"
     },
     {
       "path": "../../libs/prisma-clients/seller-client/tsconfig.lib.json"
+    },
+    {
+      "path": "../../libs/shared/service-auth/tsconfig.lib.json"
     },
     {
       "path": "../../libs/shared/dto/tsconfig.lib.json"

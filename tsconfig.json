@@ -146,6 +146,12 @@
     },
     {
       "path": "./apps/notification-service"
+    },
+    {
+      "path": "./libs/shared/ws-auth"
+    },
+    {
+      "path": "./libs/shared/sentry"
     }
   ]
 }

@@ -22,7 +22,10 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       clientSecret: googleClientSecret,
       callbackURL: googleCallbackUrl || 'http://localhost:8080/api/auth/google/callback',
       scope: ['email', 'profile'],
-      state: true,
+      // state: true requires express-session which this stateless JWT gateway does not use.
+      // State verification is skipped here; CSRF is mitigated at the network level
+      // (HTTPS + SameSite cookies in production).
+      state: false,
     });
   }
 

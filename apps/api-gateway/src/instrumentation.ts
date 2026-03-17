@@ -1,63 +1,9 @@
-import * as Sentry from '@sentry/nestjs';
-import { nodeProfilingIntegration } from '@sentry/profiling-node';
+import { initializeSentry } from '@tec-shop/sentry';
 
-// Initialize Sentry before any other imports
-export function initializeSentry() {
-  const dsn = process.env.SENTRY_DSN_BACKEND;
-
-  // Only initialize if DSN is provided and not a placeholder
-  if (!dsn || dsn.includes('your-backend-dsn')) {
-    console.log('[Sentry] Skipping initialization - DSN not configured');
-    return;
-  }
-
-  Sentry.init({
-    dsn,
-    environment: process.env.SENTRY_ENVIRONMENT || 'development',
-
-    tracesSampleRate: parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE || '0.1'),
-
-    profilesSampleRate: 0.1,
-
-    integrations: [
-      // Enable profiling
-      nodeProfilingIntegration(),
-    ],
-
-    // Set release version (optional - can be set from CI/CD)
-    release: process.env.SENTRY_RELEASE || undefined,
-
-    debug: process.env.SENTRY_DEBUG === 'true',
-
-    // Add custom tags
-    initialScope: {
-      tags: {
-        service: 'api-gateway',
-        port: process.env.PORT || '8080',
-      },
-    },
-
-    // Filter out sensitive data
-    beforeSend(event) {
-      // Remove sensitive headers
-      if (event.request?.headers) {
-        delete event.request.headers['authorization'];
-        delete event.request.headers['cookie'];
-        delete event.request.headers['x-api-key'];
-      }
-
-      // Remove sensitive environment variables
-      if (event.contexts?.runtime?.env) {
-        const env = event.contexts.runtime.env as Record<string, unknown>;
-        delete env['JWT_SECRET'];
-        delete env['SERVICE_MASTER_SECRET'];
-        delete env['STRIPE_SECRET_KEY'];
-        delete env['SMTP_PASS'];
-      }
-
-      return event;
-    },
+export function initializeSentryForService(): void {
+  initializeSentry({
+    serviceName: 'api-gateway',
+    port: process.env['PORT'] ?? '8080',
+    transport: 'HTTP',
   });
-
-  console.log('[Sentry] Initialized for API Gateway');
 }

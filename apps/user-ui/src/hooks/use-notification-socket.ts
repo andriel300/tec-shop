@@ -37,7 +37,7 @@ export function useNotificationSocket(
     if (!enabled) return;
 
     const socket = io(NOTIFICATION_WS_URL, {
-      transports: ['polling', 'websocket'],
+      transports: ['websocket', 'polling'],
       withCredentials: true,
       reconnection: true,
       reconnectionAttempts: 10,

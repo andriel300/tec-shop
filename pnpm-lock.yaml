@@ -689,6 +689,8 @@ importers:
 
   libs/shared/redis-client: {}
 
+  libs/shared/sentry: {}
+
   libs/shared/service-auth: {}
 
   libs/shared/tracing: {}
@@ -698,6 +700,8 @@ importers:
       zod:
         specifier: ^3.22.4
         version: 3.25.76
+
+  libs/shared/ws-auth: {}
 
 packages:
 

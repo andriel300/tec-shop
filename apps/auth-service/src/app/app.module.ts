@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { z } from 'zod';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -16,6 +17,22 @@ import { NotificationProducerModule } from '@tec-shop/notification-producer';
       isGlobal: true,
       expandVariables: true,
       envFilePath: process.env.NODE_ENV === 'production' ? '' : '.env',
+      validate: (config: Record<string, unknown>) => {
+        if (config['NODE_ENV'] === 'test') return config;
+        const schema = z.object({
+          NODE_ENV: z.enum(['development', 'production']).default('development'),
+          PORT: z.coerce.number().default(6001),
+          JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
+          SERVICE_MASTER_SECRET: z.string().min(32, 'SERVICE_MASTER_SECRET must be at least 32 characters'),
+          AUTH_SERVICE_DB_URL: z.string().min(1, 'AUTH_SERVICE_DB_URL is required'),
+          OTP_SALT: z.string().min(1, 'OTP_SALT is required'),
+        });
+        const result = schema.safeParse(config);
+        if (!result.success) {
+          throw new Error(`Config validation failed:\n${result.error.issues.map((i) => `  ${i.path.join('.')}: ${i.message}`).join('\n')}`);
+        }
+        return result.data;
+      },
     }),
     LoggerModule.forRootAsync({
       imports: [ConfigModule],

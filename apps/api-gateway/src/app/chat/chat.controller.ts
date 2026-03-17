@@ -18,6 +18,16 @@ import { ClientProxy } from '@nestjs/microservices';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtService } from '@nestjs/jwt';
 import { firstValueFrom } from 'rxjs';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiParam,
+  ApiQuery,
+  ApiConsumes,
+  ApiBody,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../guards/auth';
 import { RolesGuard } from '../../guards/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
@@ -65,6 +75,7 @@ interface ConversationResult {
   error?: string;
 }
 
+@ApiTags('Chat')
 @Controller('chat')
 export class ChatController {
   private readonly logger = new Logger(ChatController.name);
@@ -82,6 +93,16 @@ export class ChatController {
   @Get('ws-token')
   @UseGuards(JwtAuthGuard)
   @Throttle({ short: { limit: 20, ttl: 60000 } }) // 20 token issuances per minute per IP
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get WebSocket authentication token',
+    description:
+      'Issues a short-lived (5-minute) JWT scoped to WebSocket use. ' +
+      'Required because access tokens are stored in httpOnly cookies that ' +
+      'cannot be read by client-side JavaScript for the Socket.IO handshake.',
+  })
+  @ApiResponse({ status: 200, description: 'Token issued', schema: { properties: { token: { type: 'string' }, expiresIn: { type: 'number', example: 300 } } } })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   getWebSocketToken(@Req() req: AuthenticatedRequest) {
     const { userId, username, userType } = req.user;
 
@@ -106,6 +127,18 @@ export class ChatController {
   @Post('conversations')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('CUSTOMER', 'SELLER')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Create or retrieve a conversation',
+    description:
+      'Opens a conversation between a CUSTOMER and a SELLER. ' +
+      'If a conversation between the two participants already exists, it is returned instead of creating a duplicate. ' +
+      'CUSTOMER can only initiate with a SELLER, and vice versa.',
+  })
+  @ApiResponse({ status: 201, description: 'Conversation created or retrieved' })
+  @ApiResponse({ status: 400, description: 'Invalid participant pairing' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Role not permitted (must be CUSTOMER or SELLER)' })
   async createConversation(
     @Req() req: AuthenticatedRequest,
     @Body() dto: CreateConversationDto
@@ -173,6 +206,12 @@ export class ChatController {
    */
   @Get('conversations')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'List conversations', description: 'Returns all conversations for the authenticated user, ordered by most recent activity.' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
+  @ApiResponse({ status: 200, description: 'Paginated conversation list' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getConversations(
     @Req() req: AuthenticatedRequest,
     @Query() query: GetConversationsDto
@@ -196,6 +235,12 @@ export class ChatController {
    */
   @Get('conversations/:id')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get conversation details', description: 'Returns a single conversation. Returns 404 if the conversation does not exist or the caller is not a participant.' })
+  @ApiParam({ name: 'id', description: 'Conversation ID' })
+  @ApiResponse({ status: 200, description: 'Conversation details' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Conversation not found or access denied' })
   async getConversation(
     @Req() req: AuthenticatedRequest,
     @Param('id') conversationId: string
@@ -224,6 +269,14 @@ export class ChatController {
    */
   @Get('conversations/:id/messages')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get conversation messages', description: 'Returns paginated messages for a conversation. Caller must be a participant.' })
+  @ApiParam({ name: 'id', description: 'Conversation ID' })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
+  @ApiResponse({ status: 200, description: 'Paginated message list' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Conversation not found or access denied' })
   async getMessages(
     @Req() req: AuthenticatedRequest,
     @Param('id') conversationId: string,
@@ -256,6 +309,12 @@ export class ChatController {
    */
   @Post('conversations/:id/seen')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Mark conversation as seen', description: 'Resets the unread count for the calling participant. Used to sync read state after the user opens a conversation.' })
+  @ApiParam({ name: 'id', description: 'Conversation ID' })
+  @ApiResponse({ status: 201, description: 'Marked as seen', schema: { properties: { status: { type: 'string', example: 'seen' } } } })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Conversation not found or access denied' })
   async markAsSeen(
     @Req() req: AuthenticatedRequest,
     @Param('id') conversationId: string
@@ -284,6 +343,11 @@ export class ChatController {
    */
   @Get('online/:userId')
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Check user online status', description: 'Returns whether the given user currently has an active Socket.IO connection to the chatting service.' })
+  @ApiParam({ name: 'userId', description: 'ID of the user to check' })
+  @ApiResponse({ status: 200, description: 'Online status', schema: { properties: { online: { type: 'boolean' }, lastSeen: { type: 'string', format: 'date-time', nullable: true } } } })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async checkOnline(@Param('userId') userId: string) {
     return firstValueFrom(
       this.chattingService.send('chatting.checkOnline', { userId })
@@ -299,6 +363,14 @@ export class ChatController {
   @Roles('CUSTOMER', 'SELLER')
   @Throttle({ short: { limit: 10, ttl: 60000 } }) // 10 uploads per minute per IP
   @UseInterceptors(FileInterceptor('image', { limits: { fileSize: CHAT_IMAGE_SIZE_LIMIT } }))
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Upload chat image', description: 'Uploads an image to ImageKit CDN and returns the URL. Accepted formats: JPEG, PNG, GIF, WebP. Maximum size: 5 MB. Rate-limited to 10 uploads per minute.' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ schema: { type: 'object', properties: { image: { type: 'string', format: 'binary' } }, required: ['image'] } })
+  @ApiResponse({ status: 201, description: 'Image uploaded', schema: { properties: { url: { type: 'string' }, fileId: { type: 'string' }, name: { type: 'string' }, size: { type: 'number' } } } })
+  @ApiResponse({ status: 400, description: 'Invalid file type or size exceeded' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Role not permitted' })
   async uploadChatImage(@UploadedFile() file: Express.Multer.File) {
     this.validateChatImage(file);
 
@@ -320,6 +392,8 @@ export class ChatController {
    * Health check / ping endpoint
    */
   @Get('ping')
+  @ApiOperation({ summary: 'Ping chatting service', description: 'Liveness probe — verifies the chatting-service TCP microservice is reachable from the gateway.' })
+  @ApiResponse({ status: 200, description: 'Service is alive' })
   async ping() {
     return firstValueFrom(this.chattingService.send('chatting.ping', {}));
   }

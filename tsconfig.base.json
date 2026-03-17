@@ -56,12 +56,14 @@
         "node_modules/.prisma/product-client"
       ],
       "@tec-shop/redis-client": ["libs/shared/redis-client/src/index.ts"],
+      "@tec-shop/sentry": ["libs/shared/sentry/src/index.ts"],
       "@tec-shop/seller-client": [
         "libs/prisma-clients/seller-client/src/index.ts"
       ],
       "@tec-shop/seller-prisma-client": ["node_modules/.prisma/seller-client"],
       "@tec-shop/seller-service/*": ["apps/seller-service/src/*"],
       "@tec-shop/service-auth": ["libs/shared/service-auth/src/index.ts"],
+      "@tec-shop/ws-auth": ["libs/shared/ws-auth/src/index.ts"],
       "@tec-shop/shared-validation": ["libs/shared/validation/src/index.ts"],
       "@tec-shop/shared/imagekit": ["libs/shared/imagekit/src/index.ts"],
       "@tec-shop/tracing": ["libs/shared/tracing/src/index.ts"],

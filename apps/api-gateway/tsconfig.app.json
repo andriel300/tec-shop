@@ -38,6 +38,9 @@
       "path": "../../libs/shared/redis-client/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/shared/sentry/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/shared/dto/tsconfig.lib.json"
     }
   ]

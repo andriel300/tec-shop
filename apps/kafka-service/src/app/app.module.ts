@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MetricsModule, HealthModule } from '@tec-shop/metrics';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { SentryModule } from '@tec-shop/sentry';
 import { LoggerModule } from 'nestjs-pino';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PrismaModule } from '../prisma/prisma.module';
@@ -11,6 +12,7 @@ import { KafkaController } from './kafka.controller';
   imports: [
     MetricsModule,
     HealthModule,
+    SentryModule.forRoot({ serviceName: 'kafka-service', transport: 'Kafka' }),
 
     // Configuration
     ConfigModule.forRoot({

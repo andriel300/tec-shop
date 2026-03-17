@@ -1,11 +1,8 @@
 import { initializeTracing } from '@tec-shop/tracing';
 initializeTracing('notification-service');
 
-import { initializeSentry } from './instrumentation';
-initializeSentry(
-  'notification-service',
-  process.env.NOTIFICATION_SERVICE_PORT ?? '6012'
-);
+import { initializeSentryForService } from './instrumentation';
+initializeSentryForService('notification-service', process.env['NOTIFICATION_SERVICE_PORT'] ?? '6012');
 
 import { NestFactory } from '@nestjs/core';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
@@ -14,6 +11,7 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { Logger as PinoLogger } from 'nestjs-pino';
+import { WsIoAdapter } from '@tec-shop/ws-auth';
 
 async function bootstrap() {
   const certsPath = join(process.cwd(), 'certs');
@@ -58,15 +56,7 @@ async function bootstrap() {
     })
   );
 
-  app.enableCors({
-    origin: process.env.CORS_ORIGINS?.split(',') || [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:3002',
-      'http://localhost:4200',
-    ],
-    credentials: true,
-  });
+  app.useWebSocketAdapter(new WsIoAdapter(app));
 
   const tcpPort = parseInt(process.env.NOTIFICATION_SERVICE_TCP_PORT || '6014', 10);
   app.connectMicroservice<MicroserviceOptions>({

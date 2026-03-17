@@ -1,8 +1,8 @@
 import { initializeTracing } from '@tec-shop/tracing';
 initializeTracing('admin-service');
 
-import { initializeSentry } from './instrumentation';
-initializeSentry('admin-service', process.env.ADMIN_SERVICE_PORT ?? '6006');
+import { initializeSentryForService } from './instrumentation';
+initializeSentryForService('admin-service', process.env['ADMIN_SERVICE_PORT'] ?? '6006');
 
 import { NestFactory } from '@nestjs/core';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
