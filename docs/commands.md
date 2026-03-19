@@ -1,5 +1,7 @@
 # Development Commands
 
+For the full git worktree workflow using Worktrunk (`wt`), see [worktrunk-workflow.md](./worktrunk-workflow.md).
+
 ## Workflow A — Host-based dev
 
 ```bash

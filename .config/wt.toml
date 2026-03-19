@@ -1,0 +1,70 @@
+# Worktrunk project configuration for tec-shop
+# Docs: https://worktrunk.dev/hook/
+#
+# This file is checked into git and applies to every developer on the team.
+# Personal preferences (LLM commit generation, path templates) go in
+# ~/.config/worktrunk/config.toml instead.
+
+# ---------------------------------------------------------------------------
+# post-create — blocking tasks that must finish before you start working
+# ---------------------------------------------------------------------------
+# Runs once when the worktree is first created. Failures are logged but
+# do not abort the switch (non-fail-fast).
+
+[post-create]
+
+# Copy .env from the primary worktree. The .env file is gitignored so each
+# worktree needs its own copy. Falls back gracefully if none exists yet.
+env = """
+if [ -f {{ primary_worktree_path }}/.env ]; then
+    cp {{ primary_worktree_path }}/.env {{ worktree_path }}/.env
+    echo '[wt] Copied .env from primary worktree'
+else
+    echo '[wt] No .env found in primary worktree — copy one manually before starting services'
+fi
+"""
+
+# Install dependencies. New worktrees don't inherit node_modules — pnpm is
+# fast here because it hard-links from the global content-addressable store.
+# Must run before prisma:generate since Nx needs node_modules to resolve.
+install = "pnpm install"
+
+# Regenerate all Prisma clients. Required when the branch changes a .prisma
+# schema. Running it unconditionally is safe (idempotent) and avoids subtle
+# type errors when switching between branches with different schemas.
+prisma = "pnpm prisma:generate"
+
+# ---------------------------------------------------------------------------
+# post-start — background tasks that can run while you work
+# ---------------------------------------------------------------------------
+# Runs in the background after post-create. Useful for warming caches.
+# Logs written to .git/wt/logs/<branch>-*-post-start-*.log
+
+[post-start]
+
+# Copy remaining gitignored files from the primary worktree in the background.
+# Covers .next build caches, generated certs, and other dev artifacts so you
+# don't wait for a cold rebuild on every new worktree.
+copy = "wt step copy-ignored"
+
+# ---------------------------------------------------------------------------
+# pre-commit — runs during `wt merge` before the squash commit
+# ---------------------------------------------------------------------------
+# Fast feedback loop: lint + typecheck only. Nx "affected" limits work to
+# projects touched by this branch, keeping it quick.
+# Failures abort the merge.
+
+[pre-commit]
+
+lint = "pnpm lint:affected"
+typecheck = "pnpm typecheck:affected"
+
+# ---------------------------------------------------------------------------
+# pre-merge — runs after rebase, before the actual merge to main
+# ---------------------------------------------------------------------------
+# Heavier validation that only runs at merge time, not on every commit.
+# "affected" tests only the services/apps changed on this branch.
+
+[pre-merge]
+
+test = "pnpm test:affected"
