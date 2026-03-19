@@ -246,7 +246,7 @@ const StickyNavbar = () => {
                 <Link
                   key={index}
                   className="px-3 font-heading font-medium text-md hover:text-brand-primary transition-colors"
-                  href={`${process.env.NEXT_PUBLIC_SELLER_SERVER_URI}/dashboard`}
+                  href={`${process.env.NEXT_PUBLIC_SELLER_SERVER_URI ?? 'http://localhost:3001'}/dashboard`}
                 >
                   {t('sellerDashboard')}
                 </Link>

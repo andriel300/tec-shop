@@ -1,7 +1,7 @@
 {
   "Common": {
     "viewAll": "Ver Tudo",
-    "hello": "Ola,",
+    "hello": "Olá,",
     "welcome": "Bem-vindo",
     "shopNow": "Comprar Agora",
     "learnMore": "Saiba Mais",
@@ -15,13 +15,12 @@
     "searchPlaceholder": "Buscar produtos e lojas...",
     "searching": "Buscando...",
     "viewAllResults": "Ver todos os resultados para \"{query}\"",
-    "home": "Inicio",
+    "home": "Início",
     "products": "Produtos",
     "shops": "Lojas",
     "offers": "Ofertas",
     "becomeASeller": "Monte sua loja",
     "sellerDashboard": "Painel do vendedor",
-    "termsOfService": "Termos de Servico",
     "viewAllCategories": "Ver Todas as Categorias",
     "loadingCategories": "Carregando categorias...",
     "noCategories": "Nenhuma categoria disponivel",
@@ -32,7 +31,7 @@
     "cart": "Carrinho"
   },
   "HomePage": {
-    "recommendedForYou": "Recomendado Para Voce",
+    "recommendedForYou": "Recomendado Para Você",
     "popularProducts": "Produtos Populares",
     "latestProducts": "Produtos Mais Recentes",
     "topShops": "Melhores Lojas",

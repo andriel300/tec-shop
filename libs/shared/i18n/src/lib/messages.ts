@@ -37,8 +37,8 @@ const sharedMessages: Record<string, Messages> = {
     },
     LanguageSwitcher: {
       changeLanguage: 'Alterar idioma',
-      english: 'Ingles',
-      portuguese: 'Portugues (BR)',
+      english: 'Inglês',
+      portuguese: 'Português (BR)',
     },
   },
 };

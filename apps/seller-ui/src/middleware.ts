@@ -6,25 +6,42 @@ import { routing } from './i18n/routing';
 const intlMiddleware = createIntlMiddleware(routing);
 
 const protectedRoutes = ['/dashboard'];
+const authRoutes = ['/login', '/signup'];
+
+const localePattern = new RegExp(`^\\/(${routing.locales.join('|')})`);
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const pathnameWithoutLocale = pathname.replace(/^\/(en|pt-BR)/, '') || '/';
+  const pathnameWithoutLocale = pathname.replace(localePattern, '') || '/';
 
   const sellerAccessToken =
     request.cookies.get('__Host-seller_access_token')?.value ||
     request.cookies.get('seller_access_token')?.value;
 
-  const localeMatch = pathname.match(/^\/(en|pt-BR)/);
-  const locale = localeMatch?.[1] ?? 'en';
+  const locale = pathname.match(localePattern)?.[1] ?? routing.defaultLocale;
 
   const isProtectedRoute = protectedRoutes.some((r) =>
     pathnameWithoutLocale.startsWith(r)
   );
+  const isAuthRoute = authRoutes.some((r) =>
+    pathnameWithoutLocale.startsWith(r)
+  );
 
-  if (isProtectedRoute && !sellerAccessToken) {
-    return NextResponse.redirect(new URL(`/${locale}/login`, request.url));
+  // Check both presence and basic JWT structure (3 dot-separated segments).
+  // A cookie with any arbitrary string bypasses a presence-only check.
+  // Full signature verification happens server-side; this is an early UX gate.
+  const hasValidJwtStructure = (token: string) => token.split('.').length === 3;
+  const isAuthenticated = !!sellerAccessToken && hasValidJwtStructure(sellerAccessToken);
+
+  if (isProtectedRoute && !isAuthenticated) {
+    const loginUrl = new URL(`/${locale}/login`, request.url);
+    loginUrl.searchParams.set('redirect', pathnameWithoutLocale);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (isAuthRoute && isAuthenticated) {
+    return NextResponse.redirect(new URL(`/${locale}/dashboard`, request.url));
   }
 
   return intlMiddleware(request);

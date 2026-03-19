@@ -8,12 +8,13 @@ const intlMiddleware = createIntlMiddleware(routing);
 const protectedRoutes = ['/profile', '/dashboard', '/settings', '/orders'];
 const authRoutes = ['/login', '/signup', '/forgot-password'];
 
+const localePattern = new RegExp(`^\\/(${routing.locales.join('|')})`);
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Strip locale prefix to get the actual path for route matching
-  const pathnameWithoutLocale =
-    pathname.replace(/^\/(en|pt-BR)/, '') || '/';
+  const pathnameWithoutLocale = pathname.replace(localePattern, '') || '/';
 
   const customerAccessToken =
     request.cookies.get('__Host-customer_access_token')?.value ||
@@ -32,8 +33,7 @@ export function middleware(request: NextRequest) {
     pathnameWithoutLocale.startsWith(r)
   );
 
-  const localeMatch = pathname.match(/^\/(en|pt-BR)/);
-  const locale = localeMatch?.[1] ?? 'en';
+  const locale = pathname.match(localePattern)?.[1] ?? routing.defaultLocale;
 
   if (isProtectedRoute && !token) {
     const loginUrl = new URL(`/${locale}/login`, request.url);

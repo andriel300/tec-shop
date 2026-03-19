@@ -285,7 +285,7 @@ const Footer = () => {
               <ul className="space-y-2">
                 <li>
                   <Link
-                    href="/terms"
+                    href="/terms-of-service"
                     className="text-xs hover:text-brand-primary transition-colors"
                   >
                     Terms of Service

@@ -9,12 +9,7 @@ export const navItems: NavItemsTypes[] = [
   { title: 'Offers', href: '/offers', translationKey: 'offers' },
   {
     title: 'Become A Seller',
-    href: `${process.env.NEXT_PUBLIC_SELLER_SERVER_URI}/become-seller`,
+    href: `${process.env.NEXT_PUBLIC_SELLER_SERVER_URI ?? 'http://localhost:3001'}/become-seller`,
     translationKey: 'becomeASeller',
-  },
-  {
-    title: 'Terms of Service',
-    href: '/terms-of-service',
-    translationKey: 'termsOfService',
   },
 ];
