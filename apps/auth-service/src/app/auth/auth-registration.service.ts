@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as bcrypt from 'bcrypt';
+import * as argon2 from 'argon2';
 import { randomInt, randomBytes, createHash } from 'crypto';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -71,7 +71,7 @@ export class AuthRegistrationService {
       }
 
       this.logger.debug('Hashing password');
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await argon2.hash(password);
 
       this.logger.debug('Creating user record');
       const user = await this.prisma.user.create({
@@ -136,7 +136,7 @@ export class AuthRegistrationService {
       }
 
       this.logger.debug('Hashing seller password');
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await argon2.hash(password);
 
       this.logger.debug('Creating seller user record');
       const user = await this.prisma.user.create({
@@ -457,7 +457,7 @@ export class AuthRegistrationService {
       throw new RpcException({ statusCode: 401, message: 'Invalid or expired reset token' });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await argon2.hash(newPassword);
 
     await this.prisma.$transaction([
       this.prisma.user.update({
@@ -520,7 +520,7 @@ export class AuthRegistrationService {
       throw new RpcException({ statusCode: 401, message: 'Invalid or expired reset code' });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await argon2.hash(newPassword);
 
     await this.prisma.user.update({
       where: { id: user.id },

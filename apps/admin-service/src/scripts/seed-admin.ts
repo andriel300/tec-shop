@@ -1,5 +1,5 @@
 import { PrismaClient as AuthPrismaClient } from '@tec-shop/auth-client';
-import * as bcrypt from 'bcrypt';
+import * as argon2 from 'argon2';
 import * as dotenv from 'dotenv';
 import { resolve } from 'path';
 
@@ -63,7 +63,7 @@ async function seedAdmin() {
 
     // Hash the password
     console.log('Hashing password...');
-    const hashedPassword = await bcrypt.hash(defaultAdmin.password, 10);
+    const hashedPassword = await argon2.hash(defaultAdmin.password);
 
     // Create the admin user
     console.log('Creating admin user...');

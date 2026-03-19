@@ -5,6 +5,8 @@ import {
   ConflictException,
   Logger,
 } from '@nestjs/common';
+import * as argon2 from 'argon2';
+// TODO(migration): bcrypt kept for legacy hash verification. Remove once all users have logged in post-migration.
 import * as bcrypt from 'bcrypt';
 import {
   AuthPrismaService,
@@ -221,7 +223,7 @@ export class AdminUsersService {
       throw new ConflictException('User with this email already exists');
     }
 
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const hashedPassword = await argon2.hash(dto.password);
 
     const admin = await this.authPrisma.user.create({
       data: {
@@ -261,7 +263,9 @@ export class AdminUsersService {
       throw new BadRequestException('Admin account has no password set — cannot confirm identity');
     }
 
-    const isPasswordValid = await bcrypt.compare(confirmPassword, requestingAdmin.password);
+    const isPasswordValid = requestingAdmin.password.startsWith('$argon2')
+      ? await argon2.verify(requestingAdmin.password, confirmPassword)
+      : await bcrypt.compare(confirmPassword, requestingAdmin.password);
     if (!isPasswordValid) {
       this.logger.warn(`Delete admin rejected - wrong password from requesting admin: ${requestingAdminId}`);
       throw new BadRequestException('Password confirmation is incorrect');

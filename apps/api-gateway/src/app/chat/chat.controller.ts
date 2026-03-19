@@ -109,7 +109,7 @@ export class ChatController {
     // Create a short-lived token (5 minutes) for WebSocket authentication
     const wsToken = this.jwtService.sign(
       {
-        userId,
+        sub: userId,
         username,
         userType: userType || 'CUSTOMER',
         purpose: 'websocket',

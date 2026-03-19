@@ -6,7 +6,7 @@ import { EmailService } from '../email/email.service';
 import { LogProducerService } from '@tec-shop/logger-producer';
 import { NotificationProducerService } from '@tec-shop/notification-producer';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
-import * as bcrypt from 'bcrypt';
+import * as argon2 from 'argon2';
 import { ConfigService } from '@nestjs/config';
 import { SignupDto, VerifyEmailDto } from '@tec-shop/dto';
 import { of } from 'rxjs';
@@ -21,7 +21,7 @@ describe('AuthRegistrationService', () => {
   const mockUser = {
     id: '1',
     email: 'test@example.com',
-    password: 'hashed-password123',
+    password: '$argon2id$hashed-password123',
     isEmailVerified: true,
     userType: 'CUSTOMER' as const,
     googleId: null,
@@ -132,12 +132,12 @@ describe('AuthRegistrationService', () => {
     userClient = module.get<ClientProxy>('USER_SERVICE');
 
     jest
-      .spyOn(bcrypt, 'hash')
-      .mockImplementation(async (password) => `hashed-${password}`);
+      .spyOn(argon2, 'hash')
+      .mockImplementation(async (password) => `$argon2id$hashed-${password}`);
     jest
-      .spyOn(bcrypt, 'compare')
+      .spyOn(argon2, 'verify')
       .mockImplementation(
-        async (password, hash) => `hashed-${password}` === hash
+        async (hash, plain) => hash === `$argon2id$hashed-${plain}`
       );
   });
 
@@ -165,7 +165,7 @@ describe('AuthRegistrationService', () => {
       expect(prismaService.user.findUnique).toHaveBeenCalledWith({
         where: { email: signupDto.email },
       });
-      expect(bcrypt.hash).toHaveBeenCalledWith(signupDto.password, 10);
+      expect(argon2.hash).toHaveBeenCalledWith(signupDto.password);
       expect(prismaService.user.create).toHaveBeenCalled();
       expect(redisService.set).toHaveBeenCalled();
       expect(emailService.sendOtp).toHaveBeenCalledWith(
@@ -379,7 +379,7 @@ describe('AuthRegistrationService', () => {
         newPassword: 'NewPass123!',
       });
 
-      expect(bcrypt.hash).toHaveBeenCalledWith('NewPass123!', 10);
+      expect(argon2.hash).toHaveBeenCalledWith('NewPass123!');
       expect(result).toEqual({
         message: 'Password has been reset successfully.',
       });

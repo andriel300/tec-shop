@@ -7,6 +7,9 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import * as argon2 from 'argon2';
+// TODO(migration): bcrypt is kept for legacy hash verification during the bcrypt→Argon2id migration.
+// Once all active users have logged in at least once after the migration, remove bcrypt entirely.
 import * as bcrypt from 'bcrypt';
 import { randomBytes, createHash } from 'crypto';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
@@ -83,10 +86,7 @@ export class AuthCoreService implements OnModuleInit {
       }
 
       this.logger.debug(`Verifying password for user: ${user.id}`);
-      const isPasswordMatching = await bcrypt.compare(
-        credential.password,
-        user.password
-      );
+      const isPasswordMatching = await this.verifyPassword(credential.password, user.password);
 
       if (!isPasswordMatching) {
         this.logger.warn(`Customer login failed - password mismatch: ${credential.email}`);
@@ -96,6 +96,8 @@ export class AuthCoreService implements OnModuleInit {
         });
         throw new RpcException({ statusCode: 401, message: genericError });
       }
+
+      await this.maybeRehash(credential.password, user.password, user.id);
 
       this.logger.log(`Customer login successful - userId: ${user.id}, email: ${credential.email}`);
       this.logProducer.info('auth-service', LogCategory.AUTH, 'Customer login successful', {
@@ -135,10 +137,7 @@ export class AuthCoreService implements OnModuleInit {
       }
 
       this.logger.debug(`Verifying password for seller: ${user.id}`);
-      const isPasswordMatching = await bcrypt.compare(
-        credential.password,
-        user.password
-      );
+      const isPasswordMatching = await this.verifyPassword(credential.password, user.password);
 
       if (!isPasswordMatching) {
         this.logger.warn(`Seller login failed - password mismatch: ${credential.email}`);
@@ -148,6 +147,8 @@ export class AuthCoreService implements OnModuleInit {
         });
         throw new RpcException({ statusCode: 401, message: genericError });
       }
+
+      await this.maybeRehash(credential.password, user.password, user.id);
 
       this.logger.log(`Seller login successful - userId: ${user.id}, email: ${credential.email}`);
       this.logProducer.info('auth-service', LogCategory.AUTH, 'Seller login successful', {
@@ -187,10 +188,7 @@ export class AuthCoreService implements OnModuleInit {
       }
 
       this.logger.debug(`Verifying password for admin: ${user.id}`);
-      const isPasswordMatching = await bcrypt.compare(
-        credential.password,
-        user.password
-      );
+      const isPasswordMatching = await this.verifyPassword(credential.password, user.password);
 
       if (!isPasswordMatching) {
         this.logger.warn(`Admin login failed - password mismatch: ${credential.email}`);
@@ -200,6 +198,8 @@ export class AuthCoreService implements OnModuleInit {
         });
         throw new RpcException({ statusCode: 401, message: genericError });
       }
+
+      await this.maybeRehash(credential.password, user.password, user.id);
 
       this.logger.log(`Admin login successful - userId: ${user.id}, email: ${credential.email}`);
       this.logProducer.info('auth-service', LogCategory.AUTH, 'Admin login successful', {
@@ -517,19 +517,19 @@ export class AuthCoreService implements OnModuleInit {
       throw new RpcException({ statusCode: 401, message: 'Cannot change password for accounts authenticated via Google. Please use Google to manage your account security.' });
     }
 
-    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    const isPasswordValid = await this.verifyPassword(currentPassword, user.password);
     if (!isPasswordValid) {
       this.logger.warn(`Change password failed - invalid current password for user: ${userId}`);
       throw new RpcException({ statusCode: 401, message: 'Current password is incorrect' });
     }
 
-    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    const isSamePassword = await this.verifyPassword(newPassword, user.password);
     if (isSamePassword) {
       this.logger.warn(`Change password failed - new password same as current for user: ${userId}`);
       throw new RpcException({ statusCode: 401, message: 'New password must be different from current password' });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await argon2.hash(newPassword);
 
     await this.prisma.user.update({
       where: { id: userId },
@@ -564,7 +564,7 @@ export class AuthCoreService implements OnModuleInit {
       if (!dto.currentPassword) {
         throw new RpcException({ statusCode: 400, message: 'Current password is required to upgrade account. Please provide your current password.' });
       }
-      const isPasswordValid = await bcrypt.compare(dto.currentPassword, user.password);
+      const isPasswordValid = await this.verifyPassword(dto.currentPassword, user.password);
       if (!isPasswordValid) {
         this.logger.warn(`Upgrade to seller failed - invalid password for user: ${userId}`);
         this.logProducer.warn('auth-service', LogCategory.SECURITY, 'Upgrade to seller rejected - wrong password', {
@@ -630,6 +630,30 @@ export class AuthCoreService implements OnModuleInit {
       userId,
       email: user.email,
     };
+  }
+
+  /**
+   * Verifies a password against a stored hash.
+   * Supports both Argon2id (current) and bcrypt (legacy migration path).
+   * Argon2 hashes start with "$argon2"; bcrypt hashes start with "$2b$" or "$2a$".
+   */
+  private async verifyPassword(plain: string, hash: string): Promise<boolean> {
+    if (hash.startsWith('$argon2')) {
+      return argon2.verify(hash, plain);
+    }
+    return bcrypt.compare(plain, hash);
+  }
+
+  /**
+   * If the stored hash is still bcrypt, transparently rehash with Argon2id and persist.
+   * Call this only after verifyPassword returns true.
+   */
+  private async maybeRehash(plain: string, hash: string, userId: string): Promise<void> {
+    if (!hash.startsWith('$argon2')) {
+      const newHash = await argon2.hash(plain);
+      await this.prisma.user.update({ where: { id: userId }, data: { password: newHash } });
+      this.logger.debug(`Migrated bcrypt hash to Argon2id for user: ${userId}`);
+    }
   }
 
   private async generateTokens(

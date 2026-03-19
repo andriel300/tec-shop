@@ -6,6 +6,7 @@ import { RedisService } from '@tec-shop/redis-client';
 import { EmailService } from '../email/email.service';
 import { LogProducerService } from '@tec-shop/logger-producer';
 import { NotificationProducerService } from '@tec-shop/notification-producer';
+import * as argon2 from 'argon2';
 import * as bcrypt from 'bcrypt';
 import { RpcException } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
@@ -20,7 +21,7 @@ describe('AuthCoreService', () => {
   const mockUser = {
     id: '1',
     email: 'test@example.com',
-    password: 'hashed-password123',
+    password: '$argon2id$hashed-password123',
     isEmailVerified: true,
     userType: 'CUSTOMER' as const,
     googleId: null,
@@ -131,12 +132,17 @@ describe('AuthCoreService', () => {
     redisService = module.get<RedisService>(RedisService);
 
     jest
-      .spyOn(bcrypt, 'hash')
-      .mockImplementation(async (password) => `hashed-${password}`);
+      .spyOn(argon2, 'hash')
+      .mockImplementation(async (password) => `$argon2id$hashed-${password}`);
+    jest
+      .spyOn(argon2, 'verify')
+      .mockImplementation(
+        async (hash, plain) => hash === `$argon2id$hashed-${plain}`
+      );
     jest
       .spyOn(bcrypt, 'compare')
       .mockImplementation(
-        async (password, hash) => `hashed-${password}` === hash
+        async (plain, hash) => hash === `$2b$hashed-${plain}`
       );
   });
 
@@ -154,9 +160,9 @@ describe('AuthCoreService', () => {
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
 
       jest
-        .spyOn(bcrypt, 'compare')
+        .spyOn(argon2, 'verify')
         .mockImplementation(
-          async (password, hash) => `hashed-${password}` === hash
+          async (hash, plain) => hash === `$argon2id$hashed-${plain}`
         );
 
       const result = await service.login(loginDto);
@@ -188,7 +194,7 @@ describe('AuthCoreService', () => {
 
     it('should throw RpcException when password does not match', async () => {
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
-      jest.spyOn(bcrypt, 'compare').mockResolvedValue(false as never);
+      jest.spyOn(argon2, 'verify').mockResolvedValue(false as never);
 
       await expect(service.login(loginDto)).rejects.toThrow(
         RpcException

@@ -3,15 +3,18 @@ import {
   SubscribeMessage,
   MessageBody,
   WebSocketServer,
+  OnGatewayInit,
   OnGatewayConnection,
   OnGatewayDisconnect,
   ConnectedSocket,
   WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Injectable, Logger, UsePipes, UseFilters, ValidationPipe, OnApplicationShutdown } from '@nestjs/common';
+import { createAdapter } from '@socket.io/redis-adapter';
+import { Injectable, Logger, UsePipes, UseFilters, ValidationPipe, Inject, OnApplicationShutdown } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import type { Redis } from 'ioredis';
 import type { LogEntryResponseDto, LogLevel, LogCategory } from '@tec-shop/dto';
 import { LoggerCoreService } from './logger-core.service';
 import { WsJwtPayload, extractWsToken, WsExceptionFilter } from '@tec-shop/ws-auth';
@@ -32,20 +35,27 @@ interface LogSubscriptionFilters {
 @UseFilters(WsExceptionFilter)
 @UsePipes(new ValidationPipe())
 export class LoggerGateway
-  implements OnGatewayConnection, OnGatewayDisconnect, OnApplicationShutdown
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnApplicationShutdown
 {
   @WebSocketServer()
   server!: Server;
 
   private readonly logger = new Logger(LoggerGateway.name);
-  // Class property — not module-level. Each gateway instance owns its own map.
   private readonly socketToAdmin = new Map<string, AdminSocketInfo>();
 
   constructor(
     private readonly jwtService: JwtService,
     private readonly loggerCore: LoggerCoreService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
+    @Inject('REDIS_CLIENT') private readonly redisClient: Redis
   ) {}
+
+  afterInit(server: Server): void {
+    const pubClient = this.redisClient.duplicate();
+    const subClient = this.redisClient.duplicate();
+    server.adapter(createAdapter(pubClient, subClient));
+    this.logger.log('Socket.IO Redis adapter initialized');
+  }
 
   onApplicationShutdown(): void {
     this.server.disconnectSockets();
@@ -82,6 +92,7 @@ export class LoggerGateway
       }
 
       this.socketToAdmin.set(client.id, { adminId: payload.sub });
+      client.join('admin-logs');
 
       this.logger.log(`Admin connected: ${payload.sub} - Socket: ${client.id}`);
 
@@ -105,11 +116,8 @@ export class LoggerGateway
   }
 
   broadcastLog(log: LogEntryResponseDto): void {
-    for (const [socketId, adminInfo] of this.socketToAdmin.entries()) {
-      if (this.matchesFilters(log, adminInfo.filters)) {
-        this.server.to(socketId).emit('log_entry', log);
-      }
-    }
+    // Emit to the admin-logs room so all admin replicas receive it via Redis adapter
+    this.server.to('admin-logs').emit('log_entry', log);
   }
 
   @SubscribeMessage('subscribe')
