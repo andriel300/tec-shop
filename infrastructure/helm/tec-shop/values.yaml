@@ -50,6 +50,7 @@ services:
       minReplicas: 2
       maxReplicas: 10
       targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
 
   auth-service:
     enabled: true
@@ -71,6 +72,7 @@ services:
       minReplicas: 2
       maxReplicas: 5
       targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
 
   user-service:
     enabled: true
@@ -92,6 +94,7 @@ services:
       minReplicas: 2
       maxReplicas: 5
       targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
 
   seller-service:
     enabled: true
@@ -113,6 +116,7 @@ services:
       minReplicas: 2
       maxReplicas: 5
       targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
 
   product-service:
     enabled: true
@@ -134,6 +138,7 @@ services:
       minReplicas: 2
       maxReplicas: 8
       targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
 
   order-service:
     enabled: true
@@ -155,6 +160,7 @@ services:
       minReplicas: 2
       maxReplicas: 8
       targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
 
   admin-service:
     enabled: true
@@ -176,6 +182,7 @@ services:
       minReplicas: 1
       maxReplicas: 3
       targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
 
   chatting-service:
     enabled: true
@@ -197,6 +204,7 @@ services:
       minReplicas: 2
       maxReplicas: 5
       targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
 
   logger-service:
     enabled: true
@@ -218,6 +226,7 @@ services:
       minReplicas: 1
       maxReplicas: 3
       targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
 
   kafka-service:
     enabled: true
@@ -239,6 +248,7 @@ services:
       minReplicas: 2
       maxReplicas: 5
       targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
 
   recommendation-service:
     enabled: true
@@ -260,6 +270,7 @@ services:
       minReplicas: 2
       maxReplicas: 6
       targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
 
 # ─── Ingress ──────────────────────────────────────────────────────────────────
 
@@ -304,6 +315,7 @@ ingress:
       minReplicas: 2
       maxReplicas: 5
       targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
 
   user-ui:
     enabled: true
@@ -325,6 +337,7 @@ ingress:
       minReplicas: 2
       maxReplicas: 6
       targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
 
   seller-ui:
     enabled: true
@@ -346,6 +359,7 @@ ingress:
       minReplicas: 2
       maxReplicas: 4
       targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
 
   admin-ui:
     enabled: true
@@ -367,6 +381,7 @@ ingress:
       minReplicas: 1
       maxReplicas: 3
       targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
 
 # ─── ConfigMap ────────────────────────────────────────────────────────────────
 

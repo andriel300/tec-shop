@@ -28,21 +28,20 @@ spec:
         target:
           type: Utilization
           averageUtilization: {{ $serviceConfig.autoscaling.targetCPUUtilizationPercentage }}
-    # TODO: Add memory-based scaling if needed
-    # - type: Resource
-    #   resource:
-    #     name: memory
-    #     target:
-    #       type: Utilization
-    #       averageUtilization: 80
-    # TODO: Add custom metrics (e.g., request queue depth) for advanced scaling
-  # TODO: Configure scale-down stabilization to prevent flapping
-  # behavior:
-  #   scaleDown:
-  #     stabilizationWindowSeconds: 300
-  #     policies:
-  #       - type: Pods
-  #         value: 1
-  #         periodSeconds: 60
+    {{- if $serviceConfig.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ $serviceConfig.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
 {{- end }}
 {{- end }}

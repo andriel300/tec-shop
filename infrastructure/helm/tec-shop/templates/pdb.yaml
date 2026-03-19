@@ -1,0 +1,24 @@
+{{/*
+PodDisruptionBudget for every service with more than 1 replica.
+Ensures at least 1 pod stays available during voluntary disruptions
+(node drain, rolling upgrades, cluster autoscaler scale-down).
+Requires PodDisruptionBudget v1 (Kubernetes 1.21+).
+*/}}
+{{- range $serviceName, $serviceConfig := .Values.services }}
+{{- if and $serviceConfig.enabled (gt ($serviceConfig.replicas | int) 1) }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $serviceName }}-pdb
+  namespace: {{ include "tec-shop.namespace" $ }}
+  labels:
+    {{- include "tec-shop.labels" $ | nindent 4 }}
+    app: {{ $serviceName }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: {{ $serviceName }}
+{{- end }}
+{{- end }}

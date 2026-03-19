@@ -27,6 +27,7 @@ services:
       minReplicas: 3
       maxReplicas: 15
       targetCPUUtilizationPercentage: 60
+      targetMemoryUtilizationPercentage: 75
 
   auth-service:
     replicas: 3
@@ -42,6 +43,7 @@ services:
       minReplicas: 3
       maxReplicas: 10
       targetCPUUtilizationPercentage: 60
+      targetMemoryUtilizationPercentage: 75
 
   user-service:
     replicas: 3
@@ -57,6 +59,7 @@ services:
       minReplicas: 3
       maxReplicas: 10
       targetCPUUtilizationPercentage: 60
+      targetMemoryUtilizationPercentage: 75
 
   seller-service:
     replicas: 2
@@ -72,6 +75,7 @@ services:
       minReplicas: 2
       maxReplicas: 8
       targetCPUUtilizationPercentage: 60
+      targetMemoryUtilizationPercentage: 75
 
   product-service:
     replicas: 3
@@ -87,6 +91,7 @@ services:
       minReplicas: 3
       maxReplicas: 12
       targetCPUUtilizationPercentage: 60
+      targetMemoryUtilizationPercentage: 75
 
   order-service:
     replicas: 3
@@ -102,6 +107,7 @@ services:
       minReplicas: 3
       maxReplicas: 12
       targetCPUUtilizationPercentage: 60
+      targetMemoryUtilizationPercentage: 75
 
   admin-service:
     replicas: 2
@@ -117,6 +123,7 @@ services:
       minReplicas: 2
       maxReplicas: 5
       targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
 
   chatting-service:
     replicas: 3
@@ -132,6 +139,7 @@ services:
       minReplicas: 3
       maxReplicas: 10
       targetCPUUtilizationPercentage: 60
+      targetMemoryUtilizationPercentage: 75
 
   logger-service:
     replicas: 2
@@ -147,6 +155,7 @@ services:
       minReplicas: 2
       maxReplicas: 5
       targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
 
   notification-service:
     replicas: 2
@@ -162,6 +171,7 @@ services:
       minReplicas: 2
       maxReplicas: 5
       targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
 
   user-ui:
     replicas: 3
@@ -177,6 +187,7 @@ services:
       minReplicas: 3
       maxReplicas: 10
       targetCPUUtilizationPercentage: 60
+      targetMemoryUtilizationPercentage: 75
 
   seller-ui:
     replicas: 2
@@ -192,6 +203,7 @@ services:
       minReplicas: 2
       maxReplicas: 6
       targetCPUUtilizationPercentage: 60
+      targetMemoryUtilizationPercentage: 75
 
   admin-ui:
     replicas: 2
@@ -207,6 +219,7 @@ services:
       minReplicas: 2
       maxReplicas: 4
       targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: 80
 
   kafka-service:
     replicas: 3
@@ -222,6 +235,7 @@ services:
       minReplicas: 3
       maxReplicas: 8
       targetCPUUtilizationPercentage: 60
+      targetMemoryUtilizationPercentage: 75
 
   recommendation-service:
     replicas: 3
@@ -237,6 +251,7 @@ services:
       minReplicas: 3
       maxReplicas: 10
       targetCPUUtilizationPercentage: 60
+      targetMemoryUtilizationPercentage: 75
 
 ingress:
   enabled: true
