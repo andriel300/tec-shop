@@ -33,9 +33,9 @@ export default function RootLayout({
 }) {
   return (
     <html
-      className={`min-h-screen bg-slate-900 font-heading antialiased ${inter.variable} ${poppins.variable} ${roboto.variable}`}
+      className={`min-h-screen bg-gray-50 dark:bg-slate-900 font-heading antialiased ${inter.variable} ${poppins.variable} ${roboto.variable}`}
     >
-      <body suppressHydrationWarning className="font-sans">
+      <body suppressHydrationWarning className="font-sans h-screen overflow-hidden">
         {children}
       </body>
     </html>

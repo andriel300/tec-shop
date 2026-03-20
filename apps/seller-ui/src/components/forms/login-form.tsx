@@ -116,7 +116,7 @@ export function LoginForm() {
             <div>
               <label
                 htmlFor={field.name}
-                className="block py-2 text-sm font-medium text-text-secondary"
+                className="block py-2 text-sm font-medium text-gray-700 dark:text-slate-300"
               >
                 {t('emailAddress')}
               </label>
@@ -150,7 +150,7 @@ export function LoginForm() {
             <div>
               <label
                 htmlFor={field.name}
-                className="block py-2 text-sm font-medium text-text-secondary"
+                className="block py-2 text-sm font-medium text-gray-700 dark:text-slate-300"
               >
                 {t('passwordLabel')}
               </label>
@@ -197,7 +197,7 @@ export function LoginForm() {
                 />
                 <label
                   htmlFor={field.name}
-                  className="ml-2 block text-sm text-text-secondary"
+                  className="ml-2 block text-sm text-gray-700 dark:text-slate-300"
                 >
                   {t('rememberMe')}
                 </label>
@@ -230,7 +230,7 @@ export function LoginForm() {
                 variant="default"
                 type="submit"
                 disabled={!canSubmit || isSubmitting || isPending}
-                className="w-full"
+                className="w-full dark:text-black text-black"
               >
                 {isSubmitting || isPending ? (
                   <>

@@ -20,7 +20,6 @@ import {
 } from 'recharts';
 import { useSellerStatistics } from '../../../../hooks/useSellerData';
 
-// Mock data for charts (will be replaced with real data from order-service)
 const revenueData = [
   { month: 'Jan', revenue: 4000 },
   { month: 'Feb', revenue: 3000 },
@@ -42,77 +41,76 @@ const DashboardPage = () => {
   if (statsLoading) {
     return (
       <div className="p-8">
-        <div className="text-white text-center py-8">Loading statistics...</div>
+        <div className="text-gray-900 text-center py-8">Loading statistics...</div>
       </div>
     );
   }
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold text-white mb-8">Dashboard</h1>
+    <div className="space-y-6">
+      <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
 
-      {/* Statistics Cards */}
+      {/* KPI Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gradient-to-br from-gray-600/40 to-gray-500/20 rounded-lg p-6 border border-gray-700/50">
-            <div className="text-blue-100 text-sm mb-2">Total Revenue</div>
-            <div className="text-white text-3xl font-semibold mb-2">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* Revenue */}
+          <div className="bg-[#ffffff] dark:bg-slate-800/50 rounded-lg p-5 border-l-4 border-l-blue-500 border border-slate-200 dark:border-slate-700/50">
+            <div className="text-blue-600 text-sm font-medium mb-1">Total Revenue</div>
+            <div className="text-gray-900 text-xl font-semibold mb-1">
               $
               {(stats.revenue.total / 100).toLocaleString(undefined, {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
             </div>
-            <div className="text-blue-200 text-xs">
+            <div className="text-gray-500 text-xs">
               {stats.revenue.growth > 0 ? '+' : ''}
               {stats.revenue.growth.toFixed(1)}% from last month
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-gray-600/40 to-gray-500/20 rounded-lg p-6 border border-gray-700/50">
-            <div className="text-green-100 text-sm mb-2">Total Orders</div>
-            <div className="text-white text-3xl font-semibold mb-2">
+          {/* Orders */}
+          <div className="bg-[#ffffff] dark:bg-slate-800/50 rounded-lg p-5 border-l-4 border-l-emerald-500 border border-slate-200 dark:border-slate-700/50">
+            <div className="text-emerald-600 text-sm font-medium mb-1">Total Orders</div>
+            <div className="text-gray-900 text-xl font-semibold mb-1">
               {stats.orders.total.toLocaleString()}
             </div>
-            <div className="text-green-200 text-xs">
+            <div className="text-gray-500 text-xs">
               {stats.orders.thisMonth} this month
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-gray-600/40 to-gray-500/20 rounded-lg p-6 border border-gray-700/50">
-            <div className="text-purple-100 text-sm mb-2">Total Products</div>
-            <div className="text-white text-3xl font-semibold mb-2">
+          {/* Products */}
+          <div className="bg-[#ffffff] dark:bg-slate-800/50 rounded-lg p-4 border-l-4 border-l-purple-500 border border-slate-200 dark:border-slate-700/50">
+            <div className="text-purple-600 text-sm font-medium mb-1">Total Products</div>
+            <div className="text-gray-900 text-xl font-semibold mb-1">
               {stats.products.total.toLocaleString()}
             </div>
-            <div className="text-purple-200 text-xs">
-              {stats.products.active} active, {stats.products.outOfStock} out of
-              stock
+            <div className="text-gray-500 text-xs">
+              {stats.products.active} active, {stats.products.outOfStock} out of stock
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-gray-600/40 to-gray-500/20 rounded-lg p-6 border border-gray-700/50">
-            <div className="text-orange-100 text-sm mb-2">Shop Rating</div>
-            <div className="text-white text-3xl font-semibold mb-2">
+          {/* Rating */}
+          <div className="bg-[#ffffff] dark:bg-slate-800/50 rounded-lg p-4 border-l-4 border-l-orange-500 border border-slate-200 dark:border-slate-700/50">
+            <div className="text-orange-600 text-sm font-medium mb-1">Shop Rating</div>
+            <div className="text-gray-900 text-xl font-semibold mb-1">
               {stats.shop.rating.toFixed(1)} &#9733;
             </div>
-            <div className="text-orange-200 text-xs">
+            <div className="text-gray-500 text-xs">
               {stats.shop.isActive ? 'Shop Active' : 'Shop Inactive'}
             </div>
           </div>
         </div>
       )}
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Revenue Chart */}
-        <div className="bg-gradient-to-br from-gray-700/40 to-gray-500/20 rounded-lg p-6 border border-slate-700">
-          <h2 className="text-white text-xl font-semibold mb-4">
-            Revenue Trend
-            <span className="block text-sm text-slate-400 font-normal">
-              Last 6 months performance
-            </span>
-          </h2>
-          <ResponsiveContainer width="100%" height={300}>
+        <div className="bg-[#ffffff] dark:bg-slate-800/50 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+          <h2 className="text-gray-900 text-lg font-semibold">Revenue Trend</h2>
+          <p className="text-gray-500 text-sm mb-4">Last 6 months performance</p>
+          <ResponsiveContainer width="100%" height={250}>
             <LineChart data={revenueData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
               <XAxis dataKey="month" stroke="#9ca3af" />
@@ -137,14 +135,10 @@ const DashboardPage = () => {
         </div>
 
         {/* Order Status Distribution */}
-        <div className="bg-gradient-to-br from-gray-700/40 to-gray-500/20 rounded-lg p-6 border border-slate-700">
-          <h2 className="text-white text-xl font-semibold mb-4">
-            Order Status Distribution
-            <span className="block text-sm text-slate-400 font-normal">
-              Current order breakdown
-            </span>
-          </h2>
-          <ResponsiveContainer width="100%" height={300}>
+        <div className="bg-[#ffffff] dark:bg-slate-800/50 rounded-lg p-5 border border-slate-200 dark:border-slate-700">
+          <h2 className="text-gray-900 text-lg font-semibold">Order Status Distribution</h2>
+          <p className="text-gray-500 text-sm mb-4">Current order breakdown</p>
+          <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
                 data={orderStatusData}
@@ -176,7 +170,7 @@ const DashboardPage = () => {
                 align="center"
                 iconType="circle"
                 formatter={(value) => (
-                  <span className="text-white text-sm ml-1">{value}</span>
+                  <span className="text-gray-900 text-sm ml-1">{value}</span>
                 )}
               />
             </PieChart>
@@ -185,14 +179,10 @@ const DashboardPage = () => {
       </div>
 
       {/* Monthly Orders Bar Chart */}
-      <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
-        <h2 className="text-white text-xl font-semibold mb-4">
-          Monthly Orders
-          <span className="block text-sm text-slate-400 font-normal">
-            Order volume over the last 6 months
-          </span>
-        </h2>
-        <ResponsiveContainer width="100%" height={300}>
+      <div className="bg-[#ffffff] dark:bg-slate-800/50 rounded-lg p-5 border border-slate-200 dark:border-slate-700">
+        <h2 className="text-gray-900 text-lg font-semibold">Monthly Orders</h2>
+        <p className="text-gray-500 text-sm mb-3">Order volume over the last 6 months</p>
+        <ResponsiveContainer width="100%" height={230}>
           <BarChart data={revenueData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis dataKey="month" stroke="#9ca3af" />

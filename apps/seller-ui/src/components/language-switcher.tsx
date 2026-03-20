@@ -44,7 +44,7 @@ const LanguageSwitcher = () => {
       <button
         onClick={() => setOpen(!open)}
         disabled={isPending}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-white/20 hover:bg-white/10 transition-colors text-sm font-medium text-[#ecedee] disabled:opacity-50"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-white/20 hover:bg-white/10 transition-colors text-sm font-medium dark:text-slate-400 text-slate-900 disabled:opacity-50"
         title="Change language"
       >
         <Globe size={15} className="flex-shrink-0" />

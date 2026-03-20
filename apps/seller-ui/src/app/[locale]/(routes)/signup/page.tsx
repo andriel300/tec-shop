@@ -97,7 +97,7 @@ function SignupPageContent() {
 
   return (
     <ProtectedRoute requireAuth={false}>
-      <main className="w-full flex flex-col justify-center min-h-screen bg-gradient-to-br from-brand-primary-50 via-white to-brand-accent-50 px-4 py-4 sm:px-6 lg:px-8">
+      <main className="w-full flex flex-col justify-center min-h-screen bg-gradient-to-br from-brand-primary-50 via-[#ffffff] to-brand-accent-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 px-4 py-4 sm:px-6 lg:px-8">
         <div className="max-w-md mx-auto w-full">
           {/* Stepper */}
           <div className="relative flex items-center justify-between w-full px-4 mb-6">
@@ -158,7 +158,7 @@ function SignupPageContent() {
           </div>
 
           {/* Steps Content */}
-          <div className="w-full bg-white shadow-elev-lg rounded-lg border border-ui-divider">
+          <div className="w-full bg-[#ffffff] dark:bg-slate-800 shadow-elev-lg rounded-lg border border-ui-divider dark:border-slate-700">
             <div className="p-4 sm:p-6">
               {activeStep === 1 && (
                 <>
