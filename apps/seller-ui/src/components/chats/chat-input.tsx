@@ -37,10 +37,21 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isDark, setIsDark] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Detect dark/light mode from html class for emoji picker theme
+  useEffect(() => {
+    const html = document.documentElement;
+    const check = () => setIsDark(html.classList.contains('dark'));
+    check();
+    const observer = new MutationObserver(check);
+    observer.observe(html, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   // Close emoji picker when clicking outside
   useEffect(() => {
@@ -193,10 +204,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
   }, [attachments]);
 
   return (
-    <div className="border-t border-gray-700 bg-gray-800">
+    <div className="border-t border-surface-container-highest bg-surface-container-lowest">
       {/* Attachment previews */}
       {attachments.length > 0 && (
-        <div className="p-2 border-b border-gray-700 flex gap-2 flex-wrap">
+        <div className="p-2 border-b border-surface-container-highest flex gap-2 flex-wrap">
           {attachments.map((attachment, index) => (
             <div key={`attachment-${index}`} className="relative group">
               <Image
@@ -204,11 +215,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 alt={`Attachment ${index + 1}`}
                 width={64}
                 height={64}
-                className="w-16 h-16 object-cover rounded-lg border border-gray-600"
+                className="w-16 h-16 object-cover rounded-lg border border-surface-container-highest"
               />
               <button
                 onClick={() => removeAttachment(index)}
-                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"
+                className="absolute -top-1 -right-1 bg-feedback-error text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition"
               >
                 <X size={12} />
               </button>
@@ -219,7 +230,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
       {/* Error message */}
       {uploadError && (
-        <div className="px-4 py-2 text-xs text-red-400 bg-red-900/20">
+        <div className="px-4 py-2 text-xs text-feedback-error bg-feedback-error/10">
           {uploadError}
         </div>
       )}
@@ -232,7 +243,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             <button
               type="button"
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="p-2 text-gray-400 hover:text-gray-200 hover:bg-gray-700 rounded-full transition"
+              className="p-2 text-gray-500 hover:text-gray-900 hover:bg-surface-container rounded-full transition cursor-pointer"
               disabled={disabled}
             >
               <Smile size={20} />
@@ -241,7 +252,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
               <div className="absolute bottom-full left-0 mb-2 z-50">
                 <EmojiPicker
                   onEmojiClick={handleEmojiClick}
-                  theme={Theme.DARK}
+                  theme={isDark ? Theme.DARK : Theme.LIGHT}
                   width={320}
                   height={400}
                   searchPlaceHolder="Search emoji..."
@@ -259,7 +270,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="p-2 text-gray-400 hover:text-gray-200 hover:bg-gray-700 rounded-full transition"
+            className="p-2 text-gray-500 hover:text-gray-900 hover:bg-surface-container rounded-full transition cursor-pointer"
             disabled={disabled || attachments.length >= maxAttachments}
           >
             <ImagePlus size={20} />
@@ -281,14 +292,14 @@ const ChatInput: React.FC<ChatInputProps> = ({
             onChange={handleInputChange}
             placeholder={placeholder}
             disabled={disabled}
-            className="flex-1 bg-gray-700 border border-gray-600 text-white rounded-full px-4 py-2 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:bg-gray-800 disabled:cursor-not-allowed placeholder-gray-400"
+            className="flex-1 bg-surface-container border border-surface-container-highest text-gray-900 rounded-full px-4 py-2 focus:outline-none focus:border-brand-primary/50 focus:ring-2 focus:ring-brand-primary/30 disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-gray-500 text-sm transition-colors"
           />
 
           {/* Send button */}
           <button
             type="submit"
             disabled={(!value.trim() && attachments.length === 0) || disabled}
-            className="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-brand-primary text-white p-3 rounded-full hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
             <Send size={18} />
           </button>
@@ -296,7 +307,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
         {/* Connection status */}
         {isConnecting && (
-          <p className="text-xs text-yellow-400 mt-2 text-center">
+          <p className="text-xs text-feedback-warning mt-2 text-center">
             Connecting to chat server...
           </p>
         )}

@@ -129,10 +129,9 @@ const OrdersTable = () => {
           };
           return (
             <span
-              className={`px-3 py-1 rounded-full text-xs font-medium ${
-                statusColors[row.original.status] ||
+              className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[row.original.status] ||
                 'bg-gray-500/20 text-gray-400'
-              }`}
+                }`}
             >
               {row.original.status}
             </span>
@@ -151,9 +150,8 @@ const OrdersTable = () => {
           };
           return (
             <span
-              className={`text-sm font-medium ${
-                paymentColors[row.original.paymentStatus] || 'text-gray-400'
-              }`}
+              className={`text-sm font-medium ${paymentColors[row.original.paymentStatus] || 'text-gray-400'
+                }`}
             >
               {row.original.paymentStatus}
             </span>
@@ -211,7 +209,7 @@ const OrdersTable = () => {
     <div className="w-full min-h-screen p-8">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-3xl text-white font-bold mb-2">
+        <h2 className="text-3xl dark:text-slate-400 text-slate-900 font-bold mb-2">
           Orders Management
         </h2>
         <Breadcrumb title="All Orders" items={[]} />
@@ -360,7 +358,7 @@ const OrdersTable = () => {
                     <span className="font-medium text-white">
                       {Math.min(
                         (table.getState().pagination.pageIndex + 1) *
-                          table.getState().pagination.pageSize,
+                        table.getState().pagination.pageSize,
                         table.getFilteredRowModel().rows.length
                       )}
                     </span>{' '}
@@ -390,11 +388,10 @@ const OrdersTable = () => {
                       <button
                         key={pageIndex}
                         onClick={() => table.setPageIndex(pageIndex)}
-                        className={`px-3 py-2 rounded-lg transition-colors ${
-                          table.getState().pagination.pageIndex === pageIndex
+                        className={`px-3 py-2 rounded-lg transition-colors ${table.getState().pagination.pageIndex === pageIndex
                             ? 'bg-brand-primary text-white'
                             : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-                        }`}
+                          }`}
                       >
                         {pageIndex + 1}
                       </button>

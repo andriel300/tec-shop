@@ -94,22 +94,20 @@ function NotificationToast({
 
   return (
     <div
-      className={`flex items-start gap-3 bg-gray-900 border border-gray-700 border-l-4 ${borderColor} rounded-lg shadow-xl p-3.5 w-[360px] max-w-[calc(100vw-32px)]`}
+      className={`flex items-start gap-3 bg-[#ffffff] dark:bg-slate-900 border border-slate-200 dark:border-slate-700 border-l-4 ${borderColor} rounded-sm shadow-xl p-3.5 w-[360px] max-w-[calc(100vw-32px)]`}
     >
       <div
-        className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-          notification.templateId === 'chat.new_message'
-            ? 'bg-blue-900/60'
-            : 'bg-gray-800'
-        }`}
+        className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${notification.templateId === 'chat.new_message'
+          ? 'bg-blue-100 dark:bg-blue-900/60'
+          : 'bg-gray-100 dark:bg-slate-800'
+          }`}
       >
         {notification.templateId === 'chat.new_message' ? (
           <MessageSquare size={14} className="text-blue-400" />
         ) : (
           <div
-            className={`w-2 h-2 rounded-full ${
-              typeColors[notification.type] || 'bg-gray-500'
-            }`}
+            className={`w-2 h-2 rounded-full ${typeColors[notification.type] || 'bg-gray-500'
+              }`}
           />
         )}
       </div>
@@ -118,7 +116,7 @@ function NotificationToast({
         className={`flex-1 min-w-0 ${link ? 'cursor-pointer' : ''}`}
         onClick={handleBodyClick}
       >
-        <p className="text-sm font-semibold text-white leading-tight">
+        <p className="text-sm font-semibold text-gray-900 leading-tight">
           {notification.title}
         </p>
         <p className="text-xs text-gray-400 mt-0.5 line-clamp-2 leading-relaxed">
@@ -134,7 +132,7 @@ function NotificationToast({
 
       <button
         onClick={onClose}
-        className="flex-shrink-0 p-1 text-gray-500 hover:text-gray-300 hover:bg-gray-800 rounded transition-colors mt-0.5"
+        className="flex-shrink-0 p-1 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded transition-colors mt-0.5"
         aria-label="Close"
       >
         <X size={13} />
@@ -195,9 +193,10 @@ export function NotificationBellV2() {
   const updatePosition = useCallback(() => {
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
+      const dropdownWidth = 384; // w-96
       setDropdownPos({
-        top: rect.top,
-        left: rect.right + 8,
+        top: rect.bottom + 8,
+        left: Math.max(8, rect.right - dropdownWidth),
       });
     }
   }, []);
@@ -230,7 +229,7 @@ export function NotificationBellV2() {
       <button
         ref={buttonRef}
         onClick={handleToggle}
-        className="relative p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-700"
+        className="relative p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-slate-200 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700"
       >
         <Bell size={20} />
         {displayCount > 0 && (
@@ -250,10 +249,10 @@ export function NotificationBellV2() {
               left: dropdownPos.left,
               zIndex: 9999,
             }}
-            className="w-96 bg-gray-900 border border-gray-700 rounded-lg shadow-xl max-h-[480px] overflow-hidden flex flex-col"
+            className="w-96 bg-[#ffffff] dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-sm shadow-xl max-h-[480px] overflow-hidden flex flex-col"
           >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700">
-              <h3 className="text-white font-semibold text-sm">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+              <h3 className="text-gray-900 font-semibold text-sm">
                 Notifications
               </h3>
               {displayCount > 0 && (
@@ -278,12 +277,11 @@ export function NotificationBellV2() {
                   const rowContent = (
                     <div className="flex items-start gap-3">
                       <div
-                        className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
-                          typeColors[notification.type] || 'bg-gray-500'
-                        }`}
+                        className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${typeColors[notification.type] || 'bg-gray-500'
+                          }`}
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-white font-medium truncate">
+                        <p className="text-sm text-gray-900 font-medium truncate">
                           {notification.title}
                         </p>
                         <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">
@@ -327,18 +325,16 @@ export function NotificationBellV2() {
                       key={notification.id}
                       href={link}
                       onClick={() => setIsOpen(false)}
-                      className={`block px-4 py-3 border-b border-gray-800 hover:bg-gray-800/50 transition-colors ${
-                        !notification.isRead ? 'bg-gray-800/30' : ''
-                      }`}
+                      className={`block px-4 py-3 border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors ${!notification.isRead ? 'bg-blue-50/50 dark:bg-slate-800/30' : ''
+                        }`}
                     >
                       {rowContent}
                     </Link>
                   ) : (
                     <div
                       key={notification.id}
-                      className={`px-4 py-3 border-b border-gray-800 hover:bg-gray-800/50 transition-colors ${
-                        !notification.isRead ? 'bg-gray-800/30' : ''
-                      }`}
+                      className={`px-4 py-3 border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors ${!notification.isRead ? 'bg-blue-50/50 dark:bg-slate-800/30' : ''
+                        }`}
                     >
                       {rowContent}
                     </div>
@@ -350,7 +346,7 @@ export function NotificationBellV2() {
             <Link
               href="/dashboard/notifications"
               onClick={() => setIsOpen(false)}
-              className="block px-4 py-3 text-center text-sm text-blue-400 hover:text-blue-300 border-t border-gray-700 hover:bg-gray-800/50 transition-colors"
+              className="block px-4 py-3 text-center text-sm text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 border-t border-slate-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors"
             >
               View all notifications
             </Link>

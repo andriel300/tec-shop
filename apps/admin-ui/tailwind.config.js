@@ -19,15 +19,15 @@ const designTokens = {
       900: '#1E3A8A',
     },
     secondary: {
-      DEFAULT: '#F97316', // vibrant orange
-      50: '#FFF7ED',
+      DEFAULT: '#5670D5', // vibrant orange
+      50: '#EFEFFF',
       100: '#FFEDD5',
       200: '#FED7AA',
       300: '#FDBA74',
       400: '#FB923C',
       500: '#F97316',
       600: '#EA580C',
-      700: '#C2410C',
+      700: '#5670D5',
       800: '#9A3412',
       900: '#7C2D12',
     },
@@ -216,7 +216,7 @@ module.exports = {
     require('@tailwindcss/aspect-ratio'),
 
     // Small plugin: expose tokens as CSS variables for use in non-Tailwind CSS
-    plugin(function ({ addBase }) {
+    plugin(function({ addBase }) {
       addBase({
         ':root': {
           // Brand
@@ -261,7 +261,7 @@ module.exports = {
     }),
 
     // Accessibility: Disable animations for users who prefer reduced motion
-    plugin(function ({ addBase }) {
+    plugin(function({ addBase }) {
       addBase({
         '@media (prefers-reduced-motion: reduce)': {
           '*': {

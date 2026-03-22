@@ -216,6 +216,28 @@ export const getSellerStatistics = async (): Promise<SellerStatistics> => {
   return response.data;
 };
 
+export interface ChartDataPoint {
+  month: string;
+  revenue: number;
+}
+
+export interface OrderStatusDataPoint {
+  name: string;
+  value: number;
+  color: string;
+}
+
+export interface SellerChartData {
+  revenueData: ChartDataPoint[];
+  monthlyOrdersData: ChartDataPoint[];
+  orderStatusData: OrderStatusDataPoint[];
+}
+
+export const getSellerChartData = async (): Promise<SellerChartData> => {
+  const response = await apiClient.get('/seller/chart-data');
+  return response.data;
+};
+
 // Password change
 export const changePassword = async (data: ChangePasswordData): Promise<{ message: string }> => {
   const response = await apiClient.post('/auth/change-password', data);

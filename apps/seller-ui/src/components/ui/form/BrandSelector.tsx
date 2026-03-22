@@ -105,19 +105,19 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
     return (
       <div className={`flex items-center justify-center p-8 ${className}`}>
         <Loader2 className="animate-spin text-blue-500" size={24} />
-        <span className="ml-2 text-gray-400">Loading brands...</span>
+        <span className="ml-2 text-gray-500">Loading brands...</span>
       </div>
     );
   }
 
   return (
     <div className={`space-y-2 ${className}`}>
-      <label className="block text-sm font-medium text-gray-300 mb-2">
-        Brand {required && <span className="text-red-400">*</span>}
+      <label className="block text-sm font-medium text-gray-900 mb-2">
+        Brand {required && <span className="text-feedback-error">*</span>}
       </label>
 
       {error && (
-        <div className="p-3 bg-red-900/20 border border-red-700 rounded-lg text-sm text-red-400">
+        <div className="p-3 bg-feedback-error/10 rounded-lg text-sm text-feedback-error">
           {error}
         </div>
       )}
@@ -150,14 +150,14 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
       {/* Dropdown with suggestions and create option */}
       {showDropdown && (
         <div className="relative">
-          <div className="absolute top-0 left-0 right-0 z-50 max-h-64 overflow-y-auto bg-gray-800 border border-gray-700 rounded-lg shadow-xl">
+          <div className="absolute top-0 left-0 right-0 z-50 max-h-64 overflow-y-auto bg-surface-container-lowest rounded-lg shadow-ambient">
             {/* Create new brand option */}
             {showCreateOption && (
               <button
                 type="button"
                 onClick={() => handleCreateBrand(searchTerm.trim())}
                 disabled={creating}
-                className="w-full text-left px-4 py-3 border-b border-gray-700 hover:bg-blue-900/30 transition-colors flex items-center gap-3 text-blue-400 font-medium"
+                className="w-full text-left px-4 py-3 border-b border-gray-200 hover:bg-gray-100 transition-colors flex items-center gap-3 text-brand-primary font-medium"
               >
                 {creating ? (
                   <>
@@ -175,7 +175,7 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
 
             {/* Existing brands */}
             {filteredBrands.length > 0 ? (
-              <div className="divide-y divide-gray-700">
+              <div className="divide-y divide-gray-200">
                 {filteredBrands.map((brand: Brand) => (
                   <button
                     key={brand.id}
@@ -183,8 +183,8 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
                     onClick={() => handleBrandSelect(brand)}
                     className={`w-full text-left px-4 py-3 transition-colors flex items-center gap-3 ${
                       selectedBrand?.id === brand.id
-                        ? 'bg-blue-600 text-white'
-                        : 'hover:bg-gray-700 text-gray-300'
+                        ? 'bg-brand-primary text-white'
+                        : 'hover:bg-gray-100 text-gray-900'
                     }`}
                   >
                     <Award
@@ -192,7 +192,7 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
                       className={
                         selectedBrand?.id === brand.id
                           ? 'text-white'
-                          : 'text-gray-400'
+                          : 'text-gray-500'
                       }
                     />
                     <div className="flex-1">
@@ -202,7 +202,7 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
                           className={`text-xs mt-0.5 ${
                             selectedBrand?.id === brand.id
                               ? 'text-blue-100'
-                              : 'text-gray-400'
+                              : 'text-gray-500'
                           }`}
                         >
                           {brand.description}
@@ -213,7 +213,7 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
                 ))}
               </div>
             ) : !showCreateOption ? (
-              <div className="p-4 text-center text-gray-400 text-sm">
+              <div className="p-4 text-center text-gray-500 text-sm">
                 No brands found. Start typing to create a new brand.
               </div>
             ) : null}
@@ -229,10 +229,10 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
 
       {/* Selected brand info */}
       {selectedBrand && !showDropdown && (
-        <div className="flex items-center justify-between p-3 bg-blue-900/20 border border-blue-700/50 rounded-lg">
+        <div className="flex items-center justify-between p-3 bg-brand-primary/10 rounded-lg">
           <div className="flex items-center gap-2">
-            <Award size={16} className="text-blue-400" />
-            <span className="text-sm text-blue-300">
+            <Award size={16} className="text-brand-primary" />
+            <span className="text-sm text-gray-900">
               Selected: <span className="font-medium">{selectedBrand.name}</span>
             </span>
           </div>
@@ -240,7 +240,7 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
             <button
               type="button"
               onClick={handleClearSelection}
-              className="text-xs text-red-400 hover:text-red-300 transition-colors"
+              className="text-xs text-feedback-error hover:opacity-75 transition-opacity"
             >
               Clear
             </button>
@@ -249,7 +249,7 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
       )}
 
       {/* Help text */}
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-gray-500">
         Type to search existing brands or create a new one instantly.
       </p>
     </div>

@@ -102,7 +102,7 @@ const Page = () => {
   return (
     <div className="w-full min-h-screen p-8">
       <div className="flex justify-between items-center mb-1">
-        <h2 className="text-2xl text-white font-semibold">Discount Codes</h2>
+        <h2 className="text-2xl text-gray-900 font-semibold">Discount Codes</h2>
         <Button
           className="px-4 py-2 gap-2 items-center"
           onClick={handleCreateClick}
@@ -110,7 +110,7 @@ const Page = () => {
           <Plus size={18} /> Create Discount
         </Button>
       </div>
-      <div className="flex items-center text-white">
+      <div className="flex items-center text-gray-900">
         <Breadcrumb
           items={[
             { label: 'Dashboard', href: '/dashboard' },
@@ -119,8 +119,8 @@ const Page = () => {
         />
       </div>
 
-      <div className="mt-8 bg-gray-900 p-6 rounded-lg shadow-lg">
-        <h3 className="text-lg font-semibold text-white mb-4">
+      <div className="mt-8 bg-[#ffffff] dark:bg-slate-900 p-6 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
           Your Discount Codes
         </h3>
 
@@ -207,7 +207,7 @@ const Page = () => {
                 {discounts.map((discount) => (
                   <tr
                     key={discount.id}
-                    className="border-b border-gray-800 hover:bg-gray-800/50 transition-colors"
+                    className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors"
                   >
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
@@ -223,24 +223,24 @@ const Page = () => {
                         </button>
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-white">
+                    <td className="py-3 px-4 text-gray-900">
                       {discount.publicName}
                     </td>
                     <td className="py-3 px-4">
-                      <span className="text-gray-300 text-sm">
+                      <span className="text-gray-600 dark:text-gray-300 text-sm">
                         {discount.discountType.replace('_', ' ')}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-white font-medium">
+                    <td className="py-3 px-4 text-gray-900 font-medium">
                       {formatDiscountValue(discount)}
                     </td>
                     <td className="py-3 px-4">
-                      <span className="text-gray-300">
+                      <span className="text-gray-600 dark:text-gray-300">
                         {discount.usageCount}
                         {discount.usageLimit ? ` / ${discount.usageLimit}` : ''}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-gray-300">
+                    <td className="py-3 px-4 text-gray-600 dark:text-gray-300">
                       {formatDate(discount.endDate)}
                     </td>
                     <td className="py-3 px-4">

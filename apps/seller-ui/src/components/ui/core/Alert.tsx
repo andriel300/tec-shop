@@ -5,10 +5,10 @@ import { CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 const alertVariants = cva('mb-6 p-4 rounded-lg flex items-start gap-3 border', {
   variants: {
     variant: {
-      success: 'bg-green-900/50 border-green-500',
-      error: 'bg-red-900/50 border-red-500',
-      warning: 'bg-yellow-900/50 border-yellow-500',
-      info: 'bg-blue-900/50 border-blue-500',
+      success: 'bg-feedback-success/10 border-feedback-success/30',
+      error: 'bg-feedback-error/10 border-feedback-error/30',
+      warning: 'bg-feedback-warning/10 border-feedback-warning/30',
+      info: 'bg-feedback-info/10 border-feedback-info/30',
     },
   },
   defaultVariants: {
@@ -24,24 +24,24 @@ const iconMap = {
 };
 
 const iconColorMap = {
-  success: 'text-green-400',
-  error: 'text-red-400',
-  warning: 'text-yellow-400',
-  info: 'text-blue-400',
+  success: 'text-feedback-success',
+  error: 'text-feedback-error',
+  warning: 'text-feedback-warning',
+  info: 'text-feedback-info',
 };
 
 const titleColorMap = {
-  success: 'text-green-400',
-  error: 'text-red-400',
-  warning: 'text-yellow-400',
-  info: 'text-blue-400',
+  success: 'text-feedback-success',
+  error: 'text-feedback-error',
+  warning: 'text-feedback-warning',
+  info: 'text-feedback-info',
 };
 
 const descriptionColorMap = {
-  success: 'text-green-300',
-  error: 'text-red-300',
-  warning: 'text-yellow-300',
-  info: 'text-blue-300',
+  success: 'text-gray-900',
+  error: 'text-gray-900',
+  warning: 'text-gray-900',
+  info: 'text-gray-900',
 };
 
 export interface AlertProps extends VariantProps<typeof alertVariants> {

@@ -229,4 +229,75 @@ export class OrderQueryService {
 
     return updatedOrder;
   }
+
+  async getSellerChartData(payload: { shopId: string; sellerId: string }) {
+    const { sellerId } = payload;
+
+    const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const now = new Date();
+
+    // Build ordered list of last 6 months (year-month key + display label)
+    const months = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+      return { key: `${d.getFullYear()}-${d.getMonth()}`, label: MONTH_NAMES[d.getMonth()] };
+    });
+
+    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+
+    const items = await this.prisma.orderItem.findMany({
+      where: { sellerId, createdAt: { gte: sixMonthsAgo } },
+      select: {
+        orderId: true,
+        sellerPayout: true,
+        createdAt: true,
+        order: { select: { status: true } },
+      },
+    });
+
+    // Per-month revenue (cents) and unique order IDs
+    const revenueByMonth = new Map<string, number>(months.map(({ key }) => [key, 0]));
+    const ordersByMonth = new Map<string, Set<string>>(months.map(({ key }) => [key, new Set()]));
+
+    // All unique orders seen → status for distribution chart
+    const orderStatusMap = new Map<string, string>();
+
+    for (const item of items) {
+      const key = `${item.createdAt.getFullYear()}-${item.createdAt.getMonth()}`;
+
+      if (revenueByMonth.has(key)) {
+        if (['PAID', 'SHIPPED', 'DELIVERED'].includes(item.order.status)) {
+          revenueByMonth.set(key, revenueByMonth.get(key)! + item.sellerPayout);
+        }
+        ordersByMonth.get(key)!.add(item.orderId);
+      }
+
+      orderStatusMap.set(item.orderId, item.order.status);
+    }
+
+    // Build status distribution from unique orders
+    let completed = 0;
+    let pending = 0;
+    let cancelled = 0;
+    for (const status of orderStatusMap.values()) {
+      if (status === 'DELIVERED') completed++;
+      else if (['PENDING', 'PAID', 'SHIPPED'].includes(status)) pending++;
+      else if (status === 'CANCELLED') cancelled++;
+    }
+
+    return {
+      revenueData: months.map(({ key, label }) => ({
+        month: label,
+        revenue: Math.round((revenueByMonth.get(key) ?? 0) / 100),
+      })),
+      monthlyOrdersData: months.map(({ key, label }) => ({
+        month: label,
+        revenue: ordersByMonth.get(key)?.size ?? 0,
+      })),
+      orderStatusData: [
+        { name: 'Completed', value: completed, color: '#10b981' },
+        { name: 'Pending', value: pending, color: '#f59e0b' },
+        { name: 'Cancelled', value: cancelled, color: '#ef4444' },
+      ],
+    };
+  }
 }

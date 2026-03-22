@@ -64,7 +64,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     editorProps: {
       attributes: {
         class:
-          'prose prose-invert prose-sm max-w-none focus:outline-none min-h-[150px] px-4 py-3',
+          'prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-[150px] px-4 py-3',
       },
     },
     immediatelyRender: false,
@@ -84,18 +84,18 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
   return (
     <div
-      className={`border border-gray-700 rounded-lg bg-gray-800 overflow-hidden ${className}`}
+      className={`border border-surface-container-highest rounded-lg bg-surface-container overflow-hidden ${className}`}
     >
       {/* Toolbar */}
-      <div className="flex items-center gap-1 p-2 border-b border-gray-700 bg-gray-900/50">
+      <div className="flex items-center gap-1 p-2 border-b border-surface-container-highest bg-surface-container-low">
         <button
           type="button"
           onClick={() => editor?.chain().focus().toggleBold().run()}
           disabled={!editor?.can().chain().focus().toggleBold().run()}
-          className={`p-2 rounded hover:bg-gray-700 transition-colors ${
+          className={`p-2 rounded hover:bg-surface-container-highest transition-colors ${
             editor?.isActive('bold')
-              ? 'bg-gray-700 text-blue-400'
-              : 'text-gray-400'
+              ? 'bg-surface-container-highest text-brand-primary-600'
+              : 'text-gray-500'
           }`}
           title="Bold"
         >
@@ -106,10 +106,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           type="button"
           onClick={() => editor?.chain().focus().toggleItalic().run()}
           disabled={!editor?.can().chain().focus().toggleItalic().run()}
-          className={`p-2 rounded hover:bg-gray-700 transition-colors ${
+          className={`p-2 rounded hover:bg-surface-container-highest transition-colors ${
             editor?.isActive('italic')
-              ? 'bg-gray-700 text-blue-400'
-              : 'text-gray-400'
+              ? 'bg-surface-container-highest text-brand-primary-600'
+              : 'text-gray-500'
           }`}
           title="Italic"
         >
@@ -121,25 +121,25 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           onClick={() =>
             editor?.chain().focus().toggleHeading({ level: 2 }).run()
           }
-          className={`p-2 rounded hover:bg-gray-700 transition-colors ${
+          className={`p-2 rounded hover:bg-surface-container-highest transition-colors ${
             editor?.isActive('heading', { level: 2 })
-              ? 'bg-gray-700 text-blue-400'
-              : 'text-gray-400'
+              ? 'bg-surface-container-highest text-brand-primary-600'
+              : 'text-gray-500'
           }`}
           title="Heading"
         >
           <Heading2 size={18} />
         </button>
 
-        <div className="w-px h-6 bg-gray-700 mx-1" />
+        <div className="w-px h-6 bg-surface-container-highest mx-1" />
 
         <button
           type="button"
           onClick={() => editor?.chain().focus().toggleBulletList().run()}
-          className={`p-2 rounded hover:bg-gray-700 transition-colors ${
+          className={`p-2 rounded hover:bg-surface-container-highest transition-colors ${
             editor?.isActive('bulletList')
-              ? 'bg-gray-700 text-blue-400'
-              : 'text-gray-400'
+              ? 'bg-surface-container-highest text-brand-primary-600'
+              : 'text-gray-500'
           }`}
           title="Bullet List"
         >
@@ -149,23 +149,23 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         <button
           type="button"
           onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-          className={`p-2 rounded hover:bg-gray-700 transition-colors ${
+          className={`p-2 rounded hover:bg-surface-container-highest transition-colors ${
             editor?.isActive('orderedList')
-              ? 'bg-gray-700 text-blue-400'
-              : 'text-gray-400'
+              ? 'bg-surface-container-highest text-brand-primary-600'
+              : 'text-gray-500'
           }`}
           title="Numbered List"
         >
           <ListOrdered size={18} />
         </button>
 
-        <div className="w-px h-6 bg-gray-700 mx-1" />
+        <div className="w-px h-6 bg-surface-container-highest mx-1" />
 
         <button
           type="button"
           onClick={() => editor?.chain().focus().undo().run()}
           disabled={!editor?.can().chain().focus().undo().run()}
-          className="p-2 rounded hover:bg-gray-700 transition-colors text-gray-400 disabled:opacity-30"
+          className="p-2 rounded hover:bg-surface-container-highest transition-colors text-gray-500 disabled:opacity-30"
           title="Undo"
         >
           <Undo size={18} />
@@ -175,7 +175,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           type="button"
           onClick={() => editor?.chain().focus().redo().run()}
           disabled={!editor?.can().chain().focus().redo().run()}
-          className="p-2 rounded hover:bg-gray-700 transition-colors text-gray-400 disabled:opacity-30"
+          className="p-2 rounded hover:bg-surface-container-highest transition-colors text-gray-500 disabled:opacity-30"
           title="Redo"
         >
           <Redo size={18} />
@@ -186,17 +186,17 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       <EditorContent editor={editor} />
 
       {/* Word Count Footer */}
-      <div className="flex items-center justify-between px-4 py-2 border-t border-gray-700 bg-gray-900/50 text-xs">
-        <span className="text-gray-400">
+      <div className="flex items-center justify-between px-4 py-2 border-t border-surface-container-highest bg-surface-container-low text-xs">
+        <span className="text-gray-500">
           {minWords} - {maxWords} words recommended
         </span>
         <span
           className={`font-medium ${
             isUnderMin
-              ? 'text-yellow-400'
+              ? 'text-feedback-warning'
               : isOverMax
-              ? 'text-red-400'
-              : 'text-green-400'
+              ? 'text-feedback-error'
+              : 'text-feedback-success'
           }`}
         >
           {wordCount} words

@@ -140,7 +140,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   return (
     <>
       <Link href={`/productview/${product.slug || product.id}`}>
-        <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden h-full flex flex-col">
+        <div className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden h-full flex flex-col">
           <div className="relative w-full h-[200px] bg-gray-100">
             {/* Image */}
             {product.images && product.images.length > 0 ? (
@@ -148,7 +148,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
                 src={product.images[0]}
                 alt={product.name}
                 fill
-                className="object-cover hover:scale-110 transition-transform duration-300"
+                className="object-cover group-hover:scale-110 transition-transform duration-300"
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 33vw, 25vw"
               />
             ) : (
@@ -157,12 +157,15 @@ const ProductCard = ({ product }: ProductCardProps) => {
               </div>
             )}
 
-            {/* Action Icons */}
+            {/* Action Icons — hidden by default, revealed on card hover */}
             <div className="absolute top-2 right-2 flex flex-col gap-2">
               <button
                 onClick={handleFavoriteClick}
-                className="bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow
-                           hover:scale-110 transition-transform duration-200"
+                className={`bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow
+                           hover:scale-110 transition-all duration-200
+                           group-hover:opacity-100 group-hover:translate-x-0
+                           group-hover:[transition-delay:0ms]
+                           ${isWishListed ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-3 [transition-delay:0ms]'}`}
                 aria-label={
                   isWishListed ? 'Remove from favorites' : 'Add to favorites'
                 }
@@ -177,7 +180,9 @@ const ProductCard = ({ product }: ProductCardProps) => {
               <button
                 onClick={handleQuickView}
                 className="bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow
-                           hover:scale-110 transition-transform duration-200"
+                           hover:scale-110 transition-all duration-200
+                           opacity-0 translate-x-3 group-hover:opacity-100 group-hover:translate-x-0
+                           [transition-delay:0ms] group-hover:[transition-delay:60ms]"
                 aria-label="Quick view"
               >
                 <Eye className="w-5 h-5 text-gray-700" />
@@ -185,8 +190,11 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
               <button
                 onClick={handleAddToCart}
-                className=" bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow
-                           hover:scale-110 transition-transform duration-200"
+                className={`bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow
+                           hover:scale-110 transition-all duration-200
+                           group-hover:opacity-100 group-hover:translate-x-0
+                           group-hover:[transition-delay:120ms]
+                           ${isInCart ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-3 [transition-delay:0ms]'}`}
                 aria-label={isInCart ? 'Remove from cart' : 'Add to cart'}
               >
                 <ShoppingBag

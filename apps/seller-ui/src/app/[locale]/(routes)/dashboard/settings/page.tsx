@@ -64,7 +64,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen p-4 md:p-6">
-      <h1 className="text-2xl font-bold text-white mb-6">Settings</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Settings</h1>
 
       <div className="flex flex-col md:flex-row gap-6">
         {/* Tab Navigation */}
@@ -80,7 +80,7 @@ export default function SettingsPage() {
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
                     activeTab === tab.id
                       ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
-                      : 'bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700'
+                      : 'bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-700'
                   }`}
                 >
                   <Icon size={16} />
@@ -101,7 +101,7 @@ export default function SettingsPage() {
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-left ${
                     activeTab === tab.id
                       ? ' text-blue-500 border border-blue-500/30'
-                      : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                      : 'text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-gray-700 dark:hover:text-slate-200'
                   }`}
                 >
                   <Icon size={18} />
@@ -114,7 +114,7 @@ export default function SettingsPage() {
 
         {/* Tab Content */}
         <div className="flex-1 min-w-0">
-          <div className="bg-ui-background-dark border border-slate-700 rounded-xl p-6">
+          <div className="bg-[#ffffff] dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6">
             {activeTab === 'account' && <AccountInfoTab />}
             {activeTab === 'security' && <SecurityTab />}
             {activeTab === 'visibility' && <VisibilityTab />}
@@ -299,7 +299,7 @@ function SecurityTab() {
       />
 
       {formData.newPassword.length > 0 && (
-        <div className="space-y-2 p-4 bg-slate-800 rounded-lg border border-slate-700">
+        <div className="space-y-2 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
           <p className="text-sm font-medium text-slate-300 mb-2">
             Password requirements:
           </p>
@@ -400,9 +400,9 @@ function VisibilityTab() {
         description="Control whether your shop is visible to customers."
       />
 
-      <div className="flex items-center justify-between p-4 bg-slate-800 rounded-lg border border-slate-700">
+      <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
         <div>
-          <p className="text-white font-medium">Shop Status</p>
+          <p className="text-gray-900 font-medium">Shop Status</p>
           <p className="text-sm text-slate-400 mt-1">
             {isActive
               ? 'Your shop is currently visible to customers.'
@@ -520,12 +520,12 @@ function SocialLinksTab() {
         {links.map((link, index) => (
           <div
             key={index}
-            className="flex flex-col sm:flex-row gap-3 p-4 bg-slate-800 rounded-lg border border-slate-700"
+            className="flex flex-col sm:flex-row gap-3 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700"
           >
             <select
               value={link.platform}
               onChange={(e) => updateLink(index, 'platform', e.target.value)}
-              className="bg-slate-700 text-white border border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-40"
+              className="bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-40"
             >
               {SOCIAL_PLATFORMS.map((platform) => (
                 <option key={platform} value={platform}>
@@ -538,7 +538,7 @@ function SocialLinksTab() {
               value={link.url}
               onChange={(e) => updateLink(index, 'url', e.target.value)}
               placeholder="https://..."
-              className="flex-1 bg-slate-700 text-white border border-slate-600 rounded-lg px-3 py-2 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
               type="button"
@@ -619,7 +619,7 @@ function PoliciesTab() {
 
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className="block text-sm font-medium text-slate-300">
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
             Return Policy
           </label>
           <span className="text-xs text-slate-500">
@@ -632,13 +632,13 @@ function PoliciesTab() {
           maxLength={5000}
           rows={6}
           placeholder="Describe your return policy..."
-          className="w-full bg-slate-800 text-white border border-slate-700 rounded-lg px-4 py-3 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+          className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 text-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
         />
       </div>
 
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className="block text-sm font-medium text-slate-300">
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
             Shipping Information
           </label>
           <span className="text-xs text-slate-500">
@@ -651,7 +651,7 @@ function PoliciesTab() {
           maxLength={5000}
           rows={6}
           placeholder="Describe your shipping options and timelines..."
-          className="w-full bg-slate-800 text-white border border-slate-700 rounded-lg px-4 py-3 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+          className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 text-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
         />
       </div>
 
@@ -759,13 +759,13 @@ function NotificationsTab() {
       {NOTIFICATION_GROUPS.map((group) => (
         <div key={group.title} className="space-y-2">
           <h3 className="text-sm font-medium text-slate-300">{group.title}</h3>
-          <div className="bg-slate-800 rounded-lg border border-slate-700 divide-y divide-slate-700">
+          <div className="bg-gray-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 divide-y divide-gray-100 dark:divide-slate-700">
             {group.keys.map((key) => (
               <div
                 key={key}
                 className="flex items-center justify-between px-4 py-3"
               >
-                <span className="text-sm text-slate-200">
+                <span className="text-sm text-gray-700 dark:text-slate-200">
                   {NOTIFICATION_LABELS[key]}
                 </span>
                 <button
@@ -807,7 +807,7 @@ function TabHeader({
 }) {
   return (
     <div className="mb-2">
-      <h2 className="text-lg font-semibold text-white">{title}</h2>
+      <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
       <p className="text-sm text-slate-400 mt-1">{description}</p>
     </div>
   );
@@ -841,7 +841,7 @@ function FormField({
         onChange={onChange ? (e) => onChange(e.target.value) : undefined}
         placeholder={placeholder}
         disabled={disabled}
-        className={`w-full bg-slate-800 text-white border border-slate-700 rounded-lg px-4 py-2.5 text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+        className={`w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2.5 text-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
           disabled ? 'opacity-50 cursor-not-allowed' : ''
         }`}
       />

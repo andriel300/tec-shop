@@ -61,6 +61,7 @@ export class SellerController {
   constructor(
     @Inject('SELLER_SERVICE') private readonly sellerService: ClientProxy,
     @Inject('PRODUCT_SERVICE') private readonly productService: ClientProxy,
+    @Inject('ORDER_SERVICE') private readonly orderService: ClientProxy,
     private readonly imagekitService: ImageKitService,
     private readonly cb: CircuitBreakerService
   ) { }
@@ -234,6 +235,37 @@ export class SellerController {
     return this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
       this.sellerService.send('seller-get-statistics', request.user.userId)
     ));
+  }
+
+  @Get('chart-data')
+  @UseGuards(RolesGuard)
+  @Roles('SELLER')
+  @ApiOperation({
+    summary: 'Get seller chart data for dashboard',
+    description: 'Returns last 6 months of revenue, monthly orders, and order status distribution.',
+  })
+  @ApiResponse({ status: 200, description: 'Chart data retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - User is not a seller' })
+  async getChartData(@Req() request: { user: { userId: string } }) {
+    this.logger.log(`Fetching chart data for seller authId: ${request.user.userId}`);
+
+    const shop = await this.cb.fire('SELLER_SERVICE', () =>
+      firstValueFrom(this.sellerService.send('get-seller-shop', request.user.userId))
+    );
+
+    if (!shop) {
+      return { revenueData: [], monthlyOrdersData: [], orderStatusData: [] };
+    }
+
+    return this.cb.fire('ORDER_SERVICE', () =>
+      firstValueFrom(
+        this.orderService.send('order-get-seller-chart-data', {
+          shopId: shop.id,
+          sellerId: shop.sellerId,
+        })
+      )
+    );
   }
 
   // NOTIFICATION PREFERENCES ENDPOINTS

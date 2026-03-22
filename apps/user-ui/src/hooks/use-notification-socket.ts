@@ -37,11 +37,11 @@ export function useNotificationSocket(
     if (!enabled) return;
 
     const socket = io(NOTIFICATION_WS_URL, {
-      transports: ['websocket', 'polling'],
+      transports: ['websocket'],
       withCredentials: true,
       reconnection: true,
-      reconnectionAttempts: 10,
-      reconnectionDelay: 1000,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 2000,
       reconnectionDelayMax: 10000,
     });
 

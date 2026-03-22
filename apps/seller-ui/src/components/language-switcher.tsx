@@ -44,7 +44,7 @@ const LanguageSwitcher = () => {
       <button
         onClick={() => setOpen(!open)}
         disabled={isPending}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-white/20 hover:bg-white/10 transition-colors text-sm font-medium text-[#ecedee] disabled:opacity-50"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm border border-slate-200 dark:border-white/20 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors text-sm font-medium text-slate-700 dark:text-slate-400 disabled:opacity-50"
         title="Change language"
       >
         <Globe size={15} className="flex-shrink-0" />
@@ -56,24 +56,24 @@ const LanguageSwitcher = () => {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 w-44 bg-[#1c1c2e] border border-white/15 rounded-md shadow-lg z-[300] overflow-hidden">
+        <div className="absolute right-0 top-full mt-1.5 w-44 bg-[#ffffff] dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-sm shadow-lg z-[300] overflow-hidden">
           {LANGUAGES.map((lang) => (
             <button
               key={lang.code}
               onClick={() => handleSelect(lang.code)}
-              className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-white/10 transition-colors text-sm"
+              className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors text-sm"
             >
               <span
                 className={
                   locale === lang.code
-                    ? 'font-semibold text-[#0085ff]'
-                    : 'text-[#ecedee]'
+                    ? 'font-semibold text-blue-600 dark:text-[#0085ff]'
+                    : 'text-gray-700 dark:text-slate-200'
                 }
               >
                 {lang.label}
               </span>
               {locale === lang.code && (
-                <Check size={14} className="text-[#0085ff]" />
+                <Check size={14} className="text-blue-600 dark:text-[#0085ff]" />
               )}
             </button>
           ))}

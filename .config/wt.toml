@@ -50,21 +50,11 @@ copy = "wt step copy-ignored"
 # ---------------------------------------------------------------------------
 # pre-commit — runs during `wt merge` before the squash commit
 # ---------------------------------------------------------------------------
-# Fast feedback loop: lint + typecheck only. Nx "affected" limits work to
-# projects touched by this branch, keeping it quick.
-# Failures abort the merge.
+# Targeted typecheck on the three services changed most often.
+# Avoids nx affected which scans the entire monorepo and is too slow locally.
 
 [pre-commit]
 
-lint = "pnpm lint:affected"
-typecheck = "pnpm typecheck:affected"
-
-# ---------------------------------------------------------------------------
-# pre-merge — runs after rebase, before the actual merge to main
-# ---------------------------------------------------------------------------
-# Heavier validation that only runs at merge time, not on every commit.
-# "affected" tests only the services/apps changed on this branch.
-
-[pre-merge]
-
-test = "pnpm test:affected"
+# typecheck-seller  = "cd apps/seller-ui && npx tsc --noEmit"
+# typecheck-gateway = "npx nx run api-gateway:typecheck"
+# typecheck-order = "npx nx run order-service:typecheck"

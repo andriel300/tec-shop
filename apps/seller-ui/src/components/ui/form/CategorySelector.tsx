@@ -112,8 +112,8 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
           onClick={() => handleCategorySelect(category)}
           className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center gap-2 ${
             selectedCategory?.id === category.id
-              ? 'bg-blue-600 text-white'
-              : 'hover:bg-gray-700 text-gray-300'
+              ? 'bg-brand-primary-600 text-white'
+              : 'hover:bg-surface-container text-gray-900'
           }`}
           style={{ paddingLeft: `${level * 1.5 + 0.75}rem` }}
         >
@@ -136,8 +136,8 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
   if (loading) {
     return (
       <div className={`flex items-center justify-center p-8 ${className}`}>
-        <Loader2 className="animate-spin text-blue-500" size={24} />
-        <span className="ml-2 text-gray-400">Loading categories...</span>
+        <Loader2 className="animate-spin text-brand-primary-600" size={24} />
+        <span className="ml-2 text-gray-500">Loading categories...</span>
       </div>
     );
   }
@@ -156,14 +156,14 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
     <div className={`space-y-4 ${className}`}>
       {/* Selected Category Breadcrumb */}
       {breadcrumb.length > 0 && (
-        <div className="flex items-center gap-2 p-3 bg-gray-700/50 rounded-lg">
-          <span className="text-sm text-gray-400">Selected:</span>
+        <div className="flex items-center gap-2 p-3 bg-surface-container rounded-lg">
+          <span className="text-sm text-gray-500">Selected:</span>
           {breadcrumb.map((cat, index) => (
             <React.Fragment key={cat.id}>
               {index > 0 && (
                 <ChevronRight size={14} className="text-gray-500" />
               )}
-              <span className="text-sm text-blue-400">{cat.name}</span>
+              <span className="text-sm text-brand-primary-600">{cat.name}</span>
             </React.Fragment>
           ))}
         </div>
@@ -179,7 +179,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
       />
 
       {/* Category Tree */}
-      <div className="max-h-64 overflow-y-auto bg-gray-800 border border-gray-700 rounded-lg p-2">
+      <div className="max-h-64 overflow-y-auto bg-surface-container-low border border-surface-container-highest rounded-lg p-2">
         {renderCategories(categories)}
       </div>
 

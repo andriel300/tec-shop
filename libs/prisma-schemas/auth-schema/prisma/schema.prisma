@@ -23,6 +23,7 @@ model User {
   googleId            String?
   provider            String               @default("local")
   refreshToken        String?
+  refreshTokenFamily  String?
   isBanned            Boolean              @default(false)
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt

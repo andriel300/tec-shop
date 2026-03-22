@@ -8,7 +8,7 @@ const textareaVariants = cva(
       variant: {
         default: 'border-gray-300 text-text-primary',
         destructive: 'border-feedback-error text-text-primary',
-        dark: 'border-gray-700 bg-gray-800 text-white placeholder-gray-500 focus-visible:ring-blue-500 focus-visible:ring-offset-0',
+        dark: 'bg-surface-container border-surface-container-highest text-gray-900 focus-visible:ring-brand-primary-600 focus-visible:ring-offset-0',
       },
     },
     defaultVariants: {

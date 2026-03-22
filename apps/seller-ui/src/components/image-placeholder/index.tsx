@@ -1,11 +1,21 @@
 'use client';
 
 import { createLogger } from '@tec-shop/next-logger';
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const logger = createLogger('seller-ui:image-placeholder');
 import { Image as IKImage } from '@imagekit/next';
-import { Upload, X, Image as ImageIcon, Loader2, Wand2 } from 'lucide-react';
+import {
+  Upload,
+  X,
+  Image as ImageIcon,
+  Loader2,
+  Wand2,
+  Scissors,
+  Layers,
+  Sparkles,
+  Maximize2,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { imagekitConfig, getImageKitPath } from '../../lib/imagekit-config';
 import {
@@ -16,6 +26,16 @@ import {
 import type { Transformation } from '@imagekit/javascript';
 import { uploadImage } from '../../lib/api/upload';
 import { sanitizeUrl } from '../../lib/utils/sanitize-url';
+
+const ENHANCEMENT_META: Record<
+  EnhancementEffect,
+  { icon: React.ElementType; description: string }
+> = {
+  aiRemoveBackground: { icon: Scissors, description: 'Remove image background' },
+  aiDropShadow: { icon: Layers, description: 'Add realistic drop shadow' },
+  aiRetouch: { icon: Sparkles, description: 'Enhance & smooth details' },
+  aiUpscale: { icon: Maximize2, description: 'AI super-resolution 2x' },
+};
 
 const enhancementTransformation = (
   effect: EnhancementEffect | null
@@ -58,6 +78,8 @@ const ImagePlaceHolder = ({
   const [tempEnhancement, setTempEnhancement] =
     useState<EnhancementEffect | null>(null);
   const [isApplyingEnhancement, setIsApplyingEnhancement] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(false);
+  const [isModalPreviewLoading, setIsModalPreviewLoading] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
 
   // Update preview when defaultImage changes
@@ -72,6 +94,15 @@ const ImagePlaceHolder = ({
         URL.revokeObjectURL(imagePreview);
       }
     };
+  }, [imagePreview]);
+
+  // Show loading indicator when a real (non-blob) image URL is set
+  useEffect(() => {
+    if (imagePreview && !imagePreview.startsWith('blob:')) {
+      setIsImageLoading(true);
+    } else {
+      setIsImageLoading(false);
+    }
   }, [imagePreview]);
 
   // Close modal when clicking outside
@@ -256,11 +287,13 @@ const ImagePlaceHolder = ({
   const handleSelectEnhancement = (effect: EnhancementEffect) => {
     // Toggle: if same effect is clicked, deselect it
     setTempEnhancement((prev) => (prev === effect ? null : effect));
+    setIsModalPreviewLoading(true);
   };
 
   const handleWandClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setTempEnhancement(selectedEnhancement);
+    setIsModalPreviewLoading(true);
     setShowEnhancementModal(true);
   };
 
@@ -275,25 +308,30 @@ const ImagePlaceHolder = ({
         imagePreview &&
         !imagePreview.startsWith('blob:')
       ) {
-        // Build enhanced URL with ImageKit transformation
-        const imagePath = getImageKitPath(imagePreview.split('?')[0]); // Strip existing params
+        const baseUrl = imagePreview.split('?')[0]; // Strip existing params
         const urlParam = effectToUrlParam[tempEnhancement];
 
-        // Ensure proper URL construction with exactly one slash between endpoint and path
-        const endpoint = imagekitConfig.urlEndpoint.replace(/\/$/, ''); // Remove trailing slash
-        const path = imagePath.startsWith('/') ? imagePath : `/${imagePath}`; // Ensure leading slash
-        const enhancedUrl = `${endpoint}${path}?tr=e-${urlParam}`;
+        // Build enhanced URL directly from the full ImageKit URL when available.
+        // imagePreview is set to the full URL returned by the upload API
+        // (e.g. https://ik.imagekit.io/id/products/img.jpg), so we can append
+        // the transformation query param without needing urlEndpoint at all.
+        let enhancedUrl: string;
+        if (baseUrl.startsWith('http://') || baseUrl.startsWith('https://')) {
+          enhancedUrl = `${baseUrl}?tr=e-${urlParam}`;
+        } else {
+          // Fallback: reconstruct from urlEndpoint (path-only preview URLs)
+          const endpoint = imagekitConfig.urlEndpoint.replace(/\/$/, '');
+          if (!endpoint) {
+            throw new Error(
+              'ImageKit URL endpoint is not configured. Set NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT.'
+            );
+          }
+          const path = baseUrl.startsWith('/') ? baseUrl : `/${baseUrl}`;
+          enhancedUrl = `${endpoint}${path}?tr=e-${urlParam}`;
+        }
 
-        // Preload the enhanced image to ensure it's ready before closing modal
-        await new Promise<void>((resolve, reject) => {
-          const img = new window.Image();
-          img.onload = () => resolve();
-          img.onerror = () =>
-            reject(new Error('Failed to load enhanced image'));
-          img.src = enhancedUrl;
-        });
-
-        // Update the image preview with enhanced URL
+        // Apply optimistically — do not preload; the placeholder's own loading
+        // state will handle the spinner while ImageKit processes the AI effect.
         setImagePreview(enhancedUrl);
 
         // Notify parent component with enhanced URL
@@ -312,13 +350,8 @@ const ImagePlaceHolder = ({
         imagePreview &&
         !imagePreview.startsWith('blob:')
       ) {
-        // Clear enhancement - use original URL without transformation params
-        const imagePath = getImageKitPath(imagePreview.split('?')[0]); // Strip params
-
-        // Ensure proper URL construction
-        const endpoint = imagekitConfig.urlEndpoint.replace(/\/$/, '');
-        const path = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
-        const originalUrl = `${endpoint}${path}`;
+        // Clear enhancement - strip transformation params from the URL
+        const originalUrl = imagePreview.split('?')[0];
 
         setImagePreview(originalUrl);
 
@@ -357,9 +390,9 @@ const ImagePlaceHolder = ({
       onDragOver={handleDragOver}
       onDrop={handleDrop}
       className={`relative ${small ? 'h-[120px]' : 'h-[300px]'
-        } w-full cursor-pointer bg-gray-800 border-2 border-dashed rounded-lg flex flex-col justify-center items-center transition-all duration-200 group overflow-hidden ${isDragging
-          ? 'border-blue-400 bg-blue-900/20 scale-[1.02]'
-          : 'border-gray-600 hover:border-blue-500 hover:bg-gray-750'
+        } w-full cursor-pointer bg-surface-container border-2 border-dashed rounded-lg flex flex-col justify-center items-center transition-all duration-200 group overflow-hidden ${isDragging
+          ? 'border-brand-primary-600 bg-brand-primary-600/10 scale-[1.02]'
+          : 'border-surface-container-highest hover:border-brand-primary-600'
         } ${isLoading ? 'cursor-wait' : ''}`}
     >
       <input
@@ -376,9 +409,9 @@ const ImagePlaceHolder = ({
           <div className="flex flex-col items-center gap-2">
             <Loader2
               size={small ? 24 : 32}
-              className="animate-spin text-blue-400"
+              className="animate-spin text-brand-primary-600"
             />
-            <span className="text-xs text-gray-300">Processing...</span>
+            <span className="text-xs text-gray-900">Processing...</span>
           </div>
         </div>
       )}
@@ -391,6 +424,8 @@ const ImagePlaceHolder = ({
               src={safeImagePreview}
               alt={`Product ${index}`}
               className="absolute inset-0 w-full h-full object-cover"
+              onLoad={() => setIsImageLoading(false)}
+              onError={() => setIsImageLoading(false)}
             />
           ) : imagekitConfig.urlEndpoint ? (
             /* Use IKImage only for basic ImageKit URLs without transformations */
@@ -412,13 +447,24 @@ const ImagePlaceHolder = ({
               ]}
               loading="eager"
               className="absolute inset-0 w-full h-full object-cover"
+              onLoad={() => setIsImageLoading(false)}
+              onError={() => setIsImageLoading(false)}
             />
           ) : (
             <img
               src={safeImagePreview}
               alt={`Product ${index}`}
               className="absolute inset-0 w-full h-full object-cover"
+              onLoad={() => setIsImageLoading(false)}
+              onError={() => setIsImageLoading(false)}
             />
+          )}
+
+          {/* Loading skeleton while ImageKit image loads */}
+          {isImageLoading && !isLoading && (
+            <div className="absolute inset-0 z-[1] flex items-center justify-center bg-surface-container">
+              <Loader2 size={small ? 20 : 28} className="animate-spin text-brand-primary" />
+            </div>
           )}
 
           {/* Overlay on Hover */}
@@ -478,109 +524,158 @@ const ImagePlaceHolder = ({
 
           {/* AI Enhancement Modal */}
           {isImageUploaded && showEnhancementModal && (
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-75 animate-fade-in">
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white/75 backdrop-blur-sm">
               <div
                 ref={modalRef}
-                className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-2xl mx-4 animate-slide-up"
+                className="bg-surface-container-lowest rounded-2xl w-full max-w-2xl mx-4 overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* Modal Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700">
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-5">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg">
-                      <Wand2 size={20} className="text-white" />
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-blue-600 flex items-center justify-center shrink-0">
+                      <Wand2 size={17} className="text-white" />
                     </div>
-                    <h3 className="text-xl font-semibold text-white">
-                      Enhance Product Image
-                    </h3>
+                    <div>
+                      <h3 className="text-base font-semibold text-gray-900 leading-tight">
+                        Enhance Product Image
+                      </h3>
+                      <p className="text-xs text-gray-500">Powered by ImageKit AI</p>
+                    </div>
                   </div>
                   <button
                     type="button"
                     onClick={handleCancelEnhancements}
-                    className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                    className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-surface-container rounded-lg transition-colors cursor-pointer"
                   >
-                    <X size={20} />
+                    <X size={17} />
                   </button>
                 </div>
 
-                {/* Modal Body */}
-                <div className="p-6">
-                  {/* Image Preview */}
-                  <div className="mb-6 flex justify-center">
-                    <div className="relative w-full max-w-md h-64 bg-gray-800 rounded-lg overflow-hidden border-2 border-gray-700">
-                      <IKImage
-                        urlEndpoint={imagekitConfig.urlEndpoint}
-                        src={getImageKitPath(safeImagePreview.split('?')[0])}
+                {/* Body: two-column */}
+                <div className="grid grid-cols-2 gap-0 px-6 pb-6">
+                  {/* Left: image preview */}
+                  <div className="pr-5">
+                    <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      Preview
+                    </p>
+                    <div className="relative w-full h-56 bg-surface-container rounded-xl overflow-hidden">
+                      {isModalPreviewLoading && (
+                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2">
+                          <Loader2 size={24} className="animate-spin text-violet-500" />
+                          <span className="text-xs text-gray-500">
+                            {tempEnhancement ? 'Generating...' : 'Loading...'}
+                          </span>
+                        </div>
+                      )}
+                      <img
+                        src={
+                          tempEnhancement
+                            ? `${safeImagePreview.split('?')[0]}?tr=e-${effectToUrlParam[tempEnhancement]}`
+                            : safeImagePreview.split('?')[0]
+                        }
                         alt="Preview"
-                        width={400}
-                        height={400}
-                        transformation={[
-                          {
-                            width: '400',
-                            height: '400',
-                            crop: 'at_max',
-                            quality: 90,
-                            focus: 'auto',
-                            ...enhancementTransformation(tempEnhancement),
-                          },
-                        ]}
-                        loading="eager"
-                        className="absolute inset-0 w-full h-full object-contain"
+                        className={`absolute inset-0 w-full h-full object-contain transition-opacity duration-300 ${isModalPreviewLoading ? 'opacity-0' : 'opacity-100'
+                          }`}
+                        onLoad={() => setIsModalPreviewLoading(false)}
+                        onError={() => setIsModalPreviewLoading(false)}
                       />
                     </div>
                   </div>
 
-                  {/* AI Enhancements Grid */}
-                  <div className="mb-6">
-                    <h4 className="text-sm font-medium text-gray-300 mb-3">
+                  {/* Right: enhancement options */}
+                  <div className="pl-5 border-l border-gray-200">
+                    <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">
                       AI Enhancements
-                    </h4>
-                    <div className="grid grid-cols-2 gap-3">
+                    </p>
+                    <div className="flex flex-col gap-1.5">
                       {enhancements.map((enhancement) => {
-                        const isSelected =
-                          tempEnhancement === enhancement.effect;
+                        const isSelected = tempEnhancement === enhancement.effect;
+                        const meta = ENHANCEMENT_META[enhancement.effect];
+                        const Icon = meta.icon;
                         return (
                           <button
                             key={enhancement.effect}
                             type="button"
-                            onClick={() =>
-                              handleSelectEnhancement(enhancement.effect)
-                            }
-                            className={`flex items-center gap-3 p-4 rounded-lg border-2 transition-all ${isSelected
-                              ? 'bg-gradient-to-br from-purple-600/20 to-blue-600/20 border-purple-500'
-                              : 'bg-gray-800 border-gray-700 hover:border-gray-600'
+                            onClick={() => handleSelectEnhancement(enhancement.effect)}
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${isSelected
+                              ? 'bg-violet-500/15 ring-1 ring-violet-500/60'
+                              : 'bg-surface-container hover:bg-surface-container-low'
                               }`}
                           >
                             <div
-                              className={`flex items-center justify-center w-5 h-5 rounded-full border-2 transition-colors ${isSelected
-                                ? 'bg-purple-600 border-purple-600'
-                                : 'border-gray-600'
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${isSelected
+                                ? 'bg-gradient-to-br from-violet-500 to-blue-600'
+                                : 'bg-surface-container-highest'
                                 }`}
                             >
-                              {isSelected && (
-                                <div className="w-2.5 h-2.5 bg-white rounded-full" />
-                              )}
+                              <Icon
+                                size={15}
+                                className={isSelected ? 'text-white' : 'text-gray-500'}
+                              />
                             </div>
-                            <span
-                              className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-gray-300'
-                                }`}
-                            >
-                              {enhancement.label}
-                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 leading-tight">
+                                {enhancement.label}
+                              </p>
+                              <p className="text-xs text-gray-500 truncate">
+                                {meta.description}
+                              </p>
+                            </div>
+                            {isSelected && (
+                              <div className="w-4 h-4 rounded-full bg-violet-500 flex items-center justify-center shrink-0">
+                                <svg
+                                  className="w-2.5 h-2.5 text-white"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              </div>
+                            )}
                           </button>
                         );
                       })}
                     </div>
+
+                    {/* Drop Shadow tip — shown inline below the list */}
+                    {tempEnhancement === 'aiDropShadow' && (
+                      <div className="mt-3 flex items-start gap-2 px-3 py-2.5 bg-yellow-500/10 rounded-lg">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="13"
+                          height="13"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="text-feedback-warning mt-0.5 shrink-0"
+                        >
+                          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                          <path d="M12 9v4" />
+                          <path d="M12 17h.01" />
+                        </svg>
+                        <p className="text-xs text-gray-900 leading-relaxed">
+                          Best with <span className="font-semibold">transparent PNG</span>. On opaque images the shadow wraps the entire frame.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Modal Footer */}
-                <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-700 bg-gray-800/50">
+                {/* Footer */}
+                <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-200">
                   <button
                     type="button"
                     onClick={handleCancelEnhancements}
                     disabled={isApplyingEnhancement}
-                    className="px-4 py-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 text-sm text-gray-500 hover:text-gray-900 hover:bg-surface-container rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -588,11 +683,11 @@ const ImagePlaceHolder = ({
                     type="button"
                     onClick={handleApplyEnhancements}
                     disabled={isApplyingEnhancement}
-                    className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="px-5 py-2 text-sm bg-gradient-to-r from-violet-600 to-blue-600 text-white font-medium rounded-lg hover:from-violet-700 hover:to-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
                   >
                     {isApplyingEnhancement ? (
                       <>
-                        <Loader2 size={16} className="animate-spin" />
+                        <Loader2 size={14} className="animate-spin" />
                         Applying...
                       </>
                     ) : (
@@ -609,8 +704,8 @@ const ImagePlaceHolder = ({
           {/* Upload Placeholder */}
           <div
             className={`flex flex-col items-center justify-center transition-colors ${isDragging
-              ? 'text-blue-400 scale-110'
-              : 'text-gray-400 group-hover:text-blue-400'
+              ? 'text-brand-primary-600 scale-110'
+              : 'text-gray-500 group-hover:text-brand-primary-600'
               }`}
           >
             {small ? (

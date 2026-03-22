@@ -39,30 +39,60 @@ export const VariantTable: React.FC<VariantTableProps> = ({
     return null;
   }
 
+  const activeCount = variants.filter((v) => v.isActive).length;
+
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
-      <div className="p-4 border-b border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-200">
-          Manage Variants ({variants.length})
-        </h3>
+    <div className="bg-surface-container-lowest rounded-xl overflow-hidden">
+      {/* Table Header */}
+      <div className="px-5 py-4 flex items-center justify-between">
+        <div>
+          <h3 className="text-base font-semibold text-gray-900">
+            Manage Variants
+          </h3>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {variants.length} variant{variants.length !== 1 ? 's' : ''} &middot;{' '}
+            {activeCount} active
+          </p>
+        </div>
       </div>
 
+      {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-900 text-gray-300 text-sm">
+          <thead className="bg-surface-container">
             <tr>
-              <th className="px-4 py-3 text-left">SKU</th>
-              <th className="px-4 py-3 text-left">Attributes</th>
-              <th className="px-4 py-3 text-left">Price</th>
-              <th className="px-4 py-3 text-left">Sale Price</th>
-              <th className="px-4 py-3 text-left">Stock</th>
-              <th className="px-4 py-3 text-left">Active</th>
-              <th className="px-4 py-3 text-left">Actions</th>
+              <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                SKU
+              </th>
+              <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Attributes
+              </th>
+              <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Price
+              </th>
+              <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Sale Price
+              </th>
+              <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Stock
+              </th>
+              <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Active
+              </th>
+              <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                &nbsp;
+              </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-700">
+          <tbody className="divide-y divide-surface-container-highest">
             {variants.map((variant, index) => (
-              <tr key={index} className="hover:bg-gray-750">
+              <tr
+                key={index}
+                className={`hover:bg-surface-container transition-colors ${
+                  !variant.isActive ? 'opacity-50' : ''
+                }`}
+              >
+                {/* SKU */}
                 <td className="px-4 py-3">
                   <Input
                     variant="dark"
@@ -70,9 +100,11 @@ export const VariantTable: React.FC<VariantTableProps> = ({
                     onChange={(e) =>
                       onUpdateVariant(index, 'sku', e.target.value)
                     }
-                    className="w-32 text-sm"
+                    className="w-32 text-xs"
                   />
                 </td>
+
+                {/* Attributes */}
                 <td className="px-4 py-3">
                   <div className="flex gap-1 flex-wrap">
                     {Object.entries(variant.attributes).map(([key, value]) => {
@@ -83,23 +115,29 @@ export const VariantTable: React.FC<VariantTableProps> = ({
                       return (
                         <span
                           key={key}
-                          className="inline-flex items-center gap-1.5 px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs"
+                          className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-surface-container text-gray-900 rounded-md text-xs"
                         >
                           {colorData && (
                             <span
-                              className="w-3 h-3 rounded-full border border-gray-500"
-                              style={{ backgroundColor: colorData.hex }}
+                              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                              style={{
+                                backgroundColor: colorData.hex,
+                                boxShadow:
+                                  colorData.textColor === '#000000'
+                                    ? 'inset 0 0 0 1px rgba(0,0,0,0.12)'
+                                    : 'none',
+                              }}
                             />
                           )}
-                          <span className="font-medium text-gray-400">
-                            {key}:
-                          </span>{' '}
-                          {value}
+                          <span className="text-gray-500">{key}:</span>
+                          <span className="font-medium">{value}</span>
                         </span>
                       );
                     })}
                   </div>
                 </td>
+
+                {/* Price */}
                 <td className="px-4 py-3">
                   <Input
                     variant="dark"
@@ -113,9 +151,11 @@ export const VariantTable: React.FC<VariantTableProps> = ({
                         parseFloat(e.target.value) || 0
                       )
                     }
-                    className="w-24 text-sm"
+                    className="w-24 text-xs"
                   />
                 </td>
+
+                {/* Sale Price */}
                 <td className="px-4 py-3">
                   <Input
                     variant="dark"
@@ -129,10 +169,12 @@ export const VariantTable: React.FC<VariantTableProps> = ({
                         e.target.value ? parseFloat(e.target.value) : undefined
                       )
                     }
-                    className="w-24 text-sm"
+                    className="w-24 text-xs"
                     placeholder="Optional"
                   />
                 </td>
+
+                {/* Stock */}
                 <td className="px-4 py-3">
                   <Input
                     variant="dark"
@@ -145,26 +187,43 @@ export const VariantTable: React.FC<VariantTableProps> = ({
                         parseInt(e.target.value, 10) || 0
                       )
                     }
-                    className="w-20 text-sm"
+                    className="w-20 text-xs"
                   />
                 </td>
+
+                {/* Active Toggle */}
                 <td className="px-4 py-3">
-                  <input
-                    type="checkbox"
-                    checked={variant.isActive}
-                    onChange={(e) =>
-                      onUpdateVariant(index, 'isActive', e.target.checked)
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={variant.isActive}
+                    onClick={() =>
+                      onUpdateVariant(index, 'isActive', !variant.isActive)
                     }
-                    className="w-4 h-4 rounded bg-gray-700 border-gray-600"
-                  />
+                    className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-1 ${
+                      variant.isActive
+                        ? 'bg-brand-primary'
+                        : 'bg-surface-container-highest'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-4 w-4 rounded-full shadow-sm transform transition-transform duration-200 ease-in-out mt-0.5 ${
+                        variant.isActive ? 'translate-x-4' : 'translate-x-0.5'
+                      }`}
+                      style={{ backgroundColor: '#ffffff' }}
+                    />
+                  </button>
                 </td>
+
+                {/* Delete */}
                 <td className="px-4 py-3">
                   <button
                     type="button"
                     onClick={() => onRemoveVariant(index)}
-                    className="text-red-400 hover:text-red-300"
+                    className="p-1.5 rounded-md text-feedback-error hover:bg-feedback-error/10 transition-colors cursor-pointer"
+                    title="Remove variant"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={14} />
                   </button>
                 </td>
               </tr>

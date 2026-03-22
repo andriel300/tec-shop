@@ -88,9 +88,9 @@ const ProductsPage = () => {
   });
 
   return (
-    <div className="w-full mx-auto p-8 text-white">
+    <div className="w-full mx-auto p-8 text-gray-900">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-semibold font-heading text-white">
+        <h2 className="text-2xl font-semibold font-heading text-gray-900">
           Products
         </h2>
         <Link
@@ -114,7 +114,7 @@ const ProductsPage = () => {
       {/* Delete errors are now handled by toast notifications via React Query */}
 
       {/* Search and Filters */}
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 mb-6">
+      <div className="bg-gray-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg p-4 mb-6">
         <div className="flex gap-4 items-center">
           <div className="flex-1 relative">
             <Search
@@ -126,7 +126,7 @@ const ProductsPage = () => {
               placeholder="Search products..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-4 py-2 bg-[#ffffff] dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
@@ -138,9 +138,9 @@ const ProductsPage = () => {
           Loading products...
         </div>
       ) : filteredProducts.length === 0 ? (
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-12 text-center">
-          <Package size={48} className="mx-auto text-gray-600 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-300 mb-2">
+        <div className="bg-gray-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-12 text-center">
+          <Package size={48} className="mx-auto text-gray-400 dark:text-gray-600 mb-4" />
+          <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
             No Products Found
           </h3>
           <p className="text-gray-400 mb-6">
@@ -157,9 +157,9 @@ const ProductsPage = () => {
           </Link>
         </div>
       ) : (
-        <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
+        <div className="bg-[#ffffff] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
           <table className="w-full">
-            <thead className="bg-gray-900 border-b border-gray-700">
+            <thead className="bg-gray-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                   Product
@@ -182,11 +182,11 @@ const ProductsPage = () => {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-700">
+            <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
               {filteredProducts.map((product) => (
                 <tr
                   key={product.id}
-                  className="hover:bg-gray-700/50 transition-colors"
+                  className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
@@ -226,12 +226,12 @@ const ProductsPage = () => {
                           )}
                         </div>
                       ) : (
-                        <div className="w-12 h-12 rounded bg-gray-700 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded bg-gray-100 dark:bg-slate-700 flex items-center justify-center">
                           <Package size={24} className="text-gray-500" />
                         </div>
                       )}
                       <div>
-                        <div className="font-medium text-white">
+                        <div className="font-medium text-gray-900">
                           {product.name}
                         </div>
                         <div className="text-sm text-gray-400">
@@ -240,7 +240,7 @@ const ProductsPage = () => {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-white">
+                  <td className="px-6 py-4 text-gray-900">
                     ${product.salePrice || product.price}
                     {product.salePrice && (
                       <span className="ml-2 text-gray-400 line-through text-sm">

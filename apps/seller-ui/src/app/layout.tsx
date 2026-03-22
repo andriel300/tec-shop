@@ -1,5 +1,5 @@
 import './global.css';
-import { Inter, Poppins, Roboto } from 'next/font/google';
+import { Inter, Poppins, Roboto, Space_Grotesk } from 'next/font/google';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -21,6 +21,13 @@ const roboto = Roboto({
   display: 'swap',
 });
 
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-space-grotesk',
+  display: 'swap',
+});
+
 export const metadata = {
   title: 'TecShop Seller',
   description: 'TecShop Seller Portal - Manage your business',
@@ -33,9 +40,9 @@ export default function RootLayout({
 }) {
   return (
     <html
-      className={`min-h-screen bg-slate-900 font-heading antialiased ${inter.variable} ${poppins.variable} ${roboto.variable}`}
+      className={`min-h-screen bg-gray-50 dark:bg-slate-900 font-heading antialiased ${inter.variable} ${poppins.variable} ${roboto.variable} ${spaceGrotesk.variable}`}
     >
-      <body suppressHydrationWarning className="font-sans">
+      <body suppressHydrationWarning className="font-sans h-screen overflow-hidden">
         {children}
       </body>
     </html>

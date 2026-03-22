@@ -21,7 +21,7 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
   return (
     <div className={`flex items-center mb-6 gap-3 ${className}`}>
       {/* Title */}
-      {title && <h2 className="text-xl font-semibold text-white">{title}</h2>}
+      {title && <h2 className="text-xl font-semibold text-gray-900">{title}</h2>}
 
       {/* Divider (only if title exists) */}
       {title && <span className="text-gray-500">/</span>}
@@ -36,18 +36,18 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({
               {item.href && !isLast ? (
                 <Link
                   href={item.href}
-                  className="text-[#80Deea] hover:text-[#4DD0E1] cursor-pointer transition-colors"
+                  className="text-brand-primary hover:opacity-75 cursor-pointer transition-opacity"
                 >
                   {item.label}
                 </Link>
               ) : (
-                <span className={isLast ? 'text-gray-400' : 'text-[#80Deea]'}>
+                <span className={isLast ? 'text-gray-500' : 'text-brand-primary'}>
                   {item.label}
                 </span>
               )}
 
               {!isLast && (
-                <ChevronRight size={20} className="opacity-[.8] mx-1" />
+                <ChevronRight size={16} className="text-gray-500 mx-1" />
               )}
             </React.Fragment>
           );

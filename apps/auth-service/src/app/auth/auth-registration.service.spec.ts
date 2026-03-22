@@ -27,6 +27,7 @@ describe('AuthRegistrationService', () => {
     googleId: null,
     provider: 'local',
     refreshToken: null,
+    refreshTokenFamily: null,
     isBanned: false,
     createdAt: new Date(),
     updatedAt: new Date(),

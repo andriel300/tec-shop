@@ -237,7 +237,7 @@ const InboxPage = () => {
   if (authLoading || sellerLoading) {
     return (
       <div className="flex items-center justify-center min-h-[80vh]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary" />
       </div>
     );
   }
@@ -247,10 +247,10 @@ const InboxPage = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[80vh] gap-4">
         <MessageCircle size={48} className="text-gray-500" />
-        <p className="text-gray-400">Please log in to view your messages</p>
+        <p className="text-gray-500">Please log in to view your messages</p>
         <button
           onClick={() => router.push('/login')}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
+          className="bg-brand-primary text-white px-6 py-2 rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
         >
           Log In
         </button>
@@ -259,67 +259,84 @@ const InboxPage = () => {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 md:p-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-          <Users className="text-blue-500" />
-          Customer Messages
-        </h1>
-        <p className="text-gray-400 text-sm mt-1">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="p-2 bg-brand-primary/10 rounded-lg">
+            <Users size={20} className="text-brand-primary" />
+          </div>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Customer Messages
+          </h1>
+        </div>
+        <p className="text-gray-500 text-sm pl-1">
           Chat with your customers in real-time
         </p>
       </div>
 
-      <div className="flex h-[calc(100vh-220px)] rounded-lg overflow-hidden border border-gray-700 bg-gray-800">
+      <div className="flex h-[calc(100vh-210px)] rounded-xl overflow-hidden border border-surface-container-highest bg-surface-container-lowest shadow-sm">
         {/* Conversations List */}
         <div
           className={`${
-            selectedConversation ? 'hidden md:block' : 'block'
-          } w-full md:w-[320px] border-r border-gray-700 bg-gray-850`}
+            selectedConversation ? 'hidden md:flex' : 'flex'
+          } flex-col w-full md:w-[300px] border-r border-surface-container-highest bg-surface-container flex-shrink-0`}
         >
-          <div className="p-4 border-b border-gray-700">
-            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-              <MessageCircle size={20} className="text-blue-500" />
-              Conversations
-            </h2>
-            {isConnected ? (
-              <span className="text-xs text-green-400 flex items-center gap-1 mt-1">
-                <span className="w-2 h-2 bg-green-500 rounded-full" />
-                Connected
-              </span>
-            ) : isConnecting ? (
-              <span className="text-xs text-yellow-400 flex items-center gap-1 mt-1">
-                <span className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
-                Connecting...
-              </span>
-            ) : connectionError ? (
-              <button
-                onClick={reconnect}
-                className="text-xs text-red-400 flex items-center gap-1 mt-1 hover:underline"
-              >
-                <span className="w-2 h-2 bg-red-500 rounded-full" />
-                {connectionError} - Click to retry
-              </button>
-            ) : null}
+          {/* Sidebar header */}
+          <div className="px-4 py-3.5 border-b border-surface-container-highest">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                <MessageCircle size={16} className="text-brand-primary" />
+                Conversations
+              </h2>
+              {isConnected ? (
+                <span className="inline-flex items-center gap-1 text-xs text-feedback-success">
+                  <span className="w-1.5 h-1.5 bg-feedback-success rounded-full" />
+                  Live
+                </span>
+              ) : isConnecting ? (
+                <span className="inline-flex items-center gap-1 text-xs text-feedback-warning">
+                  <span className="w-1.5 h-1.5 bg-feedback-warning rounded-full animate-pulse" />
+                  Connecting
+                </span>
+              ) : connectionError ? (
+                <button
+                  onClick={reconnect}
+                  className="text-xs text-feedback-error flex items-center gap-1 hover:underline cursor-pointer"
+                >
+                  <span className="w-1.5 h-1.5 bg-feedback-error rounded-full" />
+                  Retry
+                </button>
+              ) : null}
+            </div>
           </div>
 
-          <div className="divide-y divide-gray-700 overflow-y-auto max-h-[calc(100vh-320px)]">
+          {/* Conversation items */}
+          <div className="overflow-y-auto flex-1">
             {conversationsLoading ? (
-              <div className="p-4 text-center">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto" />
+              <div className="flex flex-col gap-3 p-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center gap-3 animate-pulse">
+                    <div className="w-10 h-10 rounded-full bg-surface-container-highest flex-shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 bg-surface-container-highest rounded w-3/4" />
+                      <div className="h-2.5 bg-surface-container-highest rounded w-1/2" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : conversationsError ? (
-              <div className="p-4 text-sm text-red-400 text-center">
-                Failed to load conversations
+              <div className="p-6 text-center">
+                <p className="text-sm text-feedback-error">
+                  Failed to load conversations
+                </p>
               </div>
             ) : !conversationsData?.conversations?.length ? (
               <div className="p-8 text-center">
-                <MessageCircle
-                  size={40}
-                  className="text-gray-600 mx-auto mb-3"
-                />
-                <p className="text-sm text-gray-400">No conversations yet</p>
+                <div className="p-3 bg-surface-container rounded-full w-fit mx-auto mb-3">
+                  <MessageCircle size={28} className="text-gray-500" />
+                </div>
+                <p className="text-sm font-medium text-gray-900">No conversations yet</p>
                 <p className="text-xs text-gray-500 mt-1">
                   Customer messages will appear here
                 </p>
@@ -333,24 +350,26 @@ const InboxPage = () => {
                   <button
                     key={conversation.id}
                     onClick={() => handleSelectConversation(conversation)}
-                    className={`w-full text-left px-4 py-3 transition hover:bg-gray-700 ${
-                      isActive ? 'bg-gray-700' : ''
+                    className={`w-full text-left px-4 py-3 transition-colors duration-150 cursor-pointer border-l-[3px] ${
+                      isActive
+                        ? 'bg-brand-primary/10 border-brand-primary'
+                        : 'border-transparent hover:bg-surface-container-highest'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="relative">
+                      <div className="relative flex-shrink-0">
                         <Image
                           src={
                             conversation.otherParticipant.avatar ||
                             DEFAULT_AVATAR
                           }
                           alt={conversation.otherParticipant.name}
-                          width={44}
-                          height={44}
-                          className="rounded-full border border-gray-600 w-[44px] h-[44px] object-cover"
+                          width={40}
+                          height={40}
+                          className="rounded-full w-10 h-10 object-cover"
                         />
                         {hasUnread && (
-                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                          <span className="absolute -top-1 -right-1 bg-feedback-error text-white text-[10px] font-bold rounded-full w-4.5 h-4.5 min-w-[18px] min-h-[18px] flex items-center justify-center leading-none px-1">
                             {conversation.unreadCount > 9
                               ? '9+'
                               : conversation.unreadCount}
@@ -358,25 +377,27 @@ const InboxPage = () => {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-2">
                           <span
                             className={`text-sm truncate ${
                               hasUnread
-                                ? 'font-bold text-white'
-                                : 'font-medium text-gray-200'
+                                ? 'font-semibold text-gray-900'
+                                : 'font-medium text-gray-900'
                             }`}
                           >
                             {conversation.otherParticipant.name}
                           </span>
                           {conversation.lastMessage && (
-                            <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                            <span className="text-[11px] text-gray-500 flex-shrink-0">
                               {formatTime(conversation.lastMessage.createdAt)}
                             </span>
                           )}
                         </div>
                         <p
-                          className={`text-sm truncate ${
-                            hasUnread ? 'text-gray-300' : 'text-gray-500'
+                          className={`text-xs truncate mt-0.5 ${
+                            hasUnread
+                              ? 'text-gray-900 font-medium'
+                              : 'text-gray-500'
                           }`}
                         >
                           {conversation.lastMessage?.content ||
@@ -395,46 +416,48 @@ const InboxPage = () => {
         <div
           className={`${
             selectedConversation ? 'flex' : 'hidden md:flex'
-          } flex-1 flex-col bg-gray-900`}
+          } flex-1 flex-col min-w-0`}
         >
           {selectedConversation ? (
             <>
               {/* Chat Header */}
-              <div className="p-4 border-b border-gray-700 flex items-center gap-3 bg-gray-800">
+              <div className="px-5 py-3.5 border-b border-surface-container-highest flex items-center gap-3 bg-surface-container-lowest flex-shrink-0">
                 <button
                   onClick={() => {
                     setSelectedConversation(null);
                     router.push('/dashboard/inbox', { scroll: false });
                   }}
-                  className="md:hidden p-1 hover:bg-gray-700 rounded-full text-gray-400"
+                  className="md:hidden p-1.5 hover:bg-surface-container rounded-full text-gray-500 cursor-pointer transition-colors"
+                  aria-label="Back to conversations"
                 >
-                  <ArrowLeft size={20} />
+                  <ArrowLeft size={18} />
                 </button>
-                <div className="relative">
+                <div className="relative flex-shrink-0">
                   <Image
                     src={
                       selectedConversation.otherParticipant.avatar ||
                       DEFAULT_AVATAR
                     }
                     alt={selectedConversation.otherParticipant.name}
-                    width={40}
-                    height={40}
-                    className="rounded-full border border-gray-600 w-[40px] h-[40px] object-cover"
+                    width={38}
+                    height={38}
+                    className="rounded-full w-[38px] h-[38px] object-cover"
                   />
-                  {isOtherParticipantOnline && (
-                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-gray-800 rounded-full" />
-                  )}
+                  <span
+                    className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-surface-container-lowest ${
+                      isOtherParticipantOnline
+                        ? 'bg-feedback-success'
+                        : 'bg-gray-500'
+                    }`}
+                  />
                 </div>
-                <div>
-                  <h3 className="font-semibold text-white">
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold text-gray-900 truncate">
                     {selectedConversation.otherParticipant.name}
                   </h3>
-                  <p className="text-xs text-gray-400 flex items-center gap-1">
+                  <p className="text-xs text-gray-500">
                     {isOtherParticipantOnline ? (
-                      <>
-                        <span className="w-2 h-2 bg-green-500 rounded-full" />
-                        <span className="text-green-400">Online</span>
-                      </>
+                      <span className="text-feedback-success font-medium">Online</span>
                     ) : (
                       'Offline'
                     )}
@@ -445,36 +468,54 @@ const InboxPage = () => {
               {/* Messages */}
               <div
                 ref={messageContainerRef}
-                className="flex-1 overflow-y-auto p-4 space-y-4"
+                className="flex-1 overflow-y-auto px-5 py-4 space-y-3"
               >
                 {messagesLoading ? (
-                  <div className="flex justify-center py-8">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500" />
+                  <div className="flex justify-center py-12">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-primary" />
                   </div>
                 ) : localMessages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                    <MessageCircle size={40} className="mb-2" />
-                    <p>No messages yet</p>
-                    <p className="text-sm">
-                      Send a message to start the conversation
-                    </p>
+                  <div className="flex flex-col items-center justify-center h-full gap-3">
+                    <div className="p-4 bg-surface-container rounded-full">
+                      <MessageCircle size={32} className="text-gray-500" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-semibold text-gray-900">
+                        No messages yet
+                      </p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Send a message to start the conversation
+                      </p>
+                    </div>
                   </div>
                 ) : (
                   localMessages.map((message) => {
-                    // For seller-ui, seller's messages (senderType === 'seller') should be on the right
                     const isOwnMessage = message.senderType === 'seller';
                     return (
                       <div
                         key={message.id}
-                        className={`flex ${
+                        className={`flex items-end gap-2 ${
                           isOwnMessage ? 'justify-end' : 'justify-start'
                         }`}
                       >
+                        {/* Avatar for received messages */}
+                        {!isOwnMessage && (
+                          <Image
+                            src={
+                              selectedConversation.otherParticipant.avatar ||
+                              DEFAULT_AVATAR
+                            }
+                            alt={selectedConversation.otherParticipant.name}
+                            width={28}
+                            height={28}
+                            className="rounded-full w-7 h-7 object-cover flex-shrink-0 mb-0.5"
+                          />
+                        )}
                         <div
-                          className={`max-w-[70%] rounded-2xl px-4 py-2 ${
+                          className={`max-w-[65%] rounded-2xl px-3.5 py-2.5 shadow-sm ${
                             isOwnMessage
-                              ? 'bg-blue-600 text-white rounded-br-sm'
-                              : 'bg-gray-700 text-gray-100 rounded-bl-sm'
+                              ? 'bg-brand-primary text-white rounded-br-md'
+                              : 'bg-surface-container-lowest text-gray-900 rounded-bl-md border border-surface-container-highest'
                           }`}
                         >
                           {message.attachments &&
@@ -492,20 +533,22 @@ const InboxPage = () => {
                                       alt={`Attachment ${idx + 1}`}
                                       width={200}
                                       height={200}
-                                      className="rounded-lg max-w-[200px] max-h-[200px] object-cover cursor-pointer hover:opacity-90 transition"
+                                      className="rounded-xl max-w-[200px] max-h-[200px] object-cover cursor-pointer hover:opacity-90 transition"
                                     />
                                   </a>
                                 ))}
                               </div>
                             )}
                           {message.content && (
-                            <p className="whitespace-pre-wrap break-words">
+                            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
                               {message.content}
                             </p>
                           )}
                           <p
-                            className={`text-xs mt-1 ${
-                              isOwnMessage ? 'text-blue-200' : 'text-gray-400'
+                            className={`text-[11px] mt-1 ${
+                              isOwnMessage
+                                ? 'text-white/60 text-right'
+                                : 'text-gray-500'
                             }`}
                           >
                             {formatTime(message.createdAt)}
@@ -518,10 +561,10 @@ const InboxPage = () => {
 
                 {/* Image uploading indicator */}
                 {isSendingImage && (
-                  <div className="flex justify-end">
-                    <div className="bg-blue-600/50 rounded-2xl px-4 py-2 rounded-br-sm flex items-center gap-2 text-white text-sm">
-                      <Loader2 size={14} className="animate-spin" />
-                      Uploading image...
+                  <div className="flex items-end justify-end gap-2">
+                    <div className="bg-brand-primary/60 rounded-2xl rounded-br-md px-3.5 py-2.5 flex items-center gap-2 text-white text-sm shadow-sm">
+                      <Loader2 size={13} className="animate-spin" />
+                      Uploading...
                     </div>
                   </div>
                 )}
@@ -529,17 +572,27 @@ const InboxPage = () => {
                 {/* Typing indicator */}
                 {isTyping &&
                   isTyping.conversationId === selectedConversation.id && (
-                    <div className="flex justify-start">
-                      <div className="bg-gray-700 rounded-2xl px-4 py-2 rounded-bl-sm">
-                        <div className="flex gap-1">
-                          <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                    <div className="flex items-end gap-2 justify-start">
+                      <Image
+                        src={
+                          selectedConversation.otherParticipant.avatar ||
+                          DEFAULT_AVATAR
+                        }
+                        alt={selectedConversation.otherParticipant.name}
+                        width={28}
+                        height={28}
+                        className="rounded-full w-7 h-7 object-cover flex-shrink-0 mb-0.5"
+                      />
+                      <div className="bg-surface-container-lowest border border-surface-container-highest rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
+                        <div className="flex gap-1 items-center">
+                          <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" />
                           <span
-                            className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                            style={{ animationDelay: '0.1s' }}
+                            className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce"
+                            style={{ animationDelay: '0.15s' }}
                           />
                           <span
-                            className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
-                            style={{ animationDelay: '0.2s' }}
+                            className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce"
+                            style={{ animationDelay: '0.3s' }}
                           />
                         </div>
                       </div>
@@ -560,7 +613,6 @@ const InboxPage = () => {
                     | { url: string; type?: string }[]
                     | undefined;
 
-                  // Upload images to ImageKit if attachments exist
                   if (attachments && attachments.length > 0) {
                     setIsSendingImage(true);
                     try {
@@ -597,10 +649,18 @@ const InboxPage = () => {
               />
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
-              <MessageCircle size={60} className="mb-4" />
-              <p className="text-lg font-medium">Select a conversation</p>
-              <p className="text-sm">Choose from your customer conversations</p>
+            <div className="flex-1 flex flex-col items-center justify-center gap-4">
+              <div className="p-5 bg-surface-container rounded-full">
+                <MessageCircle size={36} className="text-gray-500" />
+              </div>
+              <div className="text-center">
+                <p className="text-base font-semibold text-gray-900">
+                  Select a conversation
+                </p>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  Choose from your customer conversations on the left
+                </p>
+              </div>
             </div>
           )}
         </div>
@@ -614,7 +674,7 @@ export default function InboxPageWrapper() {
     <Suspense
       fallback={
         <div className="flex items-center justify-center min-h-[80vh]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary" />
         </div>
       }
     >

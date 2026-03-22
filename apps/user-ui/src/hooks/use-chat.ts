@@ -118,7 +118,6 @@ export const useUserOnlineStatus = (
     queryKey: ['userOnline', userId],
     queryFn: () => checkUserOnline(userId),
     enabled: enabled && !!userId,
-    staleTime: 60 * 1000, // 1 minute
-    refetchInterval: 60 * 1000, // Refetch every minute
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 };

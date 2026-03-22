@@ -1,7 +1,36 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, X, Trash2, RefreshCw } from 'lucide-react';
+import {
+  Plus,
+  X,
+  Trash2,
+  RefreshCw,
+  Info,
+  Ruler,
+  Palette,
+  Layers,
+  Scissors,
+  HardDrive,
+  Cpu,
+  Package,
+  Zap,
+  Plug,
+  Scale,
+  ArrowLeftRight,
+  ArrowUpDown,
+  Circle,
+  Wind,
+  Droplets,
+  Tag,
+  Hash,
+  Target,
+  Hand,
+  TrendingUp,
+  LayoutGrid,
+  Sparkles,
+  Shirt,
+} from 'lucide-react';
 import { Input } from '../core/Input';
 import {
   ATTRIBUTE_SUGGESTIONS,
@@ -37,6 +66,42 @@ export interface VariantManagerProps {
   className?: string;
 }
 
+const SUGGESTION_ICON_MAP: Record<
+  string,
+  React.ComponentType<{ size?: number; className?: string }>
+> = {
+  Size: Ruler,
+  Color: Palette,
+  Material: Layers,
+  Fit: Shirt,
+  Pattern: LayoutGrid,
+  Style: Sparkles,
+  Fabric: Layers,
+  Cut: Scissors,
+  Storage: HardDrive,
+  Memory: Cpu,
+  Capacity: Package,
+  Power: Zap,
+  Voltage: Plug,
+  Weight: Scale,
+  Length: ArrowLeftRight,
+  Width: ArrowLeftRight,
+  Height: ArrowUpDown,
+  Diameter: Circle,
+  Scent: Wind,
+  Flavor: Droplets,
+  Fragrance: Wind,
+  Edition: Tag,
+  Version: Hash,
+  Level: TrendingUp,
+  Age: Target,
+  Difficulty: Target,
+  Finish: Hand,
+  Texture: Hand,
+  Speed: Zap,
+  Performance: TrendingUp,
+};
+
 /**
  * VariantManager Component
  * Manages product variants with dynamic attributes (size, color, etc.)
@@ -58,7 +123,6 @@ const VariantManager: React.FC<VariantManagerProps> = ({
   const [showAttributeSuggestions, setShowAttributeSuggestions] =
     useState(false);
 
-  // Filter suggestions based on input and already added attributes
   const filteredSuggestions = ATTRIBUTE_SUGGESTIONS.filter((suggestion) => {
     const alreadyAdded = attributes.some(
       (attr) => attr.name.toLowerCase() === suggestion.name.toLowerCase()
@@ -69,7 +133,6 @@ const VariantManager: React.FC<VariantManagerProps> = ({
     return !alreadyAdded && matchesSearch;
   });
 
-  // Generate all possible variant combinations
   const generateVariants = () => {
     const activeAttributes = attributes.filter(
       (attr) => attr.values.length > 0
@@ -80,35 +143,26 @@ const VariantManager: React.FC<VariantManagerProps> = ({
       return;
     }
 
-    // Generate cartesian product of all attribute values
     const combinations: Record<string, string>[] = [{}];
 
     for (const attribute of activeAttributes) {
       const newCombinations: Record<string, string>[] = [];
       for (const combination of combinations) {
         for (const value of attribute.values) {
-          newCombinations.push({
-            ...combination,
-            [attribute.name]: value,
-          });
+          newCombinations.push({ ...combination, [attribute.name]: value });
         }
       }
       combinations.length = 0;
       combinations.push(...newCombinations);
     }
 
-    // Create variants from combinations
     const newVariants: ProductVariant[] = combinations.map((attrs) => {
-      // Check if variant already exists
       const existingVariant = variants.find(
         (v) => JSON.stringify(v.attributes) === JSON.stringify(attrs)
       );
 
-      if (existingVariant) {
-        return existingVariant;
-      }
+      if (existingVariant) return existingVariant;
 
-      // Create new variant
       return {
         sku: generateSKU(productName, attrs),
         attributes: attrs,
@@ -121,10 +175,8 @@ const VariantManager: React.FC<VariantManagerProps> = ({
     onChange(newVariants);
   };
 
-  // Add new attribute
   const addAttribute = (attributeName?: string) => {
     const nameToAdd = attributeName || newAttributeName;
-
     if (nameToAdd && !attributes.some((a) => a.name === nameToAdd)) {
       setAttributes([...attributes, { name: nameToAdd, values: [] }]);
       setNewAttributeName('');
@@ -132,18 +184,14 @@ const VariantManager: React.FC<VariantManagerProps> = ({
     }
   };
 
-  // Select suggestion
   const selectSuggestion = (suggestionName: string) => {
     addAttribute(suggestionName);
   };
 
-  // Remove attribute
   const removeAttribute = (index: number) => {
-    const newAttrs = attributes.filter((_, i) => i !== index);
-    setAttributes(newAttrs);
+    setAttributes(attributes.filter((_, i) => i !== index));
   };
 
-  // Add value to attribute
   const addAttributeValue = (attributeIndex: number, directValue?: string) => {
     const attribute = attributes[attributeIndex];
     const value = directValue || newAttributeValue[attribute.name];
@@ -156,14 +204,12 @@ const VariantManager: React.FC<VariantManagerProps> = ({
     }
   };
 
-  // Remove value from attribute
   const removeAttributeValue = (attributeIndex: number, valueIndex: number) => {
     const newAttrs = [...attributes];
     newAttrs[attributeIndex].values.splice(valueIndex, 1);
     setAttributes(newAttrs);
   };
 
-  // Update variant
   const updateVariant = (
     index: number,
     field: keyof ProductVariant,
@@ -174,79 +220,106 @@ const VariantManager: React.FC<VariantManagerProps> = ({
     onChange(newVariants);
   };
 
-  // Remove variant
   const removeVariant = (index: number) => {
-    const newVariants = variants.filter((_, i) => i !== index);
-    onChange(newVariants);
+    onChange(variants.filter((_, i) => i !== index));
   };
+
+  const combinationCount = calculateCombinationCount(attributes);
 
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Product Options Configuration */}
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-        <h3 className="text-lg font-semibold text-gray-200 mb-4">
-          Product Options
-        </h3>
-        <p className="text-sm text-gray-400 mb-4">
-          Add options like Size, Color, or Material that customers can choose
-          from
-        </p>
+      <div className="bg-surface-container-lowest rounded-xl p-6 space-y-6">
+        {/* Header */}
+        <div>
+          <h3 className="text-base font-semibold text-gray-900">
+            Product Options
+          </h3>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Configure the options customers can choose from (size, color,
+            material, etc.)
+          </p>
+        </div>
 
-        {/* Existing Options */}
-        <div className="space-y-4 mb-4">
+        {/* Existing Option Groups */}
+        <div className="space-y-5">
           {attributes.map((attribute, attrIndex) => (
-            <div key={attrIndex} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-gray-300">
-                  {attribute.name}
-                </label>
+            <div key={attrIndex}>
+              {/* Option Header */}
+              <div className="flex items-center justify-between mb-2.5">
+                <div className="flex items-center gap-2">
+                  {(() => {
+                    const IconComp =
+                      SUGGESTION_ICON_MAP[attribute.name] || Tag;
+                    return (
+                      <IconComp size={14} className="text-brand-primary" />
+                    );
+                  })()}
+                  <span className="text-sm font-semibold text-gray-900">
+                    {attribute.name}
+                  </span>
+                  {attribute.values.length > 0 && (
+                    <span className="text-xs text-gray-500">
+                      &middot; {attribute.values.length}{' '}
+                      {attribute.values.length === 1 ? 'option' : 'options'}
+                    </span>
+                  )}
+                </div>
                 {attrIndex > 0 && (
                   <button
                     type="button"
                     onClick={() => removeAttribute(attrIndex)}
-                    className="text-red-400 hover:text-red-300"
+                    className="p-1 rounded-md text-feedback-error hover:bg-feedback-error/10 transition-colors cursor-pointer"
+                    title={`Remove ${attribute.name}`}
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={14} />
                   </button>
                 )}
               </div>
 
-              {/* Option Values */}
-              <div className="flex flex-wrap gap-2 mb-2">
-                {attribute.values.map((value, valueIndex) => {
-                  const colorData = isColorAttribute(attribute.name)
-                    ? COLOR_PALETTE.find((c) => c.name === value)
-                    : null;
+              {/* Selected Value Chips */}
+              {attribute.values.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {attribute.values.map((value, valueIndex) => {
+                    const colorData = isColorAttribute(attribute.name)
+                      ? COLOR_PALETTE.find((c) => c.name === value)
+                      : null;
 
-                  return (
-                    <span
-                      key={valueIndex}
-                      className="inline-flex items-center gap-2 px-3 py-1 bg-blue-900/50 text-blue-300 rounded-full text-sm"
-                    >
-                      {/* Show color swatch for color attributes */}
-                      {colorData && (
-                        <span
-                          className="w-4 h-4 rounded-full border border-gray-600"
-                          style={{ backgroundColor: colorData.hex }}
-                          title={colorData.name}
-                        />
-                      )}
-                      {value}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          removeAttributeValue(attrIndex, valueIndex)
-                        }
-                        className="hover:text-blue-100"
+                    return (
+                      <span
+                        key={valueIndex}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-brand-primary/10 text-brand-primary rounded-full text-xs font-medium"
                       >
-                        <X size={14} />
-                      </button>
-                    </span>
-                  );
-                })}
-              </div>
+                        {colorData && (
+                          <span
+                            className="w-3 h-3 rounded-full flex-shrink-0"
+                            style={{
+                              backgroundColor: colorData.hex,
+                              boxShadow:
+                                colorData.textColor === '#000000'
+                                  ? 'inset 0 0 0 1px rgba(0,0,0,0.15)'
+                                  : 'none',
+                            }}
+                          />
+                        )}
+                        {value}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            removeAttributeValue(attrIndex, valueIndex)
+                          }
+                          className="ml-0.5 flex-shrink-0 hover:opacity-70 transition-opacity cursor-pointer"
+                          aria-label={`Remove ${value}`}
+                        >
+                          <X size={11} />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
 
-              {/* Option Input (Color Picker or Text) */}
+              {/* Value Input (ColorPicker or text) */}
               <AttributeInput
                 attributeName={attribute.name}
                 selectedValues={attribute.values}
@@ -261,22 +334,29 @@ const VariantManager: React.FC<VariantManagerProps> = ({
                   addAttributeValue(attrIndex, directValue)
                 }
               />
+
+              {/* Divider between options */}
+              {attrIndex < attributes.length - 1 && (
+                <div className="border-t border-surface-container-highest mt-5" />
+              )}
             </div>
           ))}
         </div>
 
         {/* Add New Option */}
-        <div className="pt-4 border-t border-gray-700">
+        <div className="pt-4 border-t border-surface-container-highest space-y-2">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            Add option
+          </p>
           <div className="flex gap-2 relative">
             <div className="flex-1 relative">
               <Input
                 variant="dark"
-                placeholder="Add option (e.g., Color, Material)"
+                placeholder="e.g., Color, Material, Finish..."
                 value={newAttributeName}
                 onChange={(e) => setNewAttributeName(e.target.value)}
                 onFocus={() => setShowAttributeSuggestions(true)}
                 onBlur={() => {
-                  // Delay to allow click on suggestion
                   setTimeout(() => setShowAttributeSuggestions(false), 200);
                 }}
                 onKeyPress={(e) => {
@@ -289,9 +369,8 @@ const VariantManager: React.FC<VariantManagerProps> = ({
 
               {/* Suggestions Dropdown */}
               {showAttributeSuggestions && filteredSuggestions.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl max-h-80 overflow-y-auto">
-                  <div className="p-2 space-y-1">
-                    {/* Group by category */}
+                <div className="absolute z-20 w-full mt-1 bg-surface-container-lowest rounded-xl shadow-xl border border-surface-container-highest max-h-72 overflow-y-auto">
+                  <div className="p-1.5">
                     {SUGGESTION_CATEGORIES.map((category) => {
                       const categoryItems = filteredSuggestions.filter(
                         (s) => s.category === category
@@ -300,35 +379,42 @@ const VariantManager: React.FC<VariantManagerProps> = ({
 
                       return (
                         <div key={category}>
-                          <div className="px-2 py-1 text-xs font-semibold text-gray-500 uppercase">
+                          <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
                             {category}
                           </div>
-                          {categoryItems.map((suggestion, index) => (
-                            <button
-                              key={index}
-                              type="button"
-                              onClick={() => selectSuggestion(suggestion.name)}
-                              className="w-full px-3 py-2 text-left rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2 text-gray-300"
-                            >
-                              <span className="text-lg">{suggestion.icon}</span>
-                              <span className="font-medium">
-                                {suggestion.name}
-                              </span>
-                            </button>
-                          ))}
+                          {categoryItems.map((suggestion, index) => {
+                            const IconComp =
+                              SUGGESTION_ICON_MAP[suggestion.name] || Tag;
+                            return (
+                              <button
+                                key={index}
+                                type="button"
+                                onClick={() =>
+                                  selectSuggestion(suggestion.name)
+                                }
+                                className="w-full px-3 py-2 text-left rounded-lg hover:bg-surface-container transition-colors flex items-center gap-2.5 cursor-pointer"
+                              >
+                                <span className="text-brand-primary">
+                                  <IconComp size={14} />
+                                </span>
+                                <span className="text-sm font-medium text-gray-900">
+                                  {suggestion.name}
+                                </span>
+                              </button>
+                            );
+                          })}
                         </div>
                       );
                     })}
                   </div>
 
-                  {/* Show "Add custom" hint if typing something not in suggestions */}
                   {newAttributeName && filteredSuggestions.length === 0 && (
-                    <div className="p-3 text-sm text-gray-400 border-t border-gray-700">
+                    <div className="p-3 text-sm text-gray-500 border-t border-surface-container-highest">
                       Press Enter to add &quot;
-                      <span className="text-blue-400 font-medium">
+                      <span className="text-brand-primary font-medium">
                         {newAttributeName}
                       </span>
-                      &quot; as a custom option
+                      &quot;
                     </div>
                   )}
                 </div>
@@ -338,29 +424,30 @@ const VariantManager: React.FC<VariantManagerProps> = ({
             <button
               type="button"
               onClick={() => addAttribute()}
-              className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors whitespace-nowrap"
+              className="px-4 py-2 bg-surface-container text-gray-900 rounded-lg hover:bg-surface-container-highest transition-colors whitespace-nowrap flex items-center gap-1.5 text-sm font-medium cursor-pointer"
             >
-              <Plus size={18} className="inline mr-1" />
-              Add Option
+              <Plus size={15} />
+              Add
             </button>
           </div>
 
-          {/* Help text */}
-          <p className="mt-2 text-xs text-gray-500">
-            💡 Click the input to see common options or type your own custom
-            option
+          <p className="text-xs text-gray-500 flex items-center gap-1.5">
+            <Info size={12} className="flex-shrink-0" />
+            Click the input to browse common options or type your own
           </p>
         </div>
 
-        {/* Generate Variants Button */}
+        {/* Generate Variants CTA */}
         <button
           type="button"
           onClick={generateVariants}
-          className="mt-4 w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center justify-center gap-2"
+          disabled={combinationCount === 0}
+          className="w-full px-4 py-3 bg-brand-primary text-white rounded-xl hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity font-semibold flex items-center justify-center gap-2 cursor-pointer"
         >
-          <RefreshCw size={18} />
-          Generate Variants ({calculateCombinationCount(attributes)}{' '}
-          combinations)
+          <RefreshCw size={16} />
+          {combinationCount > 0
+            ? `Generate ${combinationCount} Variant${combinationCount !== 1 ? 's' : ''}`
+            : 'Generate Variants'}
         </button>
       </div>
 

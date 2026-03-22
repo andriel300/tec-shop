@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { Plus } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, ChevronDown } from 'lucide-react';
 import { Input } from '../../core/Input';
 import { COLOR_PALETTE } from './constants';
 
@@ -24,65 +24,87 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
   onCustomColorChange,
   onCustomColorSubmit,
 }) => {
+  const [showCustom, setShowCustom] = useState(false);
   const availableColors = COLOR_PALETTE.filter(
     (color) => !selectedColors.includes(color.name)
   );
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-gray-400">
-        🎨 Select colors from the palette below:
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        Select from palette
       </p>
 
       {/* Color Palette Grid */}
-      <div className="grid grid-cols-6 gap-2 p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+      <div className="grid grid-cols-6 gap-2 p-3 bg-surface-container rounded-xl">
         {availableColors.map((color, colorIndex) => (
           <button
             key={colorIndex}
             type="button"
             onClick={() => onColorSelect(color.name)}
-            className="group relative w-12 h-12 rounded-lg border-2 border-gray-600 transition-all hover:scale-110 hover:border-blue-400 hover:shadow-lg hover:z-10"
-            style={{ backgroundColor: color.hex }}
+            className="group relative w-10 h-10 rounded-lg transition-all hover:ring-2 hover:ring-brand-primary hover:ring-offset-2 hover:ring-offset-surface-container cursor-pointer"
+            style={{
+              backgroundColor: color.hex,
+              boxShadow:
+                color.textColor === '#000000'
+                  ? 'inset 0 0 0 1px rgba(0,0,0,0.12)'
+                  : 'none',
+            }}
             title={color.name}
           >
             {/* Color name tooltip on hover */}
-            <span className="absolute -top-9 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 border border-gray-700 text-white text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-20">
+            <span className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-surface-container-lowest text-gray-900 text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-20">
               {color.name}
             </span>
           </button>
         ))}
+
+        {availableColors.length === 0 && (
+          <div className="col-span-6 py-3 text-center text-sm text-gray-500">
+            All colors selected
+          </div>
+        )}
       </div>
 
       {/* Custom Color Input */}
-      <details className="text-sm group/custom">
-        <summary className="list-none text-gray-500 cursor-pointer hover:text-blue-400 transition-colors select-none py-2 px-3 rounded hover:bg-gray-800/50 inline-block">
-          <span className="inline-flex items-center gap-1">
-            <Plus size={14} className="inline" />
-            Add custom color name
-          </span>
-        </summary>
-        <div className="flex gap-2 mt-3 pl-3">
-          <Input
-            variant="dark"
-            placeholder="e.g., Midnight Blue, Sunset Orange"
-            value={customColorValue}
-            onChange={(e) => onCustomColorChange(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                onCustomColorSubmit();
-              }
-            }}
+      <div>
+        <button
+          type="button"
+          onClick={() => setShowCustom(!showCustom)}
+          className="inline-flex items-center gap-1.5 text-xs text-brand-primary hover:opacity-75 transition-opacity py-1 cursor-pointer"
+        >
+          <Plus size={13} />
+          Add custom color name
+          <ChevronDown
+            size={13}
+            className={`transition-transform duration-200 ${showCustom ? 'rotate-180' : ''}`}
           />
-          <button
-            type="button"
-            onClick={onCustomColorSubmit}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
-          >
-            <Plus size={18} />
-          </button>
-        </div>
-      </details>
+        </button>
+
+        {showCustom && (
+          <div className="flex gap-2 mt-2">
+            <Input
+              variant="dark"
+              placeholder="e.g., Midnight Blue, Sunset Orange"
+              value={customColorValue}
+              onChange={(e) => onCustomColorChange(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  onCustomColorSubmit();
+                }
+              }}
+            />
+            <button
+              type="button"
+              onClick={onCustomColorSubmit}
+              className="px-4 py-2 bg-brand-primary text-white rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap cursor-pointer"
+            >
+              <Plus size={16} />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

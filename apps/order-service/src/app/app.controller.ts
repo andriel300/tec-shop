@@ -69,6 +69,13 @@ export class AppController {
     );
   }
 
+  @MessagePattern('order-get-seller-chart-data')
+  async getSellerChartData(
+    @Payload() payload: { shopId: string; sellerId: string }
+  ) {
+    return this.orderQuery.getSellerChartData(payload);
+  }
+
   @MessagePattern('update-delivery-status')
   async updateDeliveryStatus(
     @Payload()

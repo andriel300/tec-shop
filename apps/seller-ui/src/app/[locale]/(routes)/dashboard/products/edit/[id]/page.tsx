@@ -265,7 +265,7 @@ const Page = () => {
   // Loading state
   if (isLoading) {
     return (
-      <div className="w-full mx-auto p-8 text-white">
+      <div className="w-full mx-auto p-8 text-gray-900">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4" />
@@ -279,7 +279,7 @@ const Page = () => {
   // Error state
   if (fetchError || !product) {
     return (
-      <div className="w-full mx-auto p-8 text-white">
+      <div className="w-full mx-auto p-8 text-gray-900">
         <Alert
           variant="error"
           title="Product Not Found"
@@ -287,7 +287,7 @@ const Page = () => {
         />
         <button
           onClick={() => router.push('/dashboard/all-products')}
-          className="mt-4 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
+          className="mt-4 px-4 py-2 bg-slate-200 dark:bg-slate-700 text-gray-900 dark:text-slate-200 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600"
         >
           Back to Products
         </button>
@@ -296,8 +296,8 @@ const Page = () => {
   }
 
   return (
-    <div className="w-full mx-auto p-8 text-white">
-      <h2 className="text-2xl py-2 font-semibold font-heading text-white">
+    <div className="w-full mx-auto p-8 text-gray-900">
+      <h2 className="text-2xl py-2 font-semibold font-heading text-gray-900">
         Edit Product
       </h2>
 
@@ -345,8 +345,8 @@ const Page = () => {
             />
 
             {/* Product Status */}
-            <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 space-y-4">
-              <h3 className="text-lg font-semibold text-gray-200 flex items-center gap-2">
+            <div className="bg-gray-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4 space-y-4">
+              <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                 <Tag size={20} className="text-green-400" />
                 Product Status
               </h3>
@@ -376,11 +376,11 @@ const Page = () => {
                       id="isFeatured"
                       checked={field.state.value}
                       onChange={(e) => field.handleChange(e.target.checked)}
-                      className="w-4 h-4 rounded bg-gray-700 border-gray-600 text-blue-600"
+                      className="w-4 h-4 rounded bg-gray-100 dark:bg-slate-700 border-gray-300 dark:border-gray-600 text-blue-600"
                     />
                     <label
                       htmlFor="isFeatured"
-                      className="text-sm text-gray-300"
+                      className="text-sm text-gray-600 dark:text-gray-300"
                     >
                       Mark as featured product
                     </label>
@@ -393,7 +393,7 @@ const Page = () => {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Tab Navigation */}
-            <div className="flex gap-2 border-b border-gray-700">
+            <div className="flex gap-2 border-b border-slate-200 dark:border-slate-700">
               {[
                 { id: 'basic', label: 'Basic Info', icon: Package },
                 { id: 'variants', label: 'Variants', icon: Boxes },
@@ -407,7 +407,7 @@ const Page = () => {
                   className={`px-4 py-3 flex items-center gap-2 border-b-2 transition-colors ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-400'
-                      : 'border-transparent text-gray-400 hover:text-gray-300'
+                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                   }`}
                 >
                   <tab.icon size={18} />
@@ -539,8 +539,8 @@ const Page = () => {
                   </form.Field>
 
                   {/* Pricing */}
-                  <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-200 flex items-center gap-2">
+                  <div className="bg-gray-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4 space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <DollarSign size={20} className="text-green-400" />
                       Pricing
                     </h3>
@@ -785,7 +785,7 @@ const Page = () => {
               selector={(state) => [state.canSubmit, state.isSubmitting]}
             >
               {([canSubmit, isSubmitting]) => (
-                <div className="flex gap-4 pt-6 border-t border-gray-700">
+                <div className="flex gap-4 pt-6 border-t border-slate-200 dark:border-slate-700">
                   <button
                     type="submit"
                     disabled={!canSubmit || isSubmitting || isUpdating}
@@ -822,7 +822,7 @@ const Page = () => {
                   <button
                     type="button"
                     onClick={() => router.push('/dashboard/all-products')}
-                    className="px-8 py-3 border border-gray-600 text-gray-300 rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                    className="px-8 py-3 border border-slate-300 dark:border-slate-600 text-gray-600 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
                   >
                     Cancel
                   </button>

@@ -14,8 +14,20 @@ const withNextIntl = createNextIntlPlugin(i18nRequestPath.startsWith('.') ? i18n
 const nextConfig = {
   nx: {},
   serverExternalPackages: ['pino', 'pino-pretty', 'thread-stream'],
-  webpack: (config) => {
+  experimental: {
+    webpackMemoryOptimizations: true,
+  },
+  webpack: (config, { dev }) => {
     config.resolve.extensionAlias = { '.js': ['.ts', '.tsx', '.js'], '.jsx': ['.tsx', '.jsx'] };
+    if (dev) {
+      config.watchOptions = {
+        ...config.watchOptions,
+        ignored: /node_modules/,
+      };
+      // Disable source maps in dev — eliminates 30-50% of per-module compilation memory.
+      // Trade-off: stack traces show compiled output instead of TypeScript source.
+      config.devtool = false;
+    }
     return config;
   },
   images: {
@@ -64,20 +76,14 @@ module.exports = async (phase, context) => {
   return updatedConfig;
 };
 
-// withSentryConfig must be applied last, wrapping the async function
-module.exports = withSentryConfig(module.exports, {
-  org: 'andriel',
-  project: 'tecshop-user-ui',
-
-  // Only print logs for uploading source maps in CI
-  silent: !process.env.CI,
-
-  // Upload a larger set of source maps for prettier stack traces
-  widenClientFileUpload: true,
-
-  // Automatically tree-shake Sentry logger statements to reduce bundle size
-  disableLogger: true,
-
-  // Enables automatic instrumentation of Vercel Cron Monitors.
-  automaticVercelMonitors: true,
-});
+// Only apply Sentry in production/CI — it loads heavy webpack plugins that consume multiple GB in dev
+if (process.env.NODE_ENV !== 'development') {
+  module.exports = withSentryConfig(module.exports, {
+    org: 'andriel',
+    project: 'tecshop-user-ui',
+    silent: !process.env.CI,
+    widenClientFileUpload: true,
+    disableLogger: true,
+    automaticVercelMonitors: true,
+  });
+}

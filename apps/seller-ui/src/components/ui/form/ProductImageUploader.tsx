@@ -55,13 +55,13 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
 
   return (
     <div className={`space-y-4 ${className}`}>
-      <h3 className="text-lg font-semibold text-gray-200 mb-4">
+      <h3 className="text-lg font-semibold text-gray-900 mb-4">
         Product Images
       </h3>
 
       {/* Main Image */}
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">
+        <label className="block text-sm font-medium text-gray-900 mb-2">
           Main Image *
         </label>
         <ImagePlaceHolder
@@ -74,14 +74,14 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
           onImageUploaded={onImageUploaded}
           defaultImage={getDefaultImage(0)}
         />
-        <p className="mt-2 text-xs text-gray-400">
+        <p className="mt-2 text-xs text-gray-500">
           Upload the main product image (Required)
         </p>
       </div>
 
       {/* Additional Images Grid */}
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">
+        <label className="block text-sm font-medium text-gray-900 mb-2">
           Additional Images (Optional)
         </label>
         <div className="grid grid-cols-3 gap-2">
@@ -99,17 +99,17 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
             />
           ))}
         </div>
-        <p className="mt-2 text-xs text-gray-400">
+        <p className="mt-2 text-xs text-gray-500">
           Upload up to 3 additional images
         </p>
       </div>
 
       {/* Image Upload Tips */}
-      <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 mt-4">
-        <h4 className="text-sm font-semibold text-gray-200 mb-2">
-          📸 Image Guidelines
+      <div className="bg-surface-container-lowest border border-surface-container-highest shadow-ambient rounded-lg p-4 mt-4">
+        <h4 className="text-sm font-semibold text-gray-900 mb-2">
+          Image Guidelines
         </h4>
-        <ul className="text-xs text-gray-400 space-y-1">
+        <ul className="text-xs text-gray-500 space-y-1">
           <li>• Use high-quality images (min 800x800px)</li>
           <li>• Supported formats: JPG, PNG, WebP</li>
           <li>• Max file size: 3MB per image (compress large files)</li>

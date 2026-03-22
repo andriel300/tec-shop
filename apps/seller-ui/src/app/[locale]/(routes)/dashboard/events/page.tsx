@@ -63,7 +63,7 @@ const EventsPage = () => {
   if (isLoading) {
     return (
       <div className="p-8">
-        <div className="text-white text-center py-8">Loading events...</div>
+        <div className="text-gray-900 text-center py-8">Loading events...</div>
       </div>
     );
   }
@@ -82,7 +82,7 @@ const EventsPage = () => {
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white">Events</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Events</h1>
           <p className="text-slate-400 text-sm mt-1">
             Manage your shop promotional events
           </p>
@@ -100,7 +100,7 @@ const EventsPage = () => {
         <select
           value={filterStatus || ''}
           onChange={(e) => setFilterStatus(e.target.value || undefined)}
-          className="px-4 py-2 bg-slate-800 border border-slate-700 text-white rounded-lg"
+          className="px-4 py-2 bg-[#ffffff] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-gray-900 dark:text-slate-200 rounded-lg outline-none"
         >
           <option value="">All Statuses</option>
           <option value="DRAFT">Draft</option>
@@ -122,7 +122,7 @@ const EventsPage = () => {
             const value = e.target.value;
             setFilterActive(value === '' ? undefined : value === 'active');
           }}
-          className="px-4 py-2 bg-slate-800 border border-slate-700 text-white rounded-lg"
+          className="px-4 py-2 bg-[#ffffff] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-gray-900 dark:text-slate-200 rounded-lg outline-none"
         >
           <option value="">All Events</option>
           <option value="active">Active Only</option>
@@ -133,7 +133,7 @@ const EventsPage = () => {
       {/* Events Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {data?.data?.length === 0 ? (
-          <div className="col-span-full bg-slate-800/50 rounded-lg p-8 border border-slate-700 text-center">
+          <div className="col-span-full bg-gray-50 dark:bg-slate-800/50 rounded-lg p-8 border border-slate-200 dark:border-slate-700 text-center">
             <p className="text-slate-400 mb-4">No events found</p>
             <button
               onClick={() => router.push('/dashboard/create-event')}
@@ -146,7 +146,7 @@ const EventsPage = () => {
           data?.data?.map((event: EventResponse) => (
             <div
               key={event.id}
-              className="bg-slate-800/50 rounded-lg overflow-hidden border border-slate-700 hover:border-slate-600 transition"
+              className="bg-[#ffffff] dark:bg-slate-800/50 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition"
             >
               {event.bannerImage && (
                 <div className="h-40 overflow-hidden bg-slate-700">
@@ -160,7 +160,7 @@ const EventsPage = () => {
 
               <div className="p-6">
                 <div className="flex justify-between items-start mb-3">
-                  <h3 className="text-white font-semibold text-lg line-clamp-1">
+                  <h3 className="text-gray-900 font-semibold text-lg line-clamp-1">
                     {event.title}
                   </h3>
                   {isEventActive(event) && (
@@ -177,13 +177,13 @@ const EventsPage = () => {
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-slate-500">Start:</span>
-                    <span className="text-slate-300">
+                    <span className="text-gray-700 dark:text-slate-300">
                       {new Date(event.startDate).toLocaleDateString()}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-slate-500">End:</span>
-                    <span className="text-slate-300">
+                    <span className="text-gray-700 dark:text-slate-300">
                       {new Date(event.endDate).toLocaleDateString()}
                     </span>
                   </div>

@@ -23,8 +23,7 @@ export function useUnreadCount() {
   return useQuery({
     queryKey: notificationKeys.unread(),
     queryFn: notificationsApi.getUnreadCount,
-    staleTime: 30 * 1000,
-    refetchInterval: 60 * 1000,
+    staleTime: 60 * 1000,
   });
 }
 

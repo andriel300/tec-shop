@@ -97,14 +97,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // and set with path=/api. The browser will automatically send them with API requests.
         logger.debug('No sessionStorage, attempting token refresh...');
         try {
-          const { apiClient } = await import('../lib/api/client');
+          const { performRefresh } = await import('../lib/api/client');
           const { getCurrentUser } = await import('../lib/api/user');
 
-          // Try to refresh the token - this will validate the session
-          // If successful, new tokens will be set in cookies
-          const response = await apiClient.post('/auth/refresh', { userType: 'customer' }, {
-            skipAuthRefresh: true,
-          } as Record<string, unknown>);
+          // performRefresh uses a singleton Promise shared with the interceptor.
+          // If the interceptor is already refreshing (or vice versa), both callers
+          // await the same Promise — only one HTTP request fires — preventing the
+          // race condition that would trigger refresh token reuse detection.
+          const response = await performRefresh();
 
           logger.debug('Token refresh response', { hasData: !!response.data });
 

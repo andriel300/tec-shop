@@ -32,6 +32,43 @@ apiClient.interceptors.request.use(
   }
 );
 
+import type { AxiosResponse } from 'axios';
+
+// Shared refresh Promise — a single in-flight /auth/refresh request shared by
+// all concurrent callers (interceptor + initializeAuth in auth-context).
+// Returning the full AxiosResponse lets auth-context read user data from it
+// without firing a second request.
+let refreshPromise: Promise<AxiosResponse> | null = null;
+
+/**
+ * Performs a token refresh using the singleton guard.
+ * Exported so auth-context.initializeAuth can share the same lock as the
+ * interceptor, preventing a race where both fire /auth/refresh simultaneously
+ * with the same token — which would trigger reuse detection and force a logout.
+ *
+ * All concurrent callers get back the same Promise, so only one HTTP request
+ * is ever made per refresh cycle.
+ */
+export function performRefresh(): Promise<AxiosResponse> {
+  if (!refreshPromise) {
+    refreshPromise = apiClient
+      .post('/auth/refresh', { userType: 'seller' }, {
+        skipAuthRefresh: true,
+      } as Record<string, unknown>)
+      .finally(() => { refreshPromise = null; });
+  }
+  return refreshPromise;
+}
+
+function redirectToLogin() {
+  if (typeof window !== 'undefined') {
+    const currentPath = window.location.pathname;
+    if (!currentPath.includes('/login') && !currentPath.includes('/signup')) {
+      window.location.href = '/login';
+    }
+  }
+}
+
 // Response interceptor for error handling and automatic token refresh
 apiClient.interceptors.response.use(
   (response) => {
@@ -40,45 +77,27 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Skip auto-refresh for initial auth check to avoid infinite loops
+    // Skip auto-refresh for calls that are already part of the refresh flow
     if (originalRequest.skipAuthRefresh) {
       return Promise.reject(error);
     }
 
-    // Handle both 401 (Unauthorized) and 403 (Forbidden) for expired/invalid tokens
-    // 403 can occur when RolesGuard rejects an expired token
-    if (
-      (error.response?.status === 401 || error.response?.status === 403) &&
-      !originalRequest._retry
-    ) {
+    // Only refresh on 401 (Unauthorized / expired token).
+    // 403 (Forbidden) means the token is valid but the role is wrong —
+    // refreshing gives the same role and would cause an infinite redirect.
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        // Attempt to refresh the token using cookies
-        // Backend will read refresh_token from httpOnly cookie and set new cookies
-        // skipAuthRefresh prevents infinite recursion if the refresh call itself fails with 401/403
-        await apiClient.post('/auth/refresh', { userType: 'seller' }, {
-          skipAuthRefresh: true,
-        } as Record<string, unknown>);
-
-        // Retry the original request (new access_token cookie will be used automatically)
+        // performRefresh uses a shared Promise so concurrent 401s only fire
+        // one /auth/refresh request; all other callers wait on the same Promise.
+        await performRefresh();
         return apiClient(originalRequest);
-      } catch (refreshError) {
-        // Refresh failed, clear sessionStorage
+      } catch {
         sessionStorage.removeItem('user');
         sessionStorage.removeItem('userProfile');
-
-        // Only redirect if not already on login/signup pages to avoid infinite loops
-        if (typeof window !== 'undefined') {
-          const currentPath = window.location.pathname;
-          if (!currentPath.includes('/login') && !currentPath.includes('/signup')) {
-            window.location.href = '/login';
-          }
-        }
-
-        return Promise.reject(
-          new Error('Session expired. Please log in again.')
-        );
+        redirectToLogin();
+        return Promise.reject(new Error('Session expired. Please log in again.'));
       }
     }
 

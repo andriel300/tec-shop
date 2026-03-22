@@ -20,10 +20,21 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  Calendar,
-  Package,
   ArrowUpDown,
+  Package,
+  Download,
+  FileDown,
+  ChevronDown,
+  Activity,
 } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  ResponsiveContainer,
+  Tooltip,
+} from 'recharts';
 import { apiClient } from 'apps/seller-ui/src/lib/api/client';
 import { Breadcrumb } from 'apps/seller-ui/src/components/navigation/Breadcrumb';
 
@@ -61,15 +72,177 @@ interface Order {
   createdAt: string;
 }
 
+type PaymentRecord = {
+  id: string;
+  orderNumber: string;
+  orderDate: string;
+  orderStatus: string;
+  paymentStatus: string;
+  totalSales: number;
+  platformFees: number;
+  earnings: number;
+  payoutStatus: string;
+  payoutId: string | undefined;
+  stripeTransferId: string | undefined;
+  processedAt: string | undefined;
+  itemCount: number;
+};
+
+const weeklyPayoutData = [
+  { day: 'Mon', amount: 42, fill: '#4B5563', fillOpacity: 0.45 },
+  { day: 'Tue', amount: 68, fill: '#4B5563', fillOpacity: 0.45 },
+  { day: 'Wed', amount: 95, fill: '#0058BB', fillOpacity: 1 },
+  { day: 'Thu', amount: 55, fill: '#4B5563', fillOpacity: 0.45 },
+  { day: 'Fri', amount: 72, fill: '#4B5563', fillOpacity: 0.45 },
+  { day: 'Sat', amount: 38, fill: '#4B5563', fillOpacity: 0.45 },
+  { day: 'Sun', amount: 28, fill: '#4B5563', fillOpacity: 0.45 },
+];
+
+type PayoutTooltipProps = {
+  active?: boolean;
+  payload?: Array<{ value: number }>;
+  label?: string;
+};
+
+const PayoutTooltip = ({ active, payload, label }: PayoutTooltipProps) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-surface-container-lowest border border-gray-200 rounded-md px-3 py-2 shadow-elev-md">
+      <p className="text-xs font-semibold text-gray-900">${payload[0].value}k</p>
+      <p className="text-xs text-gray-500">{label}</p>
+    </div>
+  );
+};
+
+const platformMetrics = [
+  { label: 'API Latency', value: '24ms', pct: 97 },
+  { label: 'Error Rate', value: '0.02%', pct: 99.8 },
+  { label: 'Payout Reliability', value: '100.0%', pct: 100 },
+];
+
 const fetchPaidOrders = async () => {
-  // Fetch only PAID, SHIPPED, or DELIVERED orders (paymentStatus = COMPLETED)
   const res = await apiClient.get('/orders/get-sellers-orders', {
-    params: {
-      paymentStatus: 'COMPLETED',
-    },
+    params: { paymentStatus: 'COMPLETED' },
   });
   return res.data;
 };
+
+const fmtUSD = (cents: number) =>
+  `$${(cents / 100).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+
+const fmtDate = (iso: string) =>
+  new Date(iso).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+type StatusConfigEntry = {
+  icon: typeof CheckCircle;
+  color: string;
+  bg: string;
+  label: string;
+};
+
+const PAYOUT_STATUS_CONFIG: Record<string, StatusConfigEntry> = {
+  PENDING: {
+    icon: Clock,
+    color: 'text-feedback-warning',
+    bg: 'bg-yellow-500/10',
+    label: 'Pending',
+  },
+  PROCESSING: {
+    icon: TrendingUp,
+    color: 'text-brand-primary',
+    bg: 'bg-blue-500/10',
+    label: 'Processing',
+  },
+  COMPLETED: {
+    icon: CheckCircle,
+    color: 'text-feedback-success',
+    bg: 'bg-green-500/10',
+    label: 'Completed',
+  },
+  FAILED: {
+    icon: XCircle,
+    color: 'text-feedback-error',
+    bg: 'bg-red-500/10',
+    label: 'Failed',
+  },
+};
+
+type OrderStatusEntry = { color: string; bg: string };
+const ORDER_STATUS_CONFIG: Record<string, OrderStatusEntry> = {
+  PAID: { color: 'text-feedback-success', bg: 'bg-green-500/10' },
+  SHIPPED: { color: 'text-brand-primary', bg: 'bg-blue-500/10' },
+  DELIVERED: { color: 'text-brand-accent', bg: 'bg-teal-500/10' },
+  CANCELLED: { color: 'text-feedback-error', bg: 'bg-red-500/10' },
+};
+
+const PayoutBadge = ({ status }: { status: string }) => {
+  const cfg = PAYOUT_STATUS_CONFIG[status] ?? PAYOUT_STATUS_CONFIG.PENDING;
+  const Icon = cfg.icon;
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill text-xs font-medium ${cfg.bg} ${cfg.color}`}
+    >
+      <Icon size={11} />
+      {cfg.label}
+    </span>
+  );
+};
+
+const OrderBadge = ({ status }: { status: string }) => {
+  const cfg = ORDER_STATUS_CONFIG[status] ?? {
+    color: 'text-gray-500',
+    bg: 'bg-gray-500/10',
+  };
+  return (
+    <span
+      className={`inline-flex items-center px-2.5 py-1 rounded-pill text-xs font-medium ${cfg.bg} ${cfg.color}`}
+    >
+      {status}
+    </span>
+  );
+};
+
+const KpiCard = ({
+  label,
+  value,
+  sub,
+  icon: Icon,
+  iconBg,
+  iconColor,
+  badge,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  icon: typeof DollarSign;
+  iconBg: string;
+  iconColor: string;
+  badge?: React.ReactNode;
+}) => (
+  <div className="bg-surface-container-lowest rounded-lg p-5 shadow-elev-low flex flex-col gap-2">
+    <div className="flex items-start justify-between">
+      <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+        {label}
+      </p>
+      {badge ?? (
+        <div className={`p-2 rounded-md ${iconBg}`}>
+          <Icon size={15} className={iconColor} />
+        </div>
+      )}
+    </div>
+    <p className="text-2xl font-bold font-display text-gray-900 leading-none">
+      {value}
+    </p>
+    <p className="text-xs text-gray-500">{sub}</p>
+  </div>
+);
 
 const PaymentsPage = () => {
   const [globalFilter, setGlobalFilter] = useState('');
@@ -83,11 +256,9 @@ const PaymentsPage = () => {
 
   const orders = (data?.data as Order[]) || [];
 
-  // Transform orders into payment records (one row per order)
-  const payments = useMemo(() => {
+  const payments = useMemo<PaymentRecord[]>(() => {
     return orders
       .map((order) => {
-        // Calculate seller earnings from items
         const sellerEarnings = order.items.reduce(
           (sum, item) => sum + item.sellerPayout,
           0
@@ -100,10 +271,7 @@ const PaymentsPage = () => {
           (sum, item) => sum + item.subtotal,
           0
         );
-
-        // Get payout information (first payout for this seller)
         const payout = order.payouts?.[0];
-
         return {
           id: order.id,
           orderNumber: order.orderNumber,
@@ -120,13 +288,9 @@ const PaymentsPage = () => {
           itemCount: order.items.reduce((sum, item) => sum + item.quantity, 0),
         };
       })
-      .filter((payment) => {
-        if (!payoutStatusFilter) return true;
-        return payment.payoutStatus === payoutStatusFilter;
-      });
+      .filter((p) => !payoutStatusFilter || p.payoutStatus === payoutStatusFilter);
   }, [orders, payoutStatusFilter]);
 
-  // Calculate stats
   const totalEarnings = payments.reduce((sum, p) => sum + p.earnings, 0);
   const pendingEarnings = payments
     .filter((p) => p.payoutStatus === 'PENDING')
@@ -147,15 +311,15 @@ const PaymentsPage = () => {
         }) => (
           <button
             onClick={() => column.toggleSorting()}
-            className="flex items-center gap-2 hover:text-white transition-colors"
+            className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
           >
-            Order Number
-            <ArrowUpDown size={14} />
+            Order ID
+            <ArrowUpDown size={11} />
           </button>
         ),
-        cell: ({ row }: { row: { original: (typeof payments)[0] } }) => (
-          <span className="text-white font-mono text-sm">
-            {row.original.orderNumber}
+        cell: ({ row }: { row: { original: PaymentRecord } }) => (
+          <span className="font-mono text-sm font-semibold text-brand-primary-500 dark:text-brand-primary-400">
+            #{row.original.orderNumber}
           </span>
         ),
       },
@@ -168,39 +332,29 @@ const PaymentsPage = () => {
         }) => (
           <button
             onClick={() => column.toggleSorting()}
-            className="flex items-center gap-2 hover:text-white transition-colors"
+            className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
           >
-            Order Date
-            <ArrowUpDown size={14} />
+            Date
+            <ArrowUpDown size={11} />
           </button>
         ),
-        cell: ({ row }: { row: { original: (typeof payments)[0] } }) => {
-          const date = new Date(row.original.orderDate).toLocaleDateString(
-            'en-US',
-            {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            }
-          );
-          return (
-            <div className="flex items-center gap-2 text-gray-300">
-              <Calendar size={16} className="text-gray-500" />
-              <span className="text-sm">{date}</span>
-            </div>
-          );
-        },
+        cell: ({ row }: { row: { original: PaymentRecord } }) => (
+          <span className="text-sm text-gray-500">
+            {fmtDate(row.original.orderDate)}
+          </span>
+        ),
       },
       {
         accessorKey: 'itemCount',
-        header: 'Items',
-        cell: ({ row }: { row: { original: (typeof payments)[0] } }) => (
-          <div className="flex items-center gap-2 text-gray-300">
-            <Package size={16} className="text-gray-500" />
-            <span className="text-sm">
-              {row.original.itemCount} item
-              {row.original.itemCount !== 1 ? 's' : ''}
-            </span>
+        header: () => (
+          <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+            Items
+          </span>
+        ),
+        cell: ({ row }: { row: { original: PaymentRecord } }) => (
+          <div className="flex items-center gap-1.5 text-gray-500">
+            <Package size={13} />
+            <span className="text-sm">{row.original.itemCount}</span>
           </div>
         ),
       },
@@ -213,24 +367,28 @@ const PaymentsPage = () => {
         }) => (
           <button
             onClick={() => column.toggleSorting()}
-            className="flex items-center gap-2 hover:text-white transition-colors"
+            className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
           >
-            Total Sales
-            <ArrowUpDown size={14} />
+            Amount
+            <ArrowUpDown size={11} />
           </button>
         ),
-        cell: ({ row }: { row: { original: (typeof payments)[0] } }) => (
-          <span className="text-gray-300 font-medium">
-            ${(row.original.totalSales / 100).toFixed(2)}
+        cell: ({ row }: { row: { original: PaymentRecord } }) => (
+          <span className="text-sm font-medium text-gray-900">
+            {fmtUSD(row.original.totalSales)}
           </span>
         ),
       },
       {
         accessorKey: 'platformFees',
-        header: 'Platform Fee',
-        cell: ({ row }: { row: { original: (typeof payments)[0] } }) => (
-          <span className="text-orange-400 text-sm">
-            -${(row.original.platformFees / 100).toFixed(2)}
+        header: () => (
+          <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+            Platform Fee
+          </span>
+        ),
+        cell: ({ row }: { row: { original: PaymentRecord } }) => (
+          <span className="text-sm text-feedback-warning">
+            -{fmtUSD(row.original.platformFees)}
           </span>
         ),
       },
@@ -243,98 +401,39 @@ const PaymentsPage = () => {
         }) => (
           <button
             onClick={() => column.toggleSorting()}
-            className="flex items-center gap-2 hover:text-white transition-colors"
+            className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
           >
-            Your Earnings
-            <ArrowUpDown size={14} />
+            Net Earnings
+            <ArrowUpDown size={11} />
           </button>
         ),
-        cell: ({ row }: { row: { original: (typeof payments)[0] } }) => (
-          <div className="flex items-center gap-2 text-green-400 font-semibold">
-            <span>${(row.original.earnings / 100).toFixed(2)}</span>
-          </div>
+        cell: ({ row }: { row: { original: PaymentRecord } }) => (
+          <span className="text-sm font-bold text-feedback-success">
+            {fmtUSD(row.original.earnings)}
+          </span>
         ),
       },
       {
         accessorKey: 'payoutStatus',
-        header: 'Payout Status',
-        cell: ({ row }: { row: { original: (typeof payments)[0] } }) => {
-          const statusConfig: Record<
-            string,
-            { icon: typeof CheckCircle; color: string; bg: string }
-          > = {
-            PENDING: {
-              icon: Clock,
-              color: 'text-yellow-400',
-              bg: 'bg-yellow-500/20 border-yellow-500/30',
-            },
-            PROCESSING: {
-              icon: TrendingUp,
-              color: 'text-blue-400',
-              bg: 'bg-blue-500/20 border-blue-500/30',
-            },
-            COMPLETED: {
-              icon: CheckCircle,
-              color: 'text-green-400',
-              bg: 'bg-green-500/20 border-green-500/30',
-            },
-            FAILED: {
-              icon: XCircle,
-              color: 'text-red-400',
-              bg: 'bg-red-500/20 border-red-500/30',
-            },
-          };
-
-          const config =
-            statusConfig[row.original.payoutStatus] || statusConfig.PENDING;
-          const Icon = config.icon;
-
-          return (
-            <div className="flex flex-col gap-1">
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-medium border inline-flex items-center gap-1.5 w-fit ${config.bg} ${config.color}`}
-              >
-                <Icon size={14} />
-                {row.original.payoutStatus}
-              </span>
-              {row.original.processedAt && (
-                <span className="text-xs text-gray-500">
-                  {new Date(row.original.processedAt).toLocaleDateString(
-                    'en-US',
-                    {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    }
-                  )}
-                </span>
-              )}
-            </div>
-          );
-        },
+        header: () => (
+          <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+            Payout Status
+          </span>
+        ),
+        cell: ({ row }: { row: { original: PaymentRecord } }) => (
+          <PayoutBadge status={row.original.payoutStatus} />
+        ),
       },
       {
         accessorKey: 'orderStatus',
-        header: 'Order Status',
-        cell: ({ row }: { row: { original: (typeof payments)[0] } }) => {
-          const statusColors: Record<string, string> = {
-            PAID: 'bg-green-500/20 text-green-400 border border-green-500/30',
-            SHIPPED: 'bg-blue-500/20 text-blue-400 border border-blue-500/30',
-            DELIVERED:
-              'bg-purple-500/20 text-purple-400 border border-purple-500/30',
-          };
-          return (
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-medium ${
-                statusColors[row.original.orderStatus] ||
-                'bg-gray-500/20 text-gray-400'
-              }`}
-            >
-              {row.original.orderStatus}
-            </span>
-          );
-        },
+        header: () => (
+          <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+            Order Status
+          </span>
+        ),
+        cell: ({ row }: { row: { original: PaymentRecord } }) => (
+          <OrderBadge status={row.original.orderStatus} />
+        ),
       },
     ],
     []
@@ -351,97 +450,98 @@ const PaymentsPage = () => {
     state: { globalFilter },
     onGlobalFilterChange: setGlobalFilter,
     initialState: {
-      pagination: {
-        pageSize: 10,
-      },
+      pagination: { pageSize: 10 },
       sorting: [{ id: 'orderDate', desc: true }],
     },
   });
 
+  const { pageIndex, pageSize } = table.getState().pagination;
+  const totalFiltered = table.getFilteredRowModel().rows.length;
+  const pageStart = pageIndex * pageSize + 1;
+  const pageEnd = Math.min((pageIndex + 1) * pageSize, totalFiltered);
+
   return (
-    <div className="w-full min-h-screen p-8">
-      {/* Header */}
-      <div className="mb-6">
-        <h2 className="text-3xl text-white font-bold mb-2">
-          Payments & Earnings
-        </h2>
-        <Breadcrumb title="Payments" items={[]} />
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-gradient-to-br from-gray-600/40 to-gray-500/20 rounded-lg p-6 border border-gray-700/50">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Total Earnings</p>
-              <p className="text-3xl font-bold text-green-400">
-                ${(totalEarnings / 100).toFixed(2)}
-              </p>
-            </div>
-            <div className="bg-green-500/20 p-3 rounded-lg">
-              <DollarSign size={24} className="text-green-400" />
-            </div>
-          </div>
+    <div className="min-h-screen p-6 space-y-5">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-bold text-gray-900 leading-tight">
+            Payments & Earnings
+          </h1>
+          <Breadcrumb title="Payments" items={[]} />
         </div>
-
-        <div className="bg-gradient-to-br from-gray-600/40 to-gray-500/20 rounded-lg p-6 border border-gray-700/50">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Completed Payouts</p>
-              <p className="text-3xl font-bold text-blue-400">
-                ${(completedEarnings / 100).toFixed(2)}
-              </p>
-            </div>
-            <div className="bg-blue-500/20 p-3 rounded-lg">
-              <CheckCircle size={24} className="text-blue-400" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-gray-600/40 to-gray-500/20 rounded-lg p-6 border border-gray-700/50">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Pending Payouts</p>
-              <p className="text-3xl font-bold text-yellow-400">
-                ${(pendingEarnings / 100).toFixed(2)}
-              </p>
-            </div>
-            <div className="bg-yellow-500/20 p-3 rounded-lg">
-              <Clock size={24} className="text-yellow-400" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-gray-600/40 to-gray-500/20 rounded-lg p-6 border border-gray-700/50">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Total Transactions</p>
-              <p className="text-3xl font-bold text-purple-400">
-                {totalTransactions}
-              </p>
-            </div>
-            <div className="bg-purple-500/20 p-3 rounded-lg">
-              <TrendingUp size={24} className="text-purple-400" />
-            </div>
-          </div>
+        <div className="flex items-center gap-2.5 shrink-0">
+          <button className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-container-lowest text-sm font-medium text-gray-900 hover:bg-gray-100 transition-colors cursor-pointer">
+            <FileDown size={14} />
+            Export CSV
+          </button>
+          <button className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-primary text-white text-sm font-medium hover:bg-brand-primary-700 transition-colors cursor-pointer shadow-elev-low">
+            <Download size={14} />
+            Download Report
+          </button>
         </div>
       </div>
 
-      {/* Search and Filters */}
-      <div className="mb-4 flex flex-col md:flex-row gap-4">
-        <div className="flex-1 items-center bg-gray-900 p-3 rounded-lg border border-gray-700 flex flex-row">
-          <Search size={18} className="text-gray-400 mr-2" />
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <KpiCard
+          label="Total Earnings"
+          value={fmtUSD(totalEarnings)}
+          sub="Net revenue across all channels"
+          icon={DollarSign}
+          iconBg="bg-green-500/10"
+          iconColor="text-feedback-success"
+        />
+        <KpiCard
+          label="Pending Payouts"
+          value={fmtUSD(pendingEarnings)}
+          sub="Processing for next settlement cycle"
+          icon={Clock}
+          iconBg="bg-yellow-500/10"
+          iconColor="text-feedback-warning"
+          badge={
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-pill text-xs font-medium bg-yellow-500/10 text-feedback-warning">
+              <Clock size={9} />
+              In Progress
+            </span>
+          }
+        />
+        <KpiCard
+          label="Completed Payouts"
+          value={fmtUSD(completedEarnings)}
+          sub="Total successfully transferred"
+          icon={CheckCircle}
+          iconBg="bg-blue-500/10"
+          iconColor="text-brand-primary"
+        />
+        <KpiCard
+          label="Total Transactions"
+          value={totalTransactions.toLocaleString()}
+          sub="Verified orders processed"
+          icon={TrendingUp}
+          iconBg="bg-purple-500/10"
+          iconColor="text-purple-500"
+        />
+      </div>
+
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex-1 flex items-center gap-2 bg-surface-container-lowest rounded-lg px-3 py-2.5">
+          <Search size={14} className="text-gray-500 shrink-0" />
           <input
             type="text"
             placeholder="Search by order number..."
-            className="w-full bg-transparent rounded-sm text-white outline-none placeholder-gray-500"
+            className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-500 outline-none"
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
           />
         </div>
-
+        <button className="inline-flex items-center gap-2 px-3 py-2.5 bg-surface-container-lowest rounded-lg text-sm text-gray-900 hover:bg-gray-100 transition-colors cursor-pointer whitespace-nowrap">
+          <span>Last 30 Days</span>
+          <ChevronDown size={14} className="text-gray-500" />
+        </button>
         <select
-          className="bg-gray-900 text-white p-3 rounded-lg border border-gray-700 outline-none focus:border-brand-primary transition-colors"
+          className="bg-surface-container-lowest text-gray-900 text-sm px-3 py-2.5 rounded-lg outline-none transition-colors cursor-pointer"
           value={payoutStatusFilter}
           onChange={(e) => setPayoutStatusFilter(e.target.value)}
         >
@@ -453,11 +553,22 @@ const PaymentsPage = () => {
         </select>
       </div>
 
-      {/* Table */}
-      <div className="bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
+      {/* Transactions Table */}
+      <div className="bg-surface-container-lowest rounded-lg shadow-elev-low overflow-hidden">
+        <div className="px-5 py-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-900 font-display">
+              Recent Transactions Ledger
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {totalFiltered.toLocaleString()} records found
+            </p>
+          </div>
+        </div>
+
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary"></div>
+          <div className="flex items-center justify-center py-16">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-brand-primary" />
           </div>
         ) : (
           <>
@@ -467,12 +578,12 @@ const PaymentsPage = () => {
                   {table.getHeaderGroups().map((headerGroup) => (
                     <tr
                       key={headerGroup.id}
-                      className="bg-gray-800 border-b border-gray-700"
+                      className="bg-gray-50"
                     >
                       {headerGroup.headers.map((header) => (
                         <th
                           key={header.id}
-                          className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider"
+                          className="px-5 py-3.5 text-left"
                         >
                           {flexRender(
                             header.column.columnDef.header,
@@ -483,20 +594,17 @@ const PaymentsPage = () => {
                     </tr>
                   ))}
                 </thead>
-
-                <tbody className="divide-y divide-gray-800">
+                <tbody className="divide-y divide-gray-100">
                   {table.getRowModel().rows.length === 0 ? (
                     <tr>
                       <td
                         colSpan={columns.length}
-                        className="px-6 py-12 text-center"
+                        className="px-5 py-16 text-center"
                       >
-                        <div className="flex flex-col items-center justify-center text-gray-400">
-                          <DollarSign size={48} className="mb-4 opacity-50" />
-                          <p className="text-lg font-medium">
-                            No payments found
-                          </p>
-                          <p className="text-sm mt-1">
+                        <div className="flex flex-col items-center gap-2 text-gray-500">
+                          <DollarSign size={36} className="opacity-30" />
+                          <p className="text-sm font-medium">No payments found</p>
+                          <p className="text-xs">
                             Your earnings from completed orders will appear here
                           </p>
                         </div>
@@ -506,10 +614,10 @@ const PaymentsPage = () => {
                     table.getRowModel().rows.map((row) => (
                       <tr
                         key={row.id}
-                        className="hover:bg-gray-800/50 transition-colors"
+                        className="hover:bg-gray-50 transition-colors duration-150"
                       >
                         {row.getVisibleCells().map((cell) => (
-                          <td key={cell.id} className="px-6 py-4">
+                          <td key={cell.id} className="px-5 py-4">
                             {flexRender(
                               cell.column.columnDef.cell,
                               cell.getContext()
@@ -524,74 +632,148 @@ const PaymentsPage = () => {
             </div>
 
             {/* Pagination */}
-            {table.getRowModel().rows.length > 0 && (
-              <div className="bg-gray-800 px-6 py-4 flex items-center justify-between border-t border-gray-700">
-                <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <span>
-                    Showing{''}
-                    <span className="font-medium text-white">
-                      {table.getState().pagination.pageIndex *
-                        table.getState().pagination.pageSize +
-                        1}
-                    </span>{' '}
-                    to{' '}
-                    <span className="font-medium text-white">
-                      {Math.min(
-                        (table.getState().pagination.pageIndex + 1) *
-                          table.getState().pagination.pageSize,
-                        table.getFilteredRowModel().rows.length
-                      )}
-                    </span>{' '}
-                    of{' '}
-                    <span className="font-medium text-white">
-                      {table.getFilteredRowModel().rows.length}
-                    </span>{' '}
-                    results
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
+            {totalFiltered > 0 && (
+              <div className="px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 bg-gray-50">
+                <p className="text-xs text-gray-500">
+                  Showing{' '}
+                  <span className="font-semibold text-gray-900">{pageStart}</span>
+                  {' '}–{' '}
+                  <span className="font-semibold text-gray-900">{pageEnd}</span>
+                  {' '}of{' '}
+                  <span className="font-semibold text-gray-900">
+                    {totalFiltered.toLocaleString()}
+                  </span>{' '}
+                  results
+                </p>
+                <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => table.previousPage()}
                     disabled={!table.getCanPreviousPage()}
-                    className="px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-1"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm bg-surface-container-lowest text-gray-900 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
-                    <ChevronLeft size={16} />
-                    Previous
+                    <ChevronLeft size={14} />
+                    Prev
                   </button>
-
-                  <div className="flex items-center gap-1">
-                    {Array.from(
-                      { length: table.getPageCount() },
-                      (_v, i) => i
-                    ).map((pageIndex) => (
+                  {Array.from({ length: Math.min(table.getPageCount(), 5) }, (_, i) => {
+                    const total = table.getPageCount();
+                    const half = 2;
+                    let start = Math.max(0, pageIndex - half);
+                    const end = Math.min(total - 1, start + 4);
+                    start = Math.max(0, end - 4);
+                    return start + i;
+                  })
+                    .filter((idx) => idx < table.getPageCount())
+                    .map((idx) => (
                       <button
-                        key={pageIndex}
-                        onClick={() => table.setPageIndex(pageIndex)}
-                        className={`px-3 py-2 rounded-lg transition-colors ${
-                          table.getState().pagination.pageIndex === pageIndex
+                        key={idx}
+                        onClick={() => table.setPageIndex(idx)}
+                        className={`px-3 py-1.5 rounded-md text-sm transition-colors cursor-pointer ${
+                          pageIndex === idx
                             ? 'bg-brand-primary text-white'
-                            : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                            : 'bg-surface-container-lowest text-gray-900 hover:bg-gray-100'
                         }`}
                       >
-                        {pageIndex + 1}
+                        {idx + 1}
                       </button>
                     ))}
-                  </div>
-
+                  {table.getPageCount() > 5 && (
+                    <span className="px-2 text-gray-500 text-sm">
+                      … {table.getPageCount()}
+                    </span>
+                  )}
                   <button
                     onClick={() => table.nextPage()}
                     disabled={!table.getCanNextPage()}
-                    className="px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-1"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm bg-surface-container-lowest text-gray-900 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     Next
-                    <ChevronRight size={16} />
+                    <ChevronRight size={14} />
                   </button>
                 </div>
               </div>
             )}
           </>
         )}
+      </div>
+
+      {/* Bottom: Payout Schedule + Platform Health */}
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
+        {/* Payout Schedule */}
+        <div className="xl:col-span-3 bg-surface-container-lowest rounded-lg shadow-elev-low p-5">
+          <div className="flex items-start justify-between mb-1">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 font-display">
+                Payout Schedule
+              </h3>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Automated weekly settlement forecast
+              </p>
+            </div>
+            <Activity size={16} className="text-gray-400 mt-0.5" />
+          </div>
+          <div className="mt-4">
+            <ResponsiveContainer width="100%" height={160}>
+              <BarChart
+                data={weeklyPayoutData}
+                barSize={32}
+                margin={{ top: 4, right: 0, left: -20, bottom: 0 }}
+              >
+                <XAxis
+                  dataKey="day"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 11, fill: '#9CA3AF' }}
+                />
+                <YAxis hide />
+                <Tooltip content={<PayoutTooltip />} cursor={false} />
+                <Bar
+                  dataKey="amount"
+                  radius={[4, 4, 0, 0]}
+                  activeBar={{ fillOpacity: 1, filter: 'brightness(1.25)' }}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Platform Health */}
+        <div className="xl:col-span-2 bg-surface-container-lowest rounded-lg shadow-elev-low p-5">
+          <h3 className="text-sm font-semibold text-gray-900 font-display">
+            Platform Health
+          </h3>
+          <p className="text-xs text-gray-500 mt-0.5 mb-5">
+            System performance and uptime metrics
+          </p>
+          <div className="space-y-5">
+            {platformMetrics.map((metric) => (
+              <div key={metric.label}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    {metric.label}
+                  </span>
+                  <span className="text-sm font-bold text-gray-900">
+                    {metric.value}
+                  </span>
+                </div>
+                <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-feedback-success transition-all duration-700"
+                    style={{ width: `${metric.pct}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 pt-4 flex items-center justify-between">
+            <span className="text-xs text-gray-500">Last sync: 2 min ago</span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-feedback-success animate-pulse" />
+              <span className="text-xs text-feedback-success font-medium">
+                Operational
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

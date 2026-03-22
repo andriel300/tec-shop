@@ -48,8 +48,8 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
 
     const variantClasses =
       variant === 'dark'
-        ? 'bg-gray-800 border border-gray-700 text-white focus:ring-blue-500'
-        : 'bg-ui-muted border border-ui-divider text-text-primary placeholder-text-muted focus:ring-brand-primary';
+        ? 'bg-surface-container border border-surface-container-highest text-gray-900 focus:ring-brand-primary-600'
+        : 'bg-surface-container border border-surface-container-highest text-gray-900 focus:ring-brand-primary-600';
 
     return (
       <div className="relative">
@@ -87,7 +87,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         </select>
         <ChevronDown
           className={`absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 pointer-events-none ${
-            variant === 'dark' ? 'text-gray-400' : 'text-text-muted'
+            'text-gray-500'
           }`}
         />
       </div>

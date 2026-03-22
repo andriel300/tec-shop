@@ -177,6 +177,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @Throttle({ medium: { limit: 20, ttl: 900000 } }) // 20 refreshes per 15 min — safe with singleton interceptor
   @ApiOperation({ summary: 'Refresh access token using refresh token' })
   @ApiResponse({
     status: 201,

@@ -400,6 +400,11 @@ export class AuthCoreService implements OnModuleInit {
   }
 
   async refreshToken(refreshToken: string, _currentAccessToken?: string) {
+    // Extract familyId from structured token format: "{familyId}.{secret}"
+    // Legacy tokens (no dot) have no family and cannot trigger reuse detection.
+    const dotIndex = refreshToken.indexOf('.');
+    const familyId = dotIndex !== -1 ? refreshToken.substring(0, dotIndex) : null;
+
     const hashedRefreshToken = createHash('sha256')
       .update(refreshToken)
       .digest('hex');
@@ -412,17 +417,50 @@ export class AuthCoreService implements OnModuleInit {
     });
 
     if (!user) {
+      // Token hash doesn't match the active token.
+      // If it carries a familyId, check whether that family is still registered —
+      // a match means the token was already rotated and is being replayed (reuse attack).
+      if (familyId) {
+        const familyOwner = await this.prisma.user.findFirst({
+          where: { refreshTokenFamily: familyId },
+        });
+
+        if (familyOwner) {
+          this.logger.warn(
+            `Refresh token reuse detected — revoking all tokens for userId: ${familyOwner.id}`
+          );
+          this.logProducer.warn(
+            'auth-service',
+            LogCategory.AUTH,
+            'Refresh token reuse detected',
+            {
+              userId: familyOwner.id,
+              metadata: { action: 'reuse_detected', familyId },
+            }
+          );
+
+          await this.revokeAllUserTokens(familyOwner.id, 'refresh_token_reuse');
+
+          throw new RpcException({
+            statusCode: 401,
+            message: 'Session invalidated due to suspicious activity. Please log in again.',
+          });
+        }
+      }
+
       throw new RpcException({ statusCode: 401, message: 'Invalid refresh token' });
     }
 
     const rememberMeStr = await this.redisService.get(`session-remember-me:${user.id}`);
     const wasRememberMe = rememberMeStr === '1';
 
+    // Rotate: generate new token preserving the same familyId
     const tokens = await this.generateTokens(
       user.id,
       user.email,
       user.userType as 'CUSTOMER' | 'SELLER' | 'ADMIN',
-      wasRememberMe
+      wasRememberMe,
+      familyId ?? undefined
     );
 
     this.logProducer.info('auth-service', LogCategory.AUTH, 'Token refreshed', {
@@ -442,7 +480,7 @@ export class AuthCoreService implements OnModuleInit {
     try {
       await this.prisma.user.update({
         where: { id: userId },
-        data: { refreshToken: null },
+        data: { refreshToken: null, refreshTokenFamily: null },
       });
 
       return { message: 'Refresh token revoked successfully' };
@@ -493,7 +531,7 @@ export class AuthCoreService implements OnModuleInit {
 
     await this.prisma.user.update({
       where: { id: userId },
-      data: { refreshToken: null },
+      data: { refreshToken: null, refreshTokenFamily: null },
     });
 
     return { message: 'All user tokens revoked successfully', revocationTime };
@@ -533,7 +571,7 @@ export class AuthCoreService implements OnModuleInit {
 
     await this.prisma.user.update({
       where: { id: userId },
-      data: { password: hashedPassword, refreshToken: null },
+      data: { password: hashedPassword, refreshToken: null, refreshTokenFamily: null },
     });
 
     this.logger.log(`Password changed successfully for user: ${userId}`);
@@ -660,18 +698,26 @@ export class AuthCoreService implements OnModuleInit {
     userId: string,
     email: string,
     role: 'CUSTOMER' | 'SELLER' | 'ADMIN',
-    rememberMe = false
+    rememberMe = false,
+    familyId?: string  // reuse existing family on rotation; undefined = new login → new family
   ) {
     const payload = { sub: userId, username: email, role, userType: role };
 
     const access_token = this.jwtService.sign(payload, { expiresIn: '15m' });
 
-    const refresh_token = randomBytes(32).toString('hex');
+    // Structured refresh token: "{familyId}.{secret}"
+    // familyId survives all rotations so a reused old token can be traced back to its family.
+    const family = familyId ?? randomBytes(16).toString('hex');
+    const secret = randomBytes(32).toString('hex');
+    const refresh_token = `${family}.${secret}`;
     const hashedRefreshToken = createHash('sha256').update(refresh_token).digest('hex');
 
     await this.prisma.user.update({
       where: { id: userId },
-      data: { refreshToken: hashedRefreshToken },
+      data: {
+        refreshToken: hashedRefreshToken,
+        refreshTokenFamily: family,
+      },
     });
 
     const sessionTtl = rememberMe ? 30 * 24 * 60 * 60 : 7 * 24 * 60 * 60;

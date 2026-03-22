@@ -38,21 +38,21 @@ const FormField: React.FC<FormFieldProps> = ({
     <div className={className}>
       <label
         htmlFor={field.name as string}
-        className="block text-sm font-medium text-gray-300 mb-2"
+        className="block text-sm font-medium text-gray-900 mb-2"
       >
-        {label} {required && <span className="text-red-400">*</span>}
+        {label} {required && <span className="text-feedback-error">*</span>}
       </label>
 
       {children}
 
       {hasError && (
-        <p className="mt-1 text-sm text-red-400">
+        <p className="mt-1 text-sm text-feedback-error">
           {field.state.meta.errors[0]}
         </p>
       )}
 
       {!hasError && helperText && (
-        <p className="mt-2 text-xs text-gray-400">{helperText}</p>
+        <p className="mt-2 text-xs text-gray-500">{helperText}</p>
       )}
     </div>
   );

@@ -98,7 +98,7 @@ const NotificationsPage = () => {
   return (
     <div className="w-full min-h-screen p-8">
       <div className="mb-6">
-        <h2 className="text-2xl text-white font-semibold mb-1">
+        <h2 className="text-2xl text-gray-900 font-semibold mb-1">
           Notifications
         </h2>
         <p className="text-slate-400 text-sm">
@@ -108,7 +108,7 @@ const NotificationsPage = () => {
 
       <div className="flex flex-col lg:flex-row gap-4 mb-6">
         <select
-          className="bg-slate-800 text-white p-3 rounded-lg border border-slate-700 outline-none"
+          className="bg-[#ffffff] dark:bg-slate-800 text-gray-900 dark:text-slate-200 p-3 rounded-lg border border-slate-200 dark:border-slate-700 outline-none"
           value={filterType}
           onChange={(e) => {
             setFilterType(e.target.value as NotificationType | '');
@@ -124,7 +124,7 @@ const NotificationsPage = () => {
         </select>
 
         <select
-          className="bg-slate-800 text-white p-3 rounded-lg border border-slate-700 outline-none"
+          className="bg-[#ffffff] dark:bg-slate-800 text-gray-900 dark:text-slate-200 p-3 rounded-lg border border-slate-200 dark:border-slate-700 outline-none"
           value={filterRead}
           onChange={(e) => {
             setFilterRead(e.target.value);
@@ -148,7 +148,7 @@ const NotificationsPage = () => {
         )}
       </div>
 
-      <div className="bg-slate-900 rounded-lg border border-slate-700 overflow-hidden">
+      <div className="bg-[#ffffff] dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
@@ -164,12 +164,12 @@ const NotificationsPage = () => {
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-800">
+          <div className="divide-y divide-gray-100 dark:divide-slate-800">
             {data.notifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`px-6 py-4 hover:bg-slate-800/50 transition-colors flex items-start gap-4 ${
-                  !notification.isRead ? 'bg-slate-800/20' : ''
+                className={`px-6 py-4 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors flex items-start gap-4 ${
+                  !notification.isRead ? 'bg-blue-50/50 dark:bg-slate-800/20' : ''
                 }`}
               >
                 <div className="flex-shrink-0 mt-1">
@@ -184,7 +184,7 @@ const NotificationsPage = () => {
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="text-white font-medium text-sm">
+                    <p className="text-gray-900 font-medium text-sm">
                       {notification.title}
                     </p>
                     {!notification.isRead && (
@@ -216,7 +216,7 @@ const NotificationsPage = () => {
                   {!notification.isRead && (
                     <button
                       onClick={() => markAsRead.mutate(notification.id)}
-                      className="p-2 text-slate-500 hover:text-blue-400 transition-colors rounded-lg hover:bg-slate-700"
+                      className="p-2 text-slate-500 hover:text-blue-400 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
                       title="Mark as read"
                     >
                       <Check size={16} />
@@ -224,7 +224,7 @@ const NotificationsPage = () => {
                   )}
                   <button
                     onClick={() => deleteNotification.mutate(notification.id)}
-                    className="p-2 text-slate-500 hover:text-red-400 transition-colors rounded-lg hover:bg-slate-700"
+                    className="p-2 text-slate-500 hover:text-red-400 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
                     title="Delete"
                   >
                     <Trash2 size={16} />
@@ -236,7 +236,7 @@ const NotificationsPage = () => {
         )}
 
         {totalPages > 1 && (
-          <div className="bg-slate-800 px-6 py-4 flex items-center justify-between border-t border-slate-700">
+          <div className="bg-gray-50 dark:bg-slate-800 px-6 py-4 flex items-center justify-between border-t border-slate-200 dark:border-slate-700">
             <span className="text-sm text-slate-400">
               Page {page} of {totalPages} ({data?.total} total)
             </span>
@@ -244,7 +244,7 @@ const NotificationsPage = () => {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="px-3 py-2 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-600 text-white rounded-lg transition-colors flex items-center gap-1"
+                className="px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-gray-400 dark:disabled:text-slate-600 text-gray-900 dark:text-slate-300 rounded-lg transition-colors flex items-center gap-1"
               >
                 <ChevronLeft size={16} />
                 Previous
@@ -252,7 +252,7 @@ const NotificationsPage = () => {
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="px-3 py-2 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-600 text-white rounded-lg transition-colors flex items-center gap-1"
+                className="px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-gray-400 dark:disabled:text-slate-600 text-gray-900 dark:text-slate-300 rounded-lg transition-colors flex items-center gap-1"
               >
                 Next
                 <ChevronRight size={16} />

@@ -63,19 +63,19 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/75 backdrop-blur-sm animate-fadeIn"
       onClick={handleBackdropClick}
     >
       <div
         ref={modalRef}
-        className={`relative w-full ${sizeClasses[size]} bg-gray-900 rounded-lg shadow-2xl border border-gray-800 animate-slideUp`}
+        className={`relative w-full ${sizeClasses[size]} bg-surface-container-lowest rounded-lg shadow-ambient border border-surface-container-highest animate-slideUp`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-800">
-          <h2 className="text-xl font-semibold text-white">{title}</h2>
+        <div className="flex items-center justify-between p-6 border-b border-surface-container-highest">
+          <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+            className="p-2 text-gray-500 hover:text-gray-900 hover:bg-surface-container-low rounded-lg transition-colors"
             aria-label="Close modal"
           >
             <X size={20} />

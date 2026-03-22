@@ -7,6 +7,20 @@ import React, { useState } from 'react';
 const logger = createLogger('seller-ui:create-event');
 import { useCreateEvent } from '../../../../../hooks/useEvents';
 import { useRouter } from 'apps/seller-ui/src/i18n/navigation';
+import {
+  Zap,
+  FileText,
+  Calendar,
+  Settings2,
+  AlertCircle,
+  Link2,
+} from 'lucide-react';
+import { Breadcrumb } from '../../../../../components/navigation/Breadcrumb';
+
+const inputBase =
+  'w-full px-4 py-2.5 bg-surface-container-lowest border rounded-lg text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 transition-colors text-sm';
+const inputNormal = `${inputBase} border-surface-container-highest focus:ring-brand-primary/30 focus:border-brand-primary/50`;
+const inputError = `${inputBase} border-feedback-error/50 focus:ring-feedback-error/20`;
 
 const CreateEventPage = () => {
   const router = useRouter();
@@ -34,21 +48,19 @@ const CreateEventPage = () => {
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
-    const { name, value, type } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]:
-        type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
-    }));
-
-    // Clear error for this field when user starts typing
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
       setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
+        const next = { ...prev };
+        delete next[name];
+        return next;
       });
     }
+  };
+
+  const handleToggleActive = () => {
+    setFormData((prev) => ({ ...prev, isActive: !prev.isActive }));
   };
 
   const validateForm = () => {
@@ -93,9 +105,7 @@ const CreateEventPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     try {
       await createEventMutation.mutateAsync({
@@ -120,191 +130,296 @@ const CreateEventPage = () => {
     }
   };
 
+  const descCount = formData.description.length;
+  const descPct = Math.min((descCount / 2000) * 100, 100);
+  const descBarColor =
+    descCount > 2000
+      ? 'bg-feedback-error'
+      : descCount > 1600
+      ? 'bg-feedback-warning'
+      : 'bg-feedback-success';
+
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Create New Event</h1>
-        <p className="text-slate-400 text-sm">
-          Create a promotional event for your shop to attract customers
-        </p>
+    <div className="w-full p-8 space-y-6">
+      {/* Page Header */}
+      <div>
+        <div className="flex items-center gap-3 mb-1">
+          <div className="p-2 bg-brand-primary/10 rounded-lg">
+            <Zap size={20} className="text-brand-primary" />
+          </div>
+          <h1 className="text-2xl font-semibold text-gray-900">Create Event</h1>
+        </div>
+        <Breadcrumb
+          items={[
+            { label: 'Dashboard', href: '/dashboard' },
+            { label: 'Events', href: '/dashboard/events' },
+            { label: 'Create Event' },
+          ]}
+        />
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Error Alert */}
+        {/* Submit Error */}
         {errors.submit && (
-          <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-4">
-            <p className="text-red-400 text-sm">{errors.submit}</p>
+          <div className="flex items-start gap-3 p-4 bg-feedback-error/10 border border-feedback-error/30 rounded-xl">
+            <AlertCircle
+              size={16}
+              className="text-feedback-error flex-shrink-0 mt-0.5"
+            />
+            <p className="text-sm text-feedback-error">{errors.submit}</p>
           </div>
         )}
 
-        {/* Title */}
-        <div>
-          <label htmlFor="title" className="block text-white font-medium mb-2">
-            Event Title *
-          </label>
-          <input
-            type="text"
-            id="title"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            placeholder="e.g., Summer Sale 2025"
-            className={`w-full px-4 py-3 bg-slate-800 border ${
-              errors.title ? 'border-red-500' : 'border-slate-700'
-            } text-white rounded-lg focus:outline-none focus:border-blue-500 transition`}
-          />
-          {errors.title && (
-            <p className="text-red-400 text-sm mt-1">{errors.title}</p>
-          )}
-        </div>
-
-        {/* Description */}
-        <div>
-          <label
-            htmlFor="description"
-            className="block text-white font-medium mb-2"
-          >
-            Description *
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            placeholder="Describe your event and what customers can expect..."
-            rows={5}
-            className={`w-full px-4 py-3 bg-slate-800 border ${
-              errors.description ? 'border-red-500' : 'border-slate-700'
-            } text-white rounded-lg focus:outline-none focus:border-blue-500 transition resize-none`}
-          />
-          {errors.description && (
-            <p className="text-red-400 text-sm mt-1">{errors.description}</p>
-          )}
-          <p className="text-slate-400 text-xs mt-1">
-            {formData.description.length}/2000 characters
-          </p>
-        </div>
-
-        {/* Banner Image URL */}
-        <div>
-          <label
-            htmlFor="bannerImage"
-            className="block text-white font-medium mb-2"
-          >
-            Banner Image URL (Optional)
-          </label>
-          <input
-            type="url"
-            id="bannerImage"
-            name="bannerImage"
-            value={formData.bannerImage}
-            onChange={handleChange}
-            placeholder="https://example.com/event-banner.jpg"
-            className="w-full px-4 py-3 bg-slate-800 border border-slate-700 text-white rounded-lg focus:outline-none focus:border-blue-500 transition"
-          />
-          <p className="text-slate-400 text-xs mt-1">
-            Provide a URL to an image for your event banner
-          </p>
-        </div>
-
-        {/* Date Range */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Card 1 — Event Details */}
+        <div className="bg-surface-container-lowest rounded-xl p-6 space-y-5">
           <div>
-            <label
-              htmlFor="startDate"
-              className="block text-white font-medium mb-2"
-            >
-              Start Date *
-            </label>
-            <input
-              type="date"
-              id="startDate"
-              name="startDate"
-              value={formData.startDate}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 bg-slate-800 border ${
-                errors.startDate ? 'border-red-500' : 'border-slate-700'
-              } text-white rounded-lg focus:outline-none focus:border-blue-500 transition`}
-            />
-            {errors.startDate && (
-              <p className="text-red-400 text-sm mt-1">{errors.startDate}</p>
-            )}
+            <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+              <FileText size={16} className="text-brand-primary" />
+              Event Details
+            </h3>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Provide the core information for your promotional event
+            </p>
           </div>
 
+          {/* Title */}
           <div>
             <label
-              htmlFor="endDate"
-              className="block text-white font-medium mb-2"
+              htmlFor="title"
+              className="block text-sm font-medium text-gray-900 mb-2"
             >
-              End Date *
+              Event Title <span className="text-feedback-error">*</span>
             </label>
             <input
-              type="date"
-              id="endDate"
-              name="endDate"
-              value={formData.endDate}
+              type="text"
+              id="title"
+              name="title"
+              value={formData.title}
               onChange={handleChange}
-              className={`w-full px-4 py-3 bg-slate-800 border ${
-                errors.endDate ? 'border-red-500' : 'border-slate-700'
-              } text-white rounded-lg focus:outline-none focus:border-blue-500 transition`}
+              placeholder="e.g., Summer Sale 2025"
+              className={errors.title ? inputError : inputNormal}
             />
-            {errors.endDate && (
-              <p className="text-red-400 text-sm mt-1">{errors.endDate}</p>
+            {errors.title && (
+              <p className="text-sm text-feedback-error mt-1">{errors.title}</p>
             )}
+            <p className="text-xs text-gray-500 mt-1 text-right">
+              {formData.title.length}/200
+            </p>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium text-gray-900 mb-2"
+            >
+              Description <span className="text-feedback-error">*</span>
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="Describe your event and what customers can expect..."
+              rows={5}
+              className={`${errors.description ? inputError : inputNormal} resize-none`}
+            />
+            {errors.description && (
+              <p className="text-sm text-feedback-error mt-1">
+                {errors.description}
+              </p>
+            )}
+            <div className="flex items-center gap-2 mt-2">
+              <div className="flex-1 h-1 bg-surface-container rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${descBarColor}`}
+                  style={{ width: `${descPct}%` }}
+                />
+              </div>
+              <span
+                className={`text-xs font-medium tabular-nums ${
+                  descCount > 2000
+                    ? 'text-feedback-error'
+                    : descCount > 1600
+                    ? 'text-feedback-warning'
+                    : 'text-gray-500'
+                }`}
+              >
+                {descCount}/2000
+              </span>
+            </div>
+          </div>
+
+          {/* Banner Image URL */}
+          <div>
+            <label
+              htmlFor="bannerImage"
+              className="block text-sm font-medium text-gray-900 mb-2"
+            >
+              Banner Image URL{' '}
+              <span className="text-gray-500 font-normal">(Optional)</span>
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
+                <Link2 size={14} />
+              </span>
+              <input
+                type="url"
+                id="bannerImage"
+                name="bannerImage"
+                value={formData.bannerImage}
+                onChange={handleChange}
+                placeholder="https://example.com/event-banner.jpg"
+                className={`${inputNormal} pl-9`}
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Provide a URL to an image for your event banner
+            </p>
           </div>
         </div>
 
-        {/* Status */}
-        <div>
-          <label htmlFor="status" className="block text-white font-medium mb-2">
-            Event Status
-          </label>
-          <select
-            id="status"
-            name="status"
-            value={formData.status}
-            onChange={handleChange}
-            className="w-full px-4 py-3 bg-slate-800 border border-slate-700 text-white rounded-lg focus:outline-none focus:border-blue-500 transition"
-          >
-            <option value="DRAFT">Draft</option>
-            <option value="SCHEDULED">Scheduled</option>
-            <option value="ACTIVE">Active</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="CANCELLED">Cancelled</option>
-          </select>
-          <p className="text-slate-400 text-xs mt-1">
-            Set the initial status of your event
-          </p>
+        {/* Card 2 — Date & Schedule */}
+        <div className="bg-surface-container-lowest rounded-xl p-6 space-y-5">
+          <div>
+            <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+              <Calendar size={16} className="text-brand-primary" />
+              Date &amp; Schedule
+            </h3>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Set when your event starts and ends
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Start Date */}
+            <div>
+              <label
+                htmlFor="startDate"
+                className="block text-sm font-medium text-gray-900 mb-2"
+              >
+                Start Date <span className="text-feedback-error">*</span>
+              </label>
+              <input
+                type="date"
+                id="startDate"
+                name="startDate"
+                value={formData.startDate}
+                onChange={handleChange}
+                className={errors.startDate ? inputError : inputNormal}
+              />
+              {errors.startDate && (
+                <p className="text-sm text-feedback-error mt-1">
+                  {errors.startDate}
+                </p>
+              )}
+            </div>
+
+            {/* End Date */}
+            <div>
+              <label
+                htmlFor="endDate"
+                className="block text-sm font-medium text-gray-900 mb-2"
+              >
+                End Date <span className="text-feedback-error">*</span>
+              </label>
+              <input
+                type="date"
+                id="endDate"
+                name="endDate"
+                value={formData.endDate}
+                onChange={handleChange}
+                className={errors.endDate ? inputError : inputNormal}
+              />
+              {errors.endDate && (
+                <p className="text-sm text-feedback-error mt-1">
+                  {errors.endDate}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Is Active Checkbox */}
-        <div className="flex items-center gap-3">
-          <input
-            type="checkbox"
-            id="isActive"
-            name="isActive"
-            checked={formData.isActive}
-            onChange={handleChange}
-            className="w-5 h-5 bg-slate-800 border border-slate-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <label htmlFor="isActive" className="text-white font-medium">
-            Event is active
-          </label>
+        {/* Card 3 — Event Settings */}
+        <div className="bg-surface-container-lowest rounded-xl p-6 space-y-5">
+          <div>
+            <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+              <Settings2 size={16} className="text-brand-primary" />
+              Event Settings
+            </h3>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Configure the status and visibility of your event
+            </p>
+          </div>
+
+          {/* Status */}
+          <div>
+            <label
+              htmlFor="status"
+              className="block text-sm font-medium text-gray-900 mb-2"
+            >
+              Event Status
+            </label>
+            <select
+              id="status"
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              className={`${inputNormal} appearance-none cursor-pointer`}
+            >
+              <option value="DRAFT">Draft</option>
+              <option value="SCHEDULED">Scheduled</option>
+              <option value="ACTIVE">Active</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">
+              Set the initial status of your event
+            </p>
+          </div>
+
+          {/* Is Active Toggle */}
+          <div className="flex items-center justify-between py-1">
+            <div>
+              <p className="text-sm font-medium text-gray-900">Event is active</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Active events are visible to customers on your store
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={formData.isActive}
+              onClick={handleToggleActive}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-brand-primary/30 focus:ring-offset-2 ${
+                formData.isActive
+                  ? 'bg-brand-primary'
+                  : 'bg-surface-container-highest'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full shadow-sm transition-transform duration-200 mt-0.5 ${
+                  formData.isActive ? 'translate-x-5' : 'translate-x-0.5'
+                }`}
+                style={{ backgroundColor: '#ffffff' }}
+              />
+            </button>
+          </div>
         </div>
 
         {/* Actions */}
-        <div className="flex gap-4 pt-4">
+        <div className="flex items-center gap-3 pt-2">
           <button
             type="submit"
             disabled={createEventMutation.isPending}
-            className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium"
+            className="px-6 py-2.5 bg-brand-primary text-white rounded-lg hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity text-sm font-semibold cursor-pointer"
           >
             {createEventMutation.isPending ? 'Creating...' : 'Create Event'}
           </button>
           <button
             type="button"
             onClick={() => router.push('/dashboard/events')}
-            className="px-8 py-3 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition font-medium"
+            className="px-6 py-2.5 bg-surface-container text-gray-900 rounded-lg hover:bg-surface-container-high transition-colors text-sm font-medium cursor-pointer"
           >
             Cancel
           </button>

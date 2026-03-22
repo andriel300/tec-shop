@@ -66,13 +66,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // If no sessionStorage data, try to validate/refresh the session from cookies
         // This handles cases where the browser was closed but cookies are still valid
         try {
-          const { apiClient } = await import('../lib/api/client');
+          const { performRefresh } = await import('../lib/api/client');
 
-          // Try to refresh the token - this will validate the session
-          // If successful, new tokens will be set in cookies
-          const response = await apiClient.post('/auth/refresh', { userType: 'seller' }, {
-            skipAuthRefresh: true, // Prevent interceptor from recursively trying to refresh
-          } as Record<string, unknown>);
+          // performRefresh uses a singleton Promise shared with the interceptor.
+          // If the interceptor is already refreshing (or vice versa), both callers
+          // await the same Promise — only one HTTP request fires — preventing the
+          // race condition that would trigger refresh token reuse detection.
+          const response = await performRefresh();
 
           if (response.data?.userType === 'seller') {
             // Session is valid and belongs to a seller
