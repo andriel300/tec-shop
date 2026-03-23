@@ -11,7 +11,7 @@
 # Kafka UI:     http://localhost:8090
 # Prometheus:   http://localhost:9090
 # Grafana:      http://localhost:3030  (admin/admin)
-# Alertmanager: http://localhost:9093
+# Alertmanager: http://localhost:9094
 # Tempo:        http://localhost:3200
 
 networks:
@@ -66,15 +66,18 @@ services:
     container_name: tec-shop-kafka
     restart: unless-stopped
     ports:
-      - "9092:9092"
+      - "9092:9092" # PLAINTEXT — kafka-ui / kafka-init / plain local dev
+      - "9093:9093" # SSL/mTLS  — NestJS services (requires certs/kafka/ setup)
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      # PLAINTEXT_HOST/localhost:9092 — host-based NestJS services (KAFKA_BROKER=localhost:9092)
-      # PLAINTEXT/kafka:29092         — intra-Docker communication (kafka-ui, kafka-init)
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      # PLAINTEXT_HOST/localhost:9092 — host-based plain (no certs)
+      # PLAINTEXT/kafka:29092         — intra-Docker plain (kafka-ui, kafka-init)
+      # SSL_HOST/localhost:9093       — host-based mTLS (NestJS services with certs)
+      # SSL/kafka:29093               — intra-Docker mTLS (reserved, currently unused)
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,SSL:SSL,SSL_HOST:SSL
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092,SSL://0.0.0.0:29093,SSL_HOST://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092,SSL://kafka:29093,SSL_HOST://localhost:9093
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
@@ -83,8 +86,21 @@ services:
       KAFKA_DELETE_TOPIC_ENABLE: "true"
       KAFKA_LOG_RETENTION_HOURS: 168
       KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      # mTLS — only active when certs/kafka/ exists (mounted below)
+      KAFKA_SSL_KEYSTORE_FILENAME: kafka.p12
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: password
+      KAFKA_SSL_KEY_CREDENTIALS: password
+      KAFKA_SSL_KEYSTORE_TYPE: PKCS12
+
+      KAFKA_SSL_TRUSTSTORE_FILENAME: truststore.p12
+      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: password
+      KAFKA_SSL_TRUSTSTORE_TYPE: PKCS12
+
+      KAFKA_SSL_CLIENT_AUTH: required
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: ""
     volumes:
       - kafka-data:/var/lib/kafka/data
+      - ../../certs/kafka:/etc/kafka/secrets:ro
     depends_on:
       zookeeper:
         condition: service_healthy
@@ -143,7 +159,7 @@ services:
     container_name: tec-shop-alertmanager
     restart: unless-stopped
     ports:
-      - "9093:9093"
+      - "9094:9093"
     command:
       - "--config.file=/etc/alertmanager/alertmanager.yml"
       - "--storage.path=/alertmanager"

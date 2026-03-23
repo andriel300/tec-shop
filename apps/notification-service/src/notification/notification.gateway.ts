@@ -20,12 +20,14 @@ import {
   Inject,
   OnApplicationShutdown,
 } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
 import { ConfigService } from '@nestjs/config';
 import type { Redis } from 'ioredis';
 import { JwtService } from '@nestjs/jwt';
 import type { NotificationResponseDto } from '@tec-shop/dto';
 import { NotificationCoreService } from './notification-core.service';
 import { WsJwtPayload, extractWsToken, WsExceptionFilter } from '@tec-shop/ws-auth';
+import type { NotificationSavedEvent } from '../channel/channel.service';
 
 interface ConnectedUserInfo {
   userId: string;
@@ -125,6 +127,15 @@ export class NotificationGateway
     if (userInfo) {
       this.socketToUser.delete(client.id);
       this.logger.log(`Notification WS disconnected: ${userInfo.room} (${client.id})`);
+    }
+  }
+
+  @OnEvent('notification.saved')
+  onNotificationSaved({ saved, dto }: NotificationSavedEvent): void {
+    if (dto.targetType === 'admin' && dto.targetId === 'all') {
+      this.broadcastToAllAdmins(saved);
+    } else {
+      this.broadcastToUser(dto.targetType, dto.targetId, saved);
     }
   }
 

@@ -3,7 +3,6 @@ import { AuthCoreService } from './auth-core.service';
 import { JwtService } from '@nestjs/jwt';
 import { AuthPrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '@tec-shop/redis-client';
-import { EmailService } from '../email/email.service';
 import { LogProducerService } from '@tec-shop/logger-producer';
 import { NotificationProducerService } from '@tec-shop/notification-producer';
 import * as argon2 from 'argon2';
@@ -81,15 +80,6 @@ describe('AuthCoreService', () => {
           },
         },
         {
-          provide: EmailService,
-          useValue: {
-            sendOtp: jest.fn(),
-            sendPasswordResetLink: jest.fn(),
-            sendPasswordChangedNotification: jest.fn(),
-            sendGoogleAccountLinkedNotification: jest.fn(),
-          },
-        },
-        {
           provide: LogProducerService,
           useValue: {
             emit: jest.fn().mockResolvedValue(undefined),
@@ -106,6 +96,7 @@ describe('AuthCoreService', () => {
             notifyCustomer: jest.fn().mockResolvedValue(undefined),
             notifySeller: jest.fn().mockResolvedValue(undefined),
             notifyAdmin: jest.fn().mockResolvedValue(undefined),
+            notifyUser: jest.fn().mockResolvedValue(undefined),
           },
         },
         {

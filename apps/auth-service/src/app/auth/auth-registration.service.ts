@@ -20,7 +20,6 @@ import type {
   ValidateResetTokenDto,
   SellerSignupDto,
 } from '@tec-shop/dto';
-import { EmailService } from '../email/email.service';
 import { RedisService } from '@tec-shop/redis-client';
 import { ServiceAuthUtil } from '@tec-shop/service-auth';
 import { LogProducerService } from '@tec-shop/logger-producer';
@@ -36,7 +35,6 @@ export class AuthRegistrationService {
     private readonly configService: ConfigService,
     private prisma: AuthPrismaService,
     private redisService: RedisService,
-    private emailService: EmailService,
     private readonly logProducer: LogProducerService,
     private readonly notificationProducer: NotificationProducerService,
     @Inject('USER_SERVICE') private readonly userClient: ClientProxy,
@@ -94,7 +92,8 @@ export class AuthRegistrationService {
       );
 
       this.logger.debug(`Sending verification email to: ${user.email}`);
-      await this.emailService.sendOtp(user.email, otp);
+      await this.notificationProducer.notifyUser(user.id, 'CUSTOMER', 'auth.otp', {},
+        { email: user.email, otp, expiresInMinutes: 10 }, ['email']);
 
       this.logger.log(`Customer signup successful - userId: ${user.id}, email: ${email}`);
       this.logProducer.info('auth-service', LogCategory.AUTH, 'Customer signup successful', {
@@ -166,7 +165,8 @@ export class AuthRegistrationService {
       );
 
       this.logger.debug(`Sending verification email to seller: ${user.email}`);
-      await this.emailService.sendOtp(user.email, otp);
+      await this.notificationProducer.notifyUser(user.id, 'SELLER', 'auth.otp', {},
+        { email: user.email, otp, expiresInMinutes: 10 }, ['email']);
 
       this.logger.log(`Seller signup successful - userId: ${user.id}, email: ${email}`);
       this.logProducer.info('auth-service', LogCategory.AUTH, 'Seller signup successful', {
@@ -401,7 +401,8 @@ export class AuthRegistrationService {
 
     const resetLink = `${this.frontendUrl}/reset-password?token=${resetToken}`;
 
-    await this.emailService.sendPasswordResetLink(user.email, resetLink);
+    await this.notificationProducer.notifyUser(user.id, 'CUSTOMER', 'auth.password_reset', {},
+      { email: user.email, resetLink }, ['email']);
 
     return { message: successMessage };
   }
@@ -477,9 +478,8 @@ export class AuthRegistrationService {
       },
     });
 
-    await this.emailService.sendPasswordChangedNotification(
-      resetToken.user.email
-    );
+    await this.notificationProducer.notifyUser(resetToken.userId, 'CUSTOMER', 'auth.password_changed', {},
+      { email: resetToken.user.email }, ['email']);
 
     this.logProducer.info('auth-service', LogCategory.SECURITY, 'Password reset successful', {
       userId: resetToken.userId,
@@ -530,7 +530,8 @@ export class AuthRegistrationService {
     await this.redisService.del(`password-reset:${codeHash}`);
     await this.redisService.del(`reset-attempts:${user.id}`);
 
-    await this.emailService.sendPasswordChangedNotification(user.email);
+    await this.notificationProducer.notifyUser(user.id, 'CUSTOMER', 'auth.password_changed', {},
+      { email: user.email }, ['email']);
 
     return { message: 'Password has been reset successfully.' };
   }

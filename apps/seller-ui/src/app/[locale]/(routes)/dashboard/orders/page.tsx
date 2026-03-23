@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { apiClient } from 'apps/seller-ui/src/lib/api/client';
 import { Link } from 'apps/seller-ui/src/i18n/navigation';
+import { exportCSV, type CsvColumn } from 'apps/seller-ui/src/lib/utils/export-csv';
 
 interface OrderItem {
   id: string;
@@ -126,6 +127,17 @@ const STATUS_CONFIG: Record<
     label: 'CANCELLED',
   },
 };
+
+const ORDER_CSV_COLUMNS: CsvColumn<Order>[] = [
+  { header: 'Order ID',       value: (o) => o.orderNumber },
+  { header: 'Date',           value: (o) => new Date(o.createdAt).toLocaleDateString() },
+  { header: 'Customer',       value: (o) => o.customerName || o.userId },
+  { header: 'Email',          value: (o) => o.customerEmail || '' },
+  { header: 'Items',          value: (o) => String(o.items.length) },
+  { header: 'Payout',         value: (o) => (o.items.reduce((s, i) => s + i.sellerPayout, 0) / 100).toFixed(2) },
+  { header: 'Status',         value: (o) => o.status },
+  { header: 'Payment Status', value: (o) => o.paymentStatus },
+];
 
 const OrdersPage = () => {
   const [globalFilter, setGlobalFilter] = useState('');
@@ -427,6 +439,11 @@ const OrdersPage = () => {
             </button>
 
             <button
+              onClick={() => {
+                const rows = table.getFilteredRowModel().rows.map((r) => r.original);
+                const date = new Date().toISOString().slice(0, 10);
+                exportCSV(rows, ORDER_CSV_COLUMNS, `orders-${date}`);
+              }}
               className="flex items-center gap-2 bg-brand-primary-600 text-white
                          text-sm px-4 py-2.5 rounded-lg whitespace-nowrap font-medium
                          hover:bg-brand-primary-700 transition-colors"

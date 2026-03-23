@@ -8,14 +8,13 @@ import { NestFactory } from '@nestjs/core';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { AppModule } from './app/app.module';
 import { Logger } from '@nestjs/common';
+import { buildKafkaConfig } from '@tec-shop/kafka-events';
 
 async function bootstrap() {
   const logger = new Logger('KafkaServiceBootstrap');
 
   try {
-    // Validate required environment variables
-    const kafkaBroker = process.env.KAFKA_BROKER || process.env.REDPANDA_BROKER;
-    if (!kafkaBroker) {
+    if (!process.env.KAFKA_BROKER && !process.env.REDPANDA_BROKER) {
       throw new Error('Missing required environment variable: KAFKA_BROKER');
     }
 
@@ -27,55 +26,17 @@ async function bootstrap() {
 
     logger.log('Environment variables validated successfully');
 
-    // Check if this is a local broker (no SSL needed)
-    const isLocalBroker =
-      kafkaBroker.startsWith('localhost') ||
-      kafkaBroker.startsWith('127.0.0.1') ||
-      kafkaBroker.startsWith('kafka:');
-
-    // Check if authentication credentials are provided (for production/cloud)
-    const username = process.env.KAFKA_USERNAME || process.env.REDPANDA_USERNAME;
-    const password = process.env.KAFKA_PASSWORD || process.env.REDPANDA_PASSWORD;
-    const hasCredentials = !!(username && password);
-
-    // Only use SSL/SASL if credentials provided AND not a local broker
-    // Can be overridden with KAFKA_SSL=true/false
-    const sslOverride = process.env.KAFKA_SSL;
-    const useAuthentication =
-      sslOverride === 'true' ||
-      (hasCredentials && !isLocalBroker && sslOverride !== 'false');
-
-    if (useAuthentication && hasCredentials) {
-      logger.log('Kafka authentication enabled (SCRAM-SHA-256 + SSL)');
-    } else {
-      logger.log(
-        `Kafka authentication disabled (broker: ${kafkaBroker}, local: ${isLocalBroker})`
-      );
-    }
-
-    // Build Kafka client configuration
-    const clientConfig: {
-      clientId: string;
-      brokers: string[];
-      connectionTimeout: number;
-      requestTimeout: number;
-      ssl?: boolean;
-      sasl?: { mechanism: 'scram-sha-256'; username: string; password: string };
-    } = {
-      clientId: 'kafka-service',
-      brokers: [kafkaBroker],
+    const clientConfig = buildKafkaConfig('kafka-service', {
       connectionTimeout: 10000,
       requestTimeout: 30000,
-    };
+    });
 
-    if (useAuthentication && hasCredentials) {
-      clientConfig.ssl = true;
-      clientConfig.sasl = {
-        mechanism: 'scram-sha-256',
-        username: username as string,
-        password: password as string,
-      };
-    }
+    const hasSsl = !!clientConfig.ssl;
+    logger.log(
+      hasSsl
+        ? 'Kafka mTLS/SSL enabled'
+        : `Kafka plain (broker: ${clientConfig.brokers[0]})`
+    );
 
     const app = await NestFactory.create(AppModule, { bufferLogs: true });
 

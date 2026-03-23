@@ -15,17 +15,33 @@ datasource db {
 }
 
 model Notification {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  id         String        @id @default(auto()) @map("_id") @db.ObjectId
   targetType String
   targetId   String
   templateId String
   title      String
   message    String
   type       String
-  isRead     Boolean  @default(false)
+  isRead     Boolean       @default(false)
   metadata   Json?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime      @default(now())
+  deliveries DeliveryLog[]
 
   @@index([targetType, targetId, createdAt(sort: Desc)])
   @@index([targetType, targetId, isRead])
+}
+
+model DeliveryLog {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  notificationId String       @db.ObjectId
+  channel        String       // EMAIL | PUSH
+  status         String       // SENT | FAILED
+  attemptCount   Int          @default(1)
+  error          String?
+  sentAt         DateTime?
+  createdAt      DateTime     @default(now())
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@index([notificationId])
+  @@index([channel, status])
 }

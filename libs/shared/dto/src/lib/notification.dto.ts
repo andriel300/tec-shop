@@ -12,6 +12,8 @@ export type NotificationType =
   | 'AUTH'
   | 'DELIVERY';
 
+export type NotificationChannel = 'push' | 'email';
+
 export interface NotificationEventDto {
   targetType: NotificationTargetType;
   targetId: string;
@@ -20,6 +22,8 @@ export interface NotificationEventDto {
   message: string;
   type: NotificationType;
   metadata?: Record<string, unknown>;
+  /** Which delivery channels to activate. Defaults to both push+email when omitted. */
+  channels?: NotificationChannel[];
   timestamp?: string;
 }
 

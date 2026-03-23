@@ -45,9 +45,9 @@ DEFAULT_SERVICES=(
 
 # ── Output helpers ────────────────────────────────────────────────────────────
 
-log_info()  { printf '  [INFO]  %s\n' "$*"; }
-log_ok()    { printf '  [ OK ]  %s\n' "$*"; }
-log_warn()  { printf '  [WARN]  %s\n' "$*"; }
+log_info() { printf '  [INFO]  %s\n' "$*"; }
+log_ok() { printf '  [ OK ]  %s\n' "$*"; }
+log_warn() { printf '  [WARN]  %s\n' "$*"; }
 log_error() { printf '  [ERROR] %s\n' "$*" >&2; }
 
 # ── CA generation ─────────────────────────────────────────────────────────────
@@ -95,7 +95,7 @@ generate_service_cert() {
     -new -key "$key_file" \
     -out "$csr_file" 2>/dev/null
 
-  cat > "$ext_file" <<EOF
+  cat >"$ext_file" <<EOF
 [v3_req]
 authorityKeyIdentifier = keyid,issuer
 basicConstraints       = CA:FALSE
@@ -180,32 +180,35 @@ fi
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --service)
-      [[ -z "${2:-}" ]] && { log_error "--service requires a service name argument."; exit 1; }
-      create_ca
-      generate_service_cert "$2"
-      shift 2
-      ;;
-    --all)
-      create_ca
-      for svc in "${DEFAULT_SERVICES[@]}"; do
-        generate_service_cert "$svc"
-      done
-      shift
-      ;;
-    --clean)
-      clean_certs
-      exit 0
-      ;;
-    --help)
-      print_help
-      exit 0
-      ;;
-    *)
-      log_error "Unknown option: $1"
-      print_help
+  --service)
+    [[ -z "${2:-}" ]] && {
+      log_error "--service requires a service name argument."
       exit 1
-      ;;
+    }
+    create_ca
+    generate_service_cert "$2"
+    shift 2
+    ;;
+  --all)
+    create_ca
+    for svc in "${DEFAULT_SERVICES[@]}"; do
+      generate_service_cert "$svc"
+    done
+    shift
+    ;;
+  --clean)
+    clean_certs
+    exit 0
+    ;;
+  --help)
+    print_help
+    exit 0
+    ;;
+  *)
+    log_error "Unknown option: $1"
+    print_help
+    exit 1
+    ;;
   esac
 done
 

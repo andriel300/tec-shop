@@ -21,6 +21,7 @@ import { EmailService } from './email.service';
               user: configService.get<string>('SMTP_USER'),
               pass: configService.get<string>('SMTP_PASS'),
             },
+            requireTLS: configService.get<string>('SMTP_REQUIRE_TLS') === 'true',
           },
           defaults: {
             from: `"TecShop" <${configService.get<string>('SMTP_FROM')}>`,
@@ -33,4 +34,4 @@ import { EmailService } from './email.service';
   providers: [EmailService],
   exports: [EmailService],
 })
-export class EmailModule {}
+export class EmailModule { }

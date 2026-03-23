@@ -31,10 +31,30 @@ const BUILT_IN_TEMPLATES: Record<string, TemplateDefinition> = {
       'Hi {{name}}, your seller account has been created. Set up your shop to start selling.',
     type: 'AUTH',
   },
+  'auth.otp': {
+    title: 'Verify your email',
+    message: 'Your verification code is {{otp}}. It expires in {{expiresInMinutes}} minutes.',
+    type: 'AUTH',
+  },
+  'auth.password_reset': {
+    title: 'Reset your password',
+    message: 'You requested a password reset. Click the link in your email to continue.',
+    type: 'AUTH',
+  },
   'auth.password_changed': {
     title: 'Password Changed',
     message:
       'Your password has been changed successfully. If you did not make this change, contact support immediately.',
+    type: 'AUTH',
+  },
+  'auth.account_upgrade': {
+    title: 'Account Upgraded to Seller',
+    message: 'Your account has been successfully upgraded to a Seller account.',
+    type: 'AUTH',
+  },
+  'auth.google_linked': {
+    title: 'Google Account Linked',
+    message: 'Your TecShop account has been linked to a Google account.',
     type: 'AUTH',
   },
 
@@ -75,6 +95,12 @@ const BUILT_IN_TEMPLATES: Record<string, TemplateDefinition> = {
   'order.cancelled_seller': {
     title: 'Order Cancelled',
     message: 'Order {{orderNumber}} has been cancelled by the customer.',
+    type: 'ORDER',
+  },
+  'order.placed_seller': {
+    title: 'New Order Received 🛒',
+    message:
+      'Order {{orderNumber}} has been paid. Pack and ship {{productNames}} to earn {{netPayout}}.',
     type: 'ORDER',
   },
   'order.delivered_review': {

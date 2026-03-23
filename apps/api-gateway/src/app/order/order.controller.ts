@@ -206,6 +206,20 @@ export class OrderController {
     return this.cb.fire('ORDER_SERVICE', () => firstValueFrom(this.orderClient.send('get-seller-order-details', payload)));
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/confirm-delivery')
+  @ApiOperation({ summary: 'Customer confirms they received the order' })
+  @ApiResponse({ status: 200, description: 'Order marked as delivered.' })
+  @ApiResponse({ status: 400, description: 'Order is not in SHIPPED state.' })
+  @ApiResponse({ status: 404, description: 'Order not found.' })
+  async confirmDelivery(
+    @Req() req: { user: { userId: string } },
+    @Param('id') orderId: string
+  ) {
+    const payload = { userId: req.user.userId, orderId };
+    return this.cb.fire('ORDER_SERVICE', () => firstValueFrom(this.orderClient.send('confirm-delivery', payload)));
+  }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SELLER', 'ADMIN')
   @Post('seller/:id/status')

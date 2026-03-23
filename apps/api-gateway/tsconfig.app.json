@@ -23,6 +23,9 @@
   ],
   "references": [
     {
+      "path": "../../libs/shared/kafka-events/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/shared/tracing/tsconfig.lib.json"
     },
     {

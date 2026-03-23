@@ -67,12 +67,12 @@ const Navbar = () => {
             {/* Profile Icon */}
             <Link
               href={mounted && isAuthenticated ? '/profile' : '/login'}
-              className="p-2 border-2 w-[45px] h-[45px] lg:w-[50px] lg:h-[50px] flex items-center justify-center rounded-full border-ui-divider hover:bg-ui-muted transition-colors overflow-hidden"
+              className="p-1 border-2 w-[50px] h-[50px] lg:w-[60px] lg:h-[60px] flex items-center justify-center rounded-full border-ui-divider hover:bg-ui-muted transition-colors overflow-hidden"
             >
               {mounted &&
-              isAuthenticated &&
-              userProfile?.picture &&
-              !imageError ? (
+                isAuthenticated &&
+                userProfile?.picture &&
+                !imageError ? (
                 <div className="relative w-full h-full">
                   <Image
                     src={userProfile.picture}

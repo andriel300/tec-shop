@@ -13,6 +13,9 @@
   "exclude": [],
   "references": [
     {
+      "path": "../../libs/shared/kafka-events/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/prisma-clients/analytics-client/tsconfig.lib.json"
     },
     {

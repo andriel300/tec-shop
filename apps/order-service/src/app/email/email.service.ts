@@ -26,6 +26,19 @@ interface OrderConfirmationData {
   trackingNumber?: string;
 }
 
+interface OrderShippedData {
+  customerName: string;
+  orderNumber: string;
+  trackingNumber?: string;
+  carrier?: string;
+  estimatedDelivery?: string;
+}
+
+interface OrderDeliveredData {
+  customerName: string;
+  orderNumber: string;
+}
+
 interface SellerOrderNotificationData {
   sellerName: string;
   orderNumber: string;
@@ -242,6 +255,90 @@ export class EmailService {
 
     if (this.isDevelopment) {
       this.logger.log(`Seller order notification sent to ${to} for order ${data.orderNumber}`);
+    }
+  }
+
+  async sendOrderShippedEmail(to: string, data: OrderShippedData): Promise<void> {
+    await this.mailerService.sendMail({
+      to,
+      subject: `Your TecShop Order Has Shipped — ${data.orderNumber}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
+          <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #007bff; margin: 0; font-size: 28px;">TecShop</h1>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 24px;">
+              <div style="font-size: 48px;">📦</div>
+              <h2 style="color: #007bff; margin: 8px 0 0 0;">Your Order Is On Its Way!</h2>
+            </div>
+
+            <p style="color: #666; line-height: 1.6;">Hi ${data.customerName},</p>
+            <p style="color: #666; line-height: 1.6; margin-bottom: 24px;">
+              Great news — your order <strong>${data.orderNumber}</strong> has been shipped and is heading your way!
+            </p>
+
+            ${data.trackingNumber ? `
+            <div style="background-color: #e7f3ff; border-left: 4px solid #007bff; padding: 16px 20px; border-radius: 0 6px 6px 0; margin-bottom: 24px;">
+              <p style="margin: 0 0 4px 0; font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px;">Tracking Number</p>
+              <p style="margin: 0; font-size: 18px; font-weight: bold; font-family: monospace; color: #0056b3;">${data.trackingNumber}</p>
+              ${data.carrier ? `<p style="margin: 4px 0 0 0; font-size: 13px; color: #666;">Carrier: ${data.carrier}</p>` : ''}
+              <a href="https://t.17track.net/en#nums=${data.trackingNumber}"
+                 style="display: inline-block; margin-top: 12px; background-color: #007bff; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; font-size: 13px; font-weight: bold;">
+                Track Your Package →
+              </a>
+            </div>` : ''}
+
+            <p style="color: #999; font-size: 12px; text-align: center; margin: 24px 0 0 0;">
+              Thank you for shopping with TecShop! Questions? Contact support@tec-shop.com
+            </p>
+          </div>
+        </div>
+      `,
+    });
+
+    if (this.isDevelopment) {
+      this.logger.log(`Order shipped email sent to ${to} for order ${data.orderNumber}`);
+    }
+  }
+
+  async sendOrderDeliveredEmail(to: string, data: OrderDeliveredData): Promise<void> {
+    await this.mailerService.sendMail({
+      to,
+      subject: `Your TecShop Order Has Been Delivered — ${data.orderNumber}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa;">
+          <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #007bff; margin: 0; font-size: 28px;">TecShop</h1>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 24px;">
+              <div style="font-size: 48px;">✅</div>
+              <h2 style="color: #28a745; margin: 8px 0 0 0;">Order Delivered!</h2>
+            </div>
+
+            <p style="color: #666; line-height: 1.6;">Hi ${data.customerName},</p>
+            <p style="color: #666; line-height: 1.6; margin-bottom: 24px;">
+              Your order <strong>${data.orderNumber}</strong> has been delivered. We hope you love your purchase!
+            </p>
+
+            <div style="background-color: #d4edda; border-left: 4px solid #28a745; padding: 16px 20px; border-radius: 0 6px 6px 0; margin-bottom: 24px;">
+              <p style="margin: 0; color: #155724; font-weight: 600;">Enjoying your purchase?</p>
+              <p style="margin: 6px 0 0 0; color: #155724; font-size: 13px;">Leave a review to help other shoppers and reward the seller for their great service.</p>
+            </div>
+
+            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
+              Thank you for shopping with TecShop! Questions? Contact support@tec-shop.com
+            </p>
+          </div>
+        </div>
+      `,
+    });
+
+    if (this.isDevelopment) {
+      this.logger.log(`Order delivered email sent to ${to} for order ${data.orderNumber}`);
     }
   }
 }

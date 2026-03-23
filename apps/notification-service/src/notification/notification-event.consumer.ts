@@ -1,9 +1,8 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import type { NotificationEventDto } from '@tec-shop/dto';
 import { KafkaService } from '../kafka/kafka.service';
 import type { Consumer, EachMessagePayload } from 'kafkajs';
-import { NotificationCoreService } from './notification-core.service';
-import { NotificationGateway } from './notification.gateway';
 
 const TOPIC = 'notification-events';
 const DLQ_TOPIC = 'notification-events.DLQ';
@@ -18,8 +17,7 @@ export class NotificationEventConsumer implements OnModuleInit {
 
   constructor(
     private readonly kafka: KafkaService,
-    private readonly notificationCore: NotificationCoreService,
-    private readonly notificationGateway: NotificationGateway
+    private readonly eventEmitter: EventEmitter2,
   ) {
     this.kafkaConsumer = this.kafka.createConsumer(GROUP_ID);
   }
@@ -35,16 +33,19 @@ export class NotificationEventConsumer implements OnModuleInit {
         if (!raw) return;
 
         try {
-          const data: NotificationEventDto = JSON.parse(raw);
-          this.logger.verbose(
-            `Received notification event: ${data.templateId} -> ${data.targetType}:${data.targetId}`
-          );
-          await this.withRetry(() => this.handleNotificationEvent(data));
+          const dto: NotificationEventDto = JSON.parse(raw);
+          this.logger.verbose(`Received: ${dto.templateId} -> ${dto.targetType}:${dto.targetId}`);
+          await this.withRetry(() => this.dispatch(dto));
         } catch (error) {
           await this.sendToDlq(raw, error);
         }
       },
     });
+  }
+
+  private async dispatch(dto: NotificationEventDto): Promise<void> {
+    // Fan out to all listeners: NotificationCoreService, ChannelService
+    await this.eventEmitter.emitAsync('notification.received', dto);
   }
 
   private async withRetry<T>(fn: () => Promise<T>): Promise<T> {
@@ -54,9 +55,7 @@ export class NotificationEventConsumer implements OnModuleInit {
         return await fn();
       } catch (err) {
         lastError = err;
-        this.logger.warn(
-          `Notification event attempt ${attempt}/${MAX_ATTEMPTS} failed: ${err}`
-        );
+        this.logger.warn(`Attempt ${attempt}/${MAX_ATTEMPTS} failed: ${err}`);
         if (attempt < MAX_ATTEMPTS) {
           await new Promise((r) => setTimeout(r, BASE_DELAY_MS * attempt));
         }
@@ -66,32 +65,12 @@ export class NotificationEventConsumer implements OnModuleInit {
   }
 
   private async sendToDlq(raw: string, error: unknown): Promise<void> {
-    this.logger.error(
-      `All retries exhausted — sending to ${DLQ_TOPIC}: ${error}`
-    );
+    this.logger.error(`All retries exhausted — sending to ${DLQ_TOPIC}: ${error}`);
     await this.kafka.sendMessage(DLQ_TOPIC, 'dlq', {
       originalTopic: TOPIC,
       payload: raw,
       errorMessage: error instanceof Error ? error.message : String(error),
       failedAt: new Date().toISOString(),
     });
-  }
-
-  private async handleNotificationEvent(dto: NotificationEventDto) {
-    const saved = await this.notificationCore.saveNotification(dto);
-
-    if (dto.targetType === 'admin' && dto.targetId === 'all') {
-      this.notificationGateway.broadcastToAllAdmins(saved);
-    } else {
-      this.notificationGateway.broadcastToUser(
-        dto.targetType,
-        dto.targetId,
-        saved
-      );
-    }
-
-    this.logger.verbose(
-      `Processed & broadcasted notification: ${dto.templateId} -> ${dto.targetType}:${dto.targetId}`
-    );
   }
 }

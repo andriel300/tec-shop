@@ -13,4 +13,19 @@ Table Notification {
   isRead Boolean [not null, default: false]
   metadata Json
   createdAt DateTime [default: `now()`, not null]
+  deliveries DeliveryLog [not null]
 }
+
+Table DeliveryLog {
+  id String [pk]
+  notificationId String [not null]
+  channel String [not null]
+  status String [not null]
+  attemptCount Int [not null, default: 1]
+  error String
+  sentAt DateTime
+  createdAt DateTime [default: `now()`, not null]
+  notification Notification [not null]
+}
+
+Ref: DeliveryLog.notificationId > Notification.id [delete: Cascade]

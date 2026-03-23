@@ -109,16 +109,14 @@ const StickyNavbar = () => {
 
   return (
     <div
-      className={`w-full transition-all duration-300 ${
-        isSticky
-          ? 'fixed top-0 left-0 z-[100] bg-ui-background shadow-lg'
-          : 'relative'
-      }`}
+      className={`w-full transition-all duration-300 ${isSticky
+        ? 'fixed top-0 left-0 z-[100] bg-ui-background shadow-lg'
+        : 'relative'
+        }`}
     >
       <div
-        className={`w-[80%] relative m-auto flex items-center justify-between ${
-          isSticky ? 'py-3' : 'py-0'
-        }`}
+        className={`w-[80%] relative m-auto flex items-center justify-between ${isSticky ? 'py-3' : 'py-0'
+          }`}
       >
         {/* Dropdowns */}
         <div
@@ -139,9 +137,8 @@ const StickyNavbar = () => {
             {/* Dropdown Menu */}
             {show && (
               <div
-                className={`absolute left-0 ${
-                  isSticky ? 'top-[70px]' : 'top-[50px]'
-                } flex z-50`}
+                className={`absolute left-0 ${isSticky ? 'top-[70px]' : 'top-[50px]'
+                  } flex z-50`}
                 onMouseLeave={handleDropdownMouseLeave}
               >
                 {/* Main categories column */}
@@ -160,11 +157,10 @@ const StickyNavbar = () => {
                           >
                             <Link
                               href={`/all-products?categoryId=${category.id}`}
-                              className={`flex items-center justify-between px-4 py-3 transition-colors ${
-                                hoveredCategory === category.id
-                                  ? 'bg-ui-muted'
-                                  : 'hover:bg-ui-muted'
-                              }`}
+                              className={`flex items-center justify-between px-4 py-3 transition-colors ${hoveredCategory === category.id
+                                ? 'bg-ui-muted'
+                                : 'hover:bg-ui-muted'
+                                }`}
                               onClick={() => setShow(false)}
                             >
                               <span className="font-heading font-medium text-sm text-text-primary">
@@ -245,16 +241,25 @@ const StickyNavbar = () => {
               return (
                 <Link
                   key={index}
-                  className="px-3 font-heading font-medium text-md hover:text-brand-primary transition-colors"
+                  className="px-3 py-1.5 font-Jost capitalize text-md text-text-inverted bg-brand-secondary rounded-md hover:opacity-90 transition-colors"
                   href={`${process.env.NEXT_PUBLIC_SELLER_SERVER_URI ?? 'http://localhost:3001'}/dashboard`}
                 >
                   {t('sellerDashboard')}
                 </Link>
               );
             }
+
+            // Check if this is the "Become a Seller" button
+            const isBecomeSeller = i.translationKey === 'becomeASeller';
+
             return (
               <Link
-                className="px-3 font-heading font-medium text-md hover:text-brand-primary transition-colors"
+                className={`px-3 font-Jost capitalize text-md transition-colors ${isBecomeSeller
+                  ? // Design Token Styles for "Become a Seller"
+                  'bg-ui-muted text-text-primary hover:text-brand-primary py-1.5 rounded-md hover:bg-ui-border animate-cta-pulse'
+                  : // Default Link Styles
+                  'text-text-primary hover:text-brand-primary'
+                  }`}
                 href={i.href}
                 key={index}
               >
@@ -275,9 +280,9 @@ const StickyNavbar = () => {
                   title="Account"
                 >
                   {mounted &&
-                  isAuthenticated &&
-                  userProfile?.picture &&
-                  !imageError ? (
+                    isAuthenticated &&
+                    userProfile?.picture &&
+                    !imageError ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={userProfile.picture}

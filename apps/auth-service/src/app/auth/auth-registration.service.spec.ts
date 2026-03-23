@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthRegistrationService } from './auth-registration.service';
 import { AuthPrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '@tec-shop/redis-client';
-import { EmailService } from '../email/email.service';
 import { LogProducerService } from '@tec-shop/logger-producer';
 import { NotificationProducerService } from '@tec-shop/notification-producer';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
@@ -15,7 +14,7 @@ describe('AuthRegistrationService', () => {
   let service: AuthRegistrationService;
   let prismaService: AuthPrismaService;
   let redisService: RedisService;
-  let emailService: EmailService;
+  let notificationProducer: NotificationProducerService;
   let userClient: ClientProxy;
 
   const mockUser = {
@@ -80,15 +79,6 @@ describe('AuthRegistrationService', () => {
           },
         },
         {
-          provide: EmailService,
-          useValue: {
-            sendOtp: jest.fn(),
-            sendPasswordResetLink: jest.fn(),
-            sendPasswordChangedNotification: jest.fn(),
-            sendGoogleAccountLinkedNotification: jest.fn(),
-          },
-        },
-        {
           provide: LogProducerService,
           useValue: {
             emit: jest.fn().mockResolvedValue(undefined),
@@ -105,6 +95,7 @@ describe('AuthRegistrationService', () => {
             notifyCustomer: jest.fn().mockResolvedValue(undefined),
             notifySeller: jest.fn().mockResolvedValue(undefined),
             notifyAdmin: jest.fn().mockResolvedValue(undefined),
+            notifyUser: jest.fn().mockResolvedValue(undefined),
           },
         },
         {
@@ -129,7 +120,7 @@ describe('AuthRegistrationService', () => {
     service = module.get<AuthRegistrationService>(AuthRegistrationService);
     prismaService = module.get<AuthPrismaService>(AuthPrismaService);
     redisService = module.get<RedisService>(RedisService);
-    emailService = module.get<EmailService>(EmailService);
+    notificationProducer = module.get<NotificationProducerService>(NotificationProducerService);
     userClient = module.get<ClientProxy>('USER_SERVICE');
 
     jest
@@ -159,7 +150,6 @@ describe('AuthRegistrationService', () => {
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(null);
       jest.spyOn(prismaService.user, 'create').mockResolvedValue(mockUser);
       jest.spyOn(redisService, 'set').mockResolvedValue(undefined);
-      jest.spyOn(emailService, 'sendOtp').mockResolvedValue(undefined);
 
       const result = await service.signup(signupDto);
 
@@ -169,9 +159,13 @@ describe('AuthRegistrationService', () => {
       expect(argon2.hash).toHaveBeenCalledWith(signupDto.password);
       expect(prismaService.user.create).toHaveBeenCalled();
       expect(redisService.set).toHaveBeenCalled();
-      expect(emailService.sendOtp).toHaveBeenCalledWith(
-        signupDto.email,
-        expect.any(String)
+      expect(notificationProducer.notifyUser).toHaveBeenCalledWith(
+        mockUser.id,
+        'CUSTOMER',
+        'auth.otp',
+        {},
+        expect.objectContaining({ email: signupDto.email }),
+        ['email']
       );
       expect(result).toEqual({
         message:
@@ -293,16 +287,16 @@ describe('AuthRegistrationService', () => {
           used: false,
           expiresAt: new Date(Date.now() + 3600000),
         });
-      jest
-        .spyOn(emailService, 'sendPasswordResetLink')
-        .mockResolvedValue(undefined);
-
       const result = await service.forgotPassword(forgotDto);
 
       expect(result).toEqual({ message: successMessage });
-      expect(emailService.sendPasswordResetLink).toHaveBeenCalledWith(
-        mockUser.email,
-        expect.stringContaining('reset-password?token=')
+      expect(notificationProducer.notifyUser).toHaveBeenCalledWith(
+        mockUser.id,
+        'CUSTOMER',
+        'auth.password_reset',
+        {},
+        expect.objectContaining({ email: mockUser.email, resetLink: expect.stringContaining('reset-password?token=') }),
+        ['email']
       );
     });
 
@@ -312,7 +306,7 @@ describe('AuthRegistrationService', () => {
       const result = await service.forgotPassword(forgotDto);
 
       expect(result).toEqual({ message: successMessage });
-      expect(emailService.sendPasswordResetLink).not.toHaveBeenCalled();
+      expect(notificationProducer.notifyUser).not.toHaveBeenCalled();
     });
 
     it('returns the same success message when the user email is not verified (prevents email enumeration)', async () => {
@@ -324,7 +318,7 @@ describe('AuthRegistrationService', () => {
       const result = await service.forgotPassword(forgotDto);
 
       expect(result).toEqual({ message: successMessage });
-      expect(emailService.sendPasswordResetLink).not.toHaveBeenCalled();
+      expect(notificationProducer.notifyUser).not.toHaveBeenCalled();
     });
 
     it('clears reset-attempts counter so the new code does not immediately lock the user out (user-trap fix)', async () => {
@@ -341,7 +335,6 @@ describe('AuthRegistrationService', () => {
           used: false,
           expiresAt: new Date(Date.now() + 3600000),
         });
-      jest.spyOn(emailService, 'sendPasswordResetLink').mockResolvedValue(undefined);
       jest.spyOn(redisService, 'del').mockResolvedValue(undefined);
 
       await service.forgotPassword(forgotDto);
@@ -371,10 +364,6 @@ describe('AuthRegistrationService', () => {
       jest
         .spyOn(prismaService.passwordResetToken as unknown as Record<string, jest.Mock>, 'deleteMany')
         .mockResolvedValue({ count: 1 });
-      jest
-        .spyOn(emailService, 'sendPasswordChangedNotification')
-        .mockResolvedValue(undefined);
-
       const result = await service.resetPassword({
         token: 'valid-reset-token',
         newPassword: 'NewPass123!',
@@ -384,8 +373,13 @@ describe('AuthRegistrationService', () => {
       expect(result).toEqual({
         message: 'Password has been reset successfully.',
       });
-      expect(emailService.sendPasswordChangedNotification).toHaveBeenCalledWith(
-        mockUser.email
+      expect(notificationProducer.notifyUser).toHaveBeenCalledWith(
+        mockResetToken.userId,
+        'CUSTOMER',
+        'auth.password_changed',
+        {},
+        expect.objectContaining({ email: mockUser.email }),
+        ['email']
       );
     });
 
@@ -442,14 +436,20 @@ describe('AuthRegistrationService', () => {
         .mockResolvedValueOnce(mockUser.id);
       jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockUser);
       jest.spyOn(redisService, 'del').mockResolvedValue(undefined);
-      jest.spyOn(emailService, 'sendPasswordChangedNotification').mockResolvedValue(undefined);
 
       const result = await service.resetPasswordWithCode(dto);
 
       expect(result).toEqual({ message: 'Password has been reset successfully.' });
       expect(redisService.del).toHaveBeenCalledWith(expect.stringContaining('password-reset:'));
       expect(redisService.del).toHaveBeenCalledWith(`reset-attempts:${mockUser.id}`);
-      expect(emailService.sendPasswordChangedNotification).toHaveBeenCalledWith(mockUser.email);
+      expect(notificationProducer.notifyUser).toHaveBeenCalledWith(
+        mockUser.id,
+        'CUSTOMER',
+        'auth.password_changed',
+        {},
+        expect.objectContaining({ email: mockUser.email }),
+        ['email']
+      );
     });
   });
 });

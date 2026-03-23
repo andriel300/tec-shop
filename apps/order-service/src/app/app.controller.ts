@@ -76,6 +76,13 @@ export class AppController {
     return this.orderQuery.getSellerChartData(payload);
   }
 
+  @MessagePattern('confirm-delivery')
+  async confirmDelivery(
+    @Payload() payload: { userId: string; orderId: string }
+  ) {
+    return this.orderQuery.confirmDelivery(payload.userId, payload.orderId);
+  }
+
   @MessagePattern('update-delivery-status')
   async updateDeliveryStatus(
     @Payload()

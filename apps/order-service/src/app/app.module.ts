@@ -6,14 +6,15 @@ import { OrderCheckoutService } from './order-checkout.service';
 import { OrderQueryService } from './order-query.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { RedisModule } from '@tec-shop/redis-client';
-import { EmailModule } from './email/email.module';
+import { AuthClientModule } from '../clients/auth.client';
+import { ChatClientModule } from '../clients/chat.client';
 import { UserClientModule } from '../clients/user.client';
 import { SellerClientModule } from '../clients/seller.client';
 import { ProductClientModule } from '../clients/product.client';
 import { PaymentService } from '../services/payment.service';
 import { KafkaProducerService } from '../services/kafka-producer.service';
 import { WebhookService } from '../services/webhook.service';
-import { MockLogisticsService } from '../services/mock-logistics.service';
+
 import { LoggerModule } from 'nestjs-pino';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -28,7 +29,8 @@ import { RedisService } from '@tec-shop/redis-client';
     HealthModule,
     PrismaModule,
     RedisModule.forRoot(),
-    EmailModule,
+    AuthClientModule,
+    ChatClientModule,
     UserClientModule,
     SellerClientModule,
     ProductClientModule,
@@ -76,7 +78,6 @@ import { RedisService } from '@tec-shop/redis-client';
     PaymentService,
     KafkaProducerService,
     WebhookService,
-    MockLogisticsService,
     {
       provide: 'HEALTH_INDICATORS',
       useFactory: (prisma: OrderPrismaService, redis: RedisService) => [

@@ -2,6 +2,7 @@ import { Module, DynamicModule, Global, Type, ForwardReference } from '@nestjs/c
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Kafka } from 'kafkajs';
 import { LogProducerService } from './log-producer.service.js';
+import { buildKafkaConfig } from '@tec-shop/kafka-events'; // Import the shared helper
 
 export interface LogProducerModuleOptions {
   clientId?: string;
@@ -18,58 +19,13 @@ export class LogProducerModule {
         {
           provide: 'LOG_PRODUCER_KAFKA',
           useFactory: (config: ConfigService) => {
-            const broker =
-              config.get<string>('KAFKA_BROKER') ||
-              config.get<string>('REDPANDA_BROKER') ||
-              'localhost:9092';
-
             const clientId =
               options?.clientId ||
               config.get<string>('KAFKA_CLIENT_ID') ||
               'log-producer';
 
-            const isLocalBroker =
-              broker.startsWith('localhost') ||
-              broker.startsWith('127.0.0.1') ||
-              broker.startsWith('kafka:');
-
-            const username =
-              config.get<string>('KAFKA_USERNAME') ||
-              config.get<string>('REDPANDA_USERNAME');
-            const password =
-              config.get<string>('KAFKA_PASSWORD') ||
-              config.get<string>('REDPANDA_PASSWORD');
-            const hasCredentials = !!(username && password);
-
-            const sslOverride = config.get<string>('KAFKA_SSL');
-            const useAuthentication =
-              sslOverride === 'true' ||
-              (hasCredentials && !isLocalBroker && sslOverride !== 'false');
-
-            const kafkaConfig: {
-              clientId: string;
-              brokers: string[];
-              ssl?: boolean;
-              sasl?: {
-                mechanism: 'scram-sha-256';
-                username: string;
-                password: string;
-              };
-            } = {
-              clientId,
-              brokers: [broker],
-            };
-
-            if (useAuthentication && hasCredentials) {
-              kafkaConfig.ssl = true;
-              kafkaConfig.sasl = {
-                mechanism: 'scram-sha-256',
-                username: username as string,
-                password: password as string,
-              };
-            }
-
-            return new Kafka(kafkaConfig);
+            // Delegate all complex SSL/SASL logic to buildKafkaConfig
+            return new Kafka(buildKafkaConfig(clientId));
           },
           inject: [ConfigService],
         },
@@ -101,58 +57,13 @@ export class LogProducerModule {
             config: ConfigService,
             moduleOptions: LogProducerModuleOptions
           ) => {
-            const broker =
-              config.get<string>('KAFKA_BROKER') ||
-              config.get<string>('REDPANDA_BROKER') ||
-              'localhost:9092';
-
             const clientId =
               moduleOptions?.clientId ||
               config.get<string>('KAFKA_CLIENT_ID') ||
               'log-producer';
 
-            const isLocalBroker =
-              broker.startsWith('localhost') ||
-              broker.startsWith('127.0.0.1') ||
-              broker.startsWith('kafka:');
-
-            const username =
-              config.get<string>('KAFKA_USERNAME') ||
-              config.get<string>('REDPANDA_USERNAME');
-            const password =
-              config.get<string>('KAFKA_PASSWORD') ||
-              config.get<string>('REDPANDA_PASSWORD');
-            const hasCredentials = !!(username && password);
-
-            const sslOverride = config.get<string>('KAFKA_SSL');
-            const useAuthentication =
-              sslOverride === 'true' ||
-              (hasCredentials && !isLocalBroker && sslOverride !== 'false');
-
-            const kafkaConfig: {
-              clientId: string;
-              brokers: string[];
-              ssl?: boolean;
-              sasl?: {
-                mechanism: 'scram-sha-256';
-                username: string;
-                password: string;
-              };
-            } = {
-              clientId,
-              brokers: [broker],
-            };
-
-            if (useAuthentication && hasCredentials) {
-              kafkaConfig.ssl = true;
-              kafkaConfig.sasl = {
-                mechanism: 'scram-sha-256',
-                username: username as string,
-                password: password as string,
-              };
-            }
-
-            return new Kafka(kafkaConfig);
+            // Delegate all complex SSL/SASL logic to buildKafkaConfig
+            return new Kafka(buildKafkaConfig(clientId));
           },
           inject: [ConfigService, 'LOG_PRODUCER_OPTIONS'],
         },

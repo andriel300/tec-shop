@@ -8,6 +8,7 @@ import { KafkaModule } from '../kafka/kafka.module';
 import { RedisModule } from '../redis/redis.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { WsJwtModule } from '@tec-shop/ws-auth';
+import { ChannelModule } from '../channel/channel.module';
 
 @Module({
   imports: [
@@ -16,9 +17,14 @@ import { WsJwtModule } from '@tec-shop/ws-auth';
     KafkaModule,
     RedisModule,
     PrismaModule,
+    ChannelModule,
   ],
   controllers: [NotificationTcpController],
-  providers: [NotificationCoreService, NotificationEventConsumer, NotificationGateway],
+  providers: [
+    NotificationCoreService,
+    NotificationEventConsumer,
+    NotificationGateway,
+  ],
   exports: [NotificationCoreService, NotificationGateway],
 })
 export class NotificationModule {}

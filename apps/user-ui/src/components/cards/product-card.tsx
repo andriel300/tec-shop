@@ -171,9 +171,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
                 }
               >
                 <Heart
-                  className={`w-5 h-5 ${
-                    isWishListed ? 'fill-red-500 text-red-500' : 'text-gray-700'
-                  }`}
+                  className={`w-5 h-5 ${isWishListed ? 'fill-red-500 text-red-500' : 'text-gray-700'
+                    }`}
                 />
               </button>
 
@@ -198,11 +197,10 @@ const ProductCard = ({ product }: ProductCardProps) => {
                 aria-label={isInCart ? 'Remove from cart' : 'Add to cart'}
               >
                 <ShoppingBag
-                  className={`w-5 h-5 transition ${
-                    isInCart
-                      ? 'bg-green-100 text-green-600'
-                      : 'bg-white/90 text-gray-700'
-                  }`}
+                  className={`w-5 h-5 transition ${isInCart
+                    ? 'bg-green-100 text-green-600'
+                    : 'bg-white/90 text-gray-700'
+                    }`}
                 />
               </button>
             </div>
@@ -214,7 +212,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
               </div>
             )}
             {product.isFeatured && (
-              <div className="absolute top-12 left-3 bg-yellow-500 text-white text-xs font-semibold px-2 py-1 rounded">
+              <div className="absolute top-12 left-3 font-Oregano bg-yellow-500 text-brand-secondary text-xm font-bold px-2 py-1 rounded">
                 {tCommon('featured')}
               </div>
             )}

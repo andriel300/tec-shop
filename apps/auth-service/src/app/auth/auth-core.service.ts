@@ -22,10 +22,10 @@ import type {
   ChangePasswordDto,
   UpgradeToSellerDto,
 } from '@tec-shop/dto';
-import { EmailService } from '../email/email.service';
 import { RedisService } from '@tec-shop/redis-client';
 import { ServiceAuthUtil } from '@tec-shop/service-auth';
 import { LogProducerService } from '@tec-shop/logger-producer';
+import { NotificationProducerService } from '@tec-shop/notification-producer';
 
 @Injectable()
 export class AuthCoreService implements OnModuleInit {
@@ -37,8 +37,8 @@ export class AuthCoreService implements OnModuleInit {
     private jwtService: JwtService,
     private prisma: AuthPrismaService,
     private redisService: RedisService,
-    private emailService: EmailService,
     private readonly logProducer: LogProducerService,
+    private readonly notificationProducer: NotificationProducerService,
     @Inject('USER_SERVICE') private readonly userClient: ClientProxy,
     @Inject('SELLER_SERVICE') private readonly sellerClient: ClientProxy
   ) {
@@ -246,7 +246,8 @@ export class AuthCoreService implements OnModuleInit {
               },
             });
             this.logger.log(`Account linked successfully - userId: ${user.id}`);
-            await this.emailService.sendGoogleAccountLinkedNotification(user.email);
+            void this.notificationProducer.notifyUser(user.id, user.userType as 'CUSTOMER' | 'SELLER', 'auth.google_linked', {},
+              { email: user.email }, ['email']);
           } else if (user.googleId && user.googleId !== googleId) {
             this.logger.warn(`Email already linked to different Google account: ${email}`);
             throw new RpcException({ statusCode: 409, message: 'Email already associated with another Google account' });
@@ -661,13 +662,22 @@ export class AuthCoreService implements OnModuleInit {
       metadata: { action: 'upgrade_to_seller' },
     });
 
-    await this.emailService.sendAccountUpgradeNotification(user.email);
+    void this.notificationProducer.notifyUser(userId, 'SELLER', 'auth.account_upgrade', {},
+      { email: user.email }, ['email']);
 
     return {
       ...tokens,
       userId,
       email: user.email,
     };
+  }
+
+  async getUserEmail(userId: string): Promise<{ email: string } | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    });
+    return user ?? null;
   }
 
   /**

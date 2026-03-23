@@ -8,7 +8,6 @@ import { AuthRegistrationService } from './auth-registration.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { RedisModule } from '@tec-shop/redis-client';
-import { EmailModule } from '../email/email.module';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -17,7 +16,6 @@ import { join } from 'path';
     PrismaModule,
     ConfigModule,
     RedisModule.forRoot(),
-    EmailModule,
     // ThrottlerModule removed - rate limiting handled at API Gateway
     JwtModule.registerAsync({
       imports: [ConfigModule],

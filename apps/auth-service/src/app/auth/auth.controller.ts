@@ -130,6 +130,11 @@ export class AuthController {
     );
   }
 
+  @MessagePattern('get-user-email')
+  async getUserEmail(@Payload() userId: string) {
+    return this.authCore.getUserEmail(userId);
+  }
+
   @MessagePattern('auth-upgrade-to-seller')
   async upgradeToSeller(
     @Payload() payload: { userId: string; upgradeDto: UpgradeToSellerDto }

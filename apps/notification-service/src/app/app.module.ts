@@ -2,10 +2,12 @@ import { Module } from '@nestjs/common';
 import { MetricsModule, HealthModule } from '@tec-shop/metrics';
 import { LoggerModule } from 'nestjs-pino';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
+    EventEmitterModule.forRoot({ wildcard: false, maxListeners: 20 }),
     MetricsModule,
     HealthModule,
     NotificationModule,

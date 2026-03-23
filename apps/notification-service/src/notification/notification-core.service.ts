@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { OnEvent, EventEmitter2 } from '@nestjs/event-emitter';
 import { NotificationPrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import type { Prisma } from '@tec-shop/notification-client';
@@ -8,6 +9,7 @@ import type {
   NotificationListResponseDto,
   NotificationQueryDto,
 } from '@tec-shop/dto';
+import type { NotificationSavedEvent } from '../channel/channel.service';
 
 const UNREAD_COUNT_KEY_PREFIX = 'unread:';
 const UNREAD_COUNT_TTL = 300;
@@ -18,8 +20,23 @@ export class NotificationCoreService {
 
   constructor(
     private readonly prisma: NotificationPrismaService,
-    private readonly redis: RedisService
+    private readonly redis: RedisService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
+
+  /**
+   * Listens for incoming notification events that require push delivery.
+   * Saves to DB then emits 'notification.saved' for WebSocket broadcast + channel dispatch.
+   */
+  @OnEvent('notification.received', { async: true })
+  async onNotificationReceived(dto: NotificationEventDto): Promise<void> {
+    const shouldPush = !dto.channels || dto.channels.includes('push');
+    if (!shouldPush) return;
+
+    const saved = await this.saveNotification(dto);
+    const event: NotificationSavedEvent = { saved, dto };
+    this.eventEmitter.emit('notification.saved', event);
+  }
 
   async saveNotification(
     dto: NotificationEventDto

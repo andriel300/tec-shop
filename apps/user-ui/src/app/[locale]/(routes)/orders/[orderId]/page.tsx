@@ -12,12 +12,14 @@ import {
   MapPin,
   Phone,
   Package,
+  Truck,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import Image from 'next/image';
 import { Link } from '../../../../../i18n/navigation';
 import { useRouter } from '../../../../../i18n/navigation';
 import { useParams } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 
 interface OrderItem {
   id: string;
@@ -91,6 +93,7 @@ const Page = () => {
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -107,6 +110,20 @@ const Page = () => {
     };
     if (orderId) fetchOrder();
   }, [orderId]);
+
+  const handleConfirmDelivery = useCallback(async () => {
+    if (!order) return;
+    setConfirming(true);
+    try {
+      await apiClient.post(`/orders/${order.id}/confirm-delivery`);
+      setOrder((prev) => prev ? { ...prev, status: 'DELIVERED' } : prev);
+      toast.success('Thank you! Your order has been marked as delivered.');
+    } catch {
+      toast.error('Failed to confirm delivery. Please try again.');
+    } finally {
+      setConfirming(false);
+    }
+  }, [order]);
 
   if (loading) {
     return (
@@ -242,6 +259,30 @@ const Page = () => {
               <p className="text-green-700 text-sm font-medium">
                 Your order has been delivered successfully!
               </p>
+            </div>
+          )}
+
+          {/* Confirm receipt CTA */}
+          {order.status === 'SHIPPED' && (
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200 flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex items-center gap-2 flex-1">
+                <Truck size={18} className="text-blue-500 shrink-0" />
+                <p className="text-sm text-blue-800">
+                  <span className="font-semibold">Package on its way!</span> Once you receive it, confirm delivery so the seller knows it arrived.
+                </p>
+              </div>
+              <button
+                onClick={handleConfirmDelivery}
+                disabled={confirming}
+                className="shrink-0 flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {confirming ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <Check size={15} />
+                )}
+                I've received my order
+              </button>
             </div>
           )}
         </div>

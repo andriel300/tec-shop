@@ -9,12 +9,13 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { Prisma } from '@tec-shop/order-client';
 import { OrderPrismaService } from '../prisma/prisma.service';
 import { RedisService } from '@tec-shop/redis-client';
-import { EmailService } from './email/email.service';
 import { PaymentService } from '../services/payment.service';
 import { KafkaProducerService } from '../services/kafka-producer.service';
 import { UserServiceClient } from '../clients/user.client';
+import { AuthServiceClient } from '../clients/auth.client';
 import { SellerServiceClient } from '../clients/seller.client';
 import { ProductServiceClient } from '../clients/product.client';
+import { ChatServiceClient } from '../clients/chat.client';
 import { NotificationProducerService } from '@tec-shop/notification-producer';
 import {
   CartItemDto,
@@ -31,12 +32,13 @@ export class OrderCheckoutService {
   constructor(
     private readonly prisma: OrderPrismaService,
     private readonly redis: RedisService,
-    private readonly emailService: EmailService,
     private readonly paymentService: PaymentService,
     private readonly kafkaProducer: KafkaProducerService,
     private readonly userClient: UserServiceClient,
+    private readonly authClient: AuthServiceClient,
     private readonly sellerClient: SellerServiceClient,
     private readonly productClient: ProductServiceClient,
+    private readonly chatClient: ChatServiceClient,
     private readonly notificationProducer: NotificationProducerService
   ) {}
 
@@ -384,7 +386,6 @@ export class OrderCheckoutService {
       try {
         if (event.eventType === 'order.created') {
           const payload = event.payload as unknown as { orderId: string; userId: string; cartData: CartItemDto[] };
-          await this.sendOrderConfirmationEmail(payload.orderId);
           await this.sendSellerNotifications(payload.orderId);
           await this.trackPurchaseEvent(payload.orderId, payload.userId, payload.cartData);
           await this.sendOrderPaidNotification(payload.orderId, payload.userId);
@@ -516,64 +517,6 @@ export class OrderCheckoutService {
     }
   }
 
-  private async sendOrderConfirmationEmail(orderId: string): Promise<void> {
-    try {
-      const order = await this.prisma.order.findUnique({
-        where: { id: orderId },
-        include: { items: true },
-      });
-
-      if (!order) {
-        throw new NotFoundException('Order not found');
-      }
-
-      const userProfile = await this.userClient.getUserProfile(order.userId);
-      if (!userProfile || !userProfile.email) {
-        this.logger.warn(`No email found for user ${order.userId}`);
-        return;
-      }
-
-      const shippingAddr = order.shippingAddress as Record<string, unknown>;
-
-      await this.emailService.sendOrderConfirmation(
-        userProfile.email as string,
-        {
-          customerName: shippingAddr.name as string,
-          orderNumber: order.orderNumber,
-          orderDate: order.createdAt.toLocaleDateString(),
-          items: order.items.map((item) => ({
-            productName: item.productName,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            subtotal: item.subtotal,
-          })),
-          shippingAddress: {
-            name: shippingAddr.name as string,
-            street: shippingAddr.street as string,
-            city: shippingAddr.city as string,
-            state: shippingAddr.state as string | undefined,
-            zipCode: shippingAddr.zipCode as string,
-            country: shippingAddr.country as string,
-          },
-          subtotalAmount: order.subtotalAmount,
-          discountAmount: order.discountAmount,
-          shippingCost: order.shippingCost,
-          finalAmount: order.finalAmount,
-          trackingNumber: order.trackingNumber || undefined,
-        }
-      );
-
-      this.logger.log(
-        `Order confirmation email sent for order ${order.orderNumber}`
-      );
-    } catch (error) {
-      this.logger.error(
-        `Failed to send order confirmation email for order ${orderId}`,
-        error
-      );
-    }
-  }
-
   private async sendSellerNotifications(orderId: string): Promise<void> {
     try {
       const order = await this.prisma.order.findUnique({
@@ -605,47 +548,54 @@ export class OrderCheckoutService {
       await Promise.all(
         sellerEntries.map(async ([, sellerItems], index) => {
           const seller = sellerProfiles[index];
-          if (!seller || !seller.email) {
-            return;
-          }
+          if (!seller) return;
 
-          const totalPayout = sellerItems.reduce(
-            (sum, item) => sum + item.subtotal,
-            0
-          );
-          const platformFee = sellerItems.reduce(
-            (sum, item) => sum + item.platformFee,
-            0
-          );
-          const netPayout = sellerItems.reduce(
-            (sum, item) => sum + item.sellerPayout,
-            0
-          );
+          const totalPayout = sellerItems.reduce((sum, item) => sum + item.subtotal, 0);
+          const platformFee = sellerItems.reduce((sum, item) => sum + item.platformFee, 0);
+          const netPayout   = sellerItems.reduce((sum, item) => sum + item.sellerPayout, 0);
+          const fmtPayout   = `$${(netPayout / 100).toFixed(2)}`;
+          const productNames = sellerItems.map((i) => i.productName).join(', ');
+          const sellerId    = sellerItems[0].sellerId;
 
-          await this.emailService.sendSellerOrderNotification(
-            seller.email as string,
+          const shippingAddressMeta = {
+            name:    shippingAddr.name    as string,
+            street:  shippingAddr.street  as string,
+            city:    shippingAddr.city    as string,
+            state:   shippingAddr.state   as string | undefined,
+            zipCode: shippingAddr.zipCode as string,
+            country: shippingAddr.country as string,
+          };
+
+          // notification-service handles both push AND email via metadata
+          await this.notificationProducer.notifySeller(
+            sellerId,
+            'order.placed_seller',
+            { orderNumber: order.orderNumber, productNames, netPayout: fmtPayout },
             {
-              sellerName: seller.name as string,
-              orderNumber: order.orderNumber,
-              orderDate: order.createdAt.toLocaleDateString(),
-              items: sellerItems.map((item) => ({
+              orderId: order.id,
+              // email data — notification-service sends the email
+              email:        seller.email   ?? undefined,
+              sellerName:   seller.name    ?? 'Seller',
+              orderDate:    order.createdAt.toLocaleDateString(),
+              items:        sellerItems.map((item) => ({
                 productName: item.productName,
-                quantity: item.quantity,
-                unitPrice: item.unitPrice,
-                subtotal: item.subtotal,
+                quantity:    item.quantity,
+                unitPrice:   item.unitPrice,
+                subtotal:    item.subtotal,
               })),
               totalPayout,
               platformFee,
               netPayout,
-              shippingAddress: {
-                name: shippingAddr.name as string,
-                street: shippingAddr.street as string,
-                city: shippingAddr.city as string,
-                state: shippingAddr.state as string | undefined,
-                zipCode: shippingAddr.zipCode as string,
-                country: shippingAddr.country as string,
-              },
+              shippingAddress: shippingAddressMeta,
             }
+          );
+
+          // Auto thank-you chat message from seller to customer
+          await this.chatClient.sendThankYouMessage(
+            sellerId,
+            order.userId,
+            order.orderNumber,
+            productNames
           );
         })
       );
@@ -663,13 +613,49 @@ export class OrderCheckoutService {
 
   private async sendOrderPaidNotification(orderId: string, userId: string): Promise<void> {
     try {
-      const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+      const order = await this.prisma.order.findUnique({
+        where: { id: orderId },
+        include: { items: true },
+      });
       if (!order) return;
+
+      const shippingAddr = order.shippingAddress as Record<string, unknown>;
+      const customerName = (shippingAddr.name as string | undefined) ?? 'Customer';
+
+      // Fetch customer email from auth-service
+      const authResult = await this.authClient.getUserEmail(userId);
+      const customerEmail = authResult?.email;
+
       await this.notificationProducer.notifyCustomer(
         userId,
         'order.paid',
         { orderNumber: order.orderNumber },
-        { orderId }
+        {
+          orderId,
+          // email data — notification-service sends the order confirmation email
+          email:           customerEmail ?? undefined,
+          customerName,
+          orderNumber:     order.orderNumber,
+          orderDate:       order.createdAt.toLocaleDateString(),
+          items:           order.items.map((item) => ({
+            productName: item.productName,
+            quantity:    item.quantity,
+            unitPrice:   item.unitPrice,
+            subtotal:    item.subtotal,
+          })),
+          shippingAddress: {
+            name:    shippingAddr.name    as string,
+            street:  shippingAddr.street  as string,
+            city:    shippingAddr.city    as string,
+            state:   shippingAddr.state   as string | undefined,
+            zipCode: shippingAddr.zipCode as string,
+            country: shippingAddr.country as string,
+          },
+          subtotalAmount: order.subtotalAmount,
+          discountAmount: order.discountAmount,
+          shippingCost:   order.shippingCost,
+          finalAmount:    order.finalAmount,
+        }
       );
     } catch (error) {
       this.logger.warn(
@@ -688,7 +674,7 @@ export class OrderCheckoutService {
         userId,
         productId: item.productId,
         shopId: item.shopId,
-        action: 'PURCHASE',
+        action: 'purchase',
       }));
 
       await this.kafkaProducer.sendAnalyticsEventsBatch(events);

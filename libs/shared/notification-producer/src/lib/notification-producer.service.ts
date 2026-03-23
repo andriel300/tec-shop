@@ -1,6 +1,6 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { Kafka, Producer } from 'kafkajs';
-import type { NotificationEventDto, NotificationTargetType } from '@tec-shop/dto';
+import type { NotificationEventDto, NotificationTargetType, NotificationChannel } from '@tec-shop/dto';
 import { TemplateEngine } from './template.engine.js';
 
 const NOTIFICATION_EVENTS_TOPIC = 'notification-events';
@@ -47,18 +47,20 @@ export class NotificationProducerService {
     userId: string,
     templateId: string,
     variables: Record<string, string>,
-    metadata?: Record<string, unknown>
+    metadata?: Record<string, unknown>,
+    channels?: NotificationChannel[]
   ): Promise<void> {
-    await this.send('customer', userId, templateId, variables, metadata);
+    await this.send('customer', userId, templateId, variables, metadata, channels);
   }
 
   async notifySeller(
     authId: string,
     templateId: string,
     variables: Record<string, string>,
-    metadata?: Record<string, unknown>
+    metadata?: Record<string, unknown>,
+    channels?: NotificationChannel[]
   ): Promise<void> {
-    await this.send('seller', authId, templateId, variables, metadata);
+    await this.send('seller', authId, templateId, variables, metadata, channels);
   }
 
   async notifyAdmin(
@@ -69,12 +71,26 @@ export class NotificationProducerService {
     await this.send('admin', 'all', templateId, variables, metadata);
   }
 
+  /** Send to a user by userType ('CUSTOMER' | 'SELLER'). Maps to notifyCustomer/notifySeller. */
+  async notifyUser(
+    userId: string,
+    userType: 'CUSTOMER' | 'SELLER',
+    templateId: string,
+    variables: Record<string, string>,
+    metadata?: Record<string, unknown>,
+    channels?: NotificationChannel[]
+  ): Promise<void> {
+    const targetType: NotificationTargetType = userType === 'SELLER' ? 'seller' : 'customer';
+    await this.send(targetType, userId, templateId, variables, metadata, channels);
+  }
+
   private async send(
     targetType: NotificationTargetType,
     targetId: string,
     templateId: string,
     variables: Record<string, string>,
-    metadata?: Record<string, unknown>
+    metadata?: Record<string, unknown>,
+    channels?: NotificationChannel[]
   ): Promise<void> {
     const rendered = this.templateEngine.render(templateId, variables);
 
@@ -86,6 +102,7 @@ export class NotificationProducerService {
       message: rendered.message,
       type: rendered.type,
       metadata,
+      channels,
       timestamp: new Date().toISOString(),
     };
 

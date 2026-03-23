@@ -171,10 +171,15 @@ module.exports = {
           from: { opacity: '0', transform: 'translateY(20px) scale(0.95)' },
           to: { opacity: '1', transform: 'translateY(0) scale(1)' },
         },
+        ctaPulse: {
+          '0%, 100%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(1.05)' },
+        },
       },
       animation: {
         'fade-in': 'fadeIn 200ms ease-out',
         'slide-up': 'slideUp 200ms ease-out',
+        'cta-pulse': 'ctaPulse 2s ease-in-out infinite',
       },
     },
   },
@@ -185,7 +190,7 @@ module.exports = {
     require('@tailwindcss/aspect-ratio'),
 
     // Small plugin: expose tokens as CSS variables for use in non-Tailwind CSS
-    plugin(function ({ addBase }) {
+    plugin(function({ addBase }) {
       addBase({
         ':root': {
           // Brand
@@ -230,7 +235,7 @@ module.exports = {
     }),
 
     // Accessibility: Disable animations for users who prefer reduced motion
-    plugin(function ({ addBase }) {
+    plugin(function({ addBase }) {
       addBase({
         '@media (prefers-reduced-motion: reduce)': {
           '*': {

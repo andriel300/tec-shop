@@ -21,6 +21,9 @@
   "references": [
     {
       "path": "../dto/tsconfig.lib.json"
+    },
+    {
+      "path": "../kafka-events/tsconfig.lib.json"
     }
   ]
 }

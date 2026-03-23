@@ -7,6 +7,8 @@ import { Prisma } from '@tec-shop/order-client';
 import { OrderPrismaService } from '../prisma/prisma.service';
 import { NotificationProducerService } from '@tec-shop/notification-producer';
 import { GetSellerOrdersDto, OrderStatus } from '@tec-shop/dto';
+import { UserServiceClient } from '../clients/user.client';
+import { AuthServiceClient } from '../clients/auth.client';
 
 @Injectable()
 export class OrderQueryService {
@@ -14,7 +16,9 @@ export class OrderQueryService {
 
   constructor(
     private readonly prisma: OrderPrismaService,
-    private readonly notificationProducer: NotificationProducerService
+    private readonly notificationProducer: NotificationProducerService,
+    private readonly userClient: UserServiceClient,
+    private readonly authClient: AuthServiceClient,
   ) {}
 
   async getUserOrders(userId: string): Promise<Record<string, unknown>[]> {
@@ -87,8 +91,32 @@ export class OrderQueryService {
 
     this.logger.log(`Found ${total} orders for seller ${sellerId}`);
 
+    // Enrich orders with customer name and email from user/auth services
+    const uniqueUserIds = [...new Set(orders.map((o) => o.userId))];
+
+    const customerMap = new Map<string, { name?: string; email?: string }>();
+
+    await Promise.all(
+      uniqueUserIds.map(async (userId) => {
+        const [profile, auth] = await Promise.all([
+          this.userClient.getUserProfile(userId),
+          this.authClient.getUserEmail(userId),
+        ]);
+        customerMap.set(userId, {
+          name: (profile?.['name'] as string | undefined) ?? undefined,
+          email: auth?.email ?? undefined,
+        });
+      })
+    );
+
+    const enrichedOrders = orders.map((order) => ({
+      ...order,
+      customerName: customerMap.get(order.userId)?.name,
+      customerEmail: customerMap.get(order.userId)?.email,
+    }));
+
     return {
-      data: orders,
+      data: enrichedOrders,
       pagination: {
         total,
         page,
@@ -187,15 +215,20 @@ export class OrderQueryService {
     this.logger.log(`Order ${orderId} status updated to ${status} by ${sellerId ? `seller ${sellerId}` : 'admin'}`);
 
     // Send customer notification for each order status transition
+    // Email data is passed in metadata — notification-service handles email sending
     try {
       const orderNumber = (updatedOrder as Record<string, unknown>).orderNumber as string;
+      const shippingAddr = order.shippingAddress as Record<string, unknown>;
+      const customerName = (shippingAddr.name as string | undefined) ?? 'Customer';
+      const authResult = await this.authClient.getUserEmail(order.userId);
+      const customerEmail = authResult?.email ?? undefined;
 
       if (status === OrderStatus.SHIPPED) {
         await this.notificationProducer.notifyCustomer(
           order.userId,
           'order.shipped',
           { orderNumber, trackingNumber: trackingNumber || 'N/A' },
-          { orderId }
+          { orderId, email: customerEmail, customerName, orderNumber, trackingNumber: trackingNumber || undefined }
         );
       } else if (status === OrderStatus.DELIVERED) {
         const items = updatedOrder.items as Array<{ productName: string }>;
@@ -205,7 +238,7 @@ export class OrderQueryService {
           order.userId,
           'order.delivered',
           { orderNumber },
-          { orderId }
+          { orderId, email: customerEmail, customerName, orderNumber }
         );
         await this.notificationProducer.notifyCustomer(
           order.userId,
@@ -224,6 +257,63 @@ export class OrderQueryService {
     } catch (notifError) {
       this.logger.warn(
         `Failed to send order status notification for order ${orderId}: ${notifError instanceof Error ? notifError.message : 'Unknown error'}`
+      );
+    }
+
+    return updatedOrder;
+  }
+
+  async confirmDelivery(
+    userId: string,
+    orderId: string
+  ): Promise<Record<string, unknown>> {
+    const order = await this.prisma.order.findFirst({
+      where: { id: orderId, userId },
+    });
+
+    if (!order) {
+      throw new RpcException({ statusCode: 404, message: 'Order not found' });
+    }
+
+    if (order.status !== OrderStatus.SHIPPED) {
+      throw new RpcException({
+        statusCode: 400,
+        message: 'Order cannot be confirmed — it has not been shipped yet',
+      });
+    }
+
+    const updatedOrder = await this.prisma.order.update({
+      where: { id: orderId },
+      data: { status: OrderStatus.DELIVERED },
+      include: { items: true },
+    });
+
+    this.logger.log(`Order ${orderId} confirmed as delivered by customer ${userId}`);
+
+    try {
+      const orderNumber = (updatedOrder as Record<string, unknown>).orderNumber as string;
+      const items = updatedOrder.items as Array<{ productName: string }>;
+      const productNames = items.map((i) => i.productName).join(', ');
+      const shippingAddr = order.shippingAddress as Record<string, unknown>;
+      const customerName = (shippingAddr.name as string | undefined) ?? 'Customer';
+      const authResult = await this.authClient.getUserEmail(userId);
+      const customerEmail = authResult?.email ?? undefined;
+
+      await this.notificationProducer.notifyCustomer(
+        userId,
+        'order.delivered',
+        { orderNumber },
+        { orderId, email: customerEmail, customerName, orderNumber }
+      );
+      await this.notificationProducer.notifyCustomer(
+        userId,
+        'order.delivered_review',
+        { orderNumber, productNames },
+        { orderId }
+      );
+    } catch (notifError) {
+      this.logger.warn(
+        `Failed to send delivery confirmation notification for order ${orderId}: ${notifError instanceof Error ? notifError.message : 'Unknown error'}`
       );
     }
 
