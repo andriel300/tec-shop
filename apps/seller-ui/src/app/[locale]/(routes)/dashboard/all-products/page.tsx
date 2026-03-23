@@ -3,7 +3,16 @@
 
 import React, { useState } from 'react';
 import { Image as IKImage } from '@imagekit/next';
-import { Package, Plus, Edit, Trash2, Search } from 'lucide-react';
+import {
+  Package,
+  Plus,
+  Edit,
+  Trash2,
+  Search,
+  BarChart2,
+  CheckCircle2,
+  FileText,
+} from 'lucide-react';
 import {
   useProducts,
   useDeleteProduct,
@@ -16,6 +25,56 @@ import {
   getImageKitPath,
 } from '../../../../../lib/imagekit-config';
 import { Link, useRouter } from 'apps/seller-ui/src/i18n/navigation';
+
+// --- Badge helpers ---
+
+const stockBadgeClass = (stock: number) => {
+  if (stock > 10)
+    return 'bg-feedback-success/10 text-feedback-success border border-feedback-success/20';
+  if (stock > 0)
+    return 'bg-feedback-warning/10 text-feedback-warning border border-feedback-warning/20';
+  return 'bg-feedback-error/10 text-feedback-error border border-feedback-error/20';
+};
+
+const statusBadgeClass = (status: string) => {
+  switch (status) {
+    case 'PUBLISHED':
+      return 'bg-feedback-success/10 text-feedback-success border border-feedback-success/20';
+    case 'DRAFT':
+      return 'bg-surface-container text-on-surface border border-outline-variant';
+    default:
+      return 'bg-brand-primary/10 text-brand-primary border border-brand-primary/20';
+  }
+};
+
+// --- Skeleton loader row ---
+
+const SkeletonRow = () => (
+  <tr className="border-b border-surface-container-highest">
+    <td className="px-6 py-4">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-md bg-surface-container animate-pulse flex-shrink-0" />
+        <div className="space-y-2">
+          <div className="h-3.5 bg-surface-container rounded animate-pulse w-32" />
+          <div className="h-3 bg-surface-container rounded animate-pulse w-16" />
+        </div>
+      </div>
+    </td>
+    {[...Array(4)].map((_, i) => (
+      <td key={i} className="px-6 py-4">
+        <div className="h-3.5 bg-surface-container rounded animate-pulse w-20" />
+      </td>
+    ))}
+    <td className="px-6 py-4">
+      <div className="flex justify-end gap-1">
+        <div className="w-8 h-8 rounded-md bg-surface-container animate-pulse" />
+        <div className="w-8 h-8 rounded-md bg-surface-container animate-pulse" />
+      </div>
+    </td>
+  </tr>
+);
+
+// --- Page ---
 
 const ProductsPage = () => {
   const router = useRouter();
@@ -32,14 +91,12 @@ const ProductsPage = () => {
     productName: '',
   });
 
-  // React Query hooks
   const {
     data: products = [],
     isLoading: loading,
     error: fetchError,
-  } = useProducts({
-    search: searchTerm || undefined,
-  });
+  } = useProducts({ search: searchTerm || undefined });
+
   const { mutate: deleteProductMutation, isPending: isDeleting } =
     useDeleteProduct();
 
@@ -47,57 +104,63 @@ const ProductsPage = () => {
     ? 'Failed to load products. Please try again.'
     : null;
 
-  // Handle mouse move for image preview positioning
   const handleMouseMove = (e: React.MouseEvent) => {
     setMousePosition({ x: e.clientX, y: e.clientY });
   };
 
   const openDeleteModal = (productId: string, productName: string) => {
-    setDeleteModal({
-      isOpen: true,
-      productId,
-      productName,
-    });
+    setDeleteModal({ isOpen: true, productId, productName });
   };
 
   const closeDeleteModal = () => {
-    setDeleteModal({
-      isOpen: false,
-      productId: null,
-      productName: '',
-    });
+    setDeleteModal({ isOpen: false, productId: null, productName: '' });
   };
 
   const handleDeleteConfirm = () => {
     if (!deleteModal.productId) return;
-
     deleteProductMutation(deleteModal.productId, {
-      onSuccess: () => {
-        closeDeleteModal();
-      },
+      onSuccess: () => closeDeleteModal(),
     });
   };
 
   const filteredProducts = products.filter((product) => {
     if (!searchTerm) return true;
-    const searchLower = searchTerm.toLowerCase();
+    const q = searchTerm.toLowerCase();
     return (
-      product.name.toLowerCase().includes(searchLower) ||
-      product.description.toLowerCase().includes(searchLower)
+      product.name.toLowerCase().includes(q) ||
+      product.description.toLowerCase().includes(q)
     );
   });
 
+  const publishedCount = products.filter((p) => p.status === 'PUBLISHED').length;
+  const draftCount = products.filter((p) => p.status === 'DRAFT').length;
+
+  const TABLE_HEADERS = [
+    'Product',
+    'Price',
+    'Stock',
+    'Status',
+    'Category',
+    'Actions',
+  ];
+
   return (
-    <div className="w-full mx-auto p-8 text-gray-900">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-semibold font-heading text-gray-900">
-          Products
-        </h2>
+    <div className="w-full mx-auto p-8">
+      {/* Page Header */}
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h2 className="text-2xl font-semibold font-heading text-on-surface">
+            Products
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+            Manage your product catalog
+          </p>
+        </div>
         <Link
           href="/dashboard/create-product"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+          className="px-4 py-2 bg-brand-primary-600 text-white rounded-lg text-sm font-medium hover:bg-brand-primary-700 transition-colors flex items-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-primary-600/50"
         >
-          <Plus size={20} />
+          <Plus size={16} />
           Add New Product
         </Link>
       </div>
@@ -109,214 +172,286 @@ const ProductsPage = () => {
         ]}
       />
 
-      {error && <Alert variant="error" title="Error" description={error} />}
+      {error && (
+        <div className="mt-4">
+          <Alert variant="error" title="Error" description={error} />
+        </div>
+      )}
 
-      {/* Delete errors are now handled by toast notifications via React Query */}
-
-      {/* Search and Filters */}
-      <div className="bg-gray-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg p-4 mb-6">
-        <div className="flex gap-4 items-center">
-          <div className="flex-1 relative">
-            <Search
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              size={20}
-            />
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-[#ffffff] dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+      {/* Stats Row */}
+      {!loading && products.length > 0 && (
+        <div className="grid grid-cols-3 gap-4 mt-6 mb-6">
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 flex items-center gap-3">
+            <div className="p-2 bg-brand-primary/10 rounded-md flex-shrink-0">
+              <BarChart2 size={16} className="text-brand-primary" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">
+                Total
+              </p>
+              <p className="text-xl font-semibold text-on-surface font-heading">
+                {products.length}
+              </p>
+            </div>
           </div>
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 flex items-center gap-3">
+            <div className="p-2 bg-feedback-success/10 rounded-md flex-shrink-0">
+              <CheckCircle2 size={16} className="text-feedback-success" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">
+                Published
+              </p>
+              <p className="text-xl font-semibold text-on-surface font-heading">
+                {publishedCount}
+              </p>
+            </div>
+          </div>
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 flex items-center gap-3">
+            <div className="p-2 bg-surface-container rounded-md flex-shrink-0">
+              <FileText size={16} className="text-gray-400" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">
+                Drafts
+              </p>
+              <p className="text-xl font-semibold text-on-surface font-heading">
+                {draftCount}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Search Bar */}
+      <div className="bg-surface-container-lowest border border-outline-variant rounded-lg p-3 mb-4">
+        <div className="relative">
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            size={16}
+          />
+          <input
+            type="text"
+            placeholder="Search products..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-surface-container text-sm rounded-md text-on-surface placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary-600/40 border border-transparent focus:border-brand-primary-600/30 transition-shadow"
+          />
         </div>
       </div>
 
-      {/* Products List */}
+      {/* Products Table */}
       {loading ? (
-        <div className="text-center py-12 text-gray-400">
-          Loading products...
-        </div>
-      ) : filteredProducts.length === 0 ? (
-        <div className="bg-gray-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-12 text-center">
-          <Package size={48} className="mx-auto text-gray-400 dark:text-gray-600 mb-4" />
-          <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            No Products Found
-          </h3>
-          <p className="text-gray-400 mb-6">
-            {searchTerm
-              ? 'No products match your search criteria'
-              : 'Start by creating your first product'}
-          </p>
-          <Link
-            href="/dashboard/create-product"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
-          >
-            <Plus size={20} />
-            Create Your First Product
-          </Link>
-        </div>
-      ) : (
-        <div className="bg-[#ffffff] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+        <div className="bg-surface-container-lowest border border-outline-variant rounded-lg overflow-hidden">
           <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
+            <thead className="bg-surface-container-low border-b border-surface-container-highest">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  Product
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  Price
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  Stock
-                </th>
-
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  Actions
-                </th>
+                {TABLE_HEADERS.map((h) => (
+                  <th
+                    key={h}
+                    className={`px-6 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider ${
+                      h === 'Actions' ? 'text-right' : 'text-left'
+                    }`}
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
-              {filteredProducts.map((product) => (
-                <tr
-                  key={product.id}
-                  className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-4">
-                      {product.images && product.images[0] ? (
-                        <div
-                          className="relative w-12 h-12 rounded overflow-hidden cursor-pointer ring-2 ring-transparent hover:ring-blue-500 transition-all"
-                          onMouseEnter={() =>
-                            setHoveredImage(product.images[0])
-                          }
-                          onMouseLeave={() => setHoveredImage(null)}
-                          onMouseMove={handleMouseMove}
-                        >
-                          {imagekitConfig.urlEndpoint ? (
-                            <IKImage
-                              urlEndpoint={imagekitConfig.urlEndpoint}
-                              src={getImageKitPath(product.images[0])}
-                              alt={product.name}
-                              width={48}
-                              height={48}
-                              transformation={[
-                                {
-                                  width: '48',
-                                  height: '48',
-                                  crop: 'at_max',
-                                  quality: 80,
-                                },
-                              ]}
-                              loading="lazy"
-                              className="object-cover w-full h-full"
-                            />
-                          ) : (
-                            <img
-                              src={product.images[0]}
-                              alt={product.name}
-                              className="object-cover w-full h-full"
-                            />
-                          )}
-                        </div>
-                      ) : (
-                        <div className="w-12 h-12 rounded bg-gray-100 dark:bg-slate-700 flex items-center justify-center">
-                          <Package size={24} className="text-gray-500" />
-                        </div>
-                      )}
-                      <div>
-                        <div className="font-medium text-gray-900">
-                          {product.name}
-                        </div>
-                        <div className="text-sm text-gray-400">
-                          {product.productType}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-gray-900">
-                    ${product.salePrice || product.price}
-                    {product.salePrice && (
-                      <span className="ml-2 text-gray-400 line-through text-sm">
-                        ${product.price}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        product.stock > 10
-                          ? 'bg-green-900 text-green-300'
-                          : product.stock > 0
-                          ? 'bg-yellow-900 text-yellow-300'
-                          : 'bg-red-900 text-red-300'
-                      }`}
-                    >
-                      {product.stock} units
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        product.status === 'PUBLISHED'
-                          ? 'bg-green-900 text-green-300'
-                          : product.status === 'DRAFT'
-                          ? 'bg-gray-700 text-gray-300'
-                          : 'bg-blue-900 text-blue-300'
-                      }`}
-                    >
-                      {product.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-purple-900 text-purple-300">
-                      {product.category?.name || 'Uncategorized'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() =>
-                          router.push(`/dashboard/products/edit/${product.id}`)
-                        }
-                        className="p-2 text-blue-400 hover:bg-blue-900/30 rounded transition-colors"
-                        title="Edit product"
-                      >
-                        <Edit size={18} />
-                      </button>
-                      <button
-                        onClick={() =>
-                          openDeleteModal(product.id, product.name)
-                        }
-                        className="p-2 text-red-400 hover:bg-red-900/30 rounded transition-colors"
-                        title="Delete product"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+            <tbody>
+              {[...Array(6)].map((_, i) => (
+                <SkeletonRow key={i} />
               ))}
             </tbody>
           </table>
         </div>
-      )}
+      ) : filteredProducts.length === 0 ? (
+        <div className="bg-surface-container-lowest border border-outline-variant rounded-lg p-16 text-center">
+          <div className="inline-flex p-4 bg-surface-container rounded-full mb-4">
+            <Package size={28} className="text-gray-400" />
+          </div>
+          <h3 className="text-base font-semibold text-on-surface mb-1">
+            {searchTerm ? 'No results found' : 'No products yet'}
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-xs mx-auto">
+            {searchTerm
+              ? `No products match "${searchTerm}". Try a different search term.`
+              : 'Get started by adding your first product to the catalog.'}
+          </p>
+          {!searchTerm && (
+            <Link
+              href="/dashboard/create-product"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-primary-600 text-white rounded-lg text-sm font-medium hover:bg-brand-primary-700 transition-colors cursor-pointer"
+            >
+              <Plus size={16} />
+              Add First Product
+            </Link>
+          )}
+        </div>
+      ) : (
+        <div className="bg-surface-container-lowest border border-outline-variant rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-surface-container-low border-b border-surface-container-highest">
+                <tr>
+                  {TABLE_HEADERS.map((h) => (
+                    <th
+                      key={h}
+                      className={`px-6 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider ${
+                        h === 'Actions' ? 'text-right' : 'text-left'
+                      }`}
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-surface-container-highest">
+                {filteredProducts.map((product) => (
+                  <tr
+                    key={product.id}
+                    className="hover:bg-surface-container-low transition-colors duration-150"
+                  >
+                    {/* Product */}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        {product.images && product.images[0] ? (
+                          <div
+                            className="relative w-10 h-10 rounded-md overflow-hidden cursor-pointer ring-1 ring-outline-variant hover:ring-2 hover:ring-brand-primary-600/50 transition-all flex-shrink-0"
+                            onMouseEnter={() =>
+                              setHoveredImage(product.images[0])
+                            }
+                            onMouseLeave={() => setHoveredImage(null)}
+                            onMouseMove={handleMouseMove}
+                          >
+                            {imagekitConfig.urlEndpoint ? (
+                              <IKImage
+                                urlEndpoint={imagekitConfig.urlEndpoint}
+                                src={getImageKitPath(product.images[0])}
+                                alt={product.name}
+                                width={40}
+                                height={40}
+                                transformation={[
+                                  {
+                                    width: '40',
+                                    height: '40',
+                                    crop: 'at_max',
+                                    quality: 80,
+                                  },
+                                ]}
+                                loading="lazy"
+                                className="object-cover w-full h-full"
+                              />
+                            ) : (
+                              <img
+                                src={product.images[0]}
+                                alt={product.name}
+                                className="object-cover w-full h-full"
+                              />
+                            )}
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 rounded-md bg-surface-container flex items-center justify-center flex-shrink-0 ring-1 ring-outline-variant">
+                            <Package size={18} className="text-gray-400" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-on-surface truncate">
+                            {product.name}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-0.5 uppercase tracking-wide">
+                            {product.productType}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
 
-      {/* Summary */}
-      {filteredProducts.length > 0 && (
-        <div className="mt-4 text-sm text-gray-400">
-          Showing {filteredProducts.length} product
-          {filteredProducts.length !== 1 ? 's' : ''}
+                    {/* Price */}
+                    <td className="px-6 py-4">
+                      <span className="text-sm font-semibold text-on-surface">
+                        ${product.salePrice || product.price}
+                      </span>
+                      {product.salePrice && (
+                        <span className="ml-2 text-xs text-gray-400 line-through">
+                          ${product.price}
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Stock */}
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ${stockBadgeClass(product.stock)}`}
+                      >
+                        {product.stock} units
+                      </span>
+                    </td>
+
+                    {/* Status */}
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ${statusBadgeClass(product.status)}`}
+                      >
+                        {product.status}
+                      </span>
+                    </td>
+
+                    {/* Category */}
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-brand-secondary/10 text-brand-secondary border border-brand-secondary/20">
+                        {product.category?.name || 'Uncategorized'}
+                      </span>
+                    </td>
+
+                    {/* Actions */}
+                    <td className="px-6 py-4">
+                      <div className="flex justify-end gap-1">
+                        <button
+                          onClick={() =>
+                            router.push(
+                              `/dashboard/products/edit/${product.id}`
+                            )
+                          }
+                          aria-label={`Edit ${product.name}`}
+                          className="p-2 text-gray-400 hover:text-brand-primary hover:bg-brand-primary/10 rounded-md transition-colors cursor-pointer"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          onClick={() =>
+                            openDeleteModal(product.id, product.name)
+                          }
+                          aria-label={`Delete ${product.name}`}
+                          className="p-2 text-gray-400 hover:text-feedback-error hover:bg-feedback-error/10 rounded-md transition-colors cursor-pointer"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Table Footer */}
+          <div className="px-6 py-3 bg-surface-container-low border-t border-surface-container-highest flex items-center justify-between">
+            <p className="text-xs text-gray-400">
+              Showing{' '}
+              <span className="font-medium text-on-surface">
+                {filteredProducts.length}
+              </span>{' '}
+              of{' '}
+              <span className="font-medium text-on-surface">
+                {products.length}
+              </span>{' '}
+              products
+            </p>
+          </div>
         </div>
       )}
 
-      {/* Hover Image Preview */}
+      {/* Image Hover Preview */}
       {hoveredImage && (
         <div
           className="fixed z-[9999] pointer-events-none animate-fade-in-zoom"
@@ -326,31 +461,19 @@ const ProductsPage = () => {
           }}
         >
           <div className="relative">
-            {/* Glow effect */}
-            <div
-              className="absolute -inset-2 bg-gradient-to-br from-blue-500/30 to-purple-500/30 rounded-2xl blur-lg"
-              style={{ animation: 'pulse 2s ease-in-out infinite' }}
-            />
-
-            {/* Main preview card */}
-            <div className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border border-blue-400/60 rounded-xl shadow-[0_0_30px_rgba(59,130,246,0.3)] overflow-hidden w-64 h-64">
-              {/* Bottom gradient overlay for depth */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none z-10" />
-
-              {/* Top shine effect */}
-              <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-white/10 to-transparent pointer-events-none z-10" />
-
+            <div className="absolute -inset-1 bg-black/10 dark:bg-black/40 rounded-xl blur-md" />
+            <div className="relative bg-surface-container-lowest border border-outline-variant rounded-xl shadow-elev-lg overflow-hidden w-56 h-56">
               {imagekitConfig.urlEndpoint ? (
                 <IKImage
                   urlEndpoint={imagekitConfig.urlEndpoint}
                   src={getImageKitPath(hoveredImage)}
                   alt="Product preview"
-                  width={256}
-                  height={256}
+                  width={224}
+                  height={224}
                   transformation={[
                     {
-                      width: '256',
-                      height: '256',
+                      width: '224',
+                      height: '224',
                       crop: 'at_max',
                       quality: 90,
                       focus: 'auto',
