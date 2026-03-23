@@ -2,7 +2,6 @@
 
 const path = require('path');
 const { composePlugins, withNx } = require('@nx/next');
-const { withSentryConfig } = require('@sentry/nextjs');
 const createNextIntlPlugin = require('next-intl/plugin');
 
 const i18nRequestPath = path.relative(process.cwd(), path.join(__dirname, 'src/i18n/request.ts'));
@@ -18,12 +17,23 @@ const nextConfig = {
     svgr: false,
   },
   serverExternalPackages: ['pino', 'pino-pretty', 'thread-stream'],
-  webpack: (config) => {
+  experimental: {
+    webpackMemoryOptimizations: true,
+  },
+  webpack: (config, { dev }) => {
     config.resolve.extensionAlias = { '.js': ['.ts', '.tsx', '.js'], '.jsx': ['.tsx', '.jsx'] };
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': path.join(__dirname, 'src'),
     };
+    if (dev) {
+      config.watchOptions = {
+        ...config.watchOptions,
+        ignored: /node_modules/,
+      };
+      // Disable source maps in dev — eliminates 30-50% of per-module compilation memory.
+      config.devtool = false;
+    }
     return config;
   },
   // Set custom port for seller-ui
@@ -69,34 +79,19 @@ const composedConfig = {
   serverExternalPackages: ['pino', 'pino-pretty', 'thread-stream'],
 };
 
-module.exports = withSentryConfig(withNextIntl(composedConfig), {
-  // For all available options, see:
-  // https://www.npmjs.com/package/@sentry/webpack-plugin#options
-
-  org: 'andriel',
-  project: 'tecshop-seller-ui',
-
-  // Only print logs for uploading source maps in CI
-  silent: !process.env.CI,
-
-  // For all available options, see:
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
-
-  // Upload a larger set of source maps for prettier stack traces (increases build time)
-  widenClientFileUpload: true,
-
-  // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
-  // This can increase your server load as well as your hosting bill.
-  // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
-  // side errors will fail.
-  // tunnelRoute: "/monitoring",
-
-  // Automatically tree-shake Sentry logger statements to reduce bundle size
-  disableLogger: true,
-
-  // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
-  // See the following for more information:
-  // https://docs.sentry.io/product/crons/
-  // https://vercel.com/docs/cron-jobs
-  automaticVercelMonitors: true,
-});
+// Only apply Sentry in production/CI — requiring @sentry/nextjs unconditionally
+// loads heavy webpack plugins that consume multiple GB in dev.
+const baseExport = withNextIntl(composedConfig);
+if (process.env.NODE_ENV !== 'development') {
+  const { withSentryConfig } = require('@sentry/nextjs');
+  module.exports = withSentryConfig(baseExport, {
+    org: 'andriel',
+    project: 'tecshop-seller-ui',
+    silent: !process.env.CI,
+    widenClientFileUpload: true,
+    disableLogger: true,
+    automaticVercelMonitors: true,
+  });
+} else {
+  module.exports = baseExport;
+}

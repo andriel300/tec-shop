@@ -2,7 +2,6 @@
 
 const path = require('path');
 const { withNx } = require('@nx/next');
-const { withSentryConfig } = require('@sentry/nextjs');
 const createNextIntlPlugin = require('next-intl/plugin');
 
 const i18nRequestPath = path.relative(process.cwd(), path.join(__dirname, 'src/i18n/request.ts'));
@@ -76,8 +75,10 @@ module.exports = async (phase, context) => {
   return updatedConfig;
 };
 
-// Only apply Sentry in production/CI — it loads heavy webpack plugins that consume multiple GB in dev
+// Only apply Sentry in production/CI — requiring @sentry/nextjs unconditionally
+// loads heavy webpack plugins that consume multiple GB in dev.
 if (process.env.NODE_ENV !== 'development') {
+  const { withSentryConfig } = require('@sentry/nextjs');
   module.exports = withSentryConfig(module.exports, {
     org: 'andriel',
     project: 'tecshop-user-ui',

@@ -1,0 +1,10 @@
+# Controls what wt step copy-ignored copies between worktrees.
+# Files must be both gitignored AND listed here to be copied.
+# node_modules/ is intentionally excluded — handled via symlink in post-create.
+
+.env
+.env.local
+certs/
+apps/user-ui/.next/
+apps/seller-ui/.next/
+apps/admin-ui/.next/

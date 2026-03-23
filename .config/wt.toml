@@ -24,15 +24,12 @@ else
 fi
 """
 
-# Install dependencies. New worktrees don't inherit node_modules — pnpm is
-# fast here because it hard-links from the global content-addressable store.
-# Must run before prisma:generate since Nx needs node_modules to resolve.
-install = "pnpm install"
-
-# Regenerate all Prisma clients. Required when the branch changes a .prisma
-# schema. Running it unconditionally is safe (idempotent) and avoids subtle
-# type errors when switching between branches with different schemas.
-prisma = "pnpm prisma:generate"
+# Symlink node_modules from the primary worktree instead of running pnpm install.
+# Running pnpm install in a worktree AND wt step copy-ignored in post-start caused
+# a mixed/corrupted node_modules (fresh install + copy merged on top), which
+# triggered 100% CPU loops in Next.js/Turbopack. The symlink uses the exact same
+# module resolution as main — no install, no disk duplication, no drift.
+deps = "ln -sf {{ primary_worktree_path }}/node_modules {{ worktree_path }}/node_modules"
 
 # ---------------------------------------------------------------------------
 # post-start — background tasks that can run while you work
@@ -54,6 +51,8 @@ copy = "wt step copy-ignored"
 # Avoids nx affected which scans the entire monorepo and is too slow locally.
 
 [pre-commit]
+
+# none of typecheck works maybe its because worktrunk is recently new ah who cares :)
 
 # typecheck-seller  = "cd apps/seller-ui && npx tsc --noEmit"
 # typecheck-gateway = "npx nx run api-gateway:typecheck"
