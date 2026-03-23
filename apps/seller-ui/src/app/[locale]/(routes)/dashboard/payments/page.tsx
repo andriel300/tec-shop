@@ -36,6 +36,8 @@ import {
   Tooltip,
 } from 'recharts';
 import { apiClient } from 'apps/seller-ui/src/lib/api/client';
+import { exportCSV, type CsvColumn } from 'apps/seller-ui/src/lib/utils/export-csv';
+import { exportReport } from 'apps/seller-ui/src/lib/utils/export-report';
 import { Breadcrumb } from 'apps/seller-ui/src/components/navigation/Breadcrumb';
 
 interface OrderItem {
@@ -88,15 +90,12 @@ type PaymentRecord = {
   itemCount: number;
 };
 
-const weeklyPayoutData = [
-  { day: 'Mon', amount: 42, fill: '#4B5563', fillOpacity: 0.45 },
-  { day: 'Tue', amount: 68, fill: '#4B5563', fillOpacity: 0.45 },
-  { day: 'Wed', amount: 95, fill: '#0058BB', fillOpacity: 1 },
-  { day: 'Thu', amount: 55, fill: '#4B5563', fillOpacity: 0.45 },
-  { day: 'Fri', amount: 72, fill: '#4B5563', fillOpacity: 0.45 },
-  { day: 'Sat', amount: 38, fill: '#4B5563', fillOpacity: 0.45 },
-  { day: 'Sun', amount: 28, fill: '#4B5563', fillOpacity: 0.45 },
-];
+type PayoutBarEntry = {
+  day: string;
+  amount: number;
+  fill: string;
+  fillOpacity: number;
+};
 
 type PayoutTooltipProps = {
   active?: boolean;
@@ -108,17 +107,45 @@ const PayoutTooltip = ({ active, payload, label }: PayoutTooltipProps) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-surface-container-lowest border border-gray-200 rounded-md px-3 py-2 shadow-elev-md">
-      <p className="text-xs font-semibold text-gray-900">${payload[0].value}k</p>
+      <p className="text-xs font-semibold text-gray-900">
+        {fmtUSD(payload[0].value * 100)}
+      </p>
       <p className="text-xs text-gray-500">{label}</p>
     </div>
   );
 };
 
-const platformMetrics = [
-  { label: 'API Latency', value: '24ms', pct: 97 },
-  { label: 'Error Rate', value: '0.02%', pct: 99.8 },
-  { label: 'Payout Reliability', value: '100.0%', pct: 100 },
-];
+type CustomBarShapeProps = {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  fill?: string;
+  fillOpacity?: number;
+};
+
+const CustomBarShape = ({
+  x = 0,
+  y = 0,
+  width = 0,
+  height = 0,
+  fill,
+  fillOpacity,
+}: CustomBarShapeProps) => {
+  if (height <= 0) return null;
+  return (
+    <rect
+      x={x}
+      y={y}
+      width={width}
+      height={height}
+      fill={fill}
+      fillOpacity={fillOpacity}
+      rx={4}
+    />
+  );
+};
+
 
 const fetchPaidOrders = async () => {
   const res = await apiClient.get('/orders/get-sellers-orders', {
@@ -244,6 +271,19 @@ const KpiCard = ({
   </div>
 );
 
+const PAYMENT_CSV_COLUMNS: CsvColumn<PaymentRecord>[] = [
+  { header: 'Order ID',          value: (p) => p.orderNumber },
+  { header: 'Date',              value: (p) => fmtDate(p.orderDate) },
+  { header: 'Items',             value: (p) => String(p.itemCount) },
+  { header: 'Total Sales',       value: (p) => (p.totalSales / 100).toFixed(2) },
+  { header: 'Platform Fee',      value: (p) => (p.platformFees / 100).toFixed(2) },
+  { header: 'Net Earnings',      value: (p) => (p.earnings / 100).toFixed(2) },
+  { header: 'Payout Status',     value: (p) => p.payoutStatus },
+  { header: 'Order Status',      value: (p) => p.orderStatus },
+  { header: 'Stripe Transfer ID',value: (p) => p.stripeTransferId ?? '' },
+  { header: 'Processed At',      value: (p) => (p.processedAt ? fmtDate(p.processedAt) : '') },
+];
+
 const PaymentsPage = () => {
   const [globalFilter, setGlobalFilter] = useState('');
   const [payoutStatusFilter, setPayoutStatusFilter] = useState<string>('');
@@ -291,6 +331,41 @@ const PaymentsPage = () => {
       .filter((p) => !payoutStatusFilter || p.payoutStatus === payoutStatusFilter);
   }, [orders, payoutStatusFilter]);
 
+  const weeklyPayoutData = useMemo<PayoutBarEntry[]>(() => {
+    const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const now = new Date();
+    const jsDay = now.getDay(); // 0=Sun … 6=Sat
+    const mondayOffset = jsDay === 0 ? -6 : 1 - jsDay;
+    const monday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + mondayOffset
+    );
+    const todayIdx = jsDay === 0 ? 6 : jsDay - 1; // 0=Mon … 6=Sun
+
+    const dailyCents = new Array(7).fill(0);
+    for (const order of orders) {
+      const d = new Date(order.createdAt);
+      const local = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const diffDays = Math.floor(
+        (local.getTime() - monday.getTime()) / 86_400_000
+      );
+      if (diffDays >= 0 && diffDays < 7) {
+        dailyCents[diffDays] += order.items.reduce(
+          (sum, item) => sum + item.sellerPayout,
+          0
+        );
+      }
+    }
+
+    return DAYS.map((day, i) => ({
+      day,
+      amount: Math.round(dailyCents[i] / 100),
+      fill: i === todayIdx ? '#0058BB' : '#4B5563',
+      fillOpacity: i === todayIdx ? 1 : 0.45,
+    }));
+  }, [orders]);
+
   const totalEarnings = payments.reduce((sum, p) => sum + p.earnings, 0);
   const pendingEarnings = payments
     .filter((p) => p.payoutStatus === 'PENDING')
@@ -299,6 +374,49 @@ const PaymentsPage = () => {
     .filter((p) => p.payoutStatus === 'COMPLETED')
     .reduce((sum, p) => sum + p.earnings, 0);
   const totalTransactions = payments.length;
+
+  const platformMetrics = useMemo(() => {
+    if (!payments.length) {
+      return [
+        { label: 'Payout Reliability', value: '—', pct: 0 },
+        { label: 'Order Fulfillment', value: '—', pct: 0 },
+        { label: 'Settlement Rate', value: '—', pct: 0 },
+      ];
+    }
+
+    const failedCount = payments.filter((p) => p.payoutStatus === 'FAILED').length;
+    const payoutReliability = ((payments.length - failedCount) / payments.length) * 100;
+
+    const nonCancelled = payments.filter((p) => p.orderStatus !== 'CANCELLED').length;
+    const fulfilled = payments.filter(
+      (p) => p.orderStatus === 'DELIVERED' || p.orderStatus === 'SHIPPED'
+    ).length;
+    const fulfillmentRate = nonCancelled > 0 ? (fulfilled / nonCancelled) * 100 : 100;
+
+    const settlementRate = totalEarnings > 0 ? (completedEarnings / totalEarnings) * 100 : 0;
+
+    return [
+      { label: 'Payout Reliability', value: `${payoutReliability.toFixed(1)}%`, pct: payoutReliability },
+      { label: 'Order Fulfillment',  value: `${fulfillmentRate.toFixed(1)}%`,   pct: fulfillmentRate },
+      { label: 'Settlement Rate',    value: `${settlementRate.toFixed(1)}%`,     pct: settlementRate },
+    ];
+  }, [payments, totalEarnings, completedEarnings]);
+
+  const lastSync = useMemo(() => {
+    if (!payments.length) return null;
+    return payments.reduce<Date>((latest, p) => {
+      const d = new Date(p.processedAt ?? p.orderDate);
+      return d > latest ? d : latest;
+    }, new Date(0));
+  }, [payments]);
+
+  const healthStatus = useMemo(() => {
+    if (!payments.length) return 'unknown';
+    const min = Math.min(...platformMetrics.map((m) => m.pct));
+    if (min >= 90) return 'operational';
+    if (min >= 70) return 'degraded';
+    return 'issues';
+  }, [platformMetrics, payments.length]);
 
   const columns = useMemo(
     () => [
@@ -471,11 +589,27 @@ const PaymentsPage = () => {
           <Breadcrumb title="Payments" items={[]} />
         </div>
         <div className="flex items-center gap-2.5 shrink-0">
-          <button className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-container-lowest text-sm font-medium text-gray-900 hover:bg-gray-100 transition-colors cursor-pointer">
+          <button
+            onClick={() => {
+              const rows = table.getFilteredRowModel().rows.map((r) => r.original);
+              const date = new Date().toISOString().slice(0, 10);
+              exportCSV(rows, PAYMENT_CSV_COLUMNS, `payments-${date}`);
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-container-lowest text-sm font-medium text-gray-900 hover:bg-gray-100 transition-colors cursor-pointer"
+          >
             <FileDown size={14} />
             Export CSV
           </button>
-          <button className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-primary text-white text-sm font-medium hover:bg-brand-primary-700 transition-colors cursor-pointer shadow-elev-low">
+          <button
+            onClick={() => {
+              const rows = table.getFilteredRowModel().rows.map((r) => r.original);
+              exportReport(
+                { totalEarnings, pendingEarnings, completedEarnings, totalTransactions },
+                rows
+              );
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-primary text-white text-sm font-medium hover:bg-brand-primary-700 transition-colors cursor-pointer shadow-elev-low"
+          >
             <Download size={14} />
             Download Report
           </button>
@@ -728,7 +862,7 @@ const PaymentsPage = () => {
                 <Tooltip content={<PayoutTooltip />} cursor={false} />
                 <Bar
                   dataKey="amount"
-                  radius={[4, 4, 0, 0]}
+                  shape={<CustomBarShape />}
                   activeBar={{ fillOpacity: 1, filter: 'brightness(1.25)' }}
                 />
               </BarChart>
@@ -745,31 +879,69 @@ const PaymentsPage = () => {
             System performance and uptime metrics
           </p>
           <div className="space-y-5">
-            {platformMetrics.map((metric) => (
-              <div key={metric.label}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    {metric.label}
-                  </span>
-                  <span className="text-sm font-bold text-gray-900">
-                    {metric.value}
-                  </span>
+            {platformMetrics.map((metric) => {
+              const barColor =
+                metric.pct >= 90
+                  ? 'bg-feedback-success'
+                  : metric.pct >= 70
+                  ? 'bg-feedback-warning'
+                  : 'bg-feedback-error';
+              return (
+                <div key={metric.label}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      {metric.label}
+                    </span>
+                    <span className="text-sm font-bold text-gray-900">
+                      {metric.value}
+                    </span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-700 ${barColor}`}
+                      style={{ width: `${metric.pct}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-feedback-success transition-all duration-700"
-                    style={{ width: `${metric.pct}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="mt-6 pt-4 flex items-center justify-between">
-            <span className="text-xs text-gray-500">Last sync: 2 min ago</span>
+            <span className="text-xs text-gray-500">
+              {lastSync
+                ? `Updated ${fmtDate(lastSync.toISOString())}`
+                : 'No data yet'}
+            </span>
             <div className="flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-feedback-success animate-pulse" />
-              <span className="text-xs text-feedback-success font-medium">
-                Operational
+              <div
+                className={`w-1.5 h-1.5 rounded-full animate-pulse ${
+                  healthStatus === 'operational'
+                    ? 'bg-feedback-success'
+                    : healthStatus === 'degraded'
+                    ? 'bg-feedback-warning'
+                    : healthStatus === 'issues'
+                    ? 'bg-feedback-error'
+                    : 'bg-gray-400'
+                }`}
+              />
+              <span
+                className={`text-xs font-medium ${
+                  healthStatus === 'operational'
+                    ? 'text-feedback-success'
+                    : healthStatus === 'degraded'
+                    ? 'text-feedback-warning'
+                    : healthStatus === 'issues'
+                    ? 'text-feedback-error'
+                    : 'text-gray-400'
+                }`}
+              >
+                {healthStatus === 'operational'
+                  ? 'Operational'
+                  : healthStatus === 'degraded'
+                  ? 'Degraded'
+                  : healthStatus === 'issues'
+                  ? 'Issues'
+                  : 'No Data'}
               </span>
             </div>
           </div>
