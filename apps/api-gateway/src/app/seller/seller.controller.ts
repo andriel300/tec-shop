@@ -262,7 +262,7 @@ export class SellerController {
       firstValueFrom(
         this.orderService.send('order-get-seller-chart-data', {
           shopId: shop.id,
-          sellerId: shop.sellerId,
+          sellerId: request.user.userId,
         })
       )
     );
