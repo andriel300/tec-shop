@@ -7,7 +7,8 @@ import { CircuitBreakerService } from '../../common/circuit-breaker.service';
 
 describe('SellerController', () => {
   let controller: SellerController;
-  let sellerServiceClient: ClientProxy;
+  let sellerServiceClient: jest.Mocked<ClientProxy>;
+  let orderServiceClient: jest.Mocked<ClientProxy>;
 
   const mockRequest = (userId: string) => ({
     user: { userId },
@@ -30,6 +31,12 @@ describe('SellerController', () => {
           },
         },
         {
+          provide: 'ORDER_SERVICE',
+          useValue: {
+            send: jest.fn(),
+          },
+        },
+        {
           provide: ImageKitService,
           useValue: {
             uploadFile: jest.fn(),
@@ -47,7 +54,8 @@ describe('SellerController', () => {
     }).compile();
 
     controller = module.get<SellerController>(SellerController);
-    sellerServiceClient = module.get<ClientProxy>('SELLER_SERVICE');
+    sellerServiceClient = module.get('SELLER_SERVICE');
+    orderServiceClient = module.get('ORDER_SERVICE');
   });
 
   afterEach(() => {
@@ -56,7 +64,6 @@ describe('SellerController', () => {
 
   describe('getProfile', () => {
     it('should retrieve seller profile from seller-service', async () => {
-      // Arrange
       const userId = 'seller-auth-123';
       const req = mockRequest(userId);
       const expectedProfile = {
@@ -71,16 +78,13 @@ describe('SellerController', () => {
 
       jest.spyOn(sellerServiceClient, 'send').mockReturnValue(of(expectedProfile));
 
-      // Act
       const result = await controller.getProfile(req);
 
-      // Assert
       expect(sellerServiceClient.send).toHaveBeenCalledWith('get-seller-profile', userId);
       expect(result).toEqual(expectedProfile);
     });
 
     it('should handle seller not found', async () => {
-      // Arrange
       const userId = 'non-existent-seller';
       const req = mockRequest(userId);
 
@@ -88,14 +92,12 @@ describe('SellerController', () => {
         throwError(() => new Error('Seller profile not found'))
       );
 
-      // Act & Assert
       await expect(controller.getProfile(req)).rejects.toThrow('Seller profile not found');
     });
   });
 
   describe('updateProfile', () => {
     it('should update seller profile via seller-service', async () => {
-      // Arrange
       const userId = 'seller-auth-123';
       const req = mockRequest(userId);
       const updateData = {
@@ -112,10 +114,8 @@ describe('SellerController', () => {
 
       jest.spyOn(sellerServiceClient, 'send').mockReturnValue(of(expectedResponse));
 
-      // Act
       const result = await controller.updateProfile(req, updateData);
 
-      // Assert
       expect(sellerServiceClient.send).toHaveBeenCalledWith('update-seller-profile', {
         authId: userId,
         updateData,
@@ -126,7 +126,6 @@ describe('SellerController', () => {
 
   describe('createShop', () => {
     it('should create shop via seller-service', async () => {
-      // Arrange
       const userId = 'seller-auth-123';
       const req = mockRequest(userId);
       const shopData = {
@@ -148,10 +147,8 @@ describe('SellerController', () => {
 
       jest.spyOn(sellerServiceClient, 'send').mockReturnValue(of(expectedResponse));
 
-      // Act
       const result = await controller.createShop(req, shopData);
 
-      // Assert
       expect(sellerServiceClient.send).toHaveBeenCalledWith('create-shop', {
         authId: userId,
         shopData,
@@ -160,7 +157,6 @@ describe('SellerController', () => {
     });
 
     it('should handle shop already exists error', async () => {
-      // Arrange
       const userId = 'seller-auth-123';
       const req = mockRequest(userId);
       const shopData = {
@@ -176,7 +172,6 @@ describe('SellerController', () => {
         throwError(() => new Error('Shop already exists for this seller'))
       );
 
-      // Act & Assert
       await expect(controller.createShop(req, shopData)).rejects.toThrow(
         'Shop already exists for this seller'
       );
@@ -185,7 +180,6 @@ describe('SellerController', () => {
 
   describe('createOrUpdateShop', () => {
     it('should create or update shop via seller-service', async () => {
-      // Arrange
       const userId = 'seller-auth-123';
       const req = mockRequest(userId);
       const shopData = {
@@ -202,10 +196,8 @@ describe('SellerController', () => {
 
       jest.spyOn(sellerServiceClient, 'send').mockReturnValue(of(expectedResponse));
 
-      // Act
       const result = await controller.createOrUpdateShop(req, shopData);
 
-      // Assert
       expect(sellerServiceClient.send).toHaveBeenCalledWith('create-or-update-shop', {
         authId: userId,
         shopData,
@@ -216,7 +208,6 @@ describe('SellerController', () => {
 
   describe('getShop', () => {
     it('should retrieve shop information from seller-service', async () => {
-      // Arrange
       const userId = 'seller-auth-123';
       const req = mockRequest(userId);
       const expectedShop = {
@@ -233,16 +224,13 @@ describe('SellerController', () => {
 
       jest.spyOn(sellerServiceClient, 'send').mockReturnValue(of(expectedShop));
 
-      // Act
       const result = await controller.getShop(req);
 
-      // Assert
       expect(sellerServiceClient.send).toHaveBeenCalledWith('get-seller-shop', userId);
       expect(result).toEqual(expectedShop);
     });
 
     it('should handle shop not found', async () => {
-      // Arrange
       const userId = 'seller-without-shop';
       const req = mockRequest(userId);
 
@@ -250,14 +238,12 @@ describe('SellerController', () => {
         throwError(() => new Error('Shop not found'))
       );
 
-      // Act & Assert
       await expect(controller.getShop(req)).rejects.toThrow('Shop not found');
     });
   });
 
   describe('getDashboardData', () => {
     it('should retrieve dashboard data from seller-service', async () => {
-      // Arrange
       const userId = 'seller-auth-123';
       const req = mockRequest(userId);
       const expectedDashboard = {
@@ -280,16 +266,13 @@ describe('SellerController', () => {
 
       jest.spyOn(sellerServiceClient, 'send').mockReturnValue(of(expectedDashboard));
 
-      // Act
       const result = await controller.getDashboardData(req);
 
-      // Assert
       expect(sellerServiceClient.send).toHaveBeenCalledWith('get-seller-dashboard', userId);
       expect(result).toEqual(expectedDashboard);
     });
 
     it('should handle errors from seller-service', async () => {
-      // Arrange
       const userId = 'seller-auth-123';
       const req = mockRequest(userId);
 
@@ -297,10 +280,141 @@ describe('SellerController', () => {
         throwError(() => new Error('Failed to retrieve dashboard data'))
       );
 
-      // Act & Assert
       await expect(controller.getDashboardData(req)).rejects.toThrow(
         'Failed to retrieve dashboard data'
       );
+    });
+  });
+
+  describe('getStatistics', () => {
+    it('should retrieve statistics from seller-service', async () => {
+      const userId = 'seller-auth-123';
+      const req = mockRequest(userId);
+      const expectedStats = {
+        totalRevenue: 50000,
+        totalOrders: 250,
+        totalProducts: 42,
+        rating: 4.8,
+        followers: 320,
+      };
+
+      jest.spyOn(sellerServiceClient, 'send').mockReturnValue(of(expectedStats));
+
+      const result = await controller.getStatistics(req);
+
+      expect(sellerServiceClient.send).toHaveBeenCalledWith(
+        'seller-get-statistics',
+        userId
+      );
+      expect(result).toEqual(expectedStats);
+    });
+
+    it('should propagate seller-service errors', async () => {
+      const userId = 'seller-auth-123';
+      const req = mockRequest(userId);
+
+      jest.spyOn(sellerServiceClient, 'send').mockReturnValue(
+        throwError(() => new Error('Statistics unavailable'))
+      );
+
+      await expect(controller.getStatistics(req)).rejects.toThrow('Statistics unavailable');
+    });
+  });
+
+  describe('getChartData', () => {
+    it('should fetch shop then return chart data from order-service', async () => {
+      const userId = 'seller-auth-123';
+      const req = mockRequest(userId);
+      const shop = { id: 'shop-123', businessName: 'Test Shop' };
+      const expectedChartData = {
+        revenueData: [{ month: 'Jan', revenue: 1200 }],
+        monthlyOrdersData: [{ month: 'Jan', orders: 10 }],
+        orderStatusData: [{ status: 'DELIVERED', count: 8 }],
+      };
+
+      jest.spyOn(sellerServiceClient, 'send').mockReturnValue(of(shop));
+      jest.spyOn(orderServiceClient, 'send').mockReturnValue(of(expectedChartData));
+
+      const result = await controller.getChartData(req);
+
+      expect(sellerServiceClient.send).toHaveBeenCalledWith('get-seller-shop', userId);
+      expect(orderServiceClient.send).toHaveBeenCalledWith('order-get-seller-chart-data', {
+        shopId: shop.id,
+        sellerId: userId,
+      });
+      expect(result).toEqual(expectedChartData);
+    });
+
+    it('should return empty chart arrays when shop is null', async () => {
+      const userId = 'seller-auth-123';
+      const req = mockRequest(userId);
+
+      jest.spyOn(sellerServiceClient, 'send').mockReturnValue(of(null));
+
+      const result = await controller.getChartData(req);
+
+      expect(orderServiceClient.send).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        revenueData: [],
+        monthlyOrdersData: [],
+        orderStatusData: [],
+      });
+    });
+
+    it('should propagate order-service errors', async () => {
+      const userId = 'seller-auth-123';
+      const req = mockRequest(userId);
+      const shop = { id: 'shop-123', businessName: 'Test Shop' };
+
+      jest.spyOn(sellerServiceClient, 'send').mockReturnValue(of(shop));
+      jest.spyOn(orderServiceClient, 'send').mockReturnValue(
+        throwError(() => new Error('Order service unavailable'))
+      );
+
+      await expect(controller.getChartData(req)).rejects.toThrow(
+        'Order service unavailable'
+      );
+    });
+  });
+
+  describe('getNotificationPreferences', () => {
+    it('should retrieve notification preferences from seller-service', async () => {
+      const userId = 'seller-auth-123';
+      const req = mockRequest(userId);
+      const expectedPrefs = {
+        orderUpdates: true,
+        promotions: false,
+        newFollowers: true,
+      };
+
+      jest.spyOn(sellerServiceClient, 'send').mockReturnValue(of(expectedPrefs));
+
+      const result = await controller.getNotificationPreferences(req);
+
+      expect(sellerServiceClient.send).toHaveBeenCalledWith(
+        'get-seller-notification-preferences',
+        userId
+      );
+      expect(result).toEqual(expectedPrefs);
+    });
+  });
+
+  describe('updateNotificationPreferences', () => {
+    it('should update notification preferences via seller-service', async () => {
+      const userId = 'seller-auth-123';
+      const req = mockRequest(userId);
+      const preferences = { orderUpdates: false, promotions: true };
+      const expectedResponse = { ...preferences, newFollowers: true };
+
+      jest.spyOn(sellerServiceClient, 'send').mockReturnValue(of(expectedResponse));
+
+      const result = await controller.updateNotificationPreferences(req, preferences);
+
+      expect(sellerServiceClient.send).toHaveBeenCalledWith(
+        'update-seller-notification-preferences',
+        { authId: userId, preferences }
+      );
+      expect(result).toEqual(expectedResponse);
     });
   });
 });

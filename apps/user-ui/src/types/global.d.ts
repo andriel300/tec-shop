@@ -4,5 +4,5 @@ import type appMessages from '../../messages/en.json';
 // Keys from the shared @tec-shop/i18n library (Common.signIn, LanguageSwitcher.*)
 // are merged at runtime — app-level Common keys below extend that shared set.
 declare global {
-  interface IntlMessages extends typeof appMessages {}
+  type IntlMessages = typeof appMessages;
 }

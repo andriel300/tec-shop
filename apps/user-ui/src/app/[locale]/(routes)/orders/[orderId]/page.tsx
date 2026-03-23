@@ -281,7 +281,7 @@ const Page = () => {
                 ) : (
                   <Check size={15} />
                 )}
-                I've received my order
+                I&apos;ve received my order
               </button>
             </div>
           )}

@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ChannelService, NotificationSavedEvent } from './channel.service';
+import { ChannelService } from './channel.service';
 import { NotificationEmailService } from '../email/email.service';
 import { DeliveryTrackingService } from '../tracking/delivery-tracking.service';
 import type { NotificationEventDto, NotificationResponseDto } from '@tec-shop/dto';
