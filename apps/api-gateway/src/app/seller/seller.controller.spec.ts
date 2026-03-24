@@ -6,6 +6,7 @@ import { ImageKitService } from '@tec-shop/shared/imagekit';
 import { CircuitBreakerService } from '../../common/circuit-breaker.service';
 
 describe('SellerController', () => {
+  let module: TestingModule;
   let controller: SellerController;
   let sellerServiceClient: jest.Mocked<ClientProxy>;
   let orderServiceClient: jest.Mocked<ClientProxy>;
@@ -15,7 +16,7 @@ describe('SellerController', () => {
   });
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    module = await Test.createTestingModule({
       controllers: [SellerController],
       providers: [
         {
@@ -243,6 +244,14 @@ describe('SellerController', () => {
   });
 
   describe('getDashboardData', () => {
+    it('should propagate circuit breaker rejection', async () => {
+      const req = mockRequest('seller-auth-123');
+      const cb = module.get(CircuitBreakerService);
+      jest.spyOn(cb, 'fire').mockRejectedValueOnce(new Error('Circuit open'));
+
+      await expect(controller.getDashboardData(req)).rejects.toThrow('Circuit open');
+    });
+
     it('should retrieve dashboard data from seller-service', async () => {
       const userId = 'seller-auth-123';
       const req = mockRequest(userId);
@@ -287,6 +296,14 @@ describe('SellerController', () => {
   });
 
   describe('getStatistics', () => {
+    it('should propagate circuit breaker rejection', async () => {
+      const req = mockRequest('seller-auth-123');
+      const cb = module.get(CircuitBreakerService);
+      jest.spyOn(cb, 'fire').mockRejectedValueOnce(new Error('Circuit open'));
+
+      await expect(controller.getStatistics(req)).rejects.toThrow('Circuit open');
+    });
+
     it('should retrieve statistics from seller-service', async () => {
       const userId = 'seller-auth-123';
       const req = mockRequest(userId);

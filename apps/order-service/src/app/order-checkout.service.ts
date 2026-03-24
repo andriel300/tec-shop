@@ -9,7 +9,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { Prisma } from '@tec-shop/order-client';
 import { OrderPrismaService } from '../prisma/prisma.service';
 import { RedisService } from '@tec-shop/redis-client';
-import { PaymentService } from '../services/payment.service';
+import { PaymentService, PaymentDomainException } from '../services/payment.service';
 import { KafkaProducerService } from '../services/kafka-producer.service';
 import { UserServiceClient } from '../clients/user.client';
 import { AuthServiceClient } from '../clients/auth.client';
@@ -132,17 +132,25 @@ export class OrderCheckoutService {
     const finalAmount = subtotalAmount - discountAmount + shippingCost;
 
     // Create Stripe checkout session
-    const session = await this.paymentService.createCheckoutSession({
-      userId,
-      items: resolvedItems,
-      shippingAddress,
-      subtotalAmount,
-      discountAmount,
-      shippingCost,
-      platformFee,
-      finalAmount,
-      couponCode: data.couponCode,
-    });
+    let session: { sessionId: string; sessionUrl: string; expiresAt: Date };
+    try {
+      session = await this.paymentService.createCheckoutSession({
+        userId,
+        items: resolvedItems,
+        shippingAddress,
+        subtotalAmount,
+        discountAmount,
+        shippingCost,
+        platformFee,
+        finalAmount,
+        couponCode: data.couponCode,
+      });
+    } catch (error) {
+      if (error instanceof PaymentDomainException) {
+        throw new BadRequestException(error.message);
+      }
+      throw error;
+    }
 
     // Store payment session in Redis and Database
     await this.storePaymentSession({
@@ -261,7 +269,15 @@ export class OrderCheckoutService {
       throw new NotFoundException('Payment session not found');
     }
 
-    const stripeSession = await this.paymentService.getCheckoutSession(sessionId);
+    let stripeSession: Awaited<ReturnType<typeof this.paymentService.getCheckoutSession>>;
+    try {
+      stripeSession = await this.paymentService.getCheckoutSession(sessionId);
+    } catch (error) {
+      if (error instanceof PaymentDomainException) {
+        throw new BadRequestException(error.message);
+      }
+      throw error;
+    }
     if (stripeSession.payment_status !== 'paid') {
       throw new BadRequestException('Payment not completed');
     }

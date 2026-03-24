@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { ClientProxy } from '@nestjs/microservices';
-import type { CreateCheckoutSessionDto, GetSellerOrdersDto } from '@tec-shop/dto';
+import type { CreateCheckoutSessionDto, GetSellerOrdersDto, VerifyCouponRequestDto } from '@tec-shop/dto';
 import { JwtAuthGuard } from '../../guards/auth';
 import { RolesGuard } from '../../guards/roles.guard';
 import { Roles } from '../../decorators/roles.decorator';
@@ -46,18 +46,7 @@ export class OrderController {
     status: 400,
     description: 'Invalid or expired coupon code.',
   })
-  async verifyCouponCode(
-    @Body()
-    body: {
-      couponCode: string;
-      cart: {
-        id: string;
-        sellerId: string;
-        price: number;
-        quantity: number;
-      }[];
-    }
-  ) {
+  async verifyCouponCode(@Body() body: VerifyCouponRequestDto) {
     // Transform cart items to the format expected by seller-service
     const cartItems = body.cart.map((item) => ({
       productId: item.id,

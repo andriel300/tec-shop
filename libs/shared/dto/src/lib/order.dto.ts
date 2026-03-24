@@ -102,6 +102,35 @@ export class VerifyCouponDto {
   items!: CartItemDto[];
 }
 
+export class CouponCartItemDto {
+  @IsString()
+  @IsNotEmpty()
+  id!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  sellerId!: string;
+
+  @IsNumber()
+  @Min(0)
+  price!: number;
+
+  @IsNumber()
+  @Min(1)
+  quantity!: number;
+}
+
+export class VerifyCouponRequestDto {
+  @IsString()
+  @IsNotEmpty()
+  couponCode!: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CouponCartItemDto)
+  cart!: CouponCartItemDto[];
+}
+
 export class UpdateOrderStatusDto {
   @IsEnum(OrderStatus)
   @IsNotEmpty()

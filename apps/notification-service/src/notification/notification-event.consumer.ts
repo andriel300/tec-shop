@@ -27,7 +27,7 @@ export class NotificationEventConsumer implements OnModuleInit {
     await this.kafkaConsumer.subscribe({ topic: TOPIC, fromBeginning: false });
     this.logger.log('NotificationEventConsumer is running...');
 
-    await this.kafkaConsumer.run({
+    this.kafkaConsumer.run({
       eachMessage: async (payload: EachMessagePayload) => {
         const raw = payload.message.value?.toString();
         if (!raw) return;
@@ -40,6 +40,8 @@ export class NotificationEventConsumer implements OnModuleInit {
           await this.sendToDlq(raw, error);
         }
       },
+    }).catch((err: unknown) => {
+      this.logger.error('Kafka consumer crashed', err);
     });
   }
 

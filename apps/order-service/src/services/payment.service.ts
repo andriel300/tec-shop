@@ -3,6 +3,13 @@ import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import { CartItemDto } from '@tec-shop/dto';
 
+export class PaymentDomainException extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'PaymentDomainException';
+  }
+}
+
 interface CheckoutSessionData {
   userId: string;
   items: CartItemDto[];
@@ -104,7 +111,7 @@ export class PaymentService {
     } catch (error) {
       const stripeMsg = error instanceof Error ? error.message : JSON.stringify(error);
       this.logger.error(`Failed to create Stripe checkout session: ${stripeMsg}`);
-      throw new BadRequestException(`Failed to create payment session: ${stripeMsg}`);
+      throw new PaymentDomainException(`Failed to create payment session: ${stripeMsg}`);
     }
   }
 
@@ -115,7 +122,7 @@ export class PaymentService {
       return await this.stripe.checkout.sessions.retrieve(sessionId);
     } catch (error) {
       this.logger.error(`Failed to retrieve session ${sessionId}`, error);
-      throw new BadRequestException('Failed to retrieve payment session');
+      throw new PaymentDomainException('Failed to retrieve payment session');
     }
   }
 

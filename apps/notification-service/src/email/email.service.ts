@@ -132,11 +132,23 @@ export class NotificationEmailService {
     });
   }
 
-  // ─── Order emails ─────────────────────────────────────────────────────────────
+    // ─── Order emails ─────────────────────────────────────────────────────────────
+
+  private isOrderItem(item: unknown): item is { productName: string; quantity: number; unitPrice: number; subtotal: number } {
+    return (
+      typeof item === 'object' &&
+      item !== null &&
+      typeof (item as Record<string, unknown>).productName === 'string' &&
+      typeof (item as Record<string, unknown>).quantity === 'number' &&
+      typeof (item as Record<string, unknown>).unitPrice === 'number' &&
+      typeof (item as Record<string, unknown>).subtotal === 'number'
+    );
+  }
 
   private async sendOrderConfirmation(email: string, m: Record<string, unknown>): Promise<void> {
     const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`;
-    const items = (m.items as Array<{ productName: string; quantity: number; unitPrice: number; subtotal: number }>) ?? [];
+    const rawItems = Array.isArray(m.items) ? m.items : [];
+    const items = rawItems.filter(this.isOrderItem);
     const addr = (m.shippingAddress ?? {}) as Record<string, string>;
 
     const itemsHtml = items.map((item) => `
@@ -147,10 +159,11 @@ export class NotificationEmailService {
         <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;">${fmt(item.subtotal)}</td>
       </tr>`).join('');
 
-    await this.mailer.sendMail({
-      to: email,
-      subject: `Your TecShop Order Confirmation — ${m.orderNumber}`,
-      html: `
+    try {
+      await this.mailer.sendMail({
+        to: email,
+        subject: `Your TecShop Order Confirmation — ${m.orderNumber}`,
+        html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;background:#f8f9fa;">
           <div style="background:#fff;padding:30px;border-radius:8px;">
             <h1 style="color:#007bff;text-align:center;">TecShop</h1>
@@ -181,13 +194,18 @@ export class NotificationEmailService {
             <p>${addr.name}<br>${addr.street}<br>${addr.city}${addr.state ? `, ${addr.state}` : ''} ${addr.zipCode}<br>${addr.country}</p>
           </div>
         </div>`,
-    });
+      });
+    } catch (err) {
+      this.logger.error(`Failed to send order confirmation to ${email}`, err);
+      throw err;
+    }
     if (this.isDev) this.logger.log(`Order confirmation → ${email} (${m.orderNumber})`);
   }
 
   private async sendSellerNewOrder(email: string, m: Record<string, unknown>): Promise<void> {
     const fmt = (cents: number) => `$${(cents / 100).toFixed(2)}`;
-    const items = (m.items as Array<{ productName: string; quantity: number; unitPrice: number; subtotal: number }>) ?? [];
+    const rawItems = Array.isArray(m.items) ? m.items : [];
+    const items = rawItems.filter(this.isOrderItem);
     const addr = (m.shippingAddress ?? {}) as Record<string, string>;
 
     const itemsHtml = items.map((item) => `
@@ -198,10 +216,11 @@ export class NotificationEmailService {
         <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;">${fmt(item.subtotal)}</td>
       </tr>`).join('');
 
-    await this.mailer.sendMail({
-      to: email,
-      subject: `New Order Received — ${m.orderNumber}`,
-      html: `
+    try {
+      await this.mailer.sendMail({
+        to: email,
+        subject: `New Order Received — ${m.orderNumber}`,
+        html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;background:#f8f9fa;">
           <div style="background:#fff;padding:30px;border-radius:8px;">
             <h1 style="color:#007bff;text-align:center;">TecShop Seller</h1>
@@ -237,15 +256,20 @@ export class NotificationEmailService {
             </div>
           </div>
         </div>`,
-    });
+      });
+    } catch (err) {
+      this.logger.error(`Failed to send seller new-order email to ${email}`, err);
+      throw err;
+    }
     if (this.isDev) this.logger.log(`Seller new-order → ${email} (${m.orderNumber})`);
   }
 
   private async sendOrderShipped(email: string, m: Record<string, unknown>): Promise<void> {
-    await this.mailer.sendMail({
-      to: email,
-      subject: `Your TecShop Order Has Shipped — ${m.orderNumber}`,
-      html: `
+    try {
+      await this.mailer.sendMail({
+        to: email,
+        subject: `Your TecShop Order Has Shipped — ${m.orderNumber}`,
+        html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;background:#f8f9fa;">
           <div style="background:#fff;padding:30px;border-radius:8px;">
             <h1 style="color:#007bff;text-align:center;">TecShop</h1>
@@ -265,15 +289,20 @@ export class NotificationEmailService {
             </div>` : ''}
           </div>
         </div>`,
-    });
+      });
+    } catch (err) {
+      this.logger.error(`Failed to send order shipped email to ${email}`, err);
+      throw err;
+    }
     if (this.isDev) this.logger.log(`Order shipped → ${email} (${m.orderNumber})`);
   }
 
   private async sendOrderDelivered(email: string, m: Record<string, unknown>): Promise<void> {
-    await this.mailer.sendMail({
-      to: email,
-      subject: `Your TecShop Order Has Been Delivered — ${m.orderNumber}`,
-      html: `
+    try {
+      await this.mailer.sendMail({
+        to: email,
+        subject: `Your TecShop Order Has Been Delivered — ${m.orderNumber}`,
+        html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;background:#f8f9fa;">
           <div style="background:#fff;padding:30px;border-radius:8px;">
             <h1 style="color:#007bff;text-align:center;">TecShop</h1>
@@ -287,7 +316,11 @@ export class NotificationEmailService {
             </div>
           </div>
         </div>`,
-    });
+      });
+    } catch (err) {
+      this.logger.error(`Failed to send order delivered email to ${email}`, err);
+      throw err;
+    }
     if (this.isDev) this.logger.log(`Order delivered → ${email} (${m.orderNumber})`);
   }
 }

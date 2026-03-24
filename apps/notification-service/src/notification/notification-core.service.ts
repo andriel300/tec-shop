@@ -30,12 +30,16 @@ export class NotificationCoreService {
    */
   @OnEvent('notification.received', { async: true })
   async onNotificationReceived(dto: NotificationEventDto): Promise<void> {
-    const shouldPush = !dto.channels || dto.channels.includes('push');
-    if (!shouldPush) return;
+    try {
+      const shouldPush = !dto.channels || dto.channels.includes('push');
+      if (!shouldPush) return;
 
-    const saved = await this.saveNotification(dto);
-    const event: NotificationSavedEvent = { saved, dto };
-    this.eventEmitter.emit('notification.saved', event);
+      const saved = await this.saveNotification(dto);
+      const event: NotificationSavedEvent = { saved, dto };
+      this.eventEmitter.emit('notification.saved', event);
+    } catch (err) {
+      this.logger.error('Failed to process notification.received event', err);
+    }
   }
 
   async saveNotification(
