@@ -20,6 +20,7 @@ import { useRouter } from '../../../i18n/navigation';
 import { useCreateConversation } from '../../../hooks/use-chat';
 import { useSimilarProducts } from '../../../hooks/use-recommendations';
 import type { Product, ProductVariant } from '../../../lib/api/products';
+import { trackProductView } from '../../../lib/api/products';
 import {
   ChevronLeft,
   ChevronRight,
@@ -90,6 +91,13 @@ const ProductDetails = ({ product }: { product: Product }) => {
 
   // ========== CART/PURCHASE STATE ==========
   const [quantity, setQuantity] = useState(1);
+
+  // ========== VIEW TRACKING ==========
+  // Fire-and-forget: increment the view counter when this product page loads.
+  // Runs once per product.id mount — no cleanup needed.
+  useEffect(() => {
+    trackProductView(product.id);
+  }, [product.id]);
 
   // ========== SIMILAR PRODUCTS ==========
   const { data: similarProducts } = useSimilarProducts(product.id, 5);

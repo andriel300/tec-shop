@@ -81,6 +81,16 @@ export interface PaginatedProductsResponse {
   sort: string;
 }
 
+// Tracks a product view (fire-and-forget — errors are swallowed intentionally
+// so a failed analytics call never degrades the user experience).
+export const trackProductView = async (productId: string): Promise<void> => {
+  try {
+    await apiClient.post(`/public/products/${productId}/view`);
+  } catch {
+    // silently ignore
+  }
+};
+
 // Products API functions
 export const getPublicProducts = async (
   params?: GetProductsParams

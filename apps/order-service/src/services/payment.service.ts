@@ -1,4 +1,3 @@
-import { createHash } from 'crypto';
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
@@ -72,36 +71,22 @@ export class PaymentService {
         });
       }
 
-      const idempotencyKey = createHash('sha256')
-        .update(
-          `${data.userId}:${data.items
-            .map((i) => `${i.productId}:${i.variantId ?? ''}:${i.quantity}`)
-            .sort()
-            .join(',')}`
-        )
-        .digest('hex');
-
-      const session = await this.stripe.checkout.sessions.create(
-        {
-          payment_method_types: ['card'],
-          line_items: lineItems,
-          mode: 'payment',
-          success_url: `${this.frontendUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${this.frontendUrl}/cart?cancelled=true`,
-          customer_email: undefined,
-          metadata: {
-            userId: data.userId,
-            subtotalAmount: data.subtotalAmount.toString(),
-            discountAmount: data.discountAmount.toString(),
-            shippingCost: data.shippingCost.toString(),
-            platformFee: data.platformFee.toString(),
-            finalAmount: data.finalAmount.toString(),
-            couponCode: data.couponCode || '',
-          },
-          expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
+      const session = await this.stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: lineItems,
+        mode: 'payment',
+        success_url: `${this.frontendUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${this.frontendUrl}/cart?cancelled=true`,
+        metadata: {
+          userId: data.userId,
+          subtotalAmount: data.subtotalAmount.toString(),
+          discountAmount: data.discountAmount.toString(),
+          shippingCost: data.shippingCost.toString(),
+          platformFee: data.platformFee.toString(),
+          finalAmount: data.finalAmount.toString(),
+          couponCode: data.couponCode || '',
         },
-        { idempotencyKey }
-      );
+      });
 
       if (!session.url) {
         throw new Error('Stripe session created but URL is missing');
@@ -117,8 +102,9 @@ export class PaymentService {
         expiresAt,
       };
     } catch (error) {
-      this.logger.error('Failed to create Stripe checkout session', error);
-      throw new BadRequestException('Failed to create payment session');
+      const stripeMsg = error instanceof Error ? error.message : JSON.stringify(error);
+      this.logger.error(`Failed to create Stripe checkout session: ${stripeMsg}`);
+      throw new BadRequestException(`Failed to create payment session: ${stripeMsg}`);
     }
   }
 

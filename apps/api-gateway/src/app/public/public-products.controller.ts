@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Inject, Param } from '@nestjs/common';
+import { Controller, Get, Post, Query, Inject, Param, HttpCode, HttpStatus, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { ApiOperation, ApiResponse, ApiTags, ApiQuery } from '@nestjs/swagger';
@@ -12,6 +12,8 @@ const FILTERS_TTL = 300; // seconds — filter options change rarely
 @ApiTags('Public Products')
 @Controller('public/products')
 export class PublicProductsController {
+  private readonly logger = new Logger(PublicProductsController.name);
+
   constructor(
     @Inject('PRODUCT_SERVICE') private productService: ClientProxy,
     private readonly redisService: RedisService
@@ -439,6 +441,27 @@ Retrieves all available filter options (colors, sizes) dynamically extracted fro
         sort: sort || 'newest',
       })
     );
+  }
+
+  /**
+   * Track a product view — increments the views counter in the product-service.
+   * Fire-and-forget from the client; no auth required.
+   * Uses :id (MongoDB ObjectId) so it never conflicts with the :slug GET route.
+   */
+  @Post(':id/view')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Throttle({ long: { limit: 200, ttl: 60000 } })
+  @ApiOperation({ summary: 'Track product view (public)' })
+  @ApiResponse({ status: 204, description: 'View tracked.' })
+  async trackView(@Param('id') id: string): Promise<void> {
+    await firstValueFrom(
+      this.productService.send('product-increment-product-views', { id })
+    ).catch((err: unknown) => {
+      // Fire-and-forget: a failed view increment must never degrade the user experience.
+      this.logger.warn(
+        `Failed to track view for product ${id}: ${err instanceof Error ? err.message : String(err)}`
+      );
+    });
   }
 
   /**

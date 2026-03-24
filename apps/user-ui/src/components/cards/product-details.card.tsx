@@ -26,6 +26,8 @@ import useLocationTracking from '../../hooks/use-location-tracking';
 import useDeviceTracking from '../../hooks/use-device-tracking';
 import useStore from '../../store';
 import { useRouter } from '../../i18n/navigation';
+import { SaleTag, FeaturedTag } from '../../assets/svgs/price-tag-sheet';
+import { trackProductView } from '../../lib/api/products';
 import { useCreateConversation } from '../../hooks/use-chat';
 
 interface ProductDetailsCardProps {
@@ -44,6 +46,15 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
   const [selectedAttributes, setSelectedAttributes] = useState<
     Record<string, string>
   >({});
+
+  // Optimistic view count: +1 immediately when the modal opens.
+  // The server is updated via fire-and-forget; the cache refreshes within its TTL.
+  const [localViews, setLocalViews] = useState(product.views);
+
+  useEffect(() => {
+    trackProductView(product.id);
+    setLocalViews((v) => v + 1);
+  }, [product.id]);
 
   const { user } = useAuth();
   const router = useRouter();
@@ -151,6 +162,9 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
 
   const originalPrice = selectedVariant?.price ?? product.price ?? 0;
   const hasDiscount = displayPrice < originalPrice;
+  const discountPercent = hasDiscount
+    ? Math.round(((originalPrice - displayPrice) / originalPrice) * 100)
+    : undefined;
 
   // Calculate available stock
   const availableStock = selectedVariant
@@ -360,14 +374,14 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
 
               {/* Badges */}
               {hasDiscount && (
-                <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-semibold px-3 py-1 rounded">
+                <SaleTag className="absolute top-3 left-3" discount={discountPercent}>
                   {tCommon('sale')}
-                </div>
+                </SaleTag>
               )}
               {product.isFeatured && (
-                <div className="absolute top-3 right-3 bg-yellow-500 text-white text-xs font-semibold px-3 py-1 rounded">
-                  {tCommon('featured')}
-                </div>
+                <FeaturedTag className="absolute top-3 right-3" direction="left">
+                  {tCommon('new')}
+                </FeaturedTag>
               )}
             </div>
 
@@ -664,8 +678,8 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
 
             {/* Product Stats */}
             <div className="flex items-center gap-3 text-xs text-gray-500 pt-2 border-t border-gray-200">
-              <span>{product.views} views</span>
-              <span>{product.sales} sold</span>
+              <span>{localViews} {tCommon('views')}</span>
+              <span>{product.sales} {tCommon('sold')}</span>
             </div>
 
             {/* Shop/Seller Information */}

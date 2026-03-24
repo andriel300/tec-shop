@@ -7,6 +7,9 @@
     "learnMore": "Saiba Mais",
     "sale": "PROMO",
     "featured": "DESTAQUE",
+    "new": "NOVO",
+    "views": "visualizações",
+    "sold": "vendido(s)",
     "anErrorOccurred": "Ocorreu um erro"
   },
   "Navbar": {

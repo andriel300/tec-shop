@@ -7,6 +7,7 @@ import type { Product } from '../../lib/api/products';
 import StarRating from '../ui/star-rating';
 import { Eye, Heart, ShoppingBag } from 'lucide-react';
 import ProductDetailsCard from './product-details.card';
+import { SaleTag, FeaturedTag } from '../../assets/svgs/price-tag-sheet';
 import { useAuth } from '../../hooks/use-auth';
 import useLocationTracking from '../../hooks/use-location-tracking';
 import useDeviceTracking from '../../hooks/use-device-tracking';
@@ -23,6 +24,9 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const tCommon = useTranslations('Common');
   const displayPrice = product.salePrice || product.price;
   const hasDiscount = product.salePrice && product.salePrice < product.price;
+  const discountPercent = hasDiscount
+    ? Math.round(((product.price - product.salePrice!) / product.price) * 100)
+    : undefined;
   const [open, setOpen] = useState(false);
 
   const { user } = useAuth();
@@ -207,14 +211,14 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
             {/* Badges */}
             {hasDiscount && (
-              <div className="absolute top-2 left-3 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded">
+              <SaleTag className="absolute top-2 left-2" discount={discountPercent}>
                 {tCommon('sale')}
-              </div>
+              </SaleTag>
             )}
             {product.isFeatured && (
-              <div className="absolute top-12 left-3 font-Oregano bg-yellow-500 text-brand-secondary text-xm font-bold px-2 py-1 rounded">
-                {tCommon('featured')}
-              </div>
+              <FeaturedTag className="absolute top-2 right-2" direction="left">
+                {tCommon('new')}
+              </FeaturedTag>
             )}
           </div>
 
@@ -264,8 +268,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
             )}
 
             <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
-              <span>{product.views} views</span>
-              <span>{product.sales} sold</span>
+              <span>{product.views} {tCommon('views')}</span>
+              <span>{product.sales} {tCommon('sold')}</span>
             </div>
           </div>
         </div>
