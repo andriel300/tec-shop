@@ -12,6 +12,7 @@ import Home from '../../../assets/svgs/icons/home-icon';
 import SidebarMenu from './sidebar.menu';
 import {
   BellRing,
+  Brain,
   FileClock,
   ListOrdered,
   LogOut,
@@ -24,12 +25,14 @@ import { Payment } from '../../../assets/svgs/icons/payment-icon';
 import { NotificationBell } from '../notification-bell';
 import LanguageSwitcher from '../language-switcher';
 import { Link, usePathname } from 'apps/admin-ui/src/i18n/navigation';
+import { useTrainRecommendationModel } from '../../../hooks/useAdminData';
 
 const SidebarWrapper = () => {
   const t = useTranslations('Sidebar');
   const { activeSidebar, setActiveSidebar } = useSidebar();
   const pathName = usePathname();
   const { admin } = useAdmin();
+  const trainModel = useTrainRecommendationModel();
 
   const getIconColor = (route: string) =>
     activeSidebar === route ? '#0085ff' : '#969696';
@@ -46,21 +49,22 @@ const SidebarWrapper = () => {
         position: 'sticky',
         padding: '8px',
         top: 0,
-        overflowY: 'scroll',
-        scrollbarWidth: 'none',
+        overflowY: 'hidden',
       }}
       className="sidebar-wrapper"
     >
       <Sidebar.Header>
         <Box>
           <div className="flex items-center justify-between mb-2">
-            <Link href={'/'} className="flex items-center gap-2 min-w-0">
-              <Logo />
+            <Link href={'/'} className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Logo className="w-4 h-4 text-white" />
+              </div>
               <Box className="min-w-0">
-                <h3 className="text-xl font-medium text-[#ecedee] truncate">
+                <h3 className="text-sm font-semibold text-slate-200 truncate leading-tight">
                   {admin?.name}
                 </h3>
-                <h5 className="font-medium text-xs text-[#ecedeecf] truncate">
+                <h5 className="text-xs text-slate-500 truncate leading-tight">
                   {admin?.email}
                 </h5>
               </Box>
@@ -77,7 +81,7 @@ const SidebarWrapper = () => {
         <Sidebar.Body className="body sidebar">
           <SidebarItem
             title={t('dashboard')}
-            icon={<Home fill={getIconColor('dashboard')} />}
+            icon={<Home className="w-5 h-5" fill={getIconColor('dashboard')} />}
             isActive={activeSidebar === '/dashboard'}
             href="/dashboard"
           >
@@ -168,6 +172,18 @@ const SidebarWrapper = () => {
                     <BellRing
                       size={22}
                       color={getIconColor('/dashboard/notifications')}
+                    />
+                  }
+                />
+
+                <SidebarItem
+                  isActive={false}
+                  title={trainModel.isPending ? 'Training...' : 'Train AI Model'}
+                  onClick={() => !trainModel.isPending && trainModel.mutate()}
+                  icon={
+                    <Brain
+                      size={22}
+                      color={trainModel.isPending ? '#6366f1' : '#969696'}
                     />
                   }
                 />

@@ -23,13 +23,13 @@ const SidebarItems = ({
 }: Props) => {
   const itemContent = (
     <div
-      className={`flex gap-2 w-full min-h-12 h-full items-center px-[13px] rounded-lg cursor-pointer transition hover:bg-[#2b2f31] ${
+      className={`flex gap-2.5 w-full min-h-9 items-center px-3 rounded-md cursor-pointer transition-colors duration-150 hover:bg-white/5 ${
         isActive &&
-        'scale-[.98] bg-[#0f3158] fill-blue-200 hover:bg-[#0f3158d6]'
+        'bg-blue-600/10 border border-blue-500/20 fill-blue-200 hover:bg-blue-600/15'
       }`}
     >
       {icon}
-      <h5 className="text-slate-200 text-lg flex-1">{title}</h5>
+      <h5 className="text-slate-300 text-sm flex-1 font-normal">{title}</h5>
 
       {badge !== undefined && badge > 0 && (
         <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-semibold rounded-full bg-red-500/20 text-red-400 border border-red-500/30">

@@ -131,7 +131,7 @@ module.exports = {
       // typography & fonts
       fontFamily: {
         sans: [
-          'var(--font-inter)',
+          'var(--font-poppins)',
           'ui-sans-serif',
           'system-ui',
           '-apple-system',
@@ -148,7 +148,6 @@ module.exports = {
         ],
         heading: [
           'var(--font-poppins)',
-          'var(--font-inter)',
           'ui-sans-serif',
           'Apple Color Emoji',
           'Segoe UI Emoji',

@@ -20,7 +20,6 @@ import {
 import {
   usePlatformStatistics,
   useAllOrders,
-  useTrainRecommendationModel,
 } from '../../../../hooks/useAdminData';
 
 // Dynamic imports for chart components to avoid SSR issues
@@ -147,9 +146,9 @@ const OrdersTable = () => {
           A quick snapshot of your latest transactions.
         </span>
       </h2>
-      <div className="!rounded shadow-xl overflow-hidden border border-slate-700">
+      <div className="rounded-xl overflow-hidden border border-[#1f1f1f]">
         <table className="min-w-full text-sm text-white">
-          <thead className="bg-slate-900 text-slate-300">
+          <thead className="bg-[#0a0a0a] text-slate-500">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
@@ -174,7 +173,7 @@ const OrdersTable = () => {
               table.getRowModel().rows.map((row) => (
                 <tr
                   key={row.id}
-                  className="border-t border-slate-600 hover:bg-slate-800 transition"
+                  className="border-t border-[#1a1a1a] hover:bg-white/[0.03] transition"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="p-3">
@@ -197,7 +196,6 @@ const OrdersTable = () => {
 // Dashboard Layout
 const DashboardPage = () => {
   const { data: stats, isLoading: statsLoading } = usePlatformStatistics();
-  const trainModel = useTrainRecommendationModel();
 
   return (
     <div className="p-8">
@@ -208,46 +206,46 @@ const DashboardPage = () => {
         </div>
       ) : stats ? (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg p-6 shadow-xl">
-            <div className="text-blue-100 text-sm mb-2">Total Users</div>
-            <div className="text-white text-3xl font-semibold mb-2">
+          <div className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-xl p-5">
+            <div className="text-slate-500 text-xs font-medium mb-3 uppercase tracking-wide">Total Users</div>
+            <div className="text-blue-400 text-3xl font-bold mb-1.5 tabular-nums">
               {stats.users.total.toLocaleString()}
             </div>
-            <div className="text-blue-200 text-xs">
-              {stats.users.customers} customers, {stats.users.sellers} sellers
+            <div className="text-slate-600 text-xs">
+              {stats.users.customers} customers · {stats.users.sellers} sellers
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-lg p-6 shadow-xl">
-            <div className="text-purple-100 text-sm mb-2">Active Shops</div>
-            <div className="text-white text-3xl font-semibold mb-2">
+          <div className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-xl p-5">
+            <div className="text-slate-500 text-xs font-medium mb-3 uppercase tracking-wide">Active Shops</div>
+            <div className="text-violet-400 text-3xl font-bold mb-1.5 tabular-nums">
               {stats.sellers.activeShops.toLocaleString()}
             </div>
-            <div className="text-purple-200 text-xs">
+            <div className="text-slate-600 text-xs">
               {stats.sellers.verified} verified sellers
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-green-600 to-green-800 rounded-lg p-6 shadow-xl">
-            <div className="text-green-100 text-sm mb-2">Total Orders</div>
-            <div className="text-white text-3xl font-semibold mb-2">
+          <div className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-xl p-5">
+            <div className="text-slate-500 text-xs font-medium mb-3 uppercase tracking-wide">Total Orders</div>
+            <div className="text-emerald-400 text-3xl font-bold mb-1.5 tabular-nums">
               {stats.orders.total.toLocaleString()}
             </div>
-            <div className="text-green-200 text-xs">
-              {stats.orders.completed} completed, {stats.orders.pending} pending
+            <div className="text-slate-600 text-xs">
+              {stats.orders.completed} completed · {stats.orders.pending} pending
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-orange-600 to-orange-800 rounded-lg p-6 shadow-xl">
-            <div className="text-orange-100 text-sm mb-2">Platform Revenue</div>
-            <div className="text-white text-3xl font-semibold mb-2">
+          <div className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-xl p-5">
+            <div className="text-slate-500 text-xs font-medium mb-3 uppercase tracking-wide">Platform Revenue</div>
+            <div className="text-amber-400 text-3xl font-bold mb-1.5 tabular-nums">
               $
               {(stats.revenue.total / 100).toLocaleString(undefined, {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
             </div>
-            <div className="text-orange-200 text-xs">
+            <div className="text-slate-600 text-xs">
               $
               {(stats.revenue.platformFee / 100).toLocaleString(undefined, {
                 minimumFractionDigits: 2,
@@ -258,26 +256,6 @@ const DashboardPage = () => {
           </div>
         </div>
       ) : null}
-
-      {/* Recommendation Model Training */}
-      <div className="bg-slate-800 rounded-lg p-6 shadow-xl mb-8 flex items-center justify-between">
-        <div>
-          <h3 className="text-white text-lg font-semibold">
-            Recommendation Model
-          </h3>
-          <p className="text-slate-400 text-sm mt-1">
-            Train the collaborative filtering model using collected user
-            analytics data.
-          </p>
-        </div>
-        <button
-          onClick={() => trainModel.mutate()}
-          disabled={trainModel.isPending}
-          className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-800 disabled:cursor-not-allowed text-white font-medium px-6 py-2.5 rounded-lg transition-colors"
-        >
-          {trainModel.isPending ? 'Training...' : 'Train Model'}
-        </button>
-      </div>
 
       {/*Top Charts */}
       <div className="w-full flex gap-8">
