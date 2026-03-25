@@ -221,6 +221,11 @@ export interface ChartDataPoint {
   revenue: number;
 }
 
+export interface MonthlyOrderDataPoint {
+  month: string;
+  orders: number;
+}
+
 export interface OrderStatusDataPoint {
   name: string;
   value: number;
@@ -229,7 +234,7 @@ export interface OrderStatusDataPoint {
 
 export interface SellerChartData {
   revenueData: ChartDataPoint[];
-  monthlyOrdersData: ChartDataPoint[];
+  monthlyOrdersData: MonthlyOrderDataPoint[];
   orderStatusData: OrderStatusDataPoint[];
 }
 

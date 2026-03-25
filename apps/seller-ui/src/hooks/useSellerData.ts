@@ -22,12 +22,12 @@ const DEMO_CHART_DATA: SellerChartData = {
     { month: 'Jun', revenue: 7000 },
   ],
   monthlyOrdersData: [
-    { month: 'Jan', revenue: 42 },
-    { month: 'Feb', revenue: 31 },
-    { month: 'Mar', revenue: 55 },
-    { month: 'Apr', revenue: 48 },
-    { month: 'May', revenue: 63 },
-    { month: 'Jun', revenue: 71 },
+    { month: 'Jan', orders: 42 },
+    { month: 'Feb', orders: 31 },
+    { month: 'Mar', orders: 55 },
+    { month: 'Apr', orders: 48 },
+    { month: 'May', orders: 63 },
+    { month: 'Jun', orders: 71 },
   ],
   orderStatusData: [
     { name: 'Completed', value: 140, color: '#10b981' },

@@ -573,6 +573,16 @@ export class ProductCatalogService {
     });
   }
 
+  async getSellerProductStats(shopId: string) {
+    const [total, active, outOfStock] = await Promise.all([
+      this.prisma.product.count({ where: { shopId, deletedAt: null } }),
+      this.prisma.product.count({ where: { shopId, deletedAt: null, isActive: true } }),
+      this.prisma.product.count({ where: { shopId, deletedAt: null, stock: 0, hasVariants: false } }),
+    ]);
+
+    return { total, active, outOfStock };
+  }
+
   private sanitizeProductData(dto: Record<string, unknown>): Record<string, unknown> & {
     price: number | undefined;
     salePrice: number | undefined;

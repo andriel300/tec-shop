@@ -8,6 +8,7 @@ import ThemeToggle from './ThemeToggle';
 import UserMenu from './UserMenu';
 import LanguageSwitcher from '../language-switcher';
 import { NotificationBellV2 } from '../notification-bell-v2';
+import { Link } from '../../i18n/navigation';
 
 const Navbar = () => {
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
@@ -32,7 +33,9 @@ const Navbar = () => {
         <LanguageSwitcher />
         <NotificationBellV2 />
         <div className="w-px h-5 bg-gray-300 dark:bg-slate-700/70 mx-2" />
-        <UserMenu />
+        <Link href="/" className="rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors p-1">
+          <UserMenu />
+        </Link>
       </div>
     </header>
   );

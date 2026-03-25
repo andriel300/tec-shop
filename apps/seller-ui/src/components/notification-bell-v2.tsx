@@ -64,22 +64,39 @@ function timeAgo(dateStr: string): string {
 
 function getNotificationLink(notification: NotificationEntry): string | null {
   if (notification.templateId === 'chat.new_message') {
-    const conversationId = notification.metadata?.conversationId as
-      | string
-      | undefined;
-    if (conversationId)
-      return `/dashboard/inbox?conversationId=${conversationId}`;
+    const conversationId = notification.metadata?.conversationId as string | undefined;
+    if (conversationId) return `/dashboard/inbox?conversationId=${conversationId}`;
+  }
+  if (
+    notification.templateId === 'order.delivered_seller' ||
+    notification.templateId === 'order.placed_seller' ||
+    notification.templateId === 'order.cancelled_seller'
+  ) {
+    const orderId = notification.metadata?.orderId as string | undefined;
+    if (orderId) return `/dashboard/order/${orderId}`;
   }
   return null;
+}
+
+function getNotificationLinkLabel(templateId: string): string {
+  if (templateId === 'chat.new_message') return 'Open conversation';
+  if (
+    templateId === 'order.delivered_seller' ||
+    templateId === 'order.placed_seller' ||
+    templateId === 'order.cancelled_seller'
+  ) return 'View order';
+  return 'View details';
 }
 
 function NotificationToast({
   notification,
   link,
+  linkLabel,
   onClose,
 }: {
   notification: NotificationEntry;
   link: string | null;
+  linkLabel: string;
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -124,7 +141,7 @@ function NotificationToast({
         </p>
         {link && (
           <p className="text-xs text-blue-400 mt-1.5 font-medium flex items-center gap-1">
-            <span>Open conversation</span>
+            <span>{linkLabel}</span>
             <span className="text-[10px]">&#8594;</span>
           </p>
         )}
@@ -158,11 +175,13 @@ export function NotificationBellV2() {
     enabled: !!isAuthenticated,
     onNotification: (notification) => {
       const link = getNotificationLink(notification);
+      const linkLabel = getNotificationLinkLabel(notification.templateId);
       toast.custom(
         (toastId) => (
           <NotificationToast
             notification={notification}
             link={link}
+            linkLabel={linkLabel}
             onClose={() => toast.dismiss(toastId)}
           />
         ),

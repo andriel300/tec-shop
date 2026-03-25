@@ -9,6 +9,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { Prisma } from '@tec-shop/order-client';
 import { OrderPrismaService } from '../prisma/prisma.service';
 import { RedisService } from '@tec-shop/redis-client';
+import Stripe from 'stripe';
 import { PaymentService, PaymentDomainException } from '../services/payment.service';
 import { KafkaProducerService } from '../services/kafka-producer.service';
 import { UserServiceClient } from '../clients/user.client';
@@ -491,12 +492,14 @@ export class OrderCheckoutService {
     stripeAccountId: string;
     payoutAmount: number;
     orderId: string;
+    stripePaymentIntentId?: string | null;
   }): Promise<void> {
     try {
       const transferId = await this.paymentService.createSellerPayout(
         payout.stripeAccountId,
         payout.payoutAmount,
-        payout.orderId
+        payout.orderId,
+        payout.stripePaymentIntentId ?? undefined
       );
       await this.prisma.sellerPayout.update({
         where: { id: payout.id },
@@ -504,13 +507,19 @@ export class OrderCheckoutService {
       });
       this.logger.log(`Payout completed for seller ${payout.sellerId}: ${transferId}`);
     } catch (error) {
-      this.logger.error(`Failed to process payout for seller ${payout.sellerId}`, error);
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to process payout for seller ${payout.sellerId}: ${msg}`);
+
+      // Permanent Stripe errors (invalid account, no such payment intent, etc.) should
+      // not be retried — exhaust the retry count immediately.
+      const isPermanent = error instanceof Stripe.errors.StripeInvalidRequestError;
+
       await this.prisma.sellerPayout.update({
         where: { id: payout.id },
         data: {
           status: 'FAILED',
-          errorMessage: error instanceof Error ? error.message : 'Unknown error',
-          retryCount: { increment: 1 },
+          errorMessage: msg,
+          retryCount: isPermanent ? 3 : { increment: 1 },
         },
       });
     }
@@ -523,14 +532,22 @@ export class OrderCheckoutService {
         status: { in: ['PENDING', 'FAILED'] },
         retryCount: { lt: 3 },
       },
+      include: {
+        order: { select: { stripePaymentId: true } },
+      },
     });
 
     if (payouts.length === 0) return;
 
     this.logger.log(`Retrying ${payouts.length} pending/failed payout(s)`);
-    for (const payout of payouts) {
-      await this.executePayoutTransfer(payout);
-    }
+    await Promise.all(
+      payouts.map((payout) =>
+        this.executePayoutTransfer({
+          ...payout,
+          stripePaymentIntentId: payout.order.stripePaymentId,
+        })
+      )
+    );
   }
 
   private async sendSellerNotifications(orderId: string): Promise<void> {

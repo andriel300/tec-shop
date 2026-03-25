@@ -3,7 +3,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
-import { Prisma } from '@tec-shop/order-client';
+import { Prisma, OrderStatus as PrismaOrderStatus } from '@tec-shop/order-client';
 import { OrderPrismaService } from '../prisma/prisma.service';
 import { NotificationProducerService } from '@tec-shop/notification-producer';
 import { GetSellerOrdersDto, OrderStatus } from '@tec-shop/dto';
@@ -292,7 +292,7 @@ export class OrderQueryService {
 
     try {
       const orderNumber = (updatedOrder as Record<string, unknown>).orderNumber as string;
-      const items = updatedOrder.items as Array<{ productName: string }>;
+      const items = updatedOrder.items as Array<{ productName: string; sellerId: string }>;
       const productNames = items.map((i) => i.productName).join(', ');
       const shippingAddr = order.shippingAddress as Record<string, unknown>;
       const customerName = (shippingAddr.name as string | undefined) ?? 'Customer';
@@ -311,6 +311,19 @@ export class OrderQueryService {
         { orderNumber, productNames },
         { orderId }
       );
+
+      // Notify each unique seller whose items are in this order
+      const sellerIds = [...new Set(items.map((i) => i.sellerId))];
+      await Promise.all(
+        sellerIds.map((sellerId) =>
+          this.notificationProducer.notifySeller(
+            sellerId,
+            'order.delivered_seller',
+            { orderNumber },
+            { orderId, orderNumber }
+          )
+        )
+      );
     } catch (notifError) {
       this.logger.warn(
         `Failed to send delivery confirmation notification for order ${orderId}: ${notifError instanceof Error ? notifError.message : 'Unknown error'}`
@@ -318,6 +331,75 @@ export class OrderQueryService {
     }
 
     return updatedOrder;
+  }
+
+  async getSellerStatistics(payload: { sellerId: string }) {
+    const { sellerId } = payload;
+
+    const now = new Date();
+    const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+    const PAID_STATUSES = [PrismaOrderStatus.PAID, PrismaOrderStatus.SHIPPED, PrismaOrderStatus.DELIVERED];
+    const PENDING_STATUSES = [PrismaOrderStatus.PENDING, PrismaOrderStatus.PAID, PrismaOrderStatus.SHIPPED];
+
+    const [totalRev, thisMonthRev, lastMonthRev, total, pending, completed, cancelled, thisMonth] =
+      await Promise.all([
+        this.prisma.orderItem.aggregate({
+          where: { sellerId, order: { status: { in: PAID_STATUSES } } },
+          _sum: { sellerPayout: true },
+        }),
+        this.prisma.orderItem.aggregate({
+          where: {
+            sellerId,
+            createdAt: { gte: startOfThisMonth },
+            order: { status: { in: PAID_STATUSES } },
+          },
+          _sum: { sellerPayout: true },
+        }),
+        this.prisma.orderItem.aggregate({
+          where: {
+            sellerId,
+            createdAt: { gte: startOfLastMonth, lt: startOfThisMonth },
+            order: { status: { in: PAID_STATUSES } },
+          },
+          _sum: { sellerPayout: true },
+        }),
+        this.prisma.order.count({ where: { items: { some: { sellerId } } } }),
+        this.prisma.order.count({
+          where: { items: { some: { sellerId } }, status: { in: PENDING_STATUSES } },
+        }),
+        this.prisma.order.count({
+          where: { items: { some: { sellerId } }, status: PrismaOrderStatus.DELIVERED },
+        }),
+        this.prisma.order.count({
+          where: { items: { some: { sellerId } }, status: PrismaOrderStatus.CANCELLED },
+        }),
+        this.prisma.order.count({
+          where: { items: { some: { sellerId } }, createdAt: { gte: startOfThisMonth } },
+        }),
+      ]);
+
+    const totalRevenue = totalRev._sum?.sellerPayout ?? 0;
+    const thisMonthRevenue = thisMonthRev._sum?.sellerPayout ?? 0;
+    const lastMonthRevenue = lastMonthRev._sum?.sellerPayout ?? 0;
+
+    const growth =
+      lastMonthRevenue > 0
+        ? Math.round(((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 1000) / 10
+        : thisMonthRevenue > 0
+          ? 100
+          : 0;
+
+    return {
+      revenue: {
+        total: totalRevenue,       // in cents — frontend divides by 100
+        thisMonth: thisMonthRevenue,
+        lastMonth: lastMonthRevenue,
+        growth,
+      },
+      orders: { total, pending, completed, cancelled, thisMonth },
+    };
   }
 
   async getSellerChartData(payload: { shopId: string; sellerId: string }) {
@@ -381,7 +463,7 @@ export class OrderQueryService {
       })),
       monthlyOrdersData: months.map(({ key, label }) => ({
         month: label,
-        revenue: ordersByMonth.get(key)?.size ?? 0,
+        orders: ordersByMonth.get(key)?.size ?? 0,
       })),
       orderStatusData: [
         { name: 'Completed', value: completed, color: '#10b981' },

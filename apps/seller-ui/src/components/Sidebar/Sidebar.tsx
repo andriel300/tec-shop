@@ -3,9 +3,7 @@
 import React, { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import {
-  BellPlus,
   BellRing,
-  CalendarPlus,
   ChevronLeft,
   ChevronRight,
   LayoutDashboard,
@@ -94,8 +92,8 @@ const Sidebar = () => {
           <Logo className="w-8 h-8" />
         </Link>
         {!collapsed && (
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-gray-900 dark:text-slate-100 truncate leading-tight">
+          <Link href="/" className="flex-1 min-w-0 group">
+            <p className="text-sm font-semibold text-gray-900 dark:text-slate-100 truncate leading-tight group-hover:text-brand-primary transition-colors">
               {displayName}
             </p>
             {seller?.shop?.address && (
@@ -103,7 +101,7 @@ const Sidebar = () => {
                 {seller.shop.address}
               </p>
             )}
-          </div>
+          </Link>
         )}
       </div>
 
@@ -174,28 +172,6 @@ const Sidebar = () => {
             isActive={isActive('/dashboard/trash')}
             href="/dashboard/trash"
             badge={deletedCount}
-          />
-        </SidebarGroup>
-
-        <SidebarGroup title={t('events')}>
-          <SidebarItem
-            icon={
-              <CalendarPlus
-                size={18}
-                color={iconColor('/dashboard/create-event')}
-              />
-            }
-            title={t('createEvent')}
-            isActive={isActive('/dashboard/create-event')}
-            href="/dashboard/create-event"
-          />
-          <SidebarItem
-            icon={
-              <BellPlus size={18} color={iconColor('/dashboard/events')} />
-            }
-            title={t('allEvents')}
-            isActive={isActive('/dashboard/events')}
-            href="/dashboard/events"
           />
         </SidebarGroup>
 

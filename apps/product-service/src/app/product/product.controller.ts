@@ -217,6 +217,11 @@ export class ProductController {
     return result;
   }
 
+  @MessagePattern('product-get-seller-stats')
+  async getSellerProductStats(@Payload() payload: { shopId: string }) {
+    return this.catalogService.getSellerProductStats(payload.shopId);
+  }
+
   @MessagePattern('product-increment-product-views')
   async incrementViews(@Payload() payload: { id: string }) {
     return this.catalogService.incrementViews(payload.id);

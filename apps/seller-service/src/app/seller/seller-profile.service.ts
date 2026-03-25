@@ -107,6 +107,21 @@ export class SellerProfileService {
     return seller;
   }
 
+  async getSellerByAuthId(authId: string) {
+    this.logger.debug(`Fetching stripeAccountId for authId: ${authId}`);
+
+    const seller = await this.prisma.seller.findUnique({
+      where: { authId },
+      select: { id: true, stripeAccountId: true },
+    });
+
+    if (!seller) {
+      throw new NotFoundException('Seller not found');
+    }
+
+    return seller;
+  }
+
   async updateProfile(
     authId: string,
     updateData: Partial<CreateSellerProfileDto>

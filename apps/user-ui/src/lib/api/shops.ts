@@ -19,6 +19,7 @@ export interface Shop {
   country?: string;
   phone?: string;
   logo?: string;
+  banner?: string;
   rating?: number;
   totalRatings?: number;
   totalOrders?: number; // Added for shop rating display

@@ -278,9 +278,8 @@ const InboxPage = () => {
       <div className="flex h-[calc(100vh-210px)] rounded-xl overflow-hidden border border-surface-container-highest bg-surface-container-lowest shadow-sm">
         {/* Conversations List */}
         <div
-          className={`${
-            selectedConversation ? 'hidden md:flex' : 'flex'
-          } flex-col w-full md:w-[300px] border-r border-surface-container-highest bg-surface-container flex-shrink-0`}
+          className={`${selectedConversation ? 'hidden md:flex' : 'flex'
+            } flex-col w-full md:w-[300px] border-r border-surface-container-highest bg-surface-container flex-shrink-0`}
         >
           {/* Sidebar header */}
           <div className="px-4 py-3.5 border-b border-surface-container-highest">
@@ -350,11 +349,10 @@ const InboxPage = () => {
                   <button
                     key={conversation.id}
                     onClick={() => handleSelectConversation(conversation)}
-                    className={`w-full text-left px-4 py-3 transition-colors duration-150 cursor-pointer border-l-[3px] ${
-                      isActive
-                        ? 'bg-brand-primary/10 border-brand-primary'
-                        : 'border-transparent hover:bg-surface-container-highest'
-                    }`}
+                    className={`w-full text-left px-4 py-3 transition-colors duration-150 cursor-pointer border-l-[3px] ${isActive
+                      ? 'bg-brand-primary/10 border-brand-primary'
+                      : 'border-transparent hover:bg-surface-container-highest'
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <div className="relative flex-shrink-0">
@@ -379,11 +377,10 @@ const InboxPage = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
                           <span
-                            className={`text-sm truncate ${
-                              hasUnread
-                                ? 'font-semibold text-gray-900'
-                                : 'font-medium text-gray-900'
-                            }`}
+                            className={`text-sm truncate ${hasUnread
+                              ? 'font-semibold text-gray-900'
+                              : 'font-medium text-gray-900'
+                              }`}
                           >
                             {conversation.otherParticipant.name}
                           </span>
@@ -394,11 +391,10 @@ const InboxPage = () => {
                           )}
                         </div>
                         <p
-                          className={`text-xs truncate mt-0.5 ${
-                            hasUnread
-                              ? 'text-gray-900 font-medium'
-                              : 'text-gray-500'
-                          }`}
+                          className={`text-xs truncate mt-0.5 ${hasUnread
+                            ? 'text-gray-900 font-medium'
+                            : 'text-gray-500'
+                            }`}
                         >
                           {conversation.lastMessage?.content ||
                             'No messages yet'}
@@ -414,9 +410,8 @@ const InboxPage = () => {
 
         {/* Chat Area */}
         <div
-          className={`${
-            selectedConversation ? 'flex' : 'hidden md:flex'
-          } flex-1 flex-col min-w-0`}
+          className={`${selectedConversation ? 'flex' : 'hidden md:flex'
+            } flex-1 flex-col min-w-0`}
         >
           {selectedConversation ? (
             <>
@@ -444,11 +439,10 @@ const InboxPage = () => {
                     className="rounded-full w-[38px] h-[38px] object-cover"
                   />
                   <span
-                    className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-surface-container-lowest ${
-                      isOtherParticipantOnline
-                        ? 'bg-feedback-success'
-                        : 'bg-gray-500'
-                    }`}
+                    className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-surface-container-lowest ${isOtherParticipantOnline
+                      ? 'bg-feedback-success'
+                      : 'bg-gray-500'
+                      }`}
                   />
                 </div>
                 <div className="min-w-0">
@@ -494,9 +488,8 @@ const InboxPage = () => {
                     return (
                       <div
                         key={message.id}
-                        className={`flex items-end gap-2 ${
-                          isOwnMessage ? 'justify-end' : 'justify-start'
-                        }`}
+                        className={`flex items-end gap-2 ${isOwnMessage ? 'justify-end' : 'justify-start'
+                          }`}
                       >
                         {/* Avatar for received messages */}
                         {!isOwnMessage && (
@@ -512,11 +505,10 @@ const InboxPage = () => {
                           />
                         )}
                         <div
-                          className={`max-w-[65%] rounded-2xl px-3.5 py-2.5 shadow-sm ${
-                            isOwnMessage
-                              ? 'bg-brand-primary text-white rounded-br-md'
-                              : 'bg-surface-container-lowest text-gray-900 rounded-bl-md border border-surface-container-highest'
-                          }`}
+                          className={`max-w-[65%] rounded-2xl px-3.5 py-2.5 shadow-sm ${isOwnMessage
+                            ? 'bg-brand-primary dark:text-black text-white rounded-br-md'
+                            : 'bg-surface-container-lowest text-gray-900 rounded-bl-md border border-surface-container-highest'
+                            }`}
                         >
                           {message.attachments &&
                             message.attachments.length > 0 && (
@@ -545,11 +537,10 @@ const InboxPage = () => {
                             </p>
                           )}
                           <p
-                            className={`text-[11px] mt-1 ${
-                              isOwnMessage
-                                ? 'text-white/60 text-right'
-                                : 'text-gray-500'
-                            }`}
+                            className={`text-[11px] mt-1 ${isOwnMessage
+                              ? 'dark:text-black/60 text-white/60 text-right'
+                              : 'text-gray-500'
+                              }`}
                           >
                             {formatTime(message.createdAt)}
                           </p>

@@ -299,7 +299,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           <button
             type="submit"
             disabled={(!value.trim() && attachments.length === 0) || disabled}
-            className="bg-brand-primary text-white p-3 rounded-full hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            className="bg-brand-primary dark:text-ui-muted text-ui-muted p-3 rounded-full hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
             <Send size={18} />
           </button>

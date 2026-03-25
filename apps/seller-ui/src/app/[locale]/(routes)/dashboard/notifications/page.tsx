@@ -22,6 +22,7 @@ import type {
   NotificationType,
   NotificationEntry,
 } from '../../../../../lib/api/notifications-v2';
+import { Link } from '../../../../../i18n/navigation';
 
 const USER_UI_URL = process.env.NEXT_PUBLIC_USER_UI_URL;
 
@@ -29,12 +30,28 @@ function getNotificationLink(notification: NotificationEntry): string | null {
   const metadata = notification.metadata;
   if (!metadata) return null;
 
-  const productSlug = metadata.productSlug as string | undefined;
-  if (productSlug) {
-    return `${USER_UI_URL}/product/${productSlug}`;
+  if (
+    notification.templateId === 'order.delivered_seller' ||
+    notification.templateId === 'order.placed_seller' ||
+    notification.templateId === 'order.cancelled_seller'
+  ) {
+    const orderId = metadata.orderId as string | undefined;
+    if (orderId) return `/dashboard/order/${orderId}`;
   }
 
+  const productSlug = metadata.productSlug as string | undefined;
+  if (productSlug) return `${USER_UI_URL}/product/${productSlug}`;
+
   return null;
+}
+
+function getNotificationLinkLabel(templateId: string): string {
+  if (
+    templateId === 'order.delivered_seller' ||
+    templateId === 'order.placed_seller' ||
+    templateId === 'order.cancelled_seller'
+  ) return 'View order';
+  return 'View details';
 }
 
 const NOTIFICATION_TYPES: NotificationType[] = [
@@ -198,17 +215,31 @@ const NotificationsPage = () => {
                     <p className="text-slate-500 text-xs">
                       {timeAgo(notification.createdAt)}
                     </p>
-                    {getNotificationLink(notification) && (
-                      <a
-                        href={getNotificationLink(notification) as string}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
-                      >
-                        View Product
-                        <ExternalLink size={12} />
-                      </a>
-                    )}
+                    {(() => {
+                      const link = getNotificationLink(notification);
+                      const label = getNotificationLinkLabel(notification.templateId);
+                      const isInternal = link?.startsWith('/');
+                      if (!link) return null;
+                      return isInternal ? (
+                        <Link
+                          href={link}
+                          className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
+                        >
+                          {label}
+                          <ExternalLink size={12} />
+                        </Link>
+                      ) : (
+                        <a
+                          href={link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
+                        >
+                          {label}
+                          <ExternalLink size={12} />
+                        </a>
+                      );
+                    })()}
                   </div>
                 </div>
 

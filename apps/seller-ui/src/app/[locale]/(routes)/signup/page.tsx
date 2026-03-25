@@ -2,8 +2,6 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { SignUpForm } from '../../../../components/forms/signup-form';
-import { VerifyOtpForm } from '../../../../components/forms/verify-otp-form';
 import { ProtectedRoute } from '../../../../components/auth/protected-route';
 import CreateShop from '../../../../shared/modules/auth/create-shop';
 import { StripeIcon } from '../../../../assets/svgs/stripe-logo';
@@ -13,32 +11,26 @@ import {
   createStripeOnboardingLink,
   getStripeAccountStatus,
 } from '../../../../lib/api/seller';
-import { loginUser } from '../../../../lib/api/auth';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { Link, useRouter } from 'apps/seller-ui/src/i18n/navigation';
+import { useRouter } from 'apps/seller-ui/src/i18n/navigation';
 
 function SignupPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeStep, setActiveStep] = useState(1);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showOtp, setShowOtp] = useState(false);
 
   // Handle Stripe success/error from URL parameters
   useEffect(() => {
     const stripeStatus = searchParams.get('stripe');
     if (stripeStatus === 'success') {
-      toast.success('Stripe account connected successfully! 🎉');
-      // Remove the parameter from URL
+      toast.success('Stripe account connected successfully!');
       const url = new URL(window.location.href);
       url.searchParams.delete('stripe');
       window.history.replaceState({}, '', url.toString());
     } else if (stripeStatus === 'error') {
       toast.error('Failed to connect Stripe account. Please try again.');
-      // Remove the parameter from URL
       const url = new URL(window.location.href);
       url.searchParams.delete('stripe');
       window.history.replaceState({}, '', url.toString());
@@ -49,7 +41,7 @@ function SignupPageContent() {
   const { data: stripeStatus, isLoading: isLoadingStripeStatus } = useQuery({
     queryKey: ['stripe-status'],
     queryFn: getStripeAccountStatus,
-    enabled: activeStep === 3,
+    enabled: activeStep === 2,
     retry: false,
   });
 
@@ -58,7 +50,6 @@ function SignupPageContent() {
     useMutation({
       mutationFn: createStripeOnboardingLink,
       onSuccess: (data) => {
-        // Redirect to Stripe onboarding
         window.location.href = data.url;
       },
       onError: (error: Error) => {
@@ -66,37 +57,8 @@ function SignupPageContent() {
       },
     });
 
-  // Auto-login mutation after email verification
-  const { mutate: autoLogin } = useMutation({
-    mutationFn: loginUser,
-    onSuccess: () => {
-      toast.success('Logged in successfully!');
-      setShowOtp(false);
-      setActiveStep(2);
-    },
-    onError: (error: Error) => {
-      toast.error('Auto-login failed. Please login manually.');
-      router.push('/login');
-    },
-  });
-
-  const handleSuccess = (
-    userEmail: string,
-    userName: string,
-    userPassword: string
-  ) => {
-    setEmail(userEmail);
-    setPassword(userPassword);
-    setShowOtp(true);
-  };
-
-  const handleVerificationSuccess = () => {
-    // Auto-login after email verification
-    autoLogin({ email, password, rememberMe: false });
-  };
-
   return (
-    <ProtectedRoute requireAuth={false}>
+    <ProtectedRoute requireAuth={true}>
       <main className="w-full flex flex-col justify-center min-h-screen bg-gradient-to-br from-brand-primary-50 via-[#ffffff] to-brand-accent-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 px-4 py-4 sm:px-6 lg:px-8">
         <div className="max-w-md mx-auto w-full">
           {/* Stepper */}
@@ -105,12 +67,9 @@ function SignupPageContent() {
             <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200" />
             <div
               className="absolute top-5 left-0 h-0.5 bg-brand-primary transition-all duration-500"
-              style={{
-                width:
-                  activeStep === 1 ? '0%' : activeStep === 2 ? '50%' : '100%',
-              }}
+              style={{ width: activeStep === 1 ? '0%' : '100%' }}
             />
-            {[1, 2, 3].map((step) => (
+            {[1, 2].map((step) => (
               <div
                 key={step}
                 className="flex flex-col items-center flex-1 relative"
@@ -147,11 +106,7 @@ function SignupPageContent() {
                     step <= activeStep ? 'text-brand-primary' : 'text-gray-400'
                   }`}
                 >
-                  {step === 1
-                    ? 'Create Account'
-                    : step === 2
-                    ? 'Setup Shop'
-                    : 'Connect Bank'}
+                  {step === 1 ? 'Setup Shop' : 'Connect Bank'}
                 </span>
               </div>
             ))}
@@ -161,23 +116,10 @@ function SignupPageContent() {
           <div className="w-full bg-[#ffffff] dark:bg-slate-800 shadow-elev-lg rounded-lg border border-ui-divider dark:border-slate-700">
             <div className="p-4 sm:p-6">
               {activeStep === 1 && (
-                <>
-                  {showOtp ? (
-                    <VerifyOtpForm
-                      email={email}
-                      onSuccess={handleVerificationSuccess}
-                    />
-                  ) : (
-                    <>
-                      <SignUpForm onSuccess={handleSuccess} />
-                    </>
-                  )}
-                </>
+                <CreateShop setActiveStep={() => setActiveStep(2)} />
               )}
 
-              {activeStep === 2 && <CreateShop setActiveStep={setActiveStep} />}
-
-              {activeStep === 3 && (
+              {activeStep === 2 && (
                 <div className="space-y-8">
                   {/* Header */}
                   <div className="text-center space-y-2">
@@ -298,19 +240,6 @@ function SignupPageContent() {
                   </div>
                 </div>
               )}
-
-              {/* Login link */}
-              <div className="mt-4 text-center">
-                <p className="text-sm text-text-secondary">
-                  Already have an account?{' '}
-                  <Link
-                    href="/login"
-                    className="font-medium text-brand-primary hover:underline"
-                  >
-                    Log in
-                  </Link>
-                </p>
-              </div>
             </div>
           </div>
         </div>

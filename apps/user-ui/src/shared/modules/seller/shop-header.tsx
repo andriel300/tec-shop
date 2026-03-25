@@ -77,7 +77,7 @@ const ShopHeader: React.FC<ShopHeaderProps> = ({
       {/* Cover Banner */}
       <div className="relative w-full h-[180px] md:h-[240px] bg-gradient-to-br from-blue-500 to-purple-600">
         <Image
-          src={DEFAULT_BANNER}
+          src={shop.banner || DEFAULT_BANNER}
           alt={`${shop.businessName} cover banner`}
           fill
           className="object-cover"

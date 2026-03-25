@@ -356,8 +356,8 @@ export class StripeService {
     // Account has restrictions
     if (account.requirements?.disabled_reason) {
       if (account.requirements.disabled_reason === 'rejected.fraud' ||
-          account.requirements.disabled_reason === 'rejected.listed' ||
-          account.requirements.disabled_reason === 'rejected.terms_of_service') {
+        account.requirements.disabled_reason === 'rejected.listed' ||
+        account.requirements.disabled_reason === 'rejected.terms_of_service') {
         return 'REJECTED';
       }
       return 'RESTRICTED';

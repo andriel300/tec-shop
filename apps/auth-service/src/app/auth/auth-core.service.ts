@@ -71,8 +71,8 @@ export class AuthCoreService implements OnModuleInit {
     try {
       this.logger.log(`Customer login attempt - email: ${credential.email}`);
 
-      const user = await this.prisma.user.findUnique({
-        where: { email: credential.email, userType: 'CUSTOMER' },
+      const user = await this.prisma.user.findFirst({
+        where: { email: credential.email, userType: { in: ['CUSTOMER', 'SELLER'] } },
       });
 
       const genericError = 'Invalid credentials';

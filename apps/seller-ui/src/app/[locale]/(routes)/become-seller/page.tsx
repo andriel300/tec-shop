@@ -52,14 +52,28 @@ function BecomeSellerPageContent() {
     }
   }, [searchParams]);
 
-  // Check current auth status
+  // Check current auth status — try customer cookies first (pre-upgrade), fall back to seller.
+  // Customer cookies are present when the user logged in via user-ui but hasn't upgraded yet.
+  // Seller cookies are present after upgrade or a direct seller login.
   const { data: refreshData, isLoading: isCheckingAuth, isError: isAuthError } = useQuery({
     queryKey: ['become-seller-auth-check'],
     queryFn: async () => {
-      const response = await apiClient.post('/auth/refresh', { userType: 'seller' }, {
-        skipAuthRefresh: true,
-      } as Record<string, unknown>);
-      return response.data as { userType: string; user: Record<string, unknown> };
+      try {
+        const response = await apiClient.post(
+          '/auth/refresh',
+          { userType: 'customer' },
+          { skipAuthRefresh: true } as Record<string, unknown>
+        );
+        return response.data as { userType: string; user: Record<string, unknown> };
+      } catch {
+        // No customer session — try seller (already upgraded or logged in via seller-ui)
+        const response = await apiClient.post(
+          '/auth/refresh',
+          { userType: 'seller' },
+          { skipAuthRefresh: true } as Record<string, unknown>
+        );
+        return response.data as { userType: string; user: Record<string, unknown> };
+      }
     },
     retry: false,
   });

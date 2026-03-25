@@ -215,26 +215,45 @@ export class SellerController {
     description:
       'Retrieves comprehensive statistics for the authenticated seller including revenue, orders, products, and shop metrics.',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Statistics retrieved successfully',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid or missing authentication token',
-  })
-  @ApiResponse({
-    status: 403,
-    description: 'Forbidden - User is not a seller',
-  })
+  @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing authentication token' })
+  @ApiResponse({ status: 403, description: 'Forbidden - User is not a seller' })
   async getStatistics(@Req() request: { user: { userId: string } }) {
-    this.logger.log(
-      `Fetching statistics for seller authId: ${request.user.userId}`
+    const authId = request.user.userId;
+    this.logger.log(`Fetching statistics for seller authId: ${authId}`);
+
+    const shop = await this.cb.fire('SELLER_SERVICE', () =>
+      firstValueFrom(this.sellerService.send('get-seller-shop', authId))
     );
 
-    return this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
-      this.sellerService.send('seller-get-statistics', request.user.userId)
-    ));
+    if (!shop) {
+      return {
+        revenue: { total: 0, thisMonth: 0, lastMonth: 0, growth: 0 },
+        orders: { total: 0, pending: 0, completed: 0, cancelled: 0, thisMonth: 0 },
+        products: { total: 0, active: 0, outOfStock: 0 },
+        shop: { rating: 0, totalOrders: 0, isActive: false },
+      };
+    }
+
+    const [orderStats, productStats] = await Promise.all([
+      this.cb.fire('ORDER_SERVICE', () =>
+        firstValueFrom(this.orderService.send('order-get-seller-stats', { sellerId: authId }))
+      ),
+      this.cb.fire('PRODUCT_SERVICE', () =>
+        firstValueFrom(this.productService.send('product-get-seller-stats', { shopId: shop.id }))
+      ),
+    ]);
+
+    return {
+      revenue: orderStats.revenue,
+      orders: orderStats.orders,
+      products: productStats,
+      shop: {
+        rating: shop.rating,
+        totalOrders: shop.totalOrders,
+        isActive: shop.isActive,
+      },
+    };
   }
 
   @Get('chart-data')

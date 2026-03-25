@@ -11,7 +11,6 @@ import SidebarItem from './sidebar.item';
 import Home from '../../../assets/svgs/icons/home-icon';
 import SidebarMenu from './sidebar.menu';
 import {
-  BellPlus,
   BellRing,
   FileClock,
   ListOrdered,
@@ -114,18 +113,6 @@ const SidebarWrapper = () => {
                     />
                   }
                 />
-                <SidebarItem
-                  isActive={activeSidebar === '/dashboard/events'}
-                  title={t('events')}
-                  href="/dashboard/events"
-                  icon={
-                    <BellPlus
-                      size={24}
-                      color={getIconColor('/dashboard/events')}
-                    />
-                  }
-                />
-
                 <SidebarItem
                   isActive={activeSidebar === '/dashboard/users'}
                   title={t('users')}

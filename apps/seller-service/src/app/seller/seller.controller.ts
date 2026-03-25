@@ -141,4 +141,9 @@ export class SellerController {
   async getStatistics(@Payload() authId: string) {
     return this.shopService.getStatistics(authId);
   }
+
+  @MessagePattern('get-seller-by-auth-id')
+  async getSellerByAuthId(@Payload() authId: string) {
+    return this.sellerProfile.getSellerByAuthId(authId);
+  }
 }

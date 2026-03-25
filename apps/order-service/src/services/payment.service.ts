@@ -129,28 +129,46 @@ export class PaymentService {
   async createSellerPayout(
     stripeAccountId: string,
     amount: number,
-    orderId: string
+    orderId: string,
+    sourceTransaction?: string
   ): Promise<string> {
     try {
+      // source_transaction requires a charge ID (ch_...), not a payment intent ID (pi_...).
+      // Resolve the charge from the payment intent when needed.
+      let chargeId: string | undefined;
+      if (sourceTransaction?.startsWith('pi_')) {
+        const pi = await this.stripe.paymentIntents.retrieve(sourceTransaction);
+        const latestCharge = pi.latest_charge;
+        chargeId = typeof latestCharge === 'string' ? latestCharge : latestCharge?.id;
+      } else if (sourceTransaction?.startsWith('ch_')) {
+        chargeId = sourceTransaction;
+      }
+
       const transfer = await this.stripe.transfers.create({
         amount,
         currency: 'usd',
         destination: stripeAccountId,
         description: `Payout for order ${orderId}`,
+        ...(chargeId ? { source_transaction: chargeId } : {}),
         metadata: {
           orderId,
         },
       });
 
       this.logger.log(
-        `Stripe transfer created: ${transfer.id} for ${
-          amount / 100
+        `Stripe transfer created: ${transfer.id} for ${amount / 100
         } USD to ${stripeAccountId}`
       );
 
       return transfer.id;
     } catch (error) {
-      this.logger.error(`Failed to create payout for order ${orderId}`, error);
+      if (error instanceof Stripe.errors.StripeError) {
+        this.logger.error(
+          `Stripe error [${error.type}/${error.code ?? 'no-code'}] for order ${orderId}: ${error.message}`
+        );
+      } else {
+        this.logger.error(`Failed to create payout for order ${orderId}`, error);
+      }
       throw error;
     }
   }

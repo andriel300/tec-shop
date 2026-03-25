@@ -109,6 +109,12 @@ const BUILT_IN_TEMPLATES: Record<string, TemplateDefinition> = {
       'Your order {{orderNumber}} has been delivered. Tell us what you think about {{productNames}}.',
     type: 'DELIVERY',
   },
+  'order.delivered_seller': {
+    title: 'Order Delivered',
+    message:
+      'Customer confirmed delivery of order {{orderNumber}}. Your payout is being processed.',
+    type: 'DELIVERY',
+  },
 
   // product templates
   'product.new_rating': {
