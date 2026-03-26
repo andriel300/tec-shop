@@ -242,6 +242,19 @@ export const getPlatformStatistics = async (): Promise<PlatformStatistics> => {
   return response.data;
 };
 
+// ============ Pending Counts API Functions ============
+
+export interface PendingCounts {
+  unverifiedSellers: number;
+  pendingOrders: number;
+  failedPayments: number;
+}
+
+export const getPendingCounts = async (): Promise<PendingCounts> => {
+  const response = await apiClient.get('/admin/pending-counts');
+  return response.data;
+};
+
 // ============ Recommendation API Functions ============
 
 export interface TrainingStats {

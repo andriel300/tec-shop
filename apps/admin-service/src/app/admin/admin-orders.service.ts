@@ -71,6 +71,19 @@ export class AdminOrdersService {
     };
   }
 
+  async getPendingCounts(): Promise<{
+    unverifiedSellers: number;
+    pendingOrders: number;
+    failedPayments: number;
+  }> {
+    const [unverifiedSellers, pendingOrders, failedPayments] = await Promise.all([
+      this.sellerPrisma.seller.count({ where: { isVerified: false } }),
+      this.orderPrisma.order.count({ where: { status: 'PENDING' } }),
+      this.orderPrisma.order.count({ where: { paymentStatus: 'FAILED' } }),
+    ]);
+    return { unverifiedSellers, pendingOrders, failedPayments };
+  }
+
   async getStatistics() {
     this.logger.log('Fetching platform statistics');
 

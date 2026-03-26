@@ -2,9 +2,8 @@
 
 import React from 'react';
 import { PanelLeft } from 'lucide-react';
-import { useUIStore } from '../../store/ui.store';
-import LanguageSwitcher from '../../shared/components/language-switcher';
-import { NotificationBell } from '../../shared/components/notification-bell';
+import { useUIStore } from '../../../store/ui.store';
+import LanguageSwitcher from '../language-switcher';
 
 const Navbar = () => {
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
@@ -23,7 +22,6 @@ const Navbar = () => {
       {/* Right section */}
       <div className="flex items-center gap-1 ml-auto">
         <LanguageSwitcher />
-        <NotificationBell />
       </div>
     </header>
   );

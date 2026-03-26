@@ -3,7 +3,7 @@
 import React from 'react';
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { Link } from 'apps/admin-ui/src/i18n/navigation';
-import { useUIStore } from '../../store/ui.store';
+import { useUIStore } from '../../../store/ui.store';
 
 interface SidebarItemProps {
   icon: React.ReactNode;
@@ -24,10 +24,9 @@ const SidebarItem = ({ icon, title, isActive, href, badge, onClick }: SidebarIte
         flex items-center w-full min-h-10 rounded-sm cursor-pointer
         transition-all duration-200 select-none
         ${collapsed ? 'justify-center px-0' : 'gap-3 px-3'}
-        ${
-          isActive
-            ? 'bg-blue-600/10 text-blue-400'
-            : 'text-slate-400 hover:bg-slate-800/70 hover:text-slate-200'
+        ${isActive
+          ? 'bg-blue-600/10 text-blue-400'
+          : 'text-slate-400 hover:bg-slate-800/70 hover:text-slate-200'
         }
       `}
     >

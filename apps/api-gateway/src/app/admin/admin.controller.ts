@@ -201,6 +201,15 @@ export class AdminController {
 
   // ============ Statistics Endpoints ============
 
+  @Get('pending-counts')
+  @ApiOperation({ summary: 'Get pending action counts for sidebar badges (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Pending counts retrieved successfully' })
+  async getPendingCounts() {
+    return await this.cb.fire('ADMIN_SERVICE', () => firstValueFrom(
+      this.adminService.send('admin.getPendingCounts', {})
+    ));
+  }
+
   @Get('statistics')
   @ApiOperation({ summary: 'Get platform-wide statistics (Admin only)' })
   @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })

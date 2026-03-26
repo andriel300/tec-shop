@@ -94,6 +94,11 @@ export class AdminController {
 
   // ============ Statistics Message Patterns ============
 
+  @MessagePattern('admin.getPendingCounts')
+  getPendingCounts() {
+    return this.ordersService.getPendingCounts();
+  }
+
   @MessagePattern('admin.getStatistics')
   getStatistics() {
     return this.ordersService.getStatistics();

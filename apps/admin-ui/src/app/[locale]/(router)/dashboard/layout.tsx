@@ -3,8 +3,8 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import useAdmin from '../../../../hooks/useAdmin';
-import { Sidebar } from '../../../../components/Sidebar';
-import { Navbar } from '../../../../components/Navbar';
+import { Sidebar } from '../../../../shared/components/Sidebar';
+import { Navbar } from '../../../../shared/components/Navbar';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { admin, isLoading } = useAdmin();

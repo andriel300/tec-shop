@@ -3,7 +3,6 @@
 import React, { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import {
-  BellRing,
   Brain,
   ChevronLeft,
   ChevronRight,
@@ -22,13 +21,13 @@ import { useQueryClient } from '@tanstack/react-query';
 
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { Link, usePathname, useRouter } from 'apps/admin-ui/src/i18n/navigation';
-import { Logo } from '../../assets/svgs/logo';
-import { Payment } from '../../assets/svgs/icons/payment-icon';
-import { useUIStore } from '../../store/ui.store';
-import { useSidebarStore } from '../../configs/constants';
-import { useTrainRecommendationModel } from '../../hooks/useAdminData';
-import useAdmin from '../../hooks/useAdmin';
-import apiClient from '../../lib/api/client';
+import { Logo } from '../../../assets/svgs/logo';
+import { Payment } from '../../../assets/svgs/icons/payment-icon';
+import { useUIStore } from '../../../store/ui.store';
+import { useSidebarStore } from '../../../configs/constants';
+import { useTrainRecommendationModel, useAdminPendingCounts } from '../../../hooks/useAdminData';
+import useAdmin from '../../../hooks/useAdmin';
+import apiClient from '../../../lib/api/client';
 import SidebarItem from './SidebarItem';
 import SidebarGroup from './SidebarGroup';
 
@@ -46,6 +45,7 @@ const Sidebar = () => {
   const router = useRouter();
   const { admin } = useAdmin();
   const trainModel = useTrainRecommendationModel();
+  const { data: pendingCounts } = useAdminPendingCounts();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -116,6 +116,7 @@ const Sidebar = () => {
             title={t('orders')}
             isActive={isActive('/dashboard/orders')}
             href="/dashboard/orders"
+            badge={pendingCounts?.failedPayments}
           />
           <SidebarItem
             icon={<Payment size={18} color={iconColor('/dashboard/payment')} />}
@@ -140,6 +141,7 @@ const Sidebar = () => {
             title={t('sellers')}
             isActive={isActive('/dashboard/sellers')}
             href="/dashboard/sellers"
+            badge={pendingCounts?.unverifiedSellers}
           />
         </SidebarGroup>
 
@@ -156,12 +158,7 @@ const Sidebar = () => {
             isActive={isActive('/dashboard/management')}
             href="/dashboard/management"
           />
-          <SidebarItem
-            icon={<BellRing size={18} color={iconColor('/dashboard/notifications')} />}
-            title={t('notifications')}
-            isActive={isActive('/dashboard/notifications')}
-            href="/dashboard/notifications"
-          />
+
           <SidebarItem
             icon={<Brain size={18} color={trainModel.isPending ? '#6366f1' : '#6B7280'} />}
             title={trainModel.isPending ? 'Training...' : 'Train AI Model'}

@@ -222,6 +222,22 @@ export function usePlatformStatistics() {
   });
 }
 
+// ============ Pending Counts Hook ============
+
+/**
+ * Hook: Fetch live badge counts for sidebar — unverified sellers, pending/failed orders.
+ * Polls every 30 seconds so the sidebar stays fresh without manual refresh.
+ */
+export function useAdminPendingCounts() {
+  return useQuery({
+    queryKey: ['admin', 'pending-counts'] as const,
+    queryFn: adminApi.getPendingCounts,
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchInterval: 30 * 1000,
+  });
+}
+
 // ============ Recommendation Hooks ============
 
 /**

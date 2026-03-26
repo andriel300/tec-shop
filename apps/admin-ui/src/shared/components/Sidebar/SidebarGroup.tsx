@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useUIStore } from '../../store/ui.store';
+import { useUIStore } from '../../../store/ui.store';
 
 interface SidebarGroupProps {
   title: string;
