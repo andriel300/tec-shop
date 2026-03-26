@@ -42,9 +42,8 @@ function timeAgo(dateStr: string): string {
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
   const queryClient = useQueryClient();
   const { admin } = useAdmin();
 
@@ -65,12 +64,7 @@ export function NotificationBell() {
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
-        buttonRef.current &&
-        !buttonRef.current.contains(event.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     }
@@ -79,17 +73,12 @@ export function NotificationBell() {
   }, []);
 
   const handleToggle = () => {
-    if (!isOpen && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setDropdownPos({ top: rect.bottom + 8, left: rect.right - 384 });
-    }
     setIsOpen((prev) => !prev);
   };
 
   return (
-    <div>
+    <div ref={containerRef} className="relative">
       <button
-        ref={buttonRef}
         onClick={handleToggle}
         className="relative p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-700"
       >
@@ -104,8 +93,7 @@ export function NotificationBell() {
       {isOpen && (
         <div
           ref={dropdownRef}
-          style={{ top: dropdownPos.top, left: Math.max(8, dropdownPos.left) }}
-          className="fixed w-96 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-[500] max-h-[480px] overflow-hidden flex flex-col"
+          className="absolute right-0 top-full mt-2 w-96 bg-gray-900 border border-gray-700 rounded-lg shadow-xl z-[500] max-h-[480px] overflow-hidden flex flex-col"
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700">
             <h3 className="text-white font-semibold text-sm">Notifications</h3>

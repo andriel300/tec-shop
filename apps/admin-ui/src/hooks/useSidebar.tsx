@@ -1,8 +1,8 @@
-import { useAtom } from 'jotai';
-import { activeSidebarItem } from '../configs/constants';
+import { useSidebarStore } from '../configs/constants';
 
 const useSidebar = () => {
-  const [activeSidebar, setActiveSidebar] = useAtom(activeSidebarItem);
+  const activeSidebar = useSidebarStore((s) => s.activeSidebar);
+  const setActiveSidebar = useSidebarStore((s) => s.setActiveSidebar);
   return { activeSidebar, setActiveSidebar };
 };
 

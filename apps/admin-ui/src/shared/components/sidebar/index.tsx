@@ -55,8 +55,8 @@ const SidebarWrapper = () => {
     >
       <Sidebar.Header>
         <Box>
-          <div className="flex items-center justify-between mb-2">
-            <Link href={'/'} className="flex items-center gap-2.5 min-w-0">
+          <div className="flex items-center gap-2">
+            <Link href={'/'} className="flex items-center gap-2 min-w-0 flex-1">
               <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
                 <Logo className="w-4 h-4 text-white" />
               </div>
@@ -69,10 +69,10 @@ const SidebarWrapper = () => {
                 </h5>
               </Box>
             </Link>
-            <NotificationBell />
-          </div>
-          <div className="flex justify-end">
-            <LanguageSwitcher />
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <LanguageSwitcher />
+              <NotificationBell />
+            </div>
           </div>
         </Box>
       </Sidebar.Header>
