@@ -7,12 +7,12 @@ import type { UpdateLayoutData } from '../../../../../../../lib/api/layout';
 const LayoutTab = () => {
   const { data: layout, isLoading, error } = useLayout();
   const updateMutation = useUpdateLayout();
-  const [formData, setFormData] = useState({ logo: '', banner: '' });
+  const [formData, setFormData] = useState({ logo: '' });
   const [initialized, setInitialized] = useState(false);
 
   React.useEffect(() => {
     if (layout && !initialized) {
-      setFormData({ logo: layout.logo || '', banner: layout.banner || '' });
+      setFormData({ logo: layout.logo || '' });
       setInitialized(true);
     }
   }, [layout, initialized]);
@@ -21,11 +21,10 @@ const LayoutTab = () => {
     e.preventDefault();
     const data: UpdateLayoutData = {
       logo: formData.logo.trim() || undefined,
-      banner: formData.banner.trim() || undefined,
     };
     updateMutation.mutate(data, {
       onSuccess: (res) => {
-        setFormData({ logo: res.layout.logo || '', banner: res.layout.banner || '' });
+        setFormData({ logo: res.layout.logo || '' });
       },
     });
   };
@@ -66,28 +65,6 @@ const LayoutTab = () => {
                 src={formData.logo}
                 alt="Logo preview"
                 className="max-h-20 object-contain"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-              />
-            </div>
-          )}
-        </div>
-
-        <div>
-          <label className="text-slate-300 text-sm block mb-2">Banner Image URL</label>
-          <input
-            type="text"
-            value={formData.banner}
-            onChange={(e) => setFormData({ ...formData, banner: e.target.value })}
-            className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
-            placeholder="https://example.com/banner.png"
-          />
-          {formData.banner && (
-            <div className="mt-3 p-3 bg-slate-800 rounded border border-slate-600">
-              <p className="text-slate-400 text-xs mb-2">Preview:</p>
-              <img
-                src={formData.banner}
-                alt="Banner preview"
-                className="max-h-40 object-contain"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
               />
             </div>

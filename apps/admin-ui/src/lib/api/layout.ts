@@ -16,7 +16,6 @@ export interface HeroSlide {
 export interface LayoutResponse {
   id: string;
   logo: string | null;
-  banner: string | null;
   heroSlides?: HeroSlide[];
   updatedAt: string;
   createdAt: string;
@@ -24,7 +23,6 @@ export interface LayoutResponse {
 
 export interface UpdateLayoutData {
   logo?: string;
-  banner?: string;
 }
 
 export interface CreateHeroSlideData {

@@ -34,6 +34,13 @@ export function middleware(request: NextRequest) {
   const hasValidJwtStructure = (token: string) => token.split('.').length === 3;
   const isAuthenticated = !!adminAccessToken && hasValidJwtStructure(adminAccessToken);
 
+  // Root path: smart redirect based on auth state — no page render needed.
+  if (pathnameWithoutLocale === '/' || pathnameWithoutLocale === '') {
+    return NextResponse.redirect(
+      new URL(isAuthenticated ? `/${locale}/dashboard` : `/${locale}/login`, request.url)
+    );
+  }
+
   if (isProtectedRoute && !isAuthenticated) {
     const loginUrl = new URL(`/${locale}/login`, request.url);
     loginUrl.searchParams.set('redirect', pathnameWithoutLocale);
