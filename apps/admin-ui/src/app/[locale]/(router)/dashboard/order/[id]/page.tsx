@@ -2,6 +2,7 @@
 'use client';
 
 import { use, useState } from 'react';
+import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Package,
@@ -142,7 +143,11 @@ const OrderDetailsPage = ({
     const currentIndex = steps.indexOf(order.status);
     const stepIndex = steps.indexOf(stepKey);
     if (stepIndex < currentIndex) return 'completed';
-    if (stepIndex === currentIndex) return 'current';
+    if (stepIndex === currentIndex) {
+      // DELIVERED is a terminal state — always show as completed, not "in progress"
+      if (stepKey === 'DELIVERED') return 'completed';
+      return 'current';
+    }
     return 'pending';
   };
 
@@ -201,7 +206,7 @@ const OrderDetailsPage = ({
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Order Info Card */}
-          <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
             <div className="flex items-start justify-between mb-6">
               <div>
                 <p className="text-gray-500 text-xs font-semibold uppercase tracking-widest mb-1">
@@ -274,56 +279,60 @@ const OrderDetailsPage = ({
           </div>
 
           {/* Delivery Progress */}
-          <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-            <h3 className="text-white font-semibold mb-6">
-              Delivery Progress
-            </h3>
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+            <h3 className="text-white font-semibold mb-8">Delivery Progress</h3>
 
-            <div className="flex items-start justify-between w-full relative">
+            {/* Flex-based stepper: connectors are explicit siblings, no absolute positioning */}
+            <div className="flex items-start w-full">
               {deliverySteps.map((step, index) => {
                 const status = getStepStatus(step.key);
                 const Icon = step.icon;
-                const isActive = status === 'completed' || status === 'current';
+                const isCompleted = status === 'completed';
+                const isCurrent = status === 'current';
+                const isDone = isCompleted || isCurrent;
+
+                // Connector after this step (not after last)
+                const nextStatus = index < deliverySteps.length - 1
+                  ? getStepStatus(deliverySteps[index + 1].key)
+                  : null;
+                const connectorActive = nextStatus === 'completed' || nextStatus === 'current';
 
                 return (
-                  <div
-                    key={step.key}
-                    className="relative flex flex-col items-center text-center w-full"
-                  >
-                    {index > 0 && (
+                  <React.Fragment key={step.key}>
+                    <div className="flex flex-col items-center text-center flex-shrink-0">
+                      {/* Icon circle */}
                       <div
-                        className={`absolute -left-1/2 top-6 w-full h-0.5 ${
-                          isActive ? 'bg-brand-primary-600' : 'bg-gray-800'
-                        }`}
-                      />
-                    )}
-                    <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center
-                                  border-2 z-10 transition-colors ${
-                        status === 'completed'
-                          ? 'bg-brand-primary-600 border-brand-primary-600 text-white'
-                          : status === 'current'
-                          ? 'bg-brand-primary-600/10 border-brand-primary-600 text-brand-primary-400'
-                          : 'bg-gray-800 border-gray-700 text-gray-600'
-                      }`}
-                    >
-                      <Icon size={20} />
-                    </div>
-                    <div className="mt-3">
-                      <p
-                        className={`text-sm font-semibold ${
-                          status === 'pending' ? 'text-gray-600' : 'text-white'
+                        className={`w-11 h-11 rounded-full flex items-center justify-center border-2 transition-colors ${
+                          isCompleted
+                            ? 'bg-brand-primary-600 border-brand-primary-600 text-white'
+                            : isCurrent
+                            ? 'bg-gray-800 border-brand-primary-500 text-brand-primary-400'
+                            : 'bg-gray-800 border-gray-700 text-gray-600'
                         }`}
                       >
+                        <Icon size={18} />
+                      </div>
+
+                      {/* Label */}
+                      <p className={`text-xs font-semibold mt-2.5 whitespace-nowrap ${
+                        isDone ? 'text-white' : 'text-gray-600'
+                      }`}>
                         {step.label}
                       </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {status === 'completed' && 'Completed'}
-                        {status === 'current' && 'In Progress'}
-                        {status === 'pending' && 'Pending'}
+                      <p className="text-[11px] text-gray-500 mt-0.5">
+                        {isCompleted && 'Completed'}
+                        {isCurrent && 'In Progress'}
+                        {!isDone && 'Pending'}
                       </p>
                     </div>
-                  </div>
+
+                    {/* Connector line — between steps, not after the last */}
+                    {index < deliverySteps.length - 1 && (
+                      <div className={`flex-1 h-0.5 mt-[22px] mx-3 transition-colors ${
+                        connectorActive ? 'bg-brand-primary-600' : 'bg-gray-800'
+                      }`} />
+                    )}
+                  </React.Fragment>
                 );
               })}
             </div>
@@ -376,7 +385,7 @@ const OrderDetailsPage = ({
           </div>
 
           {/* Order Items */}
-          <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
             <h3 className="text-white font-semibold mb-4">
               Order Items
               <span className="ml-2 text-sm text-gray-500 font-normal">
@@ -440,7 +449,7 @@ const OrderDetailsPage = ({
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Platform Revenue Summary */}
-          <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
             <div className="flex items-center gap-2 text-brand-primary-400 mb-4">
               <TrendingUp size={18} />
               <h3 className="font-semibold">Platform Revenue</h3>
@@ -475,7 +484,7 @@ const OrderDetailsPage = ({
           </div>
 
           {/* Order Summary */}
-          <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
             <div className="flex items-center gap-2 text-gray-300 mb-4">
               <DollarSign size={18} />
               <h3 className="font-semibold">Order Summary</h3>
@@ -512,7 +521,7 @@ const OrderDetailsPage = ({
           </div>
 
           {/* Shipping Address */}
-          <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
             <div className="flex items-center gap-2 text-gray-300 mb-4">
               <MapPin size={18} />
               <h3 className="font-semibold">Shipping Address</h3>
