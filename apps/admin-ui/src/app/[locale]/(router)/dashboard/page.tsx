@@ -330,7 +330,7 @@ const DashboardPage = () => {
                     borderRadius: '8px',
                   }}
                   labelStyle={{ color: '#fff' }}
-                  itemStyle={{ color: '3fff' }}
+                  itemStyle={{ color: '#fff' }}
                 />
 
                 {/* External Legend */}

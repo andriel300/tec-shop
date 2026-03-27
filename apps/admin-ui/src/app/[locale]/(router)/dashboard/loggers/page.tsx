@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useTransition } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -42,7 +42,6 @@ import type {
   LogCategory,
   LogQueryParams,
 } from '../../../../../lib/api/logs';
-import { Breadcrumb } from '../../../../../shared/components/navigation/Breadcrumb';
 import { toast } from 'sonner';
 
 const LOG_LEVELS: LogLevel[] = ['debug', 'info', 'warn', 'error', 'fatal'];
@@ -57,34 +56,60 @@ const LOG_CATEGORIES: LogCategory[] = [
   'payment',
 ];
 
-const levelColors: Record<LogLevel, string> = {
-  debug: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
-  info: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  warn: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  error: 'bg-red-500/20 text-red-400 border-red-500/30',
-  fatal: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+const LEVEL_CONFIG: Record<
+  LogLevel,
+  {
+    badge: string;
+    dot: string;
+    rowAccent: string;
+    icon: React.ComponentType<{ size?: number }>;
+  }
+> = {
+  debug: {
+    badge: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
+    dot: 'bg-gray-400',
+    rowAccent: '',
+    icon: Bug,
+  },
+  info: {
+    badge: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    dot: 'bg-blue-400',
+    rowAccent: '',
+    icon: Info,
+  },
+  warn: {
+    badge: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    dot: 'bg-amber-400',
+    rowAccent: 'border-l-2 border-l-amber-500/40',
+    icon: AlertTriangle,
+  },
+  error: {
+    badge: 'bg-red-500/10 text-red-400 border-red-500/20',
+    dot: 'bg-red-400',
+    rowAccent: 'border-l-2 border-l-red-500/50',
+    icon: AlertCircle,
+  },
+  fatal: {
+    badge: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+    dot: 'bg-purple-400',
+    rowAccent: 'border-l-2 border-l-purple-500/60',
+    icon: XCircle,
+  },
 };
 
-const levelIcons: Record<LogLevel, React.ComponentType<{ size?: number }>> = {
-  debug: Bug,
-  info: Info,
-  warn: AlertTriangle,
-  error: AlertCircle,
-  fatal: XCircle,
-};
-
-const categoryColors: Record<LogCategory, string> = {
-  auth: 'text-cyan-400',
-  user: 'text-green-400',
-  seller: 'text-orange-400',
-  product: 'text-pink-400',
-  order: 'text-purple-400',
-  system: 'text-gray-400',
+const CATEGORY_COLORS: Record<LogCategory, string> = {
+  auth:     'text-cyan-400',
+  user:     'text-emerald-400',
+  seller:   'text-orange-400',
+  product:  'text-pink-400',
+  order:    'text-purple-400',
+  system:   'text-gray-400',
   security: 'text-red-400',
-  payment: 'text-yellow-400',
+  payment:  'text-amber-400',
 };
 
 const LoggersPage = () => {
+  const [, startTransition] = useTransition();
   const [mode, setMode] = useState<'realtime' | 'historical'>('realtime');
   const [filters, setFilters] = useState<LogQueryParams>({
     page: 1,
@@ -118,17 +143,16 @@ const LoggersPage = () => {
   const { data: statsData } = useLogStats();
   const { data: servicesData } = useLogServices();
 
-  const rawLogs =
-    mode === 'realtime' ? realtimeLogs : historicalData?.logs || [];
-  const logs =
-    excludePatterns.length > 0
-      ? rawLogs.filter(
-          (log) =>
-            !excludePatterns.some((pattern) =>
-              log.message.toLowerCase().includes(pattern.toLowerCase())
-            )
+  const logs = useMemo(() => {
+    const raw = mode === 'realtime' ? realtimeLogs : historicalData?.logs ?? [];
+    if (excludePatterns.length === 0) return raw;
+    return raw.filter(
+      (log) =>
+        !excludePatterns.some((pattern) =>
+          log.message.toLowerCase().includes(pattern.toLowerCase())
         )
-      : rawLogs;
+    );
+  }, [mode, realtimeLogs, historicalData, excludePatterns]);
 
   const handleFilterChange = useCallback(
     (key: keyof LogQueryParams, value: string | undefined) => {
@@ -188,7 +212,7 @@ const LoggersPage = () => {
         limit: 1000,
       });
       toast.success('Logs downloaded successfully');
-    } catch (error) {
+    } catch {
       toast.error('Failed to download logs');
     }
   }, [filters]);
@@ -198,11 +222,11 @@ const LoggersPage = () => {
       {
         accessorKey: 'timestamp',
         header: 'Time',
-        size: 180,
+        size: 160,
         cell: ({ row }) => {
           const date = new Date(row.original.timestamp);
           return (
-            <span className="text-gray-300 text-xs font-mono">
+            <span className="text-gray-400 text-xs font-mono tabular-nums">
               {date.toLocaleString('en-US', {
                 month: 'short',
                 day: '2-digit',
@@ -218,15 +242,17 @@ const LoggersPage = () => {
       {
         accessorKey: 'level',
         header: 'Level',
-        size: 100,
+        size: 90,
         cell: ({ row }) => {
           const level = row.original.level;
-          const Icon = levelIcons[level];
+          const cfg = LEVEL_CONFIG[level];
+          const Icon = cfg.icon;
           return (
             <span
-              className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border ${levelColors[level]}`}
+              className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md
+                          text-xs font-semibold border ${cfg.badge}`}
             >
-              <Icon size={12} />
+              <Icon size={11} />
               {level.toUpperCase()}
             </span>
           );
@@ -235,9 +261,9 @@ const LoggersPage = () => {
       {
         accessorKey: 'service',
         header: 'Service',
-        size: 120,
+        size: 130,
         cell: ({ row }) => (
-          <span className="text-white text-sm font-medium">
+          <span className="text-white text-sm font-medium font-mono">
             {row.original.service}
           </span>
         ),
@@ -246,21 +272,31 @@ const LoggersPage = () => {
         accessorKey: 'category',
         header: 'Category',
         size: 100,
-        cell: ({ row }) => (
-          <span
-            className={`text-sm font-medium ${
-              categoryColors[row.original.category]
-            }`}
-          >
-            {row.original.category}
-          </span>
-        ),
+        cell: ({ row }) => {
+          const cat = row.original.category;
+          return (
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                  LEVEL_CONFIG[row.original.level]?.dot ?? 'bg-gray-400'
+                }`}
+              />
+              <span
+                className={`text-xs font-semibold ${
+                  CATEGORY_COLORS[cat] ?? 'text-gray-400'
+                }`}
+              >
+                {cat}
+              </span>
+            </div>
+          );
+        },
       },
       {
         accessorKey: 'message',
         header: 'Message',
         cell: ({ row }) => (
-          <span className="text-gray-200 text-sm truncate max-w-md block">
+          <span className="text-gray-200 text-sm truncate max-w-lg block">
             {row.original.message}
           </span>
         ),
@@ -271,11 +307,11 @@ const LoggersPage = () => {
         size: 100,
         cell: ({ row }) =>
           row.original.userId ? (
-            <span className="text-gray-400 text-xs font-mono">
+            <span className="text-gray-500 text-xs font-mono">
               {row.original.userId.slice(-8)}
             </span>
           ) : (
-            <span className="text-gray-600 text-xs">-</span>
+            <span className="text-gray-700 text-xs">—</span>
           ),
       },
     ],
@@ -296,291 +332,420 @@ const LoggersPage = () => {
     },
   });
 
+  const currentTablePage = table.getState().pagination.pageIndex;
+  const tablePageCount = table.getPageCount();
+  const filteredTotal = table.getFilteredRowModel().rows.length;
+  const pageStart = currentTablePage * table.getState().pagination.pageSize + 1;
+  const pageEnd = Math.min(
+    (currentTablePage + 1) * table.getState().pagination.pageSize,
+    filteredTotal
+  );
+
+  const totalPages =
+    historicalData
+      ? Math.ceil(historicalData.total / (filters.limit || 50))
+      : 0;
+  const currentHistoricalPage = filters.page || 1;
+
   return (
     <div className="w-full min-h-screen p-8">
-      <div className="mb-6">
-        <h2 className="text-3xl text-white font-bold mb-2">System Logs</h2>
-        <Breadcrumb title="Loggers" items={[]} />
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+          <span>Dashboard</span>
+          <span>/</span>
+          <span className="text-gray-300 font-medium">System Logs</span>
+        </div>
+        <h1 className="text-4xl font-bold text-white">System Logs</h1>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-4 border border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Total Logs</p>
-              <p className="text-2xl font-bold text-white">
-                {statsData?.totalLogs?.toLocaleString() || '0'}
-              </p>
+      {/* Stat Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {/* Total Logs */}
+        <div className="relative overflow-hidden bg-gray-900 border border-gray-800 rounded-lg p-6">
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="bg-brand-primary-600/10 p-2.5 rounded-lg">
+                <FileText size={18} className="text-brand-primary-400" />
+              </div>
+              <span className="text-xs font-semibold text-gray-500 bg-gray-800 px-2.5 py-0.5 rounded-full">
+                All Time
+              </span>
             </div>
-            <div className="bg-blue-500/20 p-3 rounded-lg">
-              <FileText size={20} className="text-blue-400" />
-            </div>
+            <p className="text-gray-400 text-sm mb-1">Total Logs</p>
+            <p className="text-3xl font-bold text-white">
+              {(statsData?.totalLogs ?? 0).toLocaleString()}
+            </p>
           </div>
+          <FileText
+            size={110}
+            className="absolute -bottom-5 -right-5 text-brand-primary-400 opacity-[0.04]"
+            strokeWidth={1}
+          />
         </div>
 
-        <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-4 border border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Errors</p>
-              <p className="text-2xl font-bold text-red-400">
-                {(statsData?.byLevel?.error || 0).toLocaleString()}
-              </p>
-            </div>
-            <div className="bg-red-500/20 p-3 rounded-lg">
-              <AlertCircle size={20} className="text-red-400" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-4 border border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Warnings</p>
-              <p className="text-2xl font-bold text-yellow-400">
-                {(statsData?.byLevel?.warn || 0).toLocaleString()}
-              </p>
-            </div>
-            <div className="bg-yellow-500/20 p-3 rounded-lg">
-              <AlertTriangle size={20} className="text-yellow-400" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg p-4 border border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Connection</p>
-              <p className="text-lg font-bold flex items-center gap-2">
-                {isConnected ? (
-                  <>
-                    <Wifi size={18} className="text-green-400" />
-                    <span className="text-green-400">Live</span>
-                  </>
-                ) : (
-                  <>
-                    <WifiOff size={18} className="text-gray-400" />
-                    <span className="text-gray-400">Offline</span>
-                  </>
-                )}
-              </p>
-            </div>
-            <div
-              className={`p-3 rounded-lg ${
-                isConnected ? 'bg-green-500/20' : 'bg-gray-500/20'
-              }`}
-            >
-              {isConnected ? (
-                <Wifi size={20} className="text-green-400" />
+        {/* Errors */}
+        <div className="relative overflow-hidden bg-gray-900 border border-gray-800 rounded-lg p-6">
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="bg-red-500/10 p-2.5 rounded-lg">
+                <AlertCircle size={18} className="text-red-400" />
+              </div>
+              {(statsData?.byLevel?.error ?? 0) > 0 ? (
+                <span className="text-xs font-semibold text-red-400 bg-red-500/10 px-2.5 py-0.5 rounded-full">
+                  Needs Attention
+                </span>
               ) : (
-                <WifiOff size={20} className="text-gray-400" />
+                <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">
+                  All Clear
+                </span>
               )}
             </div>
+            <p className="text-gray-400 text-sm mb-1">Errors</p>
+            <p className="text-3xl font-bold text-white">
+              {(statsData?.byLevel?.error ?? 0).toLocaleString()}
+            </p>
           </div>
-        </div>
-      </div>
-
-      <div className="mb-4 flex flex-col lg:flex-row gap-4">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setMode('realtime')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              mode === 'realtime'
-                ? 'bg-brand-primary text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-            }`}
-          >
-            Real-time
-          </button>
-          <button
-            onClick={() => setMode('historical')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              mode === 'historical'
-                ? 'bg-brand-primary text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-            }`}
-          >
-            Historical
-          </button>
-        </div>
-
-        <div className="flex-1 flex items-center bg-gray-900 p-3 rounded-lg border border-gray-700">
-          <Search size={18} className="text-gray-400 mr-2" />
-          <input
-            type="text"
-            placeholder="Search logs..."
-            className="w-full bg-transparent text-white outline-none placeholder-gray-500"
-            value={globalFilter}
-            onChange={(e) => handleSearchChange(e.target.value)}
+          <AlertCircle
+            size={110}
+            className="absolute -bottom-5 -right-5 text-red-400 opacity-[0.04]"
+            strokeWidth={1}
           />
-          {globalFilter && (
-            <button
-              onClick={() => handleSearchChange('')}
-              className="text-gray-400 hover:text-white ml-2"
-            >
-              <X size={16} />
-            </button>
-          )}
         </div>
 
-        <select
-          className="bg-gray-900 text-white p-3 rounded-lg border border-gray-700 outline-none"
-          value={filters.service || ''}
-          onChange={(e) => handleFilterChange('service', e.target.value)}
-        >
-          <option value="">All Services</option>
-          {servicesData?.services?.map((service) => (
-            <option key={service} value={service}>
-              {service}
-            </option>
-          ))}
-        </select>
+        {/* Warnings */}
+        <div className="relative overflow-hidden bg-gray-900 border border-gray-800 rounded-lg p-6">
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="bg-amber-500/10 p-2.5 rounded-lg">
+                <AlertTriangle size={18} className="text-amber-400" />
+              </div>
+              <span className="text-xs font-semibold text-gray-500 bg-gray-800 px-2.5 py-0.5 rounded-full">
+                Warnings
+              </span>
+            </div>
+            <p className="text-gray-400 text-sm mb-1">Warnings</p>
+            <p className="text-3xl font-bold text-white">
+              {(statsData?.byLevel?.warn ?? 0).toLocaleString()}
+            </p>
+          </div>
+          <AlertTriangle
+            size={110}
+            className="absolute -bottom-5 -right-5 text-amber-400 opacity-[0.04]"
+            strokeWidth={1}
+          />
+        </div>
 
-        <select
-          className="bg-gray-900 text-white p-3 rounded-lg border border-gray-700 outline-none"
-          value={filters.level || ''}
-          onChange={(e) =>
-            handleFilterChange('level', e.target.value as LogLevel)
-          }
-        >
-          <option value="">All Levels</option>
-          {LOG_LEVELS.map((level) => (
-            <option key={level} value={level}>
-              {level.toUpperCase()}
-            </option>
-          ))}
-        </select>
-
-        <select
-          className="bg-gray-900 text-white p-3 rounded-lg border border-gray-700 outline-none"
-          value={filters.category || ''}
-          onChange={(e) =>
-            handleFilterChange('category', e.target.value as LogCategory)
-          }
-        >
-          <option value="">All Categories</option>
-          {LOG_CATEGORIES.map((category) => (
-            <option key={category} value={category}>
-              {category}
-            </option>
-          ))}
-        </select>
-
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowExcludePanel(!showExcludePanel)}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-              excludePatterns.length > 0
-                ? 'bg-orange-600 hover:bg-orange-500 text-white'
-                : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-            }`}
-          >
-            <Filter size={16} />
-            Exclude
-            {excludePatterns.length > 0 ? ` (${excludePatterns.length})` : ''}
-          </button>
-          {mode === 'realtime' && (
-            <>
-              <button
-                onClick={togglePause}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-                  isPaused
-                    ? 'bg-green-600 hover:bg-green-500 text-white'
-                    : 'bg-yellow-600 hover:bg-yellow-500 text-white'
+        {/* Connection */}
+        <div className="relative overflow-hidden bg-gray-900 border border-gray-800 rounded-lg p-6">
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div
+                className={`p-2.5 rounded-lg ${
+                  isConnected ? 'bg-emerald-500/10' : 'bg-gray-500/10'
                 }`}
               >
-                {isPaused ? <Play size={16} /> : <Pause size={16} />}
-                {isPaused ? 'Resume' : 'Pause'}
-              </button>
-              <button
-                onClick={clearLogs}
-                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors flex items-center gap-2"
-              >
-                <Trash2 size={16} />
-                Clear
-              </button>
-            </>
-          )}
-          {mode === 'historical' && (
-            <button
-              onClick={() => refetch()}
-              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors flex items-center gap-2"
+                {isConnected ? (
+                  <Wifi size={18} className="text-emerald-400" />
+                ) : (
+                  <WifiOff size={18} className="text-gray-500" />
+                )}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    isConnected
+                      ? 'bg-emerald-400 animate-pulse'
+                      : 'bg-gray-500'
+                  }`}
+                />
+                <span
+                  className={`text-xs font-semibold ${
+                    isConnected ? 'text-emerald-400' : 'text-gray-500'
+                  }`}
+                >
+                  {isConnected ? 'LIVE' : 'OFFLINE'}
+                </span>
+              </div>
+            </div>
+            <p className="text-gray-400 text-sm mb-1">Stream Status</p>
+            <p
+              className={`text-3xl font-bold ${
+                isConnected ? 'text-white' : 'text-gray-500'
+              }`}
             >
-              <RefreshCw size={16} />
-              Refresh
-            </button>
+              {isConnected ? 'Connected' : 'Disconnected'}
+            </p>
+          </div>
+          {isConnected ? (
+            <Wifi
+              size={110}
+              className="absolute -bottom-5 -right-5 text-emerald-400 opacity-[0.04]"
+              strokeWidth={1}
+            />
+          ) : (
+            <WifiOff
+              size={110}
+              className="absolute -bottom-5 -right-5 text-gray-500 opacity-[0.04]"
+              strokeWidth={1}
+            />
           )}
-          <button
-            onClick={handleDownload}
-            className="px-4 py-2 bg-brand-primary hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center gap-2"
-          >
-            <Download size={16} />
-            Download
-          </button>
         </div>
       </div>
 
-      {showExcludePanel && (
-        <div className="mb-4 bg-gray-900 rounded-lg border border-gray-700 p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Filter size={16} className="text-orange-400" />
-            <span className="text-white font-medium text-sm">
-              Exclude logs containing:
-            </span>
-          </div>
-          <div className="flex gap-2 mb-3">
-            <input
-              type="text"
-              placeholder="e.g. unfollow, follow_shop..."
-              className="flex-1 bg-gray-800 text-white p-2 rounded-lg border border-gray-600 outline-none placeholder-gray-500 text-sm"
-              value={excludeInput}
-              onChange={(e) => setExcludeInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') addExcludePattern();
-              }}
-            />
-            <button
-              onClick={addExcludePattern}
-              disabled={!excludeInput.trim()}
-              className="px-4 py-2 bg-orange-600 hover:bg-orange-500 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg transition-colors text-sm font-medium"
-            >
-              Add
-            </button>
-          </div>
-          {excludePatterns.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {excludePatterns.map((pattern) => (
-                <span
-                  key={pattern}
-                  className="inline-flex items-center gap-1 px-3 py-1 bg-orange-500/20 text-orange-300 border border-orange-500/30 rounded-full text-sm"
-                >
-                  {pattern}
-                  <button
-                    onClick={() => removeExcludePattern(pattern)}
-                    className="hover:text-white transition-colors"
-                  >
-                    <X size={14} />
-                  </button>
-                </span>
-              ))}
+      {/* Table Card */}
+      <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+        {/* Toolbar */}
+        <div className="px-6 py-4 space-y-3 border-b border-gray-800">
+          {/* Row 1: Mode + Search + Actions */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Mode Segment Control */}
+            <div className="flex bg-gray-800 rounded-lg p-1 gap-1 shrink-0">
               <button
-                onClick={() => setExcludePatterns([])}
-                className="text-gray-400 hover:text-white text-sm underline"
+                onClick={() => startTransition(() => setMode('realtime'))}
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  mode === 'realtime'
+                    ? 'bg-brand-primary-600 text-white'
+                    : 'text-gray-400 hover:text-white'
+                }`}
               >
-                Clear all
+                Real-time
+              </button>
+              <button
+                onClick={() => startTransition(() => setMode('historical'))}
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  mode === 'historical'
+                    ? 'bg-brand-primary-600 text-white'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                Historical
               </button>
             </div>
-          ) : (
-            <p className="text-gray-500 text-sm">
-              No exclude patterns. Add patterns to hide matching logs.
-            </p>
-          )}
-        </div>
-      )}
 
-      <div className="bg-gray-900 rounded-lg border border-gray-700 overflow-hidden">
+            {/* Search */}
+            <div className="flex-1 min-w-48 flex items-center gap-2 bg-gray-800 rounded-lg px-4 py-2.5">
+              <Search size={15} className="text-gray-500 shrink-0" />
+              <input
+                type="text"
+                placeholder="Search logs..."
+                className="w-full bg-transparent text-white outline-none placeholder:text-gray-500 text-sm"
+                value={globalFilter}
+                onChange={(e) => handleSearchChange(e.target.value)}
+              />
+              {globalFilter && (
+                <button
+                  onClick={() => handleSearchChange('')}
+                  className="text-gray-500 hover:text-white transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => setShowExcludePanel(!showExcludePanel)}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  excludePatterns.length > 0
+                    ? 'bg-orange-500/10 border border-orange-500/20 text-orange-400'
+                    : 'bg-gray-800 border border-gray-700 text-gray-400 hover:text-white'
+                }`}
+              >
+                <Filter size={14} />
+                Exclude
+                {excludePatterns.length > 0 && (
+                  <span className="bg-orange-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                    {excludePatterns.length}
+                  </span>
+                )}
+              </button>
+
+              {mode === 'realtime' && (
+                <>
+                  <button
+                    onClick={togglePause}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                      isPaused
+                        ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                        : 'bg-amber-600 hover:bg-amber-500 text-white'
+                    }`}
+                  >
+                    {isPaused ? <Play size={14} /> : <Pause size={14} />}
+                    {isPaused ? 'Resume' : 'Pause'}
+                  </button>
+                  <button
+                    onClick={clearLogs}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-gray-800 border border-gray-700
+                               hover:border-gray-600 text-gray-400 hover:text-white rounded-lg
+                               text-sm font-medium transition-colors"
+                  >
+                    <Trash2 size={14} />
+                    Clear
+                  </button>
+                </>
+              )}
+
+              {mode === 'historical' && (
+                <button
+                  onClick={() => refetch()}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-gray-800 border border-gray-700
+                             hover:border-gray-600 text-gray-400 hover:text-white rounded-lg
+                             text-sm font-medium transition-colors"
+                >
+                  <RefreshCw size={14} />
+                  Refresh
+                </button>
+              )}
+
+              <button
+                onClick={handleDownload}
+                className="flex items-center gap-2 px-4 py-2.5 bg-brand-primary-600
+                           hover:bg-brand-primary-700 text-white rounded-lg
+                           text-sm font-medium transition-colors"
+              >
+                <Download size={14} />
+                Download
+              </button>
+            </div>
+          </div>
+
+          {/* Row 2: Filter Dropdowns */}
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              className="bg-gray-800 text-gray-300 text-sm px-3 py-2 rounded-lg
+                         outline-none cursor-pointer border border-gray-700 hover:border-gray-600 transition-colors"
+              value={filters.service || ''}
+              onChange={(e) => handleFilterChange('service', e.target.value)}
+            >
+              <option value="">All Services</option>
+              {servicesData?.services?.map((service) => (
+                <option key={service} value={service}>
+                  {service}
+                </option>
+              ))}
+            </select>
+
+            <select
+              className="bg-gray-800 text-gray-300 text-sm px-3 py-2 rounded-lg
+                         outline-none cursor-pointer border border-gray-700 hover:border-gray-600 transition-colors"
+              value={filters.level || ''}
+              onChange={(e) =>
+                handleFilterChange('level', e.target.value as LogLevel)
+              }
+            >
+              <option value="">All Levels</option>
+              {LOG_LEVELS.map((level) => (
+                <option key={level} value={level}>
+                  {level.toUpperCase()}
+                </option>
+              ))}
+            </select>
+
+            <select
+              className="bg-gray-800 text-gray-300 text-sm px-3 py-2 rounded-lg
+                         outline-none cursor-pointer border border-gray-700 hover:border-gray-600 transition-colors"
+              value={filters.category || ''}
+              onChange={(e) =>
+                handleFilterChange('category', e.target.value as LogCategory)
+              }
+            >
+              <option value="">All Categories</option>
+              {LOG_CATEGORIES.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+
+            {(filters.service || filters.level || filters.category) && (
+              <button
+                onClick={() => {
+                  handleFilterChange('service', '');
+                  handleFilterChange('level', '');
+                  handleFilterChange('category', '');
+                }}
+                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-white transition-colors"
+              >
+                <X size={12} />
+                Clear filters
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Exclude Panel */}
+        {showExcludePanel && (
+          <div className="px-6 py-4 border-b border-gray-800 bg-gray-800/30">
+            <div className="flex items-center gap-2 mb-3">
+              <Filter size={14} className="text-orange-400" />
+              <span className="text-white text-sm font-medium">
+                Exclude logs containing:
+              </span>
+            </div>
+
+            <div className="flex gap-2 mb-3">
+              <div className="flex-1 flex items-center gap-2 bg-gray-800 border border-gray-700
+                              rounded-lg px-3 py-2 focus-within:border-gray-600 transition-colors">
+                <input
+                  type="text"
+                  placeholder="e.g. health-check, token-refresh..."
+                  className="flex-1 bg-transparent text-white outline-none placeholder:text-gray-500 text-sm"
+                  value={excludeInput}
+                  onChange={(e) => setExcludeInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') addExcludePattern();
+                  }}
+                />
+              </div>
+              <button
+                onClick={addExcludePattern}
+                disabled={!excludeInput.trim()}
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-500 disabled:bg-gray-800
+                           disabled:text-gray-600 disabled:cursor-not-allowed text-white
+                           rounded-lg transition-colors text-sm font-medium"
+              >
+                Add
+              </button>
+            </div>
+
+            {excludePatterns.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {excludePatterns.map((pattern) => (
+                  <span
+                    key={pattern}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-orange-500/10
+                               text-orange-300 border border-orange-500/20 rounded-full text-xs font-medium"
+                  >
+                    {pattern}
+                    <button
+                      onClick={() => removeExcludePattern(pattern)}
+                      className="hover:text-white transition-colors"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+                <button
+                  onClick={() => setExcludePatterns([])}
+                  className="text-gray-500 hover:text-white text-xs transition-colors"
+                >
+                  Clear all
+                </button>
+              </div>
+            ) : (
+              <p className="text-gray-600 text-xs">
+                No patterns active. Add patterns to hide matching log messages.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Table */}
         {isLoadingHistorical && mode === 'historical' ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-primary"></div>
+          <div className="flex items-center justify-center py-16">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-primary-600" />
           </div>
         ) : (
           <>
@@ -588,14 +753,12 @@ const LoggersPage = () => {
               <table className="w-full">
                 <thead>
                   {table.getHeaderGroups().map((headerGroup) => (
-                    <tr
-                      key={headerGroup.id}
-                      className="bg-gray-800 border-b border-gray-700"
-                    >
+                    <tr key={headerGroup.id} className="bg-gray-800/60">
                       {headerGroup.headers.map((header) => (
                         <th
                           key={header.id}
-                          className="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider"
+                          className="px-5 py-3.5 text-left text-xs font-semibold
+                                     text-gray-400 uppercase tracking-widest"
                           style={{ width: header.getSize() }}
                         >
                           {flexRender(
@@ -607,164 +770,157 @@ const LoggersPage = () => {
                     </tr>
                   ))}
                 </thead>
-                <tbody className="divide-y divide-gray-800">
+
+                <tbody>
                   {table.getRowModel().rows.length === 0 ? (
                     <tr>
                       <td
                         colSpan={columns.length}
-                        className="px-6 py-12 text-center"
+                        className="px-6 py-16 text-center"
                       >
-                        <div className="flex flex-col items-center justify-center text-gray-400">
-                          <FileText size={48} className="mb-4 opacity-50" />
-                          <p className="text-lg font-medium">No logs found</p>
-                          <p className="text-sm mt-1">
+                        <div className="flex flex-col items-center text-gray-500">
+                          <FileText size={40} className="mb-3 opacity-30" />
+                          <p className="font-medium text-gray-300">
+                            No logs found
+                          </p>
+                          <p className="text-sm mt-1 text-gray-500">
                             {mode === 'realtime'
-                              ? 'Waiting for new log entries...'
-                              : 'Try adjusting your filters'}
+                              ? 'Waiting for incoming log entries...'
+                              : 'Try adjusting your search or filters'}
                           </p>
                         </div>
                       </td>
                     </tr>
                   ) : (
-                    table.getRowModel().rows.map((row) => (
-                      <tr
-                        key={row.id}
-                        className="hover:bg-gray-800/50 transition-colors"
-                      >
-                        {row.getVisibleCells().map((cell) => (
-                          <td key={cell.id} className="px-4 py-3">
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext()
-                            )}
-                          </td>
-                        ))}
-                      </tr>
-                    ))
+                    table.getRowModel().rows.map((row, i) => {
+                      const level = row.original.level;
+                      const accent = LEVEL_CONFIG[level]?.rowAccent ?? '';
+                      return (
+                        <tr
+                          key={row.id}
+                          className={`border-b border-gray-800 hover:bg-gray-800/50
+                            transition-colors ${accent}
+                            ${i % 2 === 1 ? 'bg-gray-800/20' : ''}`}
+                        >
+                          {row.getVisibleCells().map((cell) => (
+                            <td key={cell.id} className="px-5 py-3">
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext()
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
             </div>
 
+            {/* Pagination */}
             {table.getRowModel().rows.length > 0 && (
-              <div className="bg-gray-800 px-6 py-4 flex items-center justify-between border-t border-gray-700">
-                <div className="flex items-center gap-2 text-sm text-gray-400">
+              <div
+                className="px-6 py-4 flex items-center justify-between
+                           bg-gray-800/40 border-t border-gray-800"
+              >
+                {/* Left: count + live indicator */}
+                <div className="flex items-center gap-4 text-sm text-gray-500">
                   {mode === 'historical' && historicalData ? (
                     <span>
                       Page{' '}
-                      <span className="font-medium text-white">
-                        {filters.page || 1}
+                      <span className="font-medium text-gray-300">
+                        {currentHistoricalPage}
                       </span>{' '}
                       of{' '}
-                      <span className="font-medium text-white">
-                        {Math.ceil(
-                          historicalData.total / (filters.limit || 50)
-                        )}
+                      <span className="font-medium text-gray-300">
+                        {totalPages}
                       </span>{' '}
-                      ({historicalData.total.toLocaleString()} total logs)
+                      &mdash;{' '}
+                      <span className="font-medium text-gray-300">
+                        {historicalData.total.toLocaleString()}
+                      </span>{' '}
+                      total
                     </span>
                   ) : (
                     <span>
                       Showing{' '}
-                      <span className="font-medium text-white">
-                        {table.getState().pagination.pageIndex *
-                          table.getState().pagination.pageSize +
-                          1}
-                      </span>{' '}
-                      to{' '}
-                      <span className="font-medium text-white">
-                        {Math.min(
-                          (table.getState().pagination.pageIndex + 1) *
-                            table.getState().pagination.pageSize,
-                          table.getFilteredRowModel().rows.length
-                        )}
+                      <span className="font-medium text-gray-300">
+                        {pageStart} – {pageEnd}
                       </span>{' '}
                       of{' '}
-                      <span className="font-medium text-white">
-                        {table.getFilteredRowModel().rows.length}
+                      <span className="font-medium text-gray-300">
+                        {filteredTotal.toLocaleString()}
                       </span>{' '}
                       logs
                     </span>
                   )}
+
                   {mode === 'realtime' && (
-                    <span className="ml-4 flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <span
-                        className={`w-2 h-2 rounded-full ${
+                        className={`w-1.5 h-1.5 rounded-full ${
                           isPaused
-                            ? 'bg-yellow-400'
-                            : 'bg-green-400 animate-pulse'
+                            ? 'bg-amber-400'
+                            : 'bg-emerald-400 animate-pulse'
                         }`}
                       />
-                      {isPaused ? 'Paused' : 'Live'}
-                    </span>
+                      <span className="text-xs">
+                        {isPaused ? 'Paused' : 'Live'}
+                      </span>
+                    </div>
                   )}
                 </div>
 
-                <div className="flex items-center gap-2">
+                {/* Right: Pagination controls */}
+                <div className="flex items-center gap-1">
                   {mode === 'historical' && historicalData ? (
                     <>
                       <button
                         onClick={() =>
-                          handleHistoricalPageChange((filters.page || 1) - 1)
+                          handleHistoricalPageChange(currentHistoricalPage - 1)
                         }
-                        disabled={(filters.page || 1) <= 1}
-                        className="px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-1"
+                        disabled={currentHistoricalPage <= 1}
+                        className="p-1.5 rounded-md text-gray-500 hover:text-white hover:bg-gray-700
+                                   disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                       >
                         <ChevronLeft size={16} />
-                        Previous
                       </button>
 
-                      <div className="flex items-center gap-1">
-                        {(() => {
-                          const currentPage = filters.page || 1;
-                          const totalPages = Math.ceil(
-                            historicalData.total / (filters.limit || 50)
-                          );
-                          const maxButtons = 5;
-                          let startPage = Math.max(
-                            1,
-                            currentPage - Math.floor(maxButtons / 2)
-                          );
-                          const endPage = Math.min(
-                            totalPages,
-                            startPage + maxButtons - 1
-                          );
-                          startPage = Math.max(1, endPage - maxButtons + 1);
-
-                          return Array.from(
-                            { length: endPage - startPage + 1 },
-                            (_, i) => startPage + i
-                          ).map((pageNum) => (
-                            <button
-                              key={pageNum}
-                              onClick={() =>
-                                handleHistoricalPageChange(pageNum)
-                              }
-                              className={`px-3 py-2 rounded-lg transition-colors ${
-                                currentPage === pageNum
-                                  ? 'bg-brand-primary text-white'
-                                  : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-                              }`}
-                            >
-                              {pageNum}
-                            </button>
-                          ));
-                        })()}
-                      </div>
+                      {(() => {
+                        const maxButtons = 5;
+                        let start = Math.max(
+                          1,
+                          currentHistoricalPage - Math.floor(maxButtons / 2)
+                        );
+                        const end = Math.min(totalPages, start + maxButtons - 1);
+                        start = Math.max(1, end - maxButtons + 1);
+                        return Array.from(
+                          { length: end - start + 1 },
+                          (_, idx) => start + idx
+                        ).map((pageNum) => (
+                          <button
+                            key={pageNum}
+                            onClick={() => handleHistoricalPageChange(pageNum)}
+                            className={`w-8 h-8 rounded-md text-sm transition-colors ${
+                              currentHistoricalPage === pageNum
+                                ? 'bg-brand-primary-600 text-white font-semibold'
+                                : 'text-gray-500 hover:bg-gray-700 hover:text-white'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        ));
+                      })()}
 
                       <button
                         onClick={() =>
-                          handleHistoricalPageChange((filters.page || 1) + 1)
+                          handleHistoricalPageChange(currentHistoricalPage + 1)
                         }
-                        disabled={
-                          (filters.page || 1) >=
-                          Math.ceil(
-                            historicalData.total / (filters.limit || 50)
-                          )
-                        }
-                        className="px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-1"
+                        disabled={currentHistoricalPage >= totalPages}
+                        className="p-1.5 rounded-md text-gray-500 hover:text-white hover:bg-gray-700
+                                   disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                       >
-                        Next
                         <ChevronRight size={16} />
                       </button>
                     </>
@@ -773,38 +929,35 @@ const LoggersPage = () => {
                       <button
                         onClick={() => table.previousPage()}
                         disabled={!table.getCanPreviousPage()}
-                        className="px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-1"
+                        className="p-1.5 rounded-md text-gray-500 hover:text-white hover:bg-gray-700
+                                   disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                       >
                         <ChevronLeft size={16} />
-                        Previous
                       </button>
 
-                      <div className="flex items-center gap-1">
-                        {Array.from(
-                          { length: Math.min(table.getPageCount(), 5) },
-                          (_, i) => i
-                        ).map((pageIndex) => (
-                          <button
-                            key={pageIndex}
-                            onClick={() => table.setPageIndex(pageIndex)}
-                            className={`px-3 py-2 rounded-lg transition-colors ${
-                              table.getState().pagination.pageIndex ===
-                              pageIndex
-                                ? 'bg-brand-primary text-white'
-                                : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-                            }`}
-                          >
-                            {pageIndex + 1}
-                          </button>
-                        ))}
-                      </div>
+                      {Array.from(
+                        { length: Math.min(tablePageCount, 5) },
+                        (_, i) => i
+                      ).map((pageIndex) => (
+                        <button
+                          key={pageIndex}
+                          onClick={() => table.setPageIndex(pageIndex)}
+                          className={`w-8 h-8 rounded-md text-sm transition-colors ${
+                            currentTablePage === pageIndex
+                              ? 'bg-brand-primary-600 text-white font-semibold'
+                              : 'text-gray-500 hover:bg-gray-700 hover:text-white'
+                          }`}
+                        >
+                          {pageIndex + 1}
+                        </button>
+                      ))}
 
                       <button
                         onClick={() => table.nextPage()}
                         disabled={!table.getCanNextPage()}
-                        className="px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-1"
+                        className="p-1.5 rounded-md text-gray-500 hover:text-white hover:bg-gray-700
+                                   disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                       >
-                        Next
                         <ChevronRight size={16} />
                       </button>
                     </>

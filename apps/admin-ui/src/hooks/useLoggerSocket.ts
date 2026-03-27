@@ -54,6 +54,8 @@ export function useLoggerSocket(
   const [isPaused, setIsPaused] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const isPausedRef = useRef(isPaused);
+  const pendingLogsRef = useRef<LogEntry[]>([]);
+  const rafRef = useRef<number | null>(null);
 
   // Store callbacks in refs to avoid reconnection on callback identity changes
   const onConnectRef = useRef(onConnect);
@@ -139,11 +141,21 @@ export function useLoggerSocket(
     socket.on('log_entry', (log: LogEntry) => {
       if (isPausedRef.current) return;
 
-      setLogs((prev) => {
-        const newLogs = [log, ...prev];
-        return newLogs.slice(0, MAX_LOGS);
-      });
+      // Accumulate entries in a ref and flush once per animation frame to avoid
+      // triggering a re-render for every individual WebSocket message.
+      pendingLogsRef.current.unshift(log);
       onLogRef.current?.(log);
+
+      if (rafRef.current === null) {
+        rafRef.current = requestAnimationFrame(() => {
+          const batch = pendingLogsRef.current;
+          pendingLogsRef.current = [];
+          rafRef.current = null;
+          if (batch.length > 0) {
+            setLogs((prev) => [...batch, ...prev].slice(0, MAX_LOGS));
+          }
+        });
+      }
     });
 
     socket.on('connect_error', (error) => {
@@ -152,6 +164,11 @@ export function useLoggerSocket(
     });
 
     return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      pendingLogsRef.current = [];
       socket.disconnect();
       socketRef.current = null;
     };
