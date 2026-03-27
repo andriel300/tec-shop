@@ -1,16 +1,15 @@
 'use client';
 import { createLogger } from '@tec-shop/next-logger';
-import { AlignLeft, ChevronDown, ChevronRight } from 'lucide-react';
+import { AlignLeft, ChevronDown, ChevronRight, User, MessageCircle, LogOut } from 'lucide-react';
 
 const logger = createLogger('user-ui:sticky-navbar');
-import { Link } from '../../i18n/navigation';
+import { Link, usePathname, useRouter } from '../../i18n/navigation';
 import { useTranslations } from 'next-intl';
 import React, { useEffect, useRef, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from '../../i18n/navigation';
 import { navItems } from '../../configs/constants';
 import ProfileIcon from '../../assets/svgs/profile-icon';
 import { useAuth } from '../../hooks/use-auth';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { useCategoryTree } from '../../hooks/use-categories';
 import { NotificationBell } from '../components/notification-bell';
@@ -20,16 +19,18 @@ import LanguageSwitcher from '../components/language-switcher';
 
 const StickyNavbar = () => {
   const t = useTranslations('Navbar');
-  const tCommon = useTranslations('Common');
   const { isAuthenticated, user, userProfile, logout } = useAuth();
   const queryClient = useQueryClient();
   const router = useRouter();
+  const pathname = usePathname();
   const [show, setShow] = React.useState(false);
   const [isSticky, setIsSticky] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Fetch categories
@@ -62,12 +63,6 @@ const StickyNavbar = () => {
     setImageError(false);
   }, [userProfile?.picture]);
 
-  const handleLogout = async () => {
-    await logout();
-    queryClient.clear();
-    router.push('/login');
-  };
-
   const handleCategoryMouseEnter = (categoryId: string) => {
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
@@ -98,6 +93,12 @@ const StickyNavbar = () => {
         setShow(false);
         setHoveredCategory(null);
       }
+      if (
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(event.target as Node)
+      ) {
+        setProfileDropdownOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -106,6 +107,13 @@ const StickyNavbar = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  const handleLogout = async () => {
+    setProfileDropdownOpen(false);
+    await logout();
+    queryClient.clear();
+    router.push('/login');
+  };
 
   return (
     <div
@@ -124,16 +132,16 @@ const StickyNavbar = () => {
           className={`w-[260px] ${isSticky && '-mb-2'} cursor-pointer relative`}
         >
           <div
-            className="flex items-center justify-between px-5 h-[50px] bg-brand-primary"
+            className="flex items-center justify-between px-5 h-[50px] border border-ui-divider bg-ui-background hover:bg-ui-muted transition-colors"
             onClick={() => setShow(!show)}
           >
             <div className="flex items-center gap-2">
-              <AlignLeft color="white" />
-              <span className="text-white font-medium font-heading">
+              <AlignLeft className="w-5 h-5 text-text-primary" />
+              <span className="text-text-primary font-medium font-heading">
                 {t('allDepartments')}
               </span>
             </div>
-            <ChevronDown color="white" />
+            <ChevronDown className="w-4 h-4 text-text-primary" />
             {/* Dropdown Menu */}
             {show && (
               <div
@@ -252,13 +260,17 @@ const StickyNavbar = () => {
             // Check if this is the "Become a Seller" button
             const isBecomeSeller = i.translationKey === 'becomeASeller';
 
+            const isActive = !isBecomeSeller && (
+              pathname === i.href || (i.href !== '/' && pathname.startsWith(i.href))
+            );
+
             return (
               <Link
-                className={`px-3 font-Jost capitalize text-md transition-colors ${isBecomeSeller
-                  ? // Design Token Styles for "Become a Seller"
-                  'bg-ui-muted text-text-primary hover:text-brand-primary py-1.5 rounded-md hover:bg-ui-border animate-cta-pulse'
-                  : // Default Link Styles
-                  'text-text-primary hover:text-brand-primary'
+                className={`px-3 font-Jost capitalize text-sm font-medium transition-colors ${isBecomeSeller
+                  ? 'bg-brand-primary text-white hover:opacity-90 py-2 px-4 rounded-md ml-2'
+                  : isActive
+                    ? 'text-brand-primary border-b-2 border-brand-primary pb-0.5'
+                    : 'text-text-primary hover:text-brand-primary'
                   }`}
                 href={i.href}
                 key={index}
@@ -273,56 +285,85 @@ const StickyNavbar = () => {
           {isSticky && (
             <div className="flex-shrink-0">
               <div className="flex items-center gap-3 lg:gap-4">
-                {/* Profile Icon */}
-                <Link
-                  href={mounted && isAuthenticated ? '/profile' : '/login'}
-                  className="p-2 border-2 w-[45px] h-[45px] lg:w-[50px] lg:h-[50px] flex items-center justify-center rounded-full border-ui-divider hover:bg-ui-muted transition-colors overflow-hidden"
-                  title="Account"
-                >
-                  {mounted &&
-                    isAuthenticated &&
-                    userProfile?.picture &&
-                    !imageError ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={userProfile.picture}
-                      alt={userProfile.name || 'Profile'}
-                      className="w-full h-full object-cover rounded-full"
-                      referrerPolicy="no-referrer"
-                      crossOrigin="anonymous"
-                      onError={() => {
-                        logger.warn('Failed to load profile image in sticky header, falling back to icon');
-                        setImageError(true);
-                      }}
-                    />
-                  ) : (
-                    <ProfileIcon className="w-5 h-5 lg:w-6 lg:h-6 text-text-primary" />
-                  )}
-                </Link>
-
-                {/* User Info / Sign In */}
+                {/* Profile avatar — dropdown when authenticated, link when not */}
                 {mounted && isAuthenticated ? (
-                  <div className="hidden md:flex flex-col">
-                    <span className="block font-medium text-sm">{tCommon('hello')}</span>
+                  <div ref={profileDropdownRef} className="relative">
                     <button
-                      onClick={handleLogout}
-                      className="block font-semibold text-brand-primary text-sm hover:underline text-left"
+                      onClick={() => setProfileDropdownOpen((prev) => !prev)}
+                      className="p-1 border-2 w-[45px] h-[45px] lg:w-[50px] lg:h-[50px] flex items-center justify-center rounded-full border-ui-divider hover:bg-ui-muted transition-colors overflow-hidden"
+                      aria-label="Account menu"
+                      aria-expanded={profileDropdownOpen}
                     >
-                      {userProfile?.name?.split(' ')[0] ||
-                        user?.name?.split(' ')[0] ||
-                        'User'}
+                      {userProfile?.picture && !imageError ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={userProfile.picture}
+                          alt={userProfile.name || 'Profile'}
+                          className="w-full h-full object-cover rounded-full"
+                          referrerPolicy="no-referrer"
+                          crossOrigin="anonymous"
+                          onError={() => {
+                            logger.warn('Failed to load profile image in sticky header, falling back to icon');
+                            setImageError(true);
+                          }}
+                        />
+                      ) : (
+                        <ProfileIcon className="w-5 h-5 lg:w-6 lg:h-6 text-text-primary" />
+                      )}
                     </button>
+
+                    {profileDropdownOpen && (
+                      <div className="absolute right-0 top-full mt-2 w-56 bg-ui-surface border border-ui-divider rounded-xl shadow-elev-lg z-[200] overflow-hidden">
+                        <div className="px-4 py-3 border-b border-ui-divider">
+                          <p className="text-sm font-semibold text-text-primary truncate">
+                            {userProfile?.name || user?.name || 'User'}
+                          </p>
+                          {user?.email && (
+                            <p className="text-xs text-text-secondary truncate mt-0.5">
+                              {user.email}
+                            </p>
+                          )}
+                        </div>
+                        <div className="py-1">
+                          <Link
+                            href="/profile"
+                            onClick={() => setProfileDropdownOpen(false)}
+                            className="flex items-center gap-3 px-4 py-2.5 hover:bg-ui-muted transition-colors text-sm text-text-primary"
+                          >
+                            <User size={15} className="text-text-secondary flex-shrink-0" />
+                            My Profile
+                          </Link>
+                          <Link
+                            href="/inbox"
+                            onClick={() => setProfileDropdownOpen(false)}
+                            className="flex items-center gap-3 px-4 py-2.5 hover:bg-ui-muted transition-colors text-sm text-text-primary"
+                          >
+                            <MessageCircle size={15} className="text-text-secondary flex-shrink-0" />
+                            Inbox
+                          </Link>
+                        </div>
+                        <div className="border-t border-ui-divider py-1">
+                          <button
+                            onClick={handleLogout}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-sm text-red-600"
+                          >
+                            <LogOut size={15} className="flex-shrink-0" />
+                            Sign Out
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
-                  <Link href={'/login'} className="hidden md:block">
-                    <div className="flex flex-col">
-                      <span className="block font-medium text-sm">{tCommon('hello')}</span>
-                      <span className="block font-semibold text-brand-primary text-sm">
-                        {tCommon('signIn')}
-                      </span>
-                    </div>
+                  <Link
+                    href="/login"
+                    className="p-1 border-2 w-[45px] h-[45px] lg:w-[50px] lg:h-[50px] flex items-center justify-center rounded-full border-ui-divider hover:bg-ui-muted transition-colors overflow-hidden"
+                    title="Account"
+                  >
+                    <ProfileIcon className="w-5 h-5 lg:w-6 lg:h-6 text-text-primary" />
                   </Link>
                 )}
+
                 {/* Notification Bell */}
                 {mounted && isAuthenticated && <NotificationBell />}
 

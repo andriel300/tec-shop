@@ -13,6 +13,7 @@ type Product = {
   salePrice?: number;
   quantity: number;
   shopId: string;
+  shopName?: string;
   sellerId: string; // Required for order processing
   variantId?: string; // Optional variant identifier
   sku?: string; // Optional SKU

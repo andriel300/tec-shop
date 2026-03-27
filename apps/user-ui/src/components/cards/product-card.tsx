@@ -131,6 +131,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
           images: product.images || [],
           quantity: 1,
           shopId: product.shopId,
+          shopName: shop?.businessName,
           sellerId,
         },
         user ?? undefined,
@@ -145,14 +146,14 @@ const ProductCard = ({ product }: ProductCardProps) => {
     <>
       <Link href={`/productview/${product.slug || product.id}`}>
         <div className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden h-full flex flex-col">
-          <div className="relative w-full h-[200px] bg-gray-100">
+          <div className="relative w-full aspect-[4/3] bg-gray-100">
             {/* Image */}
             {product.images && product.images.length > 0 ? (
               <Image
                 src={product.images[0]}
                 alt={product.name}
                 fill
-                className="object-cover group-hover:scale-110 transition-transform duration-300"
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 33vw, 25vw"
               />
             ) : (
@@ -165,8 +166,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
             <div className="absolute top-2 right-2 flex flex-col gap-2">
               <button
                 onClick={handleFavoriteClick}
-                className={`bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow
-                           hover:scale-110 transition-all duration-200
+                className={`bg-white/90 backdrop-blur-sm p-2.5 rounded-full shadow
+                           hover:scale-105 transition-all duration-200
                            group-hover:opacity-100 group-hover:translate-x-0
                            group-hover:[transition-delay:0ms]
                            ${isWishListed ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-3 [transition-delay:0ms]'}`}
@@ -182,8 +183,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
               <button
                 onClick={handleQuickView}
-                className="bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow
-                           hover:scale-110 transition-all duration-200
+                className="bg-white/90 backdrop-blur-sm p-2.5 rounded-full shadow
+                           hover:scale-105 transition-all duration-200
                            opacity-0 translate-x-3 group-hover:opacity-100 group-hover:translate-x-0
                            [transition-delay:0ms] group-hover:[transition-delay:60ms]"
                 aria-label="Quick view"
@@ -193,18 +194,15 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
               <button
                 onClick={handleAddToCart}
-                className={`bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow
-                           hover:scale-110 transition-all duration-200
+                className={`bg-white/90 backdrop-blur-sm p-2.5 rounded-full shadow
+                           hover:scale-105 transition-all duration-200
                            group-hover:opacity-100 group-hover:translate-x-0
                            group-hover:[transition-delay:120ms]
                            ${isInCart ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-3 [transition-delay:0ms]'}`}
                 aria-label={isInCart ? 'Remove from cart' : 'Add to cart'}
               >
                 <ShoppingBag
-                  className={`w-5 h-5 transition ${isInCart
-                    ? 'bg-green-100 text-green-600'
-                    : 'bg-white/90 text-gray-700'
-                    }`}
+                  className={`w-5 h-5 transition ${isInCart ? 'text-green-600' : 'text-gray-700'}`}
                 />
               </button>
             </div>
@@ -260,15 +258,12 @@ const ProductCard = ({ product }: ProductCardProps) => {
             </div>
 
             {product.stock > 0 ? (
-              <p className="text-xs text-green-600 mt-1">
-                In Stock ({product.stock})
-              </p>
+              <p className="text-xs text-green-600 mt-1">In Stock</p>
             ) : (
               <p className="text-xs text-red-600 mt-1">Out of Stock</p>
             )}
 
             <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
-              <span>{product.views} {tCommon('views')}</span>
               <span>{product.sales} {tCommon('sold')}</span>
             </div>
           </div>

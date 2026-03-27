@@ -24,8 +24,9 @@ import {
   LogOut,
   MapPin,
   Package,
-  PhoneCall,
   ShoppingBag,
+  Store,
+  Tag,
   Truck,
   User as UserIcon,
   X,
@@ -327,8 +328,17 @@ const Page = () => {
 
   const isUploading = uploadMutation.isPending;
 
+  // Spending overview (computed from orders)
+  const totalSpent = orders
+    .filter((o) => o.status === 'DELIVERED')
+    .reduce((sum, o) => sum + o.finalAmount, 0);
+  const totalSaved = orders.reduce((sum, o) => sum + (o.discountAmount || 0), 0);
+  const uniqueVendors = new Set(
+    orders.flatMap((o) => o.items.map((item) => item.shopId))
+  ).size;
+
   return (
-    <div className="bg-gray-50 min-h-screen pb-16">
+    <div className="bg-[#f5f5f5] min-h-screen pb-16">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -723,41 +733,44 @@ const Page = () => {
 
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
               <h3 className="text-sm font-semibold text-gray-800 mb-3">
-                Quick Links
+                Spending Overview
               </h3>
-              <div className="space-y-0.5">
-                {(
-                  [
-                    {
-                      label: 'Shipping Addresses',
-                      Icon: MapPin,
-                      action: () => setActiveTab('Shipping Address'),
-                    },
-                    {
-                      label: 'Inbox',
-                      Icon: Inbox,
-                      action: () => router.push('/inbox'),
-                    },
-                    {
-                      label: 'Support Center',
-                      Icon: PhoneCall,
-                      action: () => { /* placeholder */ },
-                    },
-                  ] as const
-                ).map((item) => (
-                  <button
-                    key={item.label}
-                    onClick={item.action}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors text-left"
-                  >
-                    <item.Icon
-                      size={15}
-                      className="text-brand-primary flex-shrink-0"
-                    />
-                    <span className="text-sm text-gray-700">{item.label}</span>
-                    <ChevronRight size={13} className="text-gray-300 ml-auto" />
-                  </button>
-                ))}
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 bg-brand-primary/5 rounded-xl">
+                  <div className="w-8 h-8 rounded-lg bg-brand-primary/10 flex items-center justify-center flex-shrink-0">
+                    <ShoppingBag size={15} className="text-brand-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-gray-500">Lifetime Spent</p>
+                    <p className="text-sm font-bold text-gray-900">
+                      ${totalSpent.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-xl">
+                  <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                    <Tag size={15} className="text-green-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-gray-500">Total Saved</p>
+                    <p className="text-sm font-bold text-gray-900">
+                      ${totalSaved.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                  <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                    <Store size={15} className="text-gray-500" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-gray-500">Vendors Shopped</p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {uniqueVendors}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </aside>

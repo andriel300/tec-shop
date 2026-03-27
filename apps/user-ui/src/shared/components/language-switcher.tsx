@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useTransition } from 'react';
-import { Globe, ChevronDown, Check } from 'lucide-react';
+import { ChevronDown, Check } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { useRouter, usePathname } from '../../i18n/navigation';
 
 const LANGUAGES = [
-  { code: 'en', label: 'English', short: 'EN' },
-  { code: 'pt-BR', label: 'Português (BR)', short: 'PT' },
+  { code: 'en', label: 'English', short: 'EN', flag: '🇺🇸' },
+  { code: 'pt-BR', label: 'Português (BR)', short: 'PT', flag: '🇧🇷' },
 ] as const;
 
 type LocaleCode = (typeof LANGUAGES)[number]['code'];
@@ -47,7 +47,7 @@ const LanguageSwitcher = () => {
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-ui-divider hover:bg-ui-muted transition-colors text-sm font-medium text-text-primary disabled:opacity-50"
         title="Change language"
       >
-        <Globe size={15} className="flex-shrink-0" />
+        <span className="text-base leading-none">{current.flag}</span>
         <span>{current.short}</span>
         <ChevronDown
           size={13}
@@ -63,14 +63,17 @@ const LanguageSwitcher = () => {
               onClick={() => handleSelect(lang.code)}
               className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-ui-muted transition-colors text-sm"
             >
-              <span
-                className={
-                  locale === lang.code
-                    ? 'font-semibold text-brand-primary'
-                    : 'text-text-primary'
-                }
-              >
-                {lang.label}
+              <span className="flex items-center gap-2">
+                <span className="text-base leading-none">{lang.flag}</span>
+                <span
+                  className={
+                    locale === lang.code
+                      ? 'font-semibold text-brand-primary'
+                      : 'text-text-primary'
+                  }
+                >
+                  {lang.label}
+                </span>
               </span>
               {locale === lang.code && (
                 <Check size={14} className="text-brand-primary" />

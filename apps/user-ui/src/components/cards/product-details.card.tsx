@@ -29,6 +29,7 @@ import { useRouter } from '../../i18n/navigation';
 import { SaleTag, FeaturedTag } from '../../assets/svgs/price-tag-sheet';
 import { trackProductView } from '../../lib/api/products';
 import { useCreateConversation } from '../../hooks/use-chat';
+import { toast } from 'sonner';
 
 interface ProductDetailsCardProps {
   product: Product;
@@ -214,6 +215,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
           return !(item.id === product.id && !item.variantId);
         }),
       }));
+      toast.success('Removed from cart', { description: product.name });
     } else {
       // Get sellerId from shop data (required for order processing)
       // Use authId instead of MongoDB _id for cross-service consistency
@@ -233,6 +235,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
         images: product.images || [],
         quantity,
         shopId: product.shopId,
+        shopName: shop?.businessName,
         sellerId,
         variantId: selectedVariant?.id,
         sku: selectedVariant?.sku,
@@ -246,6 +249,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
         location ?? undefined,
         deviceInfo ?? undefined
       );
+      toast.success('Added to cart', { description: product.name });
     }
   };
 
@@ -291,6 +295,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
           return !(item.id === product.id && !item.variantId);
         }),
       }));
+      toast.success('Removed from wishlist', { description: product.name });
     } else {
       // Get sellerId from shop data (required for order processing)
       // Use authId instead of MongoDB _id for cross-service consistency
@@ -322,6 +327,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
         location ?? undefined,
         deviceInfo ?? undefined
       );
+      toast.success('Added to wishlist', { description: product.name });
     }
   };
 

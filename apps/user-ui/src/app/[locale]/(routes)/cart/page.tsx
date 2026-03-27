@@ -10,7 +10,22 @@ import { useAuth } from '../../../../hooks/use-auth';
 import useDeviceTracking from '../../../../hooks/use-device-tracking';
 import useLocationTracking from '../../../../hooks/use-location-tracking';
 import useStore from '../../../../store';
-import { Loader2, MapPin } from 'lucide-react';
+import {
+  Loader2,
+  MapPin,
+  ShoppingCart,
+  Minus,
+  Plus,
+  Trash2,
+  Tag,
+  X,
+  ArrowRight,
+  Home,
+  ChevronRight,
+  Store,
+  CreditCard,
+  CheckCircle2,
+} from 'lucide-react';
 import Image from 'next/image';
 import { Link } from '../../../../i18n/navigation';
 import React from 'react';
@@ -18,15 +33,31 @@ import { useShippingAddresses } from '../../../../hooks/use-shipping-addresses';
 import { apiClient } from '../../../../lib/api/client';
 import { toast } from 'sonner';
 
+function getImageUrl(item: { images?: string | string[]; image?: string | unknown }): string {
+  if (typeof item.images === 'string' && item.images) {
+    try {
+      const parsed = JSON.parse(item.images);
+      return Array.isArray(parsed) ? parsed[0] : item.images;
+    } catch {
+      return item.images;
+    }
+  }
+  if (Array.isArray(item.images) && item.images.length > 0) {
+    return item.images[0];
+  }
+  if (typeof item.image === 'string' && item.image) {
+    return item.image;
+  }
+  return '';
+}
+
 const CartPage = () => {
   const { isAuthenticated } = useAuth();
-  useLocationTracking(); // Track for analytics
-  useDeviceTracking(); // Track for analytics
+  useLocationTracking();
+  useDeviceTracking();
   const cart = useStore((state) => state.cart);
 
-  // Fetch shipping addresses
-  const { data: addresses = [], isLoading: addressesLoading } =
-    useShippingAddresses();
+  const { data: addresses = [], isLoading: addressesLoading } = useShippingAddresses();
 
   const [couponCode, setCouponCode] = React.useState('');
   const [loading, setLoading] = React.useState(false);
@@ -39,59 +70,50 @@ const CartPage = () => {
 
   const couponCodeChangeHandler = async () => {
     setError('');
-
     if (!couponCode.trim()) {
       setError('Coupon code is required');
       return;
     }
-
     try {
       const res = await apiClient.put('/orders/verify-coupon-code', {
         couponCode: couponCode.trim().toUpperCase(),
         cart,
       });
-
       if (res.data.valid) {
         setStoredCouponCode(couponCode.trim().toUpperCase());
-        // discountAmount comes in cents, convert to dollars
         setDiscountAmount(res.data.discountAmount / 100);
         setDiscountPercentage(
           res.data.discountType === 'PERCENTAGE' ? res.data.discountValue : 0
         );
         setDiscountedProductId(res.data.applicableProductIds?.[0] || '');
         setCouponCode('');
-        toast.success(res.data.message || 'Coupon applied successfully!');
+        toast.success(res.data.message || 'Coupon applied!');
       } else {
         setDiscountAmount(0);
         setDiscountPercentage(0);
         setDiscountedProductId('');
         setError(res.data.message || 'Coupon not valid for any items in cart.');
       }
-    } catch (error: unknown) {
+    } catch (err: unknown) {
       setDiscountAmount(0);
       setDiscountPercentage(0);
       setDiscountedProductId('');
-      const err = error as { response?: { data?: { message?: string } } };
-      setError(err?.response?.data?.message || 'Failed to verify coupon code');
+      const e = err as { response?: { data?: { message?: string } } };
+      setError(e?.response?.data?.message || 'Failed to verify coupon code');
     }
   };
 
   const createPaymentSession = async () => {
-    // Validate cart is not empty
     if (cart.length === 0) {
       toast.error('Your cart is empty');
       return;
     }
-
-    // Validate shipping address is selected
     if (!selectedAddressId) {
       toast.error('Please select a shipping address');
       return;
     }
-
     setLoading(true);
     try {
-      // Map cart items to the format expected by the backend
       const items = cart.map((item) => ({
         productId: item.id,
         sellerId: item.sellerId,
@@ -101,44 +123,34 @@ const CartPage = () => {
         productImage: Array.isArray(item.images) ? item.images[0] : item.image,
         variantId: item.variantId,
         sku: item.sku,
-        unitPrice: Math.round(item.price * 100), // Convert dollars to cents
+        unitPrice: Math.round(item.price * 100),
         quantity: item.quantity,
       }));
-
       const res = await apiClient.post('/orders/checkout', {
         items,
         shippingAddressId: selectedAddressId,
         paymentMethod: 'card',
         couponCode: storedCouponCode || undefined,
-        discountAmount: discountAmount
-          ? Math.round(discountAmount * 100)
-          : undefined, // Convert to cents
+        discountAmount: discountAmount ? Math.round(discountAmount * 100) : undefined,
       });
-
-      // Redirect to Stripe Checkout page
       const { sessionUrl } = res.data;
       if (sessionUrl) {
         window.location.href = sessionUrl;
       } else {
         throw new Error('No checkout session URL returned');
       }
-    } catch (error) {
+    } catch (err) {
       toast.error('Something went wrong. Please try again.');
-      logger.error('Error creating checkout session:', { error });
+      logger.error('Error creating checkout session:', { err });
     } finally {
       setLoading(false);
     }
   };
 
-  // Set default address as selected when addresses load
   React.useEffect(() => {
     if (addresses.length > 0 && !selectedAddressId) {
       const defaultAddress = addresses.find((addr) => addr.isDefault);
-      if (defaultAddress) {
-        setSelectedAddressId(defaultAddress.id);
-      } else {
-        setSelectedAddressId(addresses[0].id);
-      }
+      setSelectedAddressId(defaultAddress ? defaultAddress.id : addresses[0].id);
     }
   }, [addresses, selectedAddressId]);
 
@@ -149,10 +161,7 @@ const CartPage = () => {
           variantId && item.variantId
             ? item.id === id && item.variantId === variantId
             : item.id === id && !item.variantId;
-
-        return isMatch && item.quantity > 1
-          ? { ...item, quantity: item.quantity - 1 }
-          : item;
+        return isMatch && item.quantity > 1 ? { ...item, quantity: item.quantity - 1 } : item;
       }),
     }));
   };
@@ -164,214 +173,249 @@ const CartPage = () => {
           variantId && item.variantId
             ? item.id === id && item.variantId === variantId
             : item.id === id && !item.variantId;
-
         return isMatch ? { ...item, quantity: item.quantity + 1 } : item;
       }),
     }));
   };
 
-  const removeItem = (id: string, variantId?: string) => {
+  const removeItem = (id: string, name: string, variantId?: string) => {
     useStore.setState((state) => ({
       cart: state.cart.filter((item) => {
         const isMatch =
           variantId && item.variantId
             ? item.id === id && item.variantId === variantId
             : item.id === id && !item.variantId;
-
         return !isMatch;
       }),
     }));
+    toast.success('Removed from cart', { description: name });
   };
 
-  const subtotal = cart.reduce((total, item) => {
-    return total + item.price * item.quantity;
-  }, 0);
+  const subtotal = cart.reduce((total, item) => total + item.price * item.quantity, 0);
+  const total = subtotal - (discountAmount || 0);
+
+  // Group cart items by shopId for multi-vendor display
+  const groupedCart = cart.reduce<Record<string, typeof cart>>((groups, item) => {
+    const key = item.shopId || item.sellerId || 'unknown';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(item);
+    return groups;
+  }, {});
+
+  const selectedAddress = addresses.find((a) => a.id === selectedAddressId);
 
   return (
-    <div className="w-full bg-white">
-      <div className="md:w-[80%] w-[95%] mx-auto min-h-screen">
-        <div className="pb-[50px]">
-          <h1 className="md:pt-[50px] font-medium text-[44px] leading-[1] mb-[16px] font-Jost">
-            Shopping Cart
-          </h1>
-          <Link href={'/'} className="text-[#55585b] hover:underline">
-            Home
+    <div className="w-full min-h-screen bg-[#f5f5f5]">
+      <div className="w-[90%] lg:w-[80%] mx-auto py-6">
+
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-1.5 text-sm text-gray-500 mb-6 flex-wrap">
+          <Link href="/" className="flex items-center hover:text-brand-primary transition-colors">
+            <Home size={14} />
           </Link>
-          <span className="inline-block p-[1.5px] mx-1 bg-[#a8acb0] rounded-full"></span>
-          <span className="text-[#55585b]">Cart</span>
+          <ChevronRight size={14} className="text-gray-400 flex-shrink-0" />
+          <span className="text-gray-800 font-medium">Shopping Cart</span>
+        </nav>
+
+        {/* Page header */}
+        <div className="flex items-center gap-3 mb-6">
+          <ShoppingCart size={24} className="text-brand-primary" />
+          <h1 className="text-2xl font-bold text-gray-900 font-heading">
+            Shopping Cart
+            {cart.length > 0 && (
+              <span className="ml-2 text-base font-normal text-gray-400">
+                ({cart.length} {cart.length === 1 ? 'item' : 'items'})
+              </span>
+            )}
+          </h1>
         </div>
 
         {cart.length === 0 ? (
-          <div className="text-center text-gray-600 text-lg">
-            Your Cart is Empty! Start adding products
+          /* Empty state */
+          <div className="bg-white rounded-2xl shadow-sm flex flex-col items-center justify-center py-20 px-8 text-center">
+            <div className="w-20 h-20 rounded-full bg-brand-primary/10 flex items-center justify-center mb-5">
+              <ShoppingCart size={36} className="text-brand-primary/50" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
+            <p className="text-gray-500 text-sm max-w-xs mb-6">
+              Looks like you haven&apos;t added anything yet. Start browsing and find something you love!
+            </p>
+            <Link
+              href="/all-products"
+              className="flex items-center gap-2 bg-brand-primary text-white text-sm font-semibold px-6 py-3 rounded-full hover:bg-brand-primary-800 transition-colors"
+            >
+              Browse Products
+              <ArrowRight size={16} />
+            </Link>
           </div>
         ) : (
-          <div className="lg:flex items-start gap-10">
-            <table className="w-full lg:w-[70%] border-collapse">
-              <thead className="bg-[#f1f3f4] rounded">
-                <tr>
-                  <th className="py-3 text-left pl-6 align-middle">Product</th>
-                  <th className="py-3 text-center align-middle">Price</th>
-                  <th className="py-3 text-center align-middle">Quantity</th>
-                  <th className="py-3 text-center align-middle"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {cart?.map((item) => (
-                  <tr
-                    key={
-                      item.variantId ? `${item.id}-${item.variantId}` : item.id
-                    }
-                    className="border-b border-b-[#0000000e]"
-                  >
-                    <td className="flex items-center gap-4 p-4">
-                      {(() => {
-                        // Handle both string and array formats for images
-                        let imageUrl = '';
-                        if (typeof item.images === 'string' && item.images) {
-                          try {
-                            // Try parsing as JSON array first
-                            const parsed = JSON.parse(item.images);
-                            imageUrl = Array.isArray(parsed)
-                              ? parsed[0]
-                              : item.images;
-                          } catch {
-                            // If parsing fails, use as direct string
-                            imageUrl = item.images;
-                          }
-                        } else if (
-                          Array.isArray(item.images) &&
-                          item.images.length > 0
-                        ) {
-                          imageUrl = item.images[0];
-                        } else if (item.image) {
-                          // Fallback to single image field
-                          imageUrl =
-                            typeof item.image === 'string' ? item.image : '';
-                        }
+          /* Main layout */
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5 items-start">
 
-                        return imageUrl ? (
-                          <Image
-                            src={imageUrl}
-                            width={100}
-                            height={100}
-                            alt={item.title || 'Product image'}
-                            className="rounded object-cover"
-                            style={{ width: 'auto', height: '100px' }}
-                          />
-                        ) : (
-                          <div className="w-[100px] h-[100px] bg-gray-200 rounded flex items-center justify-center text-gray-500">
-                            No Image
-                          </div>
-                        );
-                      })()}
-                      <div className="flex flex-col">
-                        <Link
-                          href={`/productview/${item.slug || item.id}`}
-                          className="font-medium hover:text-brand-primary hover:underline transition-colors"
+            {/* Cart items — grouped by vendor */}
+            <div className="flex flex-col gap-4">
+              {Object.entries(groupedCart).map(([shopId, items]) => {
+                const shopName = items[0]?.shopName;
+                return (
+                <div key={shopId} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                  {/* Vendor header */}
+                  <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 bg-gray-50/70">
+                    <Store size={15} className="text-brand-primary flex-shrink-0" />
+                    <span className="text-xs font-semibold text-gray-700">
+                      {shopName ?? 'Vendor'}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      · {items.length} {items.length === 1 ? 'item' : 'items'}
+                    </span>
+                  </div>
+
+                  {/* Items in this vendor group */}
+                  <div className="divide-y divide-gray-50">
+                    {items.map((item) => {
+                      const imageUrl = getImageUrl(item);
+                      const lineTotal = item.price * item.quantity;
+                      return (
+                        <div
+                          key={item.variantId ? `${item.id}-${item.variantId}` : item.id}
+                          className="p-4 flex gap-4 items-start hover:bg-gray-50/50 transition-colors duration-150"
                         >
-                          {item.title}
-                        </Link>
-                        {item.variantAttributes &&
-                          Object.keys(item.variantAttributes).length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-1">
-                              {Object.entries(item.variantAttributes).map(
-                                ([key, value]) => (
-                                  <span
-                                    key={key}
-                                    className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-md capitalize"
-                                  >
-                                    {key}:{' '}
-                                    <span className="font-medium">{value}</span>
-                                  </span>
-                                )
+                          {/* Image */}
+                          <Link
+                            href={`/productview/${item.slug || item.id}`}
+                            className="flex-shrink-0"
+                          >
+                            <div className="w-24 h-24 rounded-xl overflow-hidden bg-gray-100 border border-gray-100">
+                              {imageUrl ? (
+                                <Image
+                                  src={imageUrl}
+                                  width={96}
+                                  height={96}
+                                  alt={item.title || 'Product image'}
+                                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                                  No image
+                                </div>
                               )}
                             </div>
-                          )}
-                        {item.sku && (
-                          <span className="text-xs text-gray-500 mt-1">
-                            SKU: {item.sku}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 text-lg text-center">
-                      ${(item.price * item.quantity).toFixed(2)}
-                    </td>
-                    <td className="text-center">
-                      <div className="flex justify-center items-center border border-gray-200 rounded-[20px] w-[90px] p-[2px] mx-auto">
-                        <button
-                          className="text-black cursor-pointer text-xl"
-                          onClick={() =>
-                            decreaseQuantity(item.id, item.variantId)
-                          }
-                        >
-                          -
-                        </button>
-                        <span className="px-4 text-[#55585b]">
-                          {item.quantity}
-                        </span>
-                        <button
-                          className="text-black cursor-pointer text-xl"
-                          onClick={() =>
-                            increaseQuantity(item.id, item.variantId)
-                          }
-                        >
-                          +
-                        </button>
-                      </div>
-                    </td>
-                    <td className="text-center">
-                      <button
-                        className="text-[#818487] cursor-pointer hover:text-red-600 transition duration-200"
-                        onClick={() => removeItem(item.id, item.variantId)}
-                      >
-                        X Remove
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                          </Link>
 
-            <div className="p-6 shadow-md w-full lg:w-[30%] bg-[#f9f9f9] rounded-lg">
-              <div className="flex justify-between items-center text-[#010f1c] text-[20px] font-[550] pb-3">
-                <span className="font-Jost">Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
-              </div>
-              <hr className="my-4 text-slate-200" />
-              <div className="mb-4">
-                <h4 className="mb-[7px] font-medium text-[15px]">
-                  Have a Coupon?
-                </h4>
-                <div className="flex focus-within:ring-1 rounded-md focus-within:ring-brand-primary">
-                  <Input
-                    type="text"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        couponCodeChangeHandler();
-                      }
-                    }}
-                    placeholder="Enter Coupon Code (e.g., SUMMER2025)"
-                    className="flex-1 rounded-l-md"
-                  />
-                  <button
-                    className="bg-brand-primary top-0 right-0 text-white px-4 py-2 rounded-r-md hover:bg-brand-primary-900 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={couponCodeChangeHandler}
-                    disabled={!couponCode.trim()}
-                  >
-                    Apply
-                  </button>
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <Link
+                              href={`/productview/${item.slug || item.id}`}
+                              className="text-sm font-semibold text-gray-900 hover:text-brand-primary transition-colors line-clamp-2 leading-snug"
+                            >
+                              {item.title}
+                            </Link>
+
+                            {/* Variant badges */}
+                            {item.variantAttributes && Object.keys(item.variantAttributes).length > 0 && (
+                              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                                {Object.entries(item.variantAttributes).map(([key, value]) => (
+                                  <span
+                                    key={key}
+                                    className="text-[11px] px-2 py-0.5 bg-gray-100 text-gray-600 rounded-md capitalize"
+                                  >
+                                    {key}: <span className="font-semibold">{value}</span>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            {item.sku && (
+                              <p className="text-[11px] text-gray-400 mt-1">SKU: {item.sku}</p>
+                            )}
+
+                            <div className="flex items-center gap-2 mt-2 flex-wrap">
+                              <span className="text-base font-bold text-brand-primary">
+                                ${item.price.toFixed(2)}
+                              </span>
+                              {item.quantity > 1 && (
+                                <span className="text-xs text-gray-400">
+                                  × {item.quantity} ={' '}
+                                  <span className="font-semibold text-gray-600">
+                                    ${lineTotal.toFixed(2)}
+                                  </span>
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Actions row */}
+                            <div className="flex items-center gap-3 mt-3 flex-wrap">
+                              {/* Quantity stepper */}
+                              <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden">
+                                <button
+                                  onClick={() => decreaseQuantity(item.id, item.variantId)}
+                                  disabled={item.quantity <= 1}
+                                  className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                  aria-label="Decrease quantity"
+                                >
+                                  <Minus size={13} />
+                                </button>
+                                <span className="w-8 text-center text-sm font-semibold text-gray-900 border-x border-gray-200 h-8 flex items-center justify-center">
+                                  {item.quantity}
+                                </span>
+                                <button
+                                  onClick={() => increaseQuantity(item.id, item.variantId)}
+                                  className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors"
+                                  aria-label="Increase quantity"
+                                >
+                                  <Plus size={13} />
+                                </button>
+                              </div>
+
+                              {/* Remove */}
+                              <button
+                                onClick={() => removeItem(item.id, item.title, item.variantId)}
+                                className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition-colors ml-auto"
+                                aria-label={`Remove ${item.title} from cart`}
+                              >
+                                <Trash2 size={14} />
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                {error && <p className="text-sm pt-2 text-red-500">{error}</p>}
-                {storedCouponCode && discountAmount > 0 && (
-                  <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md text-sm text-green-800 flex items-center justify-between">
-                    <span>
-                      Coupon &quot;{storedCouponCode}&quot; applied! You save $
-                      {discountAmount.toFixed(2)} ({discountPercentage}% off)
-                    </span>
+              );
+              })}
+
+              {/* Continue shopping */}
+              <Link
+                href="/all-products"
+                className="flex items-center justify-center gap-2 text-sm text-brand-primary font-medium hover:underline mt-1 py-2"
+              >
+                <ArrowRight size={15} />
+                Continue Shopping
+              </Link>
+            </div>
+
+            {/* Order summary panel */}
+            <div className="flex flex-col gap-4 sticky top-24">
+
+              {/* Coupon */}
+              <div className="bg-white rounded-2xl shadow-sm p-5">
+                <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <Tag size={15} className="text-brand-primary" />
+                  Promo Code
+                </h3>
+
+                {storedCouponCode && discountAmount > 0 ? (
+                  <div className="flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-xl">
+                    <CheckCircle2 size={15} className="text-green-600 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-green-800">
+                        &ldquo;{storedCouponCode}&rdquo; applied
+                      </p>
+                      <p className="text-xs text-green-700 mt-0.5">
+                        You save ${discountAmount.toFixed(2)}{discountPercentage > 0 && ` (${discountPercentage}% off)`}
+                      </p>
+                    </div>
                     <button
                       onClick={() => {
                         setStoredCouponCode('');
@@ -379,23 +423,50 @@ const CartPage = () => {
                         setDiscountPercentage(0);
                         setDiscountedProductId('');
                       }}
-                      className="text-red-600 hover:text-red-800 text-xs underline"
+                      className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+                      aria-label="Remove coupon"
                     >
-                      Remove
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') couponCodeChangeHandler();
+                      }}
+                      placeholder="Enter promo code"
+                      className="flex-1 rounded-lg text-sm"
+                    />
+                    <button
+                      className="bg-brand-primary text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-brand-primary-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                      onClick={couponCodeChangeHandler}
+                      disabled={!couponCode.trim()}
+                    >
+                      Apply
                     </button>
                   </div>
                 )}
+
+                {error && (
+                  <p className="text-xs text-red-500 mt-2">{error}</p>
+                )}
               </div>
-              <hr className="my-4 text-slate-200" />
-              <div className="mb-4">
-                <div className="flex justify-between items-center mb-[7px]">
-                  <h4 className="font-medium text-[15px]">
-                    Select Shipping Address
-                  </h4>
+
+              {/* Shipping address */}
+              <div className="bg-white rounded-2xl shadow-sm p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                    <MapPin size={15} className="text-brand-primary" />
+                    Shipping Address
+                  </h3>
                   {isAuthenticated && (
                     <Link
                       href="/profile?tab=shipping-address"
-                      className="text-xs text-blue-600 hover:underline"
+                      className="text-xs text-brand-primary hover:underline font-medium"
                     >
                       Manage
                     </Link>
@@ -403,116 +474,135 @@ const CartPage = () => {
                 </div>
 
                 {!isAuthenticated ? (
-                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
                     Please{' '}
-                    <Link href="/login" className="font-medium underline">
+                    <Link href="/login" className="font-semibold underline">
                       log in
                     </Link>{' '}
-                    to select a shipping address
+                    to select a shipping address.
                   </div>
                 ) : addressesLoading ? (
-                  <div className="flex items-center justify-center p-3 border border-gray-200 rounded-md">
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    <span className="text-sm text-gray-600">
-                      Loading addresses...
-                    </span>
+                  <div className="flex items-center justify-center p-3 border border-gray-100 rounded-xl">
+                    <Loader2 className="w-4 h-4 animate-spin mr-2 text-brand-primary" />
+                    <span className="text-xs text-gray-500">Loading addresses...</span>
                   </div>
                 ) : addresses.length === 0 ? (
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-800">
-                    No shipping address found.{' '}
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800">
+                    No address found.{' '}
                     <Link
                       href="/profile?tab=shipping-address"
-                      className="font-medium underline"
+                      className="font-semibold underline"
                     >
                       Add one now
                     </Link>
                   </div>
                 ) : (
-                  <select
-                    className="w-full p-2 border border-gray-200 rounded-md focus-outline-none focus:border-brand-primary-500"
-                    value={selectedAddressId}
-                    onChange={(e) => setSelectedAddressId(e.target.value)}
-                  >
-                    {addresses.map((address) => (
-                      <option key={address.id} value={address.id}>
-                        {address.label} - {address.city}
-                        {address.state && `, ${address.state}`} -{' '}
-                        {address.country}
-                        {address.isDefault ? ' (Default)' : ''}
-                      </option>
-                    ))}
-                  </select>
-                )}
+                  <>
+                    <select
+                      className="w-full p-2.5 border border-gray-200 rounded-xl text-sm text-gray-800 bg-gray-50 focus:outline-none focus:border-brand-primary transition-colors cursor-pointer"
+                      value={selectedAddressId}
+                      onChange={(e) => setSelectedAddressId(e.target.value)}
+                    >
+                      {addresses.map((address) => (
+                        <option key={address.id} value={address.id}>
+                          {address.label} — {address.city}
+                          {address.state && `, ${address.state}`} — {address.country}
+                          {address.isDefault ? ' (Default)' : ''}
+                        </option>
+                      ))}
+                    </select>
 
-                {/* Show selected address details */}
-                {selectedAddressId && addresses.length > 0 && (
-                  <div className="mt-2 p-2 bg-gray-50 border border-gray-200 rounded-md text-xs text-gray-700">
-                    <div className="flex items-start gap-1">
-                      <MapPin className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                      <div>
-                        {(() => {
-                          const selected = addresses.find(
-                            (a) => a.id === selectedAddressId
-                          );
-                          if (!selected) return null;
-                          return (
-                            <>
-                              <p className="font-medium">{selected.name}</p>
-                              <p>{selected.street}</p>
-                              <p>
-                                {selected.city}
-                                {selected.state && `, ${selected.state}`}{' '}
-                                {selected.zipCode}
+                    {selectedAddress && (
+                      <div className="mt-2.5 p-3 bg-gray-50 border border-gray-100 rounded-xl">
+                        <div className="flex items-start gap-2">
+                          <MapPin size={12} className="text-gray-400 flex-shrink-0 mt-0.5" />
+                          <div className="text-xs text-gray-600 leading-relaxed">
+                            <p className="font-semibold text-gray-800">{selectedAddress.name}</p>
+                            <p>{selectedAddress.street}</p>
+                            <p>
+                              {selectedAddress.city}
+                              {selectedAddress.state && `, ${selectedAddress.state}`}{' '}
+                              {selectedAddress.zipCode}
+                            </p>
+                            <p>{selectedAddress.country}</p>
+                            {selectedAddress.phoneNumber && (
+                              <p className="mt-1 text-gray-500">
+                                {selectedAddress.phoneNumber}
                               </p>
-                              <p>{selected.country}</p>
-                              {selected.phoneNumber && (
-                                <p className="mt-1">
-                                  Phone: {selected.phoneNumber}
-                                </p>
-                              )}
-                            </>
-                          );
-                        })()}
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    )}
+                  </>
                 )}
               </div>
-              <hr className="my-4 text-slate-200" />
 
-              <div className="mb-4">
-                <h4 className="font-medium mb-[7px] text-[15px]">
-                  Select Payment Method
-                </h4>
-                <select className="w-full p-2 border border-gray-200 rounded-md focus-outline-none focus:border-brand-primary-500">
-                  <option value="credit_card">Online Payment</option>
+              {/* Payment method */}
+              <div className="bg-white rounded-2xl shadow-sm p-5">
+                <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                  <CreditCard size={15} className="text-brand-primary" />
+                  Payment Method
+                </h3>
+                <select className="w-full p-2.5 border border-gray-200 rounded-xl text-sm text-gray-800 bg-gray-50 focus:outline-none focus:border-brand-primary transition-colors cursor-pointer">
+                  <option value="credit_card">Online Payment (Card)</option>
                   <option value="cash_on_delivery">Cash on Delivery</option>
                 </select>
               </div>
-              <hr className="my-4 text-slate-200" />
 
-              {/* Discount Display */}
-              {storedCouponCode && discountAmount > 0 && (
-                <div className="flex justify-between items-center text-green-600 text-[16px] font-medium pb-3">
-                  <span>Discount ({storedCouponCode})</span>
-                  <span>-${discountAmount.toFixed(2)}</span>
+              {/* Summary + CTA */}
+              <div className="bg-white rounded-2xl shadow-sm p-5">
+                <h2 className="text-base font-bold text-gray-900 mb-4">Order Summary</h2>
+
+                <div className="space-y-2.5 text-sm">
+                  <div className="flex justify-between text-gray-600">
+                    <span>Items ({cart.length})</span>
+                    <span className="font-medium text-gray-900">${subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-600">
+                    <span>Shipping</span>
+                    <span className="text-green-600 font-medium">Calculated at checkout</span>
+                  </div>
+                  {storedCouponCode && discountAmount > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Discount ({storedCouponCode})</span>
+                      <span className="font-semibold">-${discountAmount.toFixed(2)}</span>
+                    </div>
+                  )}
                 </div>
-              )}
 
-              <div className="flex justify-between items-center text-[#010f1c] text-[20px] font-[550] pb-3">
-                <span className="font-Jost">Total</span>
-                <span>${(subtotal - (discountAmount || 0)).toFixed(2)}</span>
+                <div className="border-t border-gray-100 my-4" />
+
+                <div className="flex justify-between text-base font-bold text-gray-900 mb-5">
+                  <span>Estimated Total</span>
+                  <span className="text-brand-primary">${total.toFixed(2)}</span>
+                </div>
+
+                <button
+                  disabled={loading}
+                  onClick={createPaymentSession}
+                  className="w-full flex items-center justify-center gap-2 bg-brand-primary text-white font-semibold text-sm py-3 rounded-xl hover:bg-brand-primary-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Redirecting...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard size={16} />
+                      Proceed to Checkout
+                    </>
+                  )}
+                </button>
+
+                <Link
+                  href="/all-products"
+                  className="block text-center text-sm text-gray-500 hover:text-brand-primary mt-3 transition-colors"
+                >
+                  Continue Shopping
+                </Link>
               </div>
-              {/* Checkout */}
-
-              <button
-                disabled={loading}
-                className="w-full bg-gray-900 hover:bg-brand-primary-500 text-white font-semibold py-3 rounded-lg transition mt-4 flex items-center justify-center gap-2"
-                onClick={createPaymentSession}
-              >
-                {loading && <Loader2 className="w-5 h-5 animate-spin" />}
-                {loading ? 'Redirecting ...' : 'Proceed to Checkout'}
-              </button>
             </div>
           </div>
         )}

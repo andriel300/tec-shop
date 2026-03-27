@@ -30,10 +30,15 @@ import {
   MessageSquareText,
   Loader2,
   ZoomIn,
+  Share2,
+  Lock,
+  ShieldCheck,
+  RotateCcw,
+  BadgeCheck,
 } from 'lucide-react';
 import Image from 'next/image';
 import { Link } from '../../../i18n/navigation';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 
 /**
  * ============================================
@@ -82,6 +87,19 @@ const ProductDetails = ({ product }: { product: Product }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isZoomEnabled, setIsZoomEnabled] = useState(false);
 
+  // ========== STICKY BAR ==========
+  const ctaRef = useRef<HTMLDivElement>(null);
+  const [showStickyBar, setShowStickyBar] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyBar(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    if (ctaRef.current) observer.observe(ctaRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   // Fetch shop details
   const { data: shop } = useShop(product.shopId);
 
@@ -103,6 +121,7 @@ const ProductDetails = ({ product }: { product: Product }) => {
   const { data: similarProducts } = useSimilarProducts(product.id, 5);
 
   const addToCart = useStore((state) => state.addToCart);
+  const removeFromCart = useStore((state) => state.removeFromCart);
   const cart = useStore((state) => state.cart);
   const isInCart = cart.some((item) => item.id === product.id);
   const addToWishList = useStore((state) => state.addToWishList);
@@ -247,7 +266,17 @@ const ProductDetails = ({ product }: { product: Product }) => {
     }
   };
 
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast.success('Link copied!', { description: 'Share this product with anyone.' });
+  };
+
   const handleAddToCart = () => {
+    if (isInCart) {
+      removeFromCart(product.id, user ?? undefined, location ?? undefined, deviceInfo);
+      toast.success('Removed from cart', { description: product.name });
+      return;
+    }
     const sellerId = shop?.seller?.authId || '';
     if (!sellerId) {
       logger.error('Cannot add to cart: sellerId not available from shop data');
@@ -265,6 +294,7 @@ const ProductDetails = ({ product }: { product: Product }) => {
         salePrice: displayPrice,
         quantity,
         shopId: product.shopId,
+        shopName: shop?.businessName,
         sellerId,
         variantId: selectedVariant?.id,
         sku: selectedVariant?.sku,
@@ -277,14 +307,15 @@ const ProductDetails = ({ product }: { product: Product }) => {
   };
 
   const isCartDisabled =
-    availableStock === 0 ||
-    (!!variantAttributes && variantAttributes.length > 0 && !selectedVariant);
+    !isInCart &&
+    (availableStock === 0 ||
+      (!!variantAttributes && variantAttributes.length > 0 && !selectedVariant));
 
   const cartButtonLabel =
-    variantAttributes && variantAttributes.length > 0 && !selectedVariant
+    variantAttributes && variantAttributes.length > 0 && !selectedVariant && !isInCart
       ? 'Select options'
       : isInCart
-      ? 'Added to cart'
+      ? 'Remove from cart'
       : 'Add to cart';
 
   return (
@@ -397,10 +428,19 @@ const ProductDetails = ({ product }: { product: Product }) => {
           {/* ── RIGHT: Product Info ── */}
           <div className="p-6 lg:p-8 flex flex-col">
 
-            {/* Name */}
-            <h1 className="text-2xl font-bold text-gray-900 leading-snug">
-              {product.name}
-            </h1>
+            {/* Name + Share */}
+            <div className="flex items-start justify-between gap-3">
+              <h1 className="text-2xl font-bold text-gray-900 leading-snug">
+                {product.name}
+              </h1>
+              <button
+                onClick={handleShare}
+                title="Share product"
+                className="flex-shrink-0 mt-1 p-2 rounded-full border border-gray-200 text-gray-400 hover:text-brand-primary hover:border-brand-primary transition-colors"
+              >
+                <Share2 size={16} />
+              </button>
+            </div>
 
             {/* Rating + Reviews */}
             <div className="flex items-center gap-2 mt-2">
@@ -537,9 +577,16 @@ const ProductDetails = ({ product }: { product: Product }) => {
               </div>
 
               {availableStock > 0 ? (
-                <span className="text-sm font-medium text-green-700 bg-green-50 px-3 py-1.5 rounded-full">
-                  In Stock &middot; {availableStock} left
-                </span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-medium text-green-700 bg-green-50 px-3 py-1.5 rounded-full">
+                    In Stock &middot; {availableStock} left
+                  </span>
+                  {availableStock <= 10 && (
+                    <span className="text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full animate-pulse">
+                      Only {availableStock} left!
+                    </span>
+                  )}
+                </div>
               ) : (
                 <span className="text-sm font-medium text-red-500 bg-red-50 px-3 py-1.5 rounded-full">
                   Out of Stock
@@ -548,11 +595,15 @@ const ProductDetails = ({ product }: { product: Product }) => {
             </div>
 
             {/* Add to Cart + Wishlist */}
-            <div className="flex gap-3">
+            <div ref={ctaRef} className="flex gap-3">
               <button
                 onClick={handleAddToCart}
                 disabled={isCartDisabled}
-                className="flex-1 flex items-center justify-center gap-2.5 py-3.5 rounded-full bg-brand-primary text-white font-semibold text-sm hover:bg-brand-primary-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className={`flex-1 flex items-center justify-center gap-2.5 py-3.5 rounded-full font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+                  isInCart
+                    ? 'bg-green-600 hover:bg-red-600 text-white'
+                    : 'bg-brand-primary hover:bg-brand-primary-800 text-white'
+                }`}
               >
                 <CartIcon className="w-5 h-5" />
                 {cartButtonLabel}
@@ -584,6 +635,24 @@ const ProductDetails = ({ product }: { product: Product }) => {
                   : 'Location unavailable'}
               </span>
               <span className="ml-auto text-gray-400 text-xs">7 days returns</span>
+            </div>
+
+            {/* Trust badges */}
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {[
+                { icon: Lock, label: 'Secure Payment', sub: 'SSL encrypted checkout' },
+                { icon: ShieldCheck, label: 'Buyer Protection', sub: 'Full refund if not received' },
+                { icon: RotateCcw, label: '7-Day Returns', sub: 'Hassle-free return policy' },
+                { icon: BadgeCheck, label: 'Authentic Products', sub: 'Verified sellers only' },
+              ].map(({ icon: Icon, label, sub }) => (
+                <div key={label} className="flex items-start gap-2.5 p-3 rounded-xl bg-gray-50 border border-gray-100">
+                  <Icon size={16} className="text-brand-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-semibold text-gray-800">{label}</p>
+                    <p className="text-[11px] text-gray-500 leading-tight mt-0.5">{sub}</p>
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Seller card */}
@@ -673,6 +742,46 @@ const ProductDetails = ({ product }: { product: Product }) => {
                 <ProductCard key={item.id} product={item} />
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sticky Add-to-Cart bar */}
+      {showStickyBar && (
+        <div className="fixed bottom-0 left-0 right-0 z-[90] bg-white border-t border-gray-200 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] px-4 py-3 animate-slide-up">
+          <div className="max-w-7xl mx-auto flex items-center gap-4">
+            {/* Thumbnail */}
+            {product.images?.[0] && (
+              <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100">
+                <Image
+                  src={product.images[0]}
+                  alt={product.name}
+                  width={48}
+                  height={48}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+
+            {/* Name + Price */}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-900 truncate">{product.name}</p>
+              <p className="text-sm font-bold text-brand-primary">${displayPrice.toFixed(2)}</p>
+            </div>
+
+            {/* CTA */}
+            <button
+              onClick={handleAddToCart}
+              disabled={isCartDisabled}
+              className={`flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                isInCart
+                  ? 'bg-green-600 hover:bg-red-600 text-white'
+                  : 'bg-brand-primary hover:bg-brand-primary-800 text-white'
+              }`}
+            >
+              <CartIcon className="w-4 h-4" />
+              {cartButtonLabel}
+            </button>
           </div>
         </div>
       )}

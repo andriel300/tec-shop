@@ -123,7 +123,7 @@ const SearchBar = () => {
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.length >= 2 && setShow(true)}
           placeholder={t('searchPlaceholder')}
-          className={`w-full px-4 pr-[120px] border-2 border-brand-primary outline-none h-[55px] ${
+          className={`w-full px-4 pr-[120px] border border-gray-200 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10 outline-none h-[55px] transition-colors ${
             show ? 'rounded-t-md rounded-b-none' : 'rounded-md'
           }`}
         />

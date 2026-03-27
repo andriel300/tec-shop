@@ -1,24 +1,17 @@
 import './global.css';
-import { Inter, Poppins, Roboto, Oregano, Jost } from 'next/font/google';
+import { Nunito_Sans, Rubik, Oregano, Jost } from 'next/font/google';
 
-// Configure your fonts
-const inter = Inter({
+const nunitoSans = Nunito_Sans({
   subsets: ['latin'],
-  variable: '--font-inter',
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-nunito-sans',
   display: 'swap',
 });
 
-const poppins = Poppins({
+const rubik = Rubik({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-poppins',
-  display: 'swap',
-});
-
-const roboto = Roboto({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '700'],
-  variable: '--font-roboto',
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-rubik',
   display: 'swap',
 });
 
@@ -49,7 +42,7 @@ export default function RootLayout({
 }) {
   return (
     <html
-      className={`${inter.variable} ${poppins.variable} ${roboto.variable} ${oregano.variable} ${jost.variable}`}
+      className={`${nunitoSans.variable} ${rubik.variable} ${oregano.variable} ${jost.variable}`}
     >
       <body suppressHydrationWarning>{children}</body>
     </html>

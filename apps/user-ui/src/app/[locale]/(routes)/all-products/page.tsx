@@ -236,20 +236,18 @@ const ProductsPage = () => {
   return (
     <div className="w-full bg-[#f5f5f5] pb-10">
       <div className="w-[90%] lg:w-[80%] m-auto">
-        <div className="pb-[50px]">
-          <h1 className="md:pt-[40px] font-medium text-[44px] leading-1 mb-[14px] font-Jost">
-            All Products
-          </h1>
-          <Link href="/" className="text-[#55585b] hover:underline">
-            Home
-          </Link>
-          <span className="inline-block p-[1.5px] mx-1 bg-[#a8acb0] rounded-full"></span>
-          <span className="text-[#55585b]">All Products</span>
+        <div className="pt-6 pb-5">
+          <div className="flex items-center gap-1.5 text-sm text-[#55585b] mb-1">
+            <Link href="/" className="hover:underline">Home</Link>
+            <span className="inline-block w-1 h-1 bg-[#a8acb0] rounded-full"></span>
+            <span>All Products</span>
+          </div>
+          <h1 className="font-medium text-3xl font-Jost text-gray-900">All Products</h1>
         </div>
         <div className="w-full flex flex-col gap-8 lg:flex-row">
           {/* sidebar */}
           <aside className="w-full lg:w-[270px] !rounded bg-white p-4 space-y-6 shadow-md">
-            <h3 className="text-xl font-heading font-medium">Price Filter</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Price Filter</h3>
             <div className="ml-2">
               <Range
                 step={1}
@@ -310,7 +308,7 @@ const ProductsPage = () => {
             <div>
               <button
                 onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
-                className="w-full flex items-center justify-between text-xl font-heading font-medium border-b border-b-slate-300 pb-1 hover:text-blue-600 transition-colors"
+                className="w-full flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-gray-500 border-b border-b-slate-200 pb-1 hover:text-blue-600 transition-colors"
               >
                 <span>Categories</span>
                 <ChevronDown
@@ -358,9 +356,9 @@ const ProductsPage = () => {
             <div>
               <button
                 onClick={() => setIsColorsOpen(!isColorsOpen)}
-                className="w-full flex items-center justify-between text-xl font-heading font-medium border-b border-b-slate-300 pb-1 mt-6 hover:text-blue-600 transition-colors"
+                className="w-full flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-gray-500 border-b border-b-slate-200 pb-1 mt-6 hover:text-blue-600 transition-colors"
               >
-                <span>Filter by Color</span>
+                <span>Colors</span>
                 <ChevronDown
                   className={`w-5 h-5 transition-transform duration-200 ${
                     isColorsOpen ? 'rotate-180' : ''
@@ -369,35 +367,35 @@ const ProductsPage = () => {
               </button>
 
               {isColorsOpen && (
-                <ul className="space-y-2 !mt-3 max-h-[300px] overflow-y-auto">
+                <div className="mt-3">
                   {isFiltersLoading ? (
                     <p className="text-sm text-gray-500">Loading colors...</p>
-                  ) : filterOptions?.colors &&
-                    filterOptions.colors.length > 0 ? (
-                    filterOptions.colors.map((colorName) => (
-                      <li
-                        key={colorName}
-                        className="flex items-center justify-between"
-                      >
-                        <label className="flex items-center gap-3 text-sm text-gray-700 cursor-pointer hover:text-blue-600 transition-colors">
-                          <input
-                            type="checkbox"
-                            checked={selectedColors.includes(colorName)}
-                            onChange={() => toggleColor(colorName)}
-                            className="w-4 h-4 accent-blue-600 cursor-pointer rounded-sm border-gray-300 focus:ring-2 focus:ring-blue-500"
-                          />
-                          <span
-                            className="w-[16px] h-[16px] rounded-full border border-gray-200"
+                  ) : filterOptions?.colors && filterOptions.colors.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {filterOptions.colors.map((colorName) => {
+                        const isSelected = selectedColors.includes(colorName);
+                        return (
+                          <button
+                            key={colorName}
+                            type="button"
+                            onClick={() => toggleColor(colorName)}
+                            title={colorName}
+                            aria-label={`${isSelected ? 'Remove' : 'Add'} ${colorName} filter`}
+                            aria-pressed={isSelected}
+                            className={`w-7 h-7 rounded-full border-2 transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${
+                              isSelected
+                                ? 'border-blue-600 scale-110 shadow-md'
+                                : 'border-gray-200 hover:border-gray-400 hover:scale-105'
+                            }`}
                             style={{ backgroundColor: getColorCode(colorName) }}
-                          ></span>
-                          {colorName}
-                        </label>
-                      </li>
-                    ))
+                          />
+                        );
+                      })}
+                    </div>
                   ) : (
                     <p className="text-sm text-gray-500">No colors available</p>
                   )}
-                </ul>
+                </div>
               )}
             </div>
 
@@ -405,9 +403,9 @@ const ProductsPage = () => {
             <div>
               <button
                 onClick={() => setIsSizesOpen(!isSizesOpen)}
-                className="w-full flex items-center justify-between text-xl font-heading font-medium border-b border-b-slate-300 pb-1 mt-6 hover:text-blue-600 transition-colors"
+                className="w-full flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-gray-500 border-b border-b-slate-200 pb-1 mt-6 hover:text-blue-600 transition-colors"
               >
-                <span>Filter by Size</span>
+                <span>Sizes</span>
                 <ChevronDown
                   className={`w-5 h-5 transition-transform duration-200 ${
                     isSizesOpen ? 'rotate-180' : ''
@@ -628,20 +626,54 @@ const ProductsPage = () => {
             )}
 
             {totalPages > 1 && (
-              <div className="flex justify-center mt-8 gap-2">
-                {Array.from({ length: totalPages }).map((_, i) => (
-                  <button
-                    key={i + 1}
-                    onClick={() => setPage(i + 1)}
-                    className={`px-3 py-1 !rounded border border-gray-200 text-sm ${
-                      page === i + 1
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white text-black'
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
+              <div className="flex justify-center mt-8 gap-1.5 items-center">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-3 py-1.5 rounded border border-gray-200 text-sm bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Prev
+                </button>
+
+                {(() => {
+                  const pages: (number | 'ellipsis')[] = [];
+                  if (totalPages <= 7) {
+                    for (let i = 1; i <= totalPages; i++) pages.push(i);
+                  } else {
+                    pages.push(1);
+                    if (page > 3) pages.push('ellipsis');
+                    for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) {
+                      pages.push(i);
+                    }
+                    if (page < totalPages - 2) pages.push('ellipsis');
+                    pages.push(totalPages);
+                  }
+                  return pages.map((p, idx) =>
+                    p === 'ellipsis' ? (
+                      <span key={`ellipsis-${idx}`} className="px-2 text-gray-400 text-sm select-none">...</span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => setPage(p)}
+                        className={`w-8 h-8 rounded border text-sm transition-colors ${
+                          page === p
+                            ? 'bg-blue-600 border-blue-600 text-white'
+                            : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    )
+                  );
+                })()}
+
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="px-3 py-1.5 rounded border border-gray-200 text-sm bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                </button>
               </div>
             )}
           </div>

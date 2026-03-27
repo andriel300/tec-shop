@@ -116,17 +116,15 @@ module.exports = {
       // typography & fonts
       fontFamily: {
         sans: [
-          'var(--font-inter)',
+          'var(--font-nunito-sans)',
           'ui-sans-serif',
           'system-ui',
           '-apple-system',
           'Segoe UI',
-          'Roboto',
           'Helvetica Neue',
           'Arial',
         ],
-        heading: ['var(--font-poppins)', 'var(--font-inter)', 'ui-sans-serif'],
-        Roboto: ['var(--font-roboto)', 'ui-sans-serif'],
+        heading: ['var(--font-rubik)', 'var(--font-nunito-sans)', 'ui-sans-serif'],
         Oregano: ['var(--font-oregano)', 'cursive'],
         Jost: ['var(--font-jost)', 'ui-sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],

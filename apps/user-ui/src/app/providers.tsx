@@ -24,13 +24,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <AuthProvider>
         {children}
         <Toaster
-          position="top-right"
+          position="bottom-right"
+          richColors
+          gap={8}
           toastOptions={{
+            duration: 4000,
             classNames: {
               toast:
-                '!rounded-[10px] !border !border-[#E5E7EB] !shadow-[0_4px_8px_rgba(15,23,36,0.08)]',
-              title: '!text-sm !font-medium !text-[#0F1724]',
-              description: '!text-xs !text-[#6B7280]',
+                '!rounded-xl !shadow-[0_8px_24px_rgba(15,23,36,0.14)] !border-0 !font-sans',
+              title:
+                '!text-sm !font-semibold !font-heading',
+              description:
+                '!text-xs !leading-relaxed !opacity-90',
             },
           }}
         />
