@@ -1,10 +1,5 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  ConflictException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import * as argon2 from 'argon2';
 // TODO(migration): bcrypt kept for legacy hash verification. Remove once all users have logged in post-migration.
 import * as bcrypt from 'bcrypt';
@@ -96,14 +91,15 @@ export class AdminUsersService {
         userType: true,
         isEmailVerified: true,
         isBanned: true,
-        googleId: true,
+        banReason: true,
+        bannedUntil: true,
         createdAt: true,
         updatedAt: true,
       },
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new RpcException({ statusCode: 404, message: 'User not found' });
     }
 
     let userProfile = null;
@@ -135,21 +131,26 @@ export class AdminUsersService {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new RpcException({ statusCode: 404, message: 'User not found' });
     }
 
     if (user.userType === 'ADMIN') {
-      throw new BadRequestException('Cannot ban admin users');
+      throw new RpcException({ statusCode: 400, message: 'Cannot ban admin users' });
     }
 
     if (user.isBanned) {
-      throw new BadRequestException('User is already banned');
+      throw new RpcException({ statusCode: 400, message: 'User is already banned' });
     }
+
+    const bannedUntil =
+      dto.duration && dto.duration > 0
+        ? new Date(Date.now() + dto.duration * 24 * 60 * 60 * 1000)
+        : null;
 
     const updatedUser = await this.authPrisma.user.update({
       where: { id: userId },
-      data: { isBanned: true },
-      select: { id: true, email: true, isBanned: true },
+      data: { isBanned: true, banReason: dto.reason, bannedUntil },
+      select: { id: true, email: true, isBanned: true, banReason: true, bannedUntil: true },
     });
 
     this.logger.log(`User ${userId} banned successfully`);
@@ -171,16 +172,16 @@ export class AdminUsersService {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new RpcException({ statusCode: 404, message: 'User not found' });
     }
 
     if (!user.isBanned) {
-      throw new BadRequestException('User is not banned');
+      throw new RpcException({ statusCode: 400, message: 'User is not banned' });
     }
 
     const updatedUser = await this.authPrisma.user.update({
       where: { id: userId },
-      data: { isBanned: false },
+      data: { isBanned: false, banReason: null, bannedUntil: null },
       select: { id: true, email: true, isBanned: true },
     });
 
@@ -220,7 +221,7 @@ export class AdminUsersService {
     });
 
     if (existingUser) {
-      throw new ConflictException('User with this email already exists');
+      throw new RpcException({ statusCode: 409, message: 'User with this email already exists' });
     }
 
     const hashedPassword = await argon2.hash(dto.password);
@@ -247,8 +248,12 @@ export class AdminUsersService {
   async deleteAdmin(adminId: string, confirmPassword: string, requestingAdminId: string) {
     this.logger.log(`Deleting admin: ${adminId}, requested by: ${requestingAdminId}`);
 
+    if (adminId === requestingAdminId) {
+      throw new RpcException({ statusCode: 400, message: 'Cannot delete your own admin account' });
+    }
+
     if (!confirmPassword) {
-      throw new BadRequestException('Password confirmation is required to delete an admin account');
+      throw new RpcException({ statusCode: 400, message: 'Password confirmation is required to delete an admin account' });
     }
 
     const requestingAdmin = await this.authPrisma.user.findUnique({
@@ -256,11 +261,11 @@ export class AdminUsersService {
     });
 
     if (!requestingAdmin || requestingAdmin.userType !== 'ADMIN') {
-      throw new BadRequestException('Requesting admin not found');
+      throw new RpcException({ statusCode: 400, message: 'Requesting admin not found' });
     }
 
     if (!requestingAdmin.password) {
-      throw new BadRequestException('Admin account has no password set — cannot confirm identity');
+      throw new RpcException({ statusCode: 400, message: 'Admin account has no password set — cannot confirm identity' });
     }
 
     const isPasswordValid = requestingAdmin.password.startsWith('$argon2')
@@ -268,7 +273,7 @@ export class AdminUsersService {
       : await bcrypt.compare(confirmPassword, requestingAdmin.password);
     if (!isPasswordValid) {
       this.logger.warn(`Delete admin rejected - wrong password from requesting admin: ${requestingAdminId}`);
-      throw new BadRequestException('Password confirmation is incorrect');
+      throw new RpcException({ statusCode: 400, message: 'Password confirmation is incorrect' });
     }
 
     const admin = await this.authPrisma.user.findUnique({
@@ -276,11 +281,11 @@ export class AdminUsersService {
     });
 
     if (!admin) {
-      throw new NotFoundException('Admin not found');
+      throw new RpcException({ statusCode: 404, message: 'Admin not found' });
     }
 
     if (admin.userType !== 'ADMIN') {
-      throw new BadRequestException('User is not an admin');
+      throw new RpcException({ statusCode: 400, message: 'User is not an admin' });
     }
 
     const adminCount = await this.authPrisma.user.count({
@@ -288,7 +293,7 @@ export class AdminUsersService {
     });
 
     if (adminCount <= 1) {
-      throw new BadRequestException('Cannot delete the last admin user. At least one admin must exist.');
+      throw new RpcException({ statusCode: 400, message: 'Cannot delete the last admin user. At least one admin must exist.' });
     }
 
     await this.authPrisma.user.delete({ where: { id: adminId } });

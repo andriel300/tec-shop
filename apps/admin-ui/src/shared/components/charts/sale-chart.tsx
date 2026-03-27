@@ -5,16 +5,14 @@ import Chart, { Props } from 'react-apexcharts';
 import Box from '../box';
 
 export const SaleChart = ({
-  ordersData,
+  data,
 }: {
-  ordersData?: { month: string; count: number }[];
+  data?: { month: string; value: number }[];
 }) => {
-  const defaultMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
-
   const chartSeries: Props['series'] = [
     {
-      name: 'Sales',
-      data: ordersData?.map((d) => d.count) ?? [31, 40, 28, 51, 42, 109, 100],
+      name: 'Revenue',
+      data: data?.map((d) => parseFloat(d.value.toFixed(2))) ?? [],
     },
   ];
 
@@ -30,7 +28,7 @@ export const SaleChart = ({
       width: 3,
     },
     xaxis: {
-      categories: ordersData?.map((d) => d.month) ?? defaultMonths,
+      categories: data?.map((d) => d.month) ?? [],
       labels: {
         style: {
           colors: '#cbd5e1',
@@ -42,6 +40,7 @@ export const SaleChart = ({
         style: {
           colors: '#cbd5e1',
         },
+        formatter: (val: number) => `$${val.toLocaleString()}`,
       },
     },
     fill: {

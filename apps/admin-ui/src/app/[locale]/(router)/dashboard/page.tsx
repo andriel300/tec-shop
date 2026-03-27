@@ -43,7 +43,7 @@ const GeographicalMap = nextDynamic(
   }
 );
 
-// Device data (placeholder - can be replaced with real analytics data later)
+// Device data — hardcoded until user-agent analytics are tracked server-side
 const deviceData = [
   { name: 'Phone', value: 55 },
   { name: 'Tablet', value: 20 },
@@ -268,7 +268,12 @@ const DashboardPage = () => {
                 Last 6 months performance
               </span>
             </h2>
-            <SaleChart />
+            <SaleChart
+              data={stats?.monthlySales?.map((d) => ({
+                month: d.month,
+                value: d.revenue / 100,
+              }))}
+            />
           </div>
         </div>
 

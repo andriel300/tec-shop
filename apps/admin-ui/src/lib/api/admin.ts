@@ -132,6 +132,12 @@ export interface GeographicDistributionItem {
   sellers: number;
 }
 
+export interface MonthlySalesItem {
+  month: string;
+  orders: number;
+  revenue: number;
+}
+
 export interface PlatformStatistics {
   users: {
     total: number;
@@ -152,6 +158,7 @@ export interface PlatformStatistics {
     total: number;
     platformFee: number;
   };
+  monthlySales: MonthlySalesItem[];
   geographicDistribution: GeographicDistributionItem[];
 }
 

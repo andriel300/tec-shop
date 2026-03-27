@@ -11,7 +11,6 @@ import { Type } from 'class-transformer';
 
 export interface UpdateLayoutDto {
   logo?: string;
-  banner?: string;
 }
 
 export interface HeroSlideResponseDto {
@@ -30,7 +29,6 @@ export interface HeroSlideResponseDto {
 export interface LayoutResponseDto {
   id: string;
   logo: string | null;
-  banner: string | null;
   heroSlides?: HeroSlideResponseDto[];
   updatedAt: string;
 }

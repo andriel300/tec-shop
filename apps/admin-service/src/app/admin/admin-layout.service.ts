@@ -25,19 +25,11 @@ export class AdminLayoutService {
   async getLayout() {
     this.logger.log('Fetching site layout');
 
-    const includeHeroSlides = {
-      heroSlides: { orderBy: { order: 'asc' as const } },
-    };
-
-    let layout = await this.userPrisma.siteLayout.findFirst({
-      include: includeHeroSlides,
-    });
+    const include = { heroSlides: { orderBy: { order: 'asc' as const } } };
+    let layout = await this.userPrisma.siteLayout.findFirst({ include });
 
     if (!layout) {
-      layout = await this.userPrisma.siteLayout.create({
-        data: {},
-        include: includeHeroSlides,
-      });
+      layout = await this.userPrisma.siteLayout.create({ data: {}, include });
       this.logger.log('Created default site layout');
     }
 
@@ -47,18 +39,11 @@ export class AdminLayoutService {
   async updateLayout(dto: UpdateLayoutDto) {
     this.logger.log(`Updating site layout: ${JSON.stringify(dto)}`);
 
-    let layout = await this.userPrisma.siteLayout.findFirst();
-
-    if (!layout) {
-      layout = await this.userPrisma.siteLayout.create({
-        data: { logo: dto.logo, banner: dto.banner },
-      });
-    } else {
-      layout = await this.userPrisma.siteLayout.update({
-        where: { id: layout.id },
-        data: { logo: dto.logo, banner: dto.banner },
-      });
-    }
+    const existing = await this.getOrCreateSiteLayout();
+    const layout = await this.userPrisma.siteLayout.update({
+      where: { id: existing.id },
+      data: { logo: dto.logo },
+    });
 
     this.logger.log('Site layout updated successfully');
     return { layout };
@@ -134,14 +119,14 @@ export class AdminLayoutService {
   async reorderHeroSlides(slideIds: string[]) {
     this.logger.log(`Reordering hero slides: ${slideIds.length} slides`);
 
-    const updates = slideIds.map((id, index) =>
-      this.userPrisma.heroSlide.update({
-        where: { id },
-        data: { order: index },
-      })
+    await this.userPrisma.$transaction(
+      slideIds.map((id, index) =>
+        this.userPrisma.heroSlide.update({
+          where: { id },
+          data: { order: index },
+        })
+      )
     );
-
-    await Promise.all(updates);
 
     this.logger.log('Hero slides reordered successfully');
     return { message: 'Hero slides reordered successfully' };

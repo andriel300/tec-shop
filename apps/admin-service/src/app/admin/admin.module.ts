@@ -15,11 +15,5 @@ import { PrismaModule } from '../../prisma/prisma.module';
     AdminOrdersService,
     AdminLayoutService,
   ],
-  exports: [
-    AdminUsersService,
-    AdminSellersService,
-    AdminOrdersService,
-    AdminLayoutService,
-  ],
 })
 export class AdminModule {}

@@ -5,6 +5,7 @@ import { WorldMap } from 'react-svg-worldmap';
 import type { DataItem } from 'react-svg-worldmap';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Users, Store, Globe } from 'lucide-react';
+import { countryCodeToName } from '../../../lib/data/countries';
 
 interface CountryInfo {
   country: string;
@@ -82,61 +83,6 @@ const countryNameToCode: Record<string, string> = {
   hungary: 'hu',
   romania: 'ro',
   greece: 'gr',
-};
-
-// Country code to full name mapping
-const countryCodeToName: Record<string, string> = {
-  us: 'United States of America',
-  gb: 'United Kingdom',
-  de: 'Germany',
-  fr: 'France',
-  it: 'Italy',
-  se: 'Sweden',
-  dk: 'Denmark',
-  no: 'Norway',
-  fi: 'Finland',
-  is: 'Iceland',
-  br: 'Brazil',
-  ca: 'Canada',
-  au: 'Australia',
-  jp: 'Japan',
-  cn: 'China',
-  in: 'India',
-  es: 'Spain',
-  pt: 'Portugal',
-  nl: 'Netherlands',
-  be: 'Belgium',
-  ch: 'Switzerland',
-  at: 'Austria',
-  pl: 'Poland',
-  ie: 'Ireland',
-  nz: 'New Zealand',
-  mx: 'Mexico',
-  ar: 'Argentina',
-  cl: 'Chile',
-  co: 'Colombia',
-  pe: 'Peru',
-  kr: 'South Korea',
-  sg: 'Singapore',
-  my: 'Malaysia',
-  th: 'Thailand',
-  id: 'Indonesia',
-  ph: 'Philippines',
-  vn: 'Vietnam',
-  za: 'South Africa',
-  ng: 'Nigeria',
-  eg: 'Egypt',
-  ke: 'Kenya',
-  ae: 'United Arab Emirates',
-  sa: 'Saudi Arabia',
-  il: 'Israel',
-  tr: 'Turkey',
-  ru: 'Russia',
-  ua: 'Ukraine',
-  cz: 'Czech Republic',
-  hu: 'Hungary',
-  ro: 'Romania',
-  gr: 'Greece',
 };
 
 // Fallback data when no API data is available

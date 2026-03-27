@@ -116,40 +116,74 @@ export class AdminOrdersService {
     const totalRevenue = revenueData._sum.finalAmount || 0;
     const totalPlatformFee = revenueData._sum.platformFee || 0;
 
+    // Build the last-6-months label list (oldest → newest, English short names)
+    const monthLabels: string[] = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      monthLabels.push(d.toLocaleString('en-US', { month: 'short' }));
+    }
+
+    // Monthly revenue for completed orders — $queryRaw because Prisma groupBy
+    // does not support date_trunc. BigInt is returned by PostgreSQL for COUNT/SUM.
+    const rawMonthly = await this.orderPrisma.$queryRaw<
+      Array<{ month: string; orders: bigint; revenue: bigint }>
+    >`
+      SELECT
+        TO_CHAR(DATE_TRUNC('month', "createdAt"), 'Mon') AS month,
+        COUNT(*)::bigint                                  AS orders,
+        COALESCE(SUM("finalAmount"), 0)::bigint           AS revenue
+      FROM "Order"
+      WHERE "createdAt" >= DATE_TRUNC('month', NOW()) - INTERVAL '5 months'
+        AND "paymentStatus" = 'COMPLETED'
+      GROUP BY DATE_TRUNC('month', "createdAt")
+      ORDER BY DATE_TRUNC('month', "createdAt") ASC
+    `;
+
+    const monthlyMap = new Map(rawMonthly.map((r) => [r.month, r]));
+    const monthlySales = monthLabels.map((month) => ({
+      month,
+      orders: Number(monthlyMap.get(month)?.orders ?? 0),
+      revenue: Number(monthlyMap.get(month)?.revenue ?? 0),
+    }));
+
     const sellersByCountry = await this.sellerPrisma.seller.groupBy({
       by: ['country'],
       _count: { country: true },
       orderBy: { _count: { country: 'desc' } },
     });
 
-    const usersByCountry = await this.userPrisma.shippingAddress.groupBy({
-      by: ['country'],
-      _count: { country: true },
-      orderBy: { _count: { country: 'desc' } },
+    // Count distinct users per country (not address count — one user may have multiple addresses)
+    const allAddresses = await this.userPrisma.shippingAddress.findMany({
+      select: { userId: true, country: true },
+      where: { country: { not: '' } },
     });
+
+    const userSetByCountry = new Map<string, Set<string>>();
+    for (const addr of allAddresses) {
+      if (!addr.country) continue;
+      if (!userSetByCountry.has(addr.country)) {
+        userSetByCountry.set(addr.country, new Set());
+      }
+      userSetByCountry.get(addr.country)!.add(addr.userId);
+    }
 
     const countryMap = new Map<string, { users: number; sellers: number }>();
 
     for (const item of sellersByCountry) {
       const country = item.country;
+      if (!country) continue;
       if (!countryMap.has(country)) {
         countryMap.set(country, { users: 0, sellers: 0 });
       }
-      const data = countryMap.get(country);
-      if (data) {
-        data.sellers = item._count.country;
-      }
+      countryMap.get(country)!.sellers = item._count.country;
     }
 
-    for (const item of usersByCountry) {
-      const country = item.country;
+    for (const [country, userSet] of userSetByCountry) {
       if (!countryMap.has(country)) {
         countryMap.set(country, { users: 0, sellers: 0 });
       }
-      const data = countryMap.get(country);
-      if (data) {
-        data.users = item._count.country;
-      }
+      countryMap.get(country)!.users = userSet.size;
     }
 
     const geographicDistribution = Array.from(countryMap.entries()).map(
@@ -161,6 +195,7 @@ export class AdminOrdersService {
       sellers: { verified: verifiedSellers, activeShops },
       orders: { total: totalOrders, pending: pendingOrders, completed: completedOrders },
       revenue: { total: totalRevenue, platformFee: totalPlatformFee },
+      monthlySales,
       geographicDistribution,
     };
   }

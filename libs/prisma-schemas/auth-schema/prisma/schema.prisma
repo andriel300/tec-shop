@@ -25,6 +25,8 @@ model User {
   refreshToken        String?
   refreshTokenFamily  String?
   isBanned            Boolean              @default(false)
+  banReason           String?
+  bannedUntil         DateTime?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   passwordResetTokens PasswordResetToken[]
