@@ -1,5 +1,7 @@
 # Architecture
 
+![Architecture System Design](../GitVisuals/archtecture%20system%20design%20microservice.gif)
+
 ## Microservices Design
 
 | Service                    | Port | Type     | Responsibility                                              |

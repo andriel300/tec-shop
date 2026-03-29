@@ -7,7 +7,7 @@
 #   NOTE: symlinks to node_modules outside the worktree root crash Turbopack.
 
 # BLOCKING — must complete before the worktree is usable
-[post-create]
+[pre-start]
 env = "cp {{ primary_worktree_path }}/.env {{ worktree_path }}/.env"
 certs = "cp -r {{ primary_worktree_path }}/certs {{ worktree_path }}/certs"
 install = "pnpm install"
