@@ -165,7 +165,7 @@ describe('AuthCoreService', () => {
     };
 
     it('should successfully log in a user and return a token', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
+      jest.spyOn(prismaService.user, 'findFirst').mockResolvedValue(mockUser);
 
       jest
         .spyOn(argon2, 'verify')
@@ -183,14 +183,14 @@ describe('AuthCoreService', () => {
     });
 
     it('should throw RpcException if credentials are invalid', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(null);
+      jest.spyOn(prismaService.user, 'findFirst').mockResolvedValue(null);
       await expect(service.login(loginDto)).rejects.toThrow(
         RpcException
       );
     });
 
     it('should throw RpcException when email is not verified', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue({
+      jest.spyOn(prismaService.user, 'findFirst').mockResolvedValue({
         ...mockUser,
         isEmailVerified: false,
       });
@@ -201,7 +201,7 @@ describe('AuthCoreService', () => {
     });
 
     it('should throw RpcException when password does not match', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
+      jest.spyOn(prismaService.user, 'findFirst').mockResolvedValue(mockUser);
       jest.spyOn(argon2, 'verify').mockResolvedValue(false as never);
 
       await expect(service.login(loginDto)).rejects.toThrow(
@@ -209,24 +209,24 @@ describe('AuthCoreService', () => {
       );
     });
 
-    it('should query with userType CUSTOMER filter to prevent cross-role token issuance', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
+    it('should query with CUSTOMER/SELLER userType filter to prevent admin cross-role login', async () => {
+      jest.spyOn(prismaService.user, 'findFirst').mockResolvedValue(mockUser);
 
       await service.login(loginDto);
 
-      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
-        where: { email: loginDto.email, userType: 'CUSTOMER' },
+      expect(prismaService.user.findFirst).toHaveBeenCalledWith({
+        where: { email: loginDto.email, userType: { in: ['CUSTOMER', 'SELLER'] } },
       });
     });
 
     it('should reject a SELLER user attempting to use the customer login endpoint', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(null);
+      jest.spyOn(prismaService.user, 'findFirst').mockResolvedValue(null);
 
       await expect(service.login(loginDto)).rejects.toThrow(RpcException);
     });
 
     it('should persist rememberMe=true to Redis so token refresh can restore a 30-day session', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
+      jest.spyOn(prismaService.user, 'findFirst').mockResolvedValue(mockUser);
       jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockUser);
       jest.spyOn(redisService, 'set').mockResolvedValue(undefined);
 
@@ -240,7 +240,7 @@ describe('AuthCoreService', () => {
     });
 
     it('should persist rememberMe=false to Redis for a normal 7-day session', async () => {
-      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
+      jest.spyOn(prismaService.user, 'findFirst').mockResolvedValue(mockUser);
       jest.spyOn(prismaService.user, 'update').mockResolvedValue(mockUser);
       jest.spyOn(redisService, 'set').mockResolvedValue(undefined);
 

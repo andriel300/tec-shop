@@ -585,4 +585,194 @@ describe('AuthController', () => {
       });
     });
   });
+
+  // ─── Admin login (step 1) ──────────────────────────────────────────────────
+
+  describe('adminLogin', () => {
+    const loginDto = {
+      email: 'admin@example.com',
+      password: 'AdminPass123!',
+      rememberMe: false,
+    };
+
+    it('returns tempToken and requiresTotp=true when TOTP is enabled — no cookies set', async () => {
+      const authResult = { requiresTotp: true, tempToken: 'uuid-handle-123' };
+      jest.spyOn(authServiceClient, 'send').mockReturnValue(of(authResult));
+      const res = mockResponse();
+
+      const result = await controller.adminLogin(loginDto, res);
+
+      expect(authServiceClient.send).toHaveBeenCalledWith('admin-auth-login', loginDto);
+      expect(res.cookie).not.toHaveBeenCalled();
+      expect(result).toEqual({ requiresTotp: true, tempToken: 'uuid-handle-123' });
+    });
+
+    it('sets admin cookies and returns success when TOTP is not enabled', async () => {
+      const authResult = {
+        access_token: 'admin-access-token',
+        refresh_token: 'admin-refresh-token',
+        rememberMe: false,
+      };
+      jest.spyOn(authServiceClient, 'send').mockReturnValue(of(authResult));
+      const res = mockResponse();
+      process.env.NODE_ENV = 'development';
+
+      const result = await controller.adminLogin(loginDto, res);
+
+      expect(res.cookie).toHaveBeenCalledWith(
+        'admin_access_token',
+        'admin-access-token',
+        expect.objectContaining({ httpOnly: true, maxAge: 15 * 60 * 1000 })
+      );
+      expect(res.cookie).toHaveBeenCalledWith(
+        'admin_refresh_token',
+        'admin-refresh-token',
+        expect.objectContaining({ httpOnly: true })
+      );
+      expect(result).toEqual({ message: 'Admin login successful', userType: 'admin' });
+    });
+
+    it('uses __Host- cookie prefix and secure=true in production', async () => {
+      const authResult = {
+        access_token: 'admin-access-token',
+        refresh_token: 'admin-refresh-token',
+        rememberMe: false,
+      };
+      jest.spyOn(authServiceClient, 'send').mockReturnValue(of(authResult));
+      const res = mockResponse();
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+
+      await controller.adminLogin(loginDto, res);
+
+      expect(res.cookie).toHaveBeenCalledWith(
+        '__Host-admin_access_token',
+        'admin-access-token',
+        expect.objectContaining({ secure: true })
+      );
+
+      process.env.NODE_ENV = originalEnv;
+    });
+
+    it('propagates errors from auth-service', async () => {
+      jest
+        .spyOn(authServiceClient, 'send')
+        .mockReturnValue(throwError(() => new Error('Invalid credentials')));
+      const res = mockResponse();
+
+      await expect(controller.adminLogin(loginDto, res)).rejects.toThrow('Invalid credentials');
+      expect(res.cookie).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── Admin login (step 2 — TOTP verify) ───────────────────────────────────
+
+  describe('adminTotpVerify', () => {
+    const verifyDto = { tempToken: 'uuid-handle-123', code: '123456' };
+
+    it('sets admin cookies on successful TOTP verification', async () => {
+      const authResult = {
+        access_token: 'admin-access-verified',
+        refresh_token: 'admin-refresh-verified',
+      };
+      jest.spyOn(authServiceClient, 'send').mockReturnValue(of(authResult));
+      const res = mockResponse();
+      process.env.NODE_ENV = 'development';
+
+      const result = await controller.adminTotpVerify(verifyDto, res);
+
+      expect(authServiceClient.send).toHaveBeenCalledWith('admin-totp-verify', verifyDto);
+      expect(res.cookie).toHaveBeenCalledWith(
+        'admin_access_token',
+        'admin-access-verified',
+        expect.objectContaining({ httpOnly: true, maxAge: 15 * 60 * 1000 })
+      );
+      expect(res.cookie).toHaveBeenCalledWith(
+        'admin_refresh_token',
+        'admin-refresh-verified',
+        expect.any(Object)
+      );
+      expect(result).toEqual({ message: 'Admin login successful', userType: 'admin' });
+    });
+
+    it('propagates errors from auth-service (invalid/expired code)', async () => {
+      jest
+        .spyOn(authServiceClient, 'send')
+        .mockReturnValue(throwError(() => new Error('Invalid TOTP code')));
+      const res = mockResponse();
+
+      await expect(controller.adminTotpVerify(verifyDto, res)).rejects.toThrow('Invalid TOTP code');
+      expect(res.cookie).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─── Admin TOTP management endpoints ──────────────────────────────────────
+
+  describe('adminTotpSetup', () => {
+    it('forwards userId to auth-service and returns setup data', async () => {
+      const setupData = {
+        qrCodeUrl: 'otpauth://totp/...',
+        secret: 'BASE32SECRET',
+        backupCodes: ['code1', 'code2'],
+      };
+      jest.spyOn(authServiceClient, 'send').mockReturnValue(of(setupData));
+      const req = mockRequest({}, { userId: 'admin-user-1' });
+
+      const result = await controller.adminTotpSetup(req);
+
+      expect(authServiceClient.send).toHaveBeenCalledWith(
+        'admin-totp-setup',
+        { userId: 'admin-user-1' }
+      );
+      expect(result).toEqual(setupData);
+    });
+  });
+
+  describe('adminTotpEnable', () => {
+    it('forwards userId and dto to auth-service', async () => {
+      const dto = { token: '654321' };
+      jest.spyOn(authServiceClient, 'send').mockReturnValue(of({ message: 'TOTP enabled' }));
+      const req = mockRequest({}, { userId: 'admin-user-1' });
+
+      const result = await controller.adminTotpEnable(req, dto);
+
+      expect(authServiceClient.send).toHaveBeenCalledWith(
+        'admin-totp-enable',
+        { userId: 'admin-user-1', dto }
+      );
+      expect(result).toEqual({ message: 'TOTP enabled' });
+    });
+  });
+
+  describe('adminTotpDisable', () => {
+    it('forwards userId and dto to auth-service', async () => {
+      const dto = { token: '111111' };
+      jest.spyOn(authServiceClient, 'send').mockReturnValue(of({ message: 'TOTP disabled' }));
+      const req = mockRequest({}, { userId: 'admin-user-1' });
+
+      const result = await controller.adminTotpDisable(req, dto);
+
+      expect(authServiceClient.send).toHaveBeenCalledWith(
+        'admin-totp-disable',
+        { userId: 'admin-user-1', dto }
+      );
+      expect(result).toEqual({ message: 'TOTP disabled' });
+    });
+  });
+
+  describe('adminTotpStatus', () => {
+    it('returns TOTP status from auth-service', async () => {
+      const status = { enabled: true, backupCodesRemaining: 6 };
+      jest.spyOn(authServiceClient, 'send').mockReturnValue(of(status));
+      const req = mockRequest({}, { userId: 'admin-user-1' });
+
+      const result = await controller.adminTotpStatus(req);
+
+      expect(authServiceClient.send).toHaveBeenCalledWith(
+        'admin-totp-status',
+        { userId: 'admin-user-1' }
+      );
+      expect(result).toEqual(status);
+    });
+  });
 });

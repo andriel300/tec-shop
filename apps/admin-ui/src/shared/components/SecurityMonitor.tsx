@@ -42,7 +42,6 @@ export function SecurityMonitor() {
       report('getter');
       return '';
     };
-    // eslint-disable-next-line no-console
     console.log('%c', trap);
 
     // Size heuristic: docked DevTools increases the gap between outer and inner dimensions.

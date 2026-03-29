@@ -2,11 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthCoreService } from './auth-core.service';
 import { AuthRegistrationService } from './auth-registration.service';
+import { AuthTotpService } from './auth-totp.service';
 
 describe('AuthController', () => {
   let authController: AuthController;
   let authCore: AuthCoreService;
   let authRegistration: AuthRegistrationService;
+  let authTotp: AuthTotpService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -26,6 +28,16 @@ describe('AuthController', () => {
             revokeAllUserTokens: jest.fn(),
             changePassword: jest.fn(),
             upgradeToSeller: jest.fn(),
+            completeTotpLogin: jest.fn(),
+          },
+        },
+        {
+          provide: AuthTotpService,
+          useValue: {
+            setupTotp: jest.fn(),
+            enableTotp: jest.fn(),
+            disableTotp: jest.fn(),
+            getTotpStatus: jest.fn(),
           },
         },
         {
@@ -47,6 +59,7 @@ describe('AuthController', () => {
     authController = module.get<AuthController>(AuthController);
     authCore = module.get<AuthCoreService>(AuthCoreService);
     authRegistration = module.get<AuthRegistrationService>(AuthRegistrationService);
+    authTotp = module.get<AuthTotpService>(AuthTotpService);
   });
 
   afterEach(() => jest.clearAllMocks());
@@ -266,6 +279,60 @@ describe('AuthController', () => {
       jest.spyOn(authCore, 'upgradeToSeller').mockResolvedValue(expected as never);
       expect(await authController.upgradeToSeller(payload as never)).toEqual(expected);
       expect(authCore.upgradeToSeller).toHaveBeenCalledWith(payload.userId, payload.upgradeDto);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // TOTP management
+  // ---------------------------------------------------------------------------
+
+  describe('adminTotpSetup (admin-totp-setup)', () => {
+    it('delegates to authTotp.setupTotp with userId', async () => {
+      const payload = { userId: 'admin-1' };
+      const expected = { qrCodeUrl: 'otpauth://...', secret: 'BASE32', backupCodes: ['a', 'b'] };
+      jest.spyOn(authTotp, 'setupTotp').mockResolvedValue(expected as never);
+      expect(await authController.adminTotpSetup(payload)).toEqual(expected);
+      expect(authTotp.setupTotp).toHaveBeenCalledWith(payload.userId);
+    });
+  });
+
+  describe('adminTotpEnable (admin-totp-enable)', () => {
+    it('delegates to authTotp.enableTotp with userId and token', async () => {
+      const payload = { userId: 'admin-1', dto: { token: '123456' } };
+      const expected = { message: 'TOTP enabled' };
+      jest.spyOn(authTotp, 'enableTotp').mockResolvedValue(expected as never);
+      expect(await authController.adminTotpEnable(payload as never)).toEqual(expected);
+      expect(authTotp.enableTotp).toHaveBeenCalledWith(payload.userId, payload.dto.token);
+    });
+  });
+
+  describe('adminTotpVerify (admin-totp-verify)', () => {
+    it('delegates to authCore.completeTotpLogin with tempToken and code', async () => {
+      const dto = { tempToken: 'uuid-handle', code: '654321' };
+      const expected = { access_token: 'tok', refresh_token: 'rtok' };
+      jest.spyOn(authCore, 'completeTotpLogin').mockResolvedValue(expected as never);
+      expect(await authController.adminTotpVerify(dto as never)).toEqual(expected);
+      expect(authCore.completeTotpLogin).toHaveBeenCalledWith(dto.tempToken, dto.code);
+    });
+  });
+
+  describe('adminTotpDisable (admin-totp-disable)', () => {
+    it('delegates to authTotp.disableTotp with userId and token', async () => {
+      const payload = { userId: 'admin-1', dto: { token: '111111' } };
+      const expected = { message: 'TOTP disabled' };
+      jest.spyOn(authTotp, 'disableTotp').mockResolvedValue(expected as never);
+      expect(await authController.adminTotpDisable(payload as never)).toEqual(expected);
+      expect(authTotp.disableTotp).toHaveBeenCalledWith(payload.userId, payload.dto.token);
+    });
+  });
+
+  describe('adminTotpStatus (admin-totp-status)', () => {
+    it('delegates to authTotp.getTotpStatus with userId', async () => {
+      const payload = { userId: 'admin-1' };
+      const expected = { enabled: true, backupCodesRemaining: 6 };
+      jest.spyOn(authTotp, 'getTotpStatus').mockResolvedValue(expected);
+      expect(await authController.adminTotpStatus(payload)).toEqual(expected);
+      expect(authTotp.getTotpStatus).toHaveBeenCalledWith(payload.userId);
     });
   });
 });

@@ -10,6 +10,7 @@ describe('SellerController', () => {
   let controller: SellerController;
   let sellerServiceClient: jest.Mocked<ClientProxy>;
   let orderServiceClient: jest.Mocked<ClientProxy>;
+  let productServiceClient: jest.Mocked<ClientProxy>;
 
   const mockRequest = (userId: string) => ({
     user: { userId },
@@ -57,6 +58,7 @@ describe('SellerController', () => {
     controller = module.get<SellerController>(SellerController);
     sellerServiceClient = module.get('SELLER_SERVICE');
     orderServiceClient = module.get('ORDER_SERVICE');
+    productServiceClient = module.get('PRODUCT_SERVICE');
   });
 
   afterEach(() => {
@@ -304,26 +306,31 @@ describe('SellerController', () => {
       await expect(controller.getStatistics(req)).rejects.toThrow('Circuit open');
     });
 
-    it('should retrieve statistics from seller-service', async () => {
+    it('should aggregate statistics from seller, order, and product services', async () => {
       const userId = 'seller-auth-123';
       const req = mockRequest(userId);
-      const expectedStats = {
-        totalRevenue: 50000,
-        totalOrders: 250,
-        totalProducts: 42,
-        rating: 4.8,
-        followers: 320,
+      const shop = { id: 'shop-123', rating: 4.8, totalOrders: 250, isActive: true };
+      const orderStats = {
+        revenue: { total: 50000, thisMonth: 5000, lastMonth: 4500, growth: 11 },
+        orders: { total: 250, pending: 10, completed: 230, cancelled: 10, thisMonth: 20 },
       };
+      const productStats = { total: 42, active: 38, outOfStock: 4 };
 
-      jest.spyOn(sellerServiceClient, 'send').mockReturnValue(of(expectedStats));
+      jest.spyOn(sellerServiceClient, 'send').mockReturnValue(of(shop));
+      jest.spyOn(orderServiceClient, 'send').mockReturnValue(of(orderStats));
+      jest.spyOn(productServiceClient, 'send').mockReturnValue(of(productStats));
 
       const result = await controller.getStatistics(req);
 
-      expect(sellerServiceClient.send).toHaveBeenCalledWith(
-        'seller-get-statistics',
-        userId
-      );
-      expect(result).toEqual(expectedStats);
+      expect(sellerServiceClient.send).toHaveBeenCalledWith('get-seller-shop', userId);
+      expect(orderServiceClient.send).toHaveBeenCalledWith('order-get-seller-stats', { sellerId: userId });
+      expect(productServiceClient.send).toHaveBeenCalledWith('product-get-seller-stats', { shopId: shop.id });
+      expect(result).toEqual({
+        revenue: orderStats.revenue,
+        orders: orderStats.orders,
+        products: productStats,
+        shop: { rating: shop.rating, totalOrders: shop.totalOrders, isActive: shop.isActive },
+      });
     });
 
     it('should propagate seller-service errors', async () => {

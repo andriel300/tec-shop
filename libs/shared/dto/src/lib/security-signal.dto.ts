@@ -23,6 +23,7 @@ function IsScalarRecord(maxKeys: number, options?: ValidationOptions) {
   return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'isScalarRecord',
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
       target: (object as { constructor: Function }).constructor,
       propertyName,
       constraints: [maxKeys],
