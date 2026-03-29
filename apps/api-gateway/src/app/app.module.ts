@@ -36,6 +36,7 @@ import { CircuitBreakerModule } from '../common/circuit-breaker.module';
 import { HoneypotModule } from './honeypot/honeypot.module';
 import { BlocklistGuard } from './honeypot/honeypot.guard';
 import { HoneypotMiddleware } from './honeypot/honeypot.middleware';
+import { SecuritySignalModule } from './security-signal/security-signal.module';
 
 @Module({
   imports: [
@@ -167,6 +168,7 @@ import { HoneypotMiddleware } from './honeypot/honeypot.middleware';
     UserNotificationModule,
     CircuitBreakerModule,
     HoneypotModule,
+    SecuritySignalModule,
     MetricsModule,
     HealthModule,
     SentryModule.forRoot({ serviceName: 'api-gateway', transport: 'HTTP' }),

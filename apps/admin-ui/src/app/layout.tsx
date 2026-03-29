@@ -1,5 +1,6 @@
 import './global.css';
 import { Poppins } from 'next/font/google';
+import { SecurityMonitor } from '../shared/components/SecurityMonitor';
 
 export const metadata = {
   title: 'Tecshop - Admin',
@@ -23,6 +24,7 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`h-screen overflow-hidden bg-[#080E1A] font-sans antialiased ${poppins.variable}`}
       >
+        <SecurityMonitor />
         {children}
       </body>
     </html>

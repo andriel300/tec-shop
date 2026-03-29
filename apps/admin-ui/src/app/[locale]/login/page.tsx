@@ -61,7 +61,8 @@ const LoginForm = () => {
   const t = useTranslations('Auth');
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = searchParams.get('redirect');
+  // SEC-10: validate redirect is a safe relative path to prevent open redirect
+  const redirectPath = safeRedirect(searchParams.get('redirect'));
   const [serverError, setServerError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [step, setStep] = useState<LoginStep>('credentials');
@@ -94,7 +95,7 @@ const LoginForm = () => {
         sessionStorage.setItem('admin', JSON.stringify(data.user));
       }
       toast.success(`Welcome back, ${data?.user?.name ?? 'Admin'}!`);
-      router.push(redirectPath ?? '/dashboard');
+      router.push(redirectPath);
     },
     onError: (error: AxiosError) => {
       const errorMessage =
@@ -116,7 +117,7 @@ const LoginForm = () => {
         sessionStorage.setItem('admin', JSON.stringify(data.user));
       }
       toast.success(`Welcome back, ${data?.user?.name ?? 'Admin'}!`);
-      router.push(redirectPath ?? '/dashboard');
+      router.push(redirectPath);
     },
     onError: (error: AxiosError) => {
       const errorMessage =
@@ -457,3 +458,14 @@ const LoginPage = () => (
 );
 
 export default LoginPage;
+
+/**
+ * SEC-10: Validates that a redirect target is a safe relative path.
+ * Rejects absolute URLs, protocol-relative URLs (//evil.com), and empty strings.
+ */
+function safeRedirect(path: string | null): string {
+  if (path && path.startsWith('/') && !path.startsWith('//')) {
+    return path;
+  }
+  return '/dashboard';
+}

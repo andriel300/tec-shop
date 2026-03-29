@@ -1,14 +1,20 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { HoneypotService } from './honeypot.service';
-import { HONEYPOT_LURE_PATHS } from './honeypot.config';
+import { HONEYPOT_LURE_PATHS, HONEYPOT_LURE_PREFIXES, normalizePath } from './honeypot.config';
 
 @Injectable()
 export class HoneypotMiddleware implements NestMiddleware {
   constructor(private readonly honeypot: HoneypotService) {}
 
   async use(req: Request, res: Response, next: NextFunction): Promise<void> {
-    if (!HONEYPOT_LURE_PATHS.has(req.path)) {
+    const normalized = normalizePath(req.path);
+
+    const isLure =
+      HONEYPOT_LURE_PATHS.has(normalized) ||
+      HONEYPOT_LURE_PREFIXES.some((prefix) => normalized.startsWith(prefix));
+
+    if (!isLure) {
       next();
       return;
     }
@@ -26,9 +32,7 @@ export class HoneypotMiddleware implements NestMiddleware {
 }
 
 function extractIp(req: Request): string {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string') {
-    return forwarded.split(',')[0]?.trim() ?? '';
-  }
-  return req.socket.remoteAddress ?? 'unknown';
+  // req.ip is resolved by Express using the trusted proxy chain set via
+  // app.set('trust proxy', 1) in main.ts — safe against X-Forwarded-For spoofing.
+  return req.ip ?? req.socket.remoteAddress ?? 'unknown';
 }

@@ -11,7 +11,7 @@ import * as argon2 from 'argon2';
 // TODO(migration): bcrypt is kept for legacy hash verification during the bcrypt→Argon2id migration.
 // Once all active users have logged in at least once after the migration, remove bcrypt entirely.
 import * as bcrypt from 'bcrypt';
-import { randomBytes, createHash } from 'crypto';
+import { randomBytes, createHash, randomUUID } from 'crypto';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { AuthPrismaService } from '../../prisma/prisma.service';
@@ -203,18 +203,17 @@ export class AuthCoreService implements OnModuleInit {
 
       await this.maybeRehash(credential.password, user.password, user.id);
 
-      // If TOTP is enabled, return a short-lived partial-auth token instead of full tokens.
-      // The client must complete step 2 via the totp/verify endpoint.
+      // If TOTP is enabled, return an opaque handle instead of full tokens.
+      // SEC-05: opaque UUID stored in Redis (5-min TTL) replaces a signed JWT so
+      // no user information is decodable from the response body.
       if (user.totpEnabled) {
-        const tempToken = this.jwtService.sign(
-          { sub: user.id, scope: 'partial-auth', userType: 'ADMIN' },
-          { expiresIn: '5m' }
-        );
-        this.logProducer.info('auth-service', LogCategory.AUTH, 'Admin login step 1 passed — TOTP required', {
+        const handle = randomUUID();
+        await this.redisService.set(`partial-auth:${handle}`, user.id, 300);
+        void this.logProducer.info('auth-service', LogCategory.AUTH, 'Admin login step 1 passed — TOTP required', {
           userId: user.id,
           metadata: { action: 'login', userType: 'ADMIN', totpRequired: true },
         });
-        return { requiresTotp: true, tempToken };
+        return { requiresTotp: true, tempToken: handle };
       }
 
       this.logger.log(`Admin login successful - userId: ${user.id}, email: ${credential.email}`);
@@ -234,19 +233,13 @@ export class AuthCoreService implements OnModuleInit {
   }
 
   async completeTotpLogin(tempToken: string, code: string) {
-    // Validate the partial-auth token
-    let payload: { sub: string; scope: string; userType: string };
-    try {
-      payload = this.jwtService.verify(tempToken);
-    } catch {
+    // SEC-05: look up opaque handle in Redis — no JWT decode, no user data in token
+    const userId = await this.redisService.get(`partial-auth:${tempToken}`);
+    if (!userId) {
       throw new RpcException({ statusCode: 401, message: 'Invalid or expired session. Please log in again.' });
     }
-
-    if (payload.scope !== 'partial-auth' || payload.userType !== 'ADMIN') {
-      throw new RpcException({ statusCode: 401, message: 'Invalid token scope' });
-    }
-
-    const userId = payload.sub;
+    // Consume immediately — one-time use
+    await this.redisService.del(`partial-auth:${tempToken}`);
     const isValid = await this.authTotp.verifyTotpForLogin(userId, code);
 
     if (!isValid) {

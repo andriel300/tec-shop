@@ -1,5 +1,6 @@
 import './global.css';
 import { Inter, Poppins, Roboto, Space_Grotesk } from 'next/font/google';
+import { SecurityMonitor } from '../shared/components/SecurityMonitor';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -43,6 +44,7 @@ export default function RootLayout({
       className={`min-h-screen bg-gray-50 dark:bg-slate-900 font-heading antialiased ${inter.variable} ${poppins.variable} ${roboto.variable} ${spaceGrotesk.variable}`}
     >
       <body suppressHydrationWarning className="font-sans h-screen overflow-hidden">
+        <SecurityMonitor />
         {children}
       </body>
     </html>

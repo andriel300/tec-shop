@@ -9,3 +9,4 @@ export * from './lib/chatting.dto';
 export * from './lib/logger.dto';
 export * from './lib/notification.dto';
 export * from './lib/layout.dto';
+export * from './lib/security-signal.dto';

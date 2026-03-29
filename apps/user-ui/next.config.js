@@ -12,6 +12,7 @@ const withNextIntl = createNextIntlPlugin(i18nRequestPath.startsWith('.') ? i18n
  **/
 const nextConfig = {
   nx: {},
+  productionBrowserSourceMaps: false,
   serverExternalPackages: ['pino', 'pino-pretty', 'thread-stream'],
   experimental: {
     webpackMemoryOptimizations: true,

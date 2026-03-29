@@ -1,5 +1,6 @@
 import './global.css';
 import { Nunito_Sans, Rubik, Oregano, Jost } from 'next/font/google';
+import { SecurityMonitor } from '../shared/components/SecurityMonitor';
 
 const nunitoSans = Nunito_Sans({
   subsets: ['latin'],
@@ -44,7 +45,10 @@ export default function RootLayout({
     <html
       className={`${nunitoSans.variable} ${rubik.variable} ${oregano.variable} ${jost.variable}`}
     >
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        <SecurityMonitor />
+        {children}
+      </body>
     </html>
   );
 }

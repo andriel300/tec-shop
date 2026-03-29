@@ -27,6 +27,11 @@ async function bootstrap() {
   });
   app.useLogger(app.get(PinoLogger));
 
+  // Trust exactly one upstream reverse-proxy hop so Express resolves req.ip
+  // from X-Forwarded-For correctly. Without this, all manual X-Forwarded-For
+  // reads are spoofable by any client (SEC-02).
+  app.set('trust proxy', 1);
+
   const isProduction = process.env.NODE_ENV === 'production';
 
   // Compress all responses (gzip/deflate) — reduces JSON payload size 60-70%

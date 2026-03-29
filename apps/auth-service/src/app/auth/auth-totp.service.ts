@@ -11,6 +11,7 @@ import { RpcException } from '@nestjs/microservices';
 import { AuthPrismaService } from '../../prisma/prisma.service';
 import { LogCategory } from '@tec-shop/dto';
 import { LogProducerService } from '@tec-shop/logger-producer';
+import { RedisService } from '@tec-shop/redis-client';
 
 // ─── RFC 6238 TOTP Implementation (no external library) ───────────────────────
 
@@ -34,6 +35,10 @@ function base32Encode(buf: Buffer): string {
   return output;
 }
 
+/**
+ * Decodes a base32 string to a Buffer.
+ * Throws on invalid characters (SEC-12) to prevent silent key equivalence.
+ */
 function base32Decode(str: string): Buffer {
   const s = str.toUpperCase().replace(/=+$/, '');
   const bytes: number[] = [];
@@ -41,7 +46,9 @@ function base32Decode(str: string): Buffer {
   let value = 0;
   for (const char of s) {
     const idx = BASE32_ALPHABET.indexOf(char);
-    if (idx === -1) continue;
+    if (idx === -1) {
+      throw new Error(`Invalid base32 character: '${char}'`);
+    }
     value = (value << 5) | idx;
     bits += 5;
     if (bits >= 8) {
@@ -66,12 +73,21 @@ function computeTotp(secret: string, counter: number, digits = 6): string {
   return (code % Math.pow(10, digits)).toString().padStart(digits, '0');
 }
 
-function verifyTotp(secret: string, token: string, window = 1, timeStep = 30): boolean {
+/**
+ * Returns the matching counter value if the token is valid, -1 otherwise.
+ * The caller uses the counter to record the used value and prevent replay.
+ */
+function verifyTotpGetCounter(
+  secret: string,
+  token: string,
+  window = 1,
+  timeStep = 30,
+): number {
   const counter = Math.floor(Date.now() / 1000 / timeStep);
   for (let i = -window; i <= window; i++) {
-    if (computeTotp(secret, counter + i) === token) return true;
+    if (computeTotp(secret, counter + i) === token) return counter + i;
   }
-  return false;
+  return -1;
 }
 
 function generateBase32Secret(bytes = 20): string {
@@ -87,6 +103,15 @@ function totpKeyUri(email: string, issuer: string, secret: string): string {
 
 // ─── Service ────────────────────────────────────────────────────────────────────
 
+/** Redis TTL covering the full ±1 counter window (3 × 30s steps). */
+const TOTP_USED_TTL_SECONDS = 90;
+
+/** Per-userId failed-attempt lockout window (10 minutes). */
+const TOTP_ATTEMPT_WINDOW_SECONDS = 600;
+
+/** Maximum TOTP failures before userId-scoped lockout. */
+const TOTP_MAX_ATTEMPTS = 5;
+
 @Injectable()
 export class AuthTotpService implements OnModuleInit {
   private readonly logger = new Logger(AuthTotpService.name);
@@ -96,6 +121,7 @@ export class AuthTotpService implements OnModuleInit {
     private readonly configService: ConfigService,
     private readonly prisma: AuthPrismaService,
     private readonly logProducer: LogProducerService,
+    private readonly redis: RedisService,
   ) {}
 
   onModuleInit() {
@@ -146,7 +172,7 @@ export class AuthTotpService implements OnModuleInit {
 
     const qrCodeUrl = totpKeyUri(user.email, 'TecShop Admin', secret);
 
-    this.logProducer.info('auth-service', LogCategory.SECURITY, 'Admin TOTP setup initiated', {
+    void this.logProducer.info('auth-service', LogCategory.SECURITY, 'Admin TOTP setup initiated', {
       userId,
       metadata: { action: 'totp_setup' },
     });
@@ -168,8 +194,9 @@ export class AuthTotpService implements OnModuleInit {
     }
 
     const secret = this.decryptSecret(user.totpSecret);
-    if (!verifyTotp(secret, token)) {
-      this.logProducer.warn('auth-service', LogCategory.SECURITY, 'Admin TOTP enable failed - invalid code', {
+    const matchedCounter = verifyTotpGetCounter(secret, token);
+    if (matchedCounter === -1) {
+      void this.logProducer.warn('auth-service', LogCategory.SECURITY, 'Admin TOTP enable failed - invalid code', {
         userId,
         metadata: { action: 'totp_enable', reason: 'invalid_code' },
       });
@@ -181,7 +208,7 @@ export class AuthTotpService implements OnModuleInit {
       data: { totpEnabled: true },
     });
 
-    this.logProducer.info('auth-service', LogCategory.SECURITY, 'Admin TOTP enabled', {
+    void this.logProducer.info('auth-service', LogCategory.SECURITY, 'Admin TOTP enabled', {
       userId,
       metadata: { action: 'totp_enabled' },
     });
@@ -189,16 +216,37 @@ export class AuthTotpService implements OnModuleInit {
 
   /**
    * Verifies a TOTP code (or backup code) during the login flow.
+   * SEC-07: enforces per-userId attempt counter (max 5 in 10 min).
+   * SEC-01: marks successfully used counter in Redis to prevent replay.
    */
   async verifyTotpForLogin(userId: string, token: string): Promise<boolean> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
     if (!user?.totpSecret || !user.totpEnabled) return false;
 
-    const secret = this.decryptSecret(user.totpSecret);
+    // SEC-07 — per-userId lockout
+    await this.assertAttemptLimit(userId);
 
-    if (verifyTotp(secret, token)) {
-      this.logProducer.info('auth-service', LogCategory.AUTH, 'Admin TOTP login verified', {
+    const secret = this.decryptSecret(user.totpSecret);
+    const matchedCounter = verifyTotpGetCounter(secret, token);
+
+    if (matchedCounter !== -1) {
+      // SEC-01 — replay protection: check this counter was not already used
+      const replayKey = `totp:used:${userId}:${matchedCounter}`;
+      const alreadyUsed = await this.redis.exists(replayKey);
+      if (alreadyUsed > 0) {
+        void this.logProducer.warn('auth-service', LogCategory.SECURITY, 'Admin TOTP replay attempt blocked', {
+          userId,
+          metadata: { action: 'totp_login_verify', reason: 'replay' },
+        });
+        await this.incrementAttempts(userId);
+        return false;
+      }
+      // Mark counter as used for the full ±1 window duration
+      await this.redis.set(replayKey, '1', TOTP_USED_TTL_SECONDS);
+      await this.clearAttempts(userId);
+
+      void this.logProducer.info('auth-service', LogCategory.AUTH, 'Admin TOTP login verified', {
         userId,
         metadata: { action: 'totp_login_verify', method: 'totp' },
       });
@@ -207,14 +255,16 @@ export class AuthTotpService implements OnModuleInit {
 
     const usedBackup = await this.consumeBackupCode(userId, token, user.totpBackupCodes);
     if (usedBackup) {
-      this.logProducer.warn('auth-service', LogCategory.AUTH, 'Admin TOTP login via backup code', {
+      await this.clearAttempts(userId);
+      void this.logProducer.warn('auth-service', LogCategory.AUTH, 'Admin TOTP login via backup code', {
         userId,
         metadata: { action: 'totp_login_verify', method: 'backup_code' },
       });
       return true;
     }
 
-    this.logProducer.warn('auth-service', LogCategory.SECURITY, 'Admin TOTP verification failed', {
+    await this.incrementAttempts(userId);
+    void this.logProducer.warn('auth-service', LogCategory.SECURITY, 'Admin TOTP verification failed', {
       userId,
       metadata: { action: 'totp_login_verify', reason: 'invalid_code' },
     });
@@ -232,8 +282,9 @@ export class AuthTotpService implements OnModuleInit {
     }
 
     const secret = this.decryptSecret(user.totpSecret);
-    if (!verifyTotp(secret, token)) {
-      this.logProducer.warn('auth-service', LogCategory.SECURITY, 'Admin TOTP disable rejected - invalid code', {
+    const matchedCounter = verifyTotpGetCounter(secret, token);
+    if (matchedCounter === -1) {
+      void this.logProducer.warn('auth-service', LogCategory.SECURITY, 'Admin TOTP disable rejected - invalid code', {
         userId,
         metadata: { action: 'totp_disable', reason: 'invalid_code' },
       });
@@ -245,7 +296,7 @@ export class AuthTotpService implements OnModuleInit {
       data: { totpEnabled: false, totpSecret: null, totpBackupCodes: [] },
     });
 
-    this.logProducer.info('auth-service', LogCategory.SECURITY, 'Admin TOTP disabled', {
+    void this.logProducer.info('auth-service', LogCategory.SECURITY, 'Admin TOTP disabled', {
       userId,
       metadata: { action: 'totp_disabled' },
     });
@@ -269,6 +320,29 @@ export class AuthTotpService implements OnModuleInit {
   }
 
   // --- Private helpers -------------------------------------------------------
+
+  private async assertAttemptLimit(userId: string): Promise<void> {
+    const key = `totp-attempts:${userId}`;
+    const raw = await this.redis.get(key);
+    const attempts = raw ? parseInt(raw, 10) : 0;
+    if (attempts >= TOTP_MAX_ATTEMPTS) {
+      throw new RpcException({
+        statusCode: 429,
+        message: 'Too many failed TOTP attempts. Try again in 10 minutes.',
+      });
+    }
+  }
+
+  private async incrementAttempts(userId: string): Promise<void> {
+    const key = `totp-attempts:${userId}`;
+    const raw = await this.redis.get(key);
+    const attempts = raw ? parseInt(raw, 10) : 0;
+    await this.redis.set(key, String(attempts + 1), TOTP_ATTEMPT_WINDOW_SECONDS);
+  }
+
+  private async clearAttempts(userId: string): Promise<void> {
+    await this.redis.del(`totp-attempts:${userId}`);
+  }
 
   private async consumeBackupCode(
     userId: string,

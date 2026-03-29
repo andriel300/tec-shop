@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import QRCode from 'qrcode';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import { toast } from 'sonner';
@@ -30,9 +31,9 @@ const QrCode = ({ url }: { url: string }) => {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
 
   React.useEffect(() => {
-    // Use a free QR code generation API (no sensitive data, only the otpauth:// URI)
-    const encoded = encodeURIComponent(url);
-    setImgSrc(`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encoded}`);
+    QRCode.toDataURL(url, { width: 180, margin: 1 })
+      .then(setImgSrc)
+      .catch(() => setImgSrc(null));
   }, [url]);
 
   if (!imgSrc) return <div className="w-[180px] h-[180px] bg-slate-800 rounded-xl animate-pulse" />;

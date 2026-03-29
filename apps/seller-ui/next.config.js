@@ -16,6 +16,7 @@ const nextConfig = {
   nx: {
     svgr: false,
   },
+  productionBrowserSourceMaps: false,
   serverExternalPackages: ['pino', 'pino-pretty', 'thread-stream'],
   experimental: {
     webpackMemoryOptimizations: true,

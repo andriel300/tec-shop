@@ -18,7 +18,9 @@ export class HoneypotService {
     config: ConfigService,
   ) {
     const raw = config.get<string>('HONEYPOT_BAN_TTL_SECONDS');
-    this.banTtlSeconds = raw ? parseInt(raw, 10) : HONEYPOT_BAN_TTL_SECONDS_DEFAULT;
+    const parsed = raw ? parseInt(raw, 10) : NaN;
+    this.banTtlSeconds =
+      Number.isFinite(parsed) && parsed > 0 ? parsed : HONEYPOT_BAN_TTL_SECONDS_DEFAULT;
   }
 
   /**
