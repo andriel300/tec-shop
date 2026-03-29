@@ -33,6 +33,9 @@ import { ImageKitModule } from '@tec-shop/shared/imagekit';
 import { LogProducerModule } from '@tec-shop/logger-producer';
 import { UserNotificationModule } from './user-notification/user-notification.module';
 import { CircuitBreakerModule } from '../common/circuit-breaker.module';
+import { HoneypotModule } from './honeypot/honeypot.module';
+import { BlocklistGuard } from './honeypot/honeypot.guard';
+import { HoneypotMiddleware } from './honeypot/honeypot.middleware';
 
 @Module({
   imports: [
@@ -163,6 +166,7 @@ import { CircuitBreakerModule } from '../common/circuit-breaker.module';
     RecommendationModule,
     UserNotificationModule,
     CircuitBreakerModule,
+    HoneypotModule,
     MetricsModule,
     HealthModule,
     SentryModule.forRoot({ serviceName: 'api-gateway', transport: 'HTTP' }),
@@ -170,6 +174,11 @@ import { CircuitBreakerModule } from '../common/circuit-breaker.module';
   controllers: [AppController],
   providers: [
     AppService,
+    // BlocklistGuard must be first: drops banned IPs before throttle counters are touched
+    {
+      provide: APP_GUARD,
+      useClass: BlocklistGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: ConditionalThrottlerGuard,
@@ -186,6 +195,7 @@ import { CircuitBreakerModule } from '../common/circuit-breaker.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(SentryContextMiddleware).forRoutes('*');
+    // HoneypotMiddleware runs first to intercept lure paths before Sentry or routing
+    consumer.apply(HoneypotMiddleware, SentryContextMiddleware).forRoutes('*');
   }
 }
