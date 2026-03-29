@@ -28,6 +28,11 @@ describe('AuthRegistrationService', () => {
     refreshToken: null,
     refreshTokenFamily: null,
     isBanned: false,
+    banReason: null,
+    bannedUntil: null,
+    totpSecret: null,
+    totpEnabled: false,
+    totpBackupCodes: [],
     createdAt: new Date(),
     updatedAt: new Date(),
   };

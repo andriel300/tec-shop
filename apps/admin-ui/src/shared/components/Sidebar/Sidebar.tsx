@@ -12,6 +12,7 @@ import {
   PackageSearch,
   PencilRuler,
   Settings,
+  ShieldCheck,
   Store,
   LayoutDashboard,
 } from 'lucide-react';
@@ -177,6 +178,12 @@ const Sidebar = () => {
         </SidebarGroup>
 
         <SidebarGroup title={t('extras')}>
+          <SidebarItem
+            icon={<ShieldCheck size={18} color={iconColor('/dashboard/settings')} />}
+            title="Security"
+            isActive={isActive('/dashboard/settings')}
+            href="/dashboard/settings"
+          />
           <SidebarItem
             icon={<LogOut size={18} color="#6B7280" />}
             title={t('logout')}

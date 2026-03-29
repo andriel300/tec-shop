@@ -5,6 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { AuthCoreService } from './auth-core.service';
 import { AuthRegistrationService } from './auth-registration.service';
+import { AuthTotpService } from './auth-totp.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { RedisModule } from '@tec-shop/redis-client';
@@ -80,6 +81,7 @@ import { join } from 'path';
   providers: [
     AuthCoreService,
     AuthRegistrationService,
+    AuthTotpService,
     // ThrottlerGuard removed - rate limiting handled at API Gateway
   ],
 })

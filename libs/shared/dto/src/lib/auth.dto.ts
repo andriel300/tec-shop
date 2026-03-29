@@ -312,6 +312,33 @@ export class UpgradeToSellerDto {
   currentPassword?: string;
 }
 
+export class TotpVerifyDto {
+  @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiJ9...', description: 'Temporary partial-auth token returned from admin login when TOTP is required' })
+  @IsString()
+  @IsNotEmpty()
+  tempToken!: string;
+
+  @ApiProperty({ example: '123456', description: '6-digit TOTP code from authenticator app, or XXXXX-XXXXX backup code' })
+  @IsString()
+  @IsNotEmpty()
+  code!: string;
+}
+
+export class TotpEnableDto {
+  @ApiProperty({ example: '123456', description: '6-digit TOTP code to confirm setup' })
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^\d{6}$/, { message: 'TOTP code must be exactly 6 digits' })
+  token!: string;
+}
+
+export class TotpDisableDto {
+  @ApiProperty({ example: '123456', description: '6-digit TOTP code to confirm disable' })
+  @IsString()
+  @IsNotEmpty()
+  token!: string;
+}
+
 export class ChangePasswordDto {
   @ApiProperty({
     example: 'OldPassword123!',

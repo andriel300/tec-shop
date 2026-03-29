@@ -26,6 +26,7 @@ import { RedisService } from '@tec-shop/redis-client';
 import { ServiceAuthUtil } from '@tec-shop/service-auth';
 import { LogProducerService } from '@tec-shop/logger-producer';
 import { NotificationProducerService } from '@tec-shop/notification-producer';
+import { AuthTotpService } from './auth-totp.service';
 
 @Injectable()
 export class AuthCoreService implements OnModuleInit {
@@ -39,6 +40,7 @@ export class AuthCoreService implements OnModuleInit {
     private redisService: RedisService,
     private readonly logProducer: LogProducerService,
     private readonly notificationProducer: NotificationProducerService,
+    private readonly authTotp: AuthTotpService,
     @Inject('USER_SERVICE') private readonly userClient: ClientProxy,
     @Inject('SELLER_SERVICE') private readonly sellerClient: ClientProxy
   ) {
@@ -201,6 +203,20 @@ export class AuthCoreService implements OnModuleInit {
 
       await this.maybeRehash(credential.password, user.password, user.id);
 
+      // If TOTP is enabled, return a short-lived partial-auth token instead of full tokens.
+      // The client must complete step 2 via the totp/verify endpoint.
+      if (user.totpEnabled) {
+        const tempToken = this.jwtService.sign(
+          { sub: user.id, scope: 'partial-auth', userType: 'ADMIN' },
+          { expiresIn: '5m' }
+        );
+        this.logProducer.info('auth-service', LogCategory.AUTH, 'Admin login step 1 passed — TOTP required', {
+          userId: user.id,
+          metadata: { action: 'login', userType: 'ADMIN', totpRequired: true },
+        });
+        return { requiresTotp: true, tempToken };
+      }
+
       this.logger.log(`Admin login successful - userId: ${user.id}, email: ${credential.email}`);
       this.logProducer.info('auth-service', LogCategory.AUTH, 'Admin login successful', {
         userId: user.id,
@@ -215,6 +231,43 @@ export class AuthCoreService implements OnModuleInit {
       );
       throw error;
     }
+  }
+
+  async completeTotpLogin(tempToken: string, code: string) {
+    // Validate the partial-auth token
+    let payload: { sub: string; scope: string; userType: string };
+    try {
+      payload = this.jwtService.verify(tempToken);
+    } catch {
+      throw new RpcException({ statusCode: 401, message: 'Invalid or expired session. Please log in again.' });
+    }
+
+    if (payload.scope !== 'partial-auth' || payload.userType !== 'ADMIN') {
+      throw new RpcException({ statusCode: 401, message: 'Invalid token scope' });
+    }
+
+    const userId = payload.sub;
+    const isValid = await this.authTotp.verifyTotpForLogin(userId, code);
+
+    if (!isValid) {
+      this.logProducer.warn('auth-service', LogCategory.AUTH, 'Admin TOTP login step 2 failed', {
+        userId,
+        metadata: { action: 'totp_login_complete', reason: 'invalid_code' },
+      });
+      throw new RpcException({ statusCode: 401, message: 'Invalid authenticator code' });
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new RpcException({ statusCode: 401, message: 'User not found' });
+    }
+
+    this.logProducer.info('auth-service', LogCategory.AUTH, 'Admin TOTP login complete', {
+      userId,
+      metadata: { action: 'totp_login_complete', userType: 'ADMIN' },
+    });
+
+    return this.generateTokens(userId, user.email, 'ADMIN', false);
   }
 
   async googleLogin(googleAuthDto: GoogleAuthDto) {

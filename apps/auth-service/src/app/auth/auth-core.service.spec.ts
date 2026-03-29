@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthCoreService } from './auth-core.service';
+import { AuthTotpService } from './auth-totp.service';
 import { JwtService } from '@nestjs/jwt';
 import { AuthPrismaService } from '../../prisma/prisma.service';
 import { RedisService } from '@tec-shop/redis-client';
@@ -28,6 +29,11 @@ describe('AuthCoreService', () => {
     refreshToken: null,
     refreshTokenFamily: null,
     isBanned: false,
+    banReason: null,
+    bannedUntil: null,
+    totpSecret: null,
+    totpEnabled: false,
+    totpBackupCodes: [],
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -113,6 +119,16 @@ describe('AuthCoreService', () => {
             emit: jest.fn(),
             send: jest.fn(),
             connect: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: AuthTotpService,
+          useValue: {
+            verifyTotpForLogin: jest.fn().mockResolvedValue(true),
+            setupTotp: jest.fn(),
+            enableTotp: jest.fn(),
+            disableTotp: jest.fn(),
+            getTotpStatus: jest.fn(),
           },
         },
       ],

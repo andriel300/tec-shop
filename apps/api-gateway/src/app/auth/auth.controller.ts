@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Inject,
   Logger,
   Post,
@@ -25,6 +26,9 @@ import type {
   GoogleAuthDto,
   ChangePasswordDto,
   UpgradeToSellerDto,
+  TotpVerifyDto,
+  TotpEnableDto,
+  TotpDisableDto,
 } from '@tec-shop/dto';
 import { IsIn, IsOptional, IsString } from 'class-validator';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -523,6 +527,12 @@ export class AuthController {
       this.authService.send('admin-auth-login', body)
     ));
 
+    // When TOTP is enabled, step 1 returns a partial-auth token instead of full tokens.
+    // The client must POST to /auth/admin/totp/verify to complete login.
+    if (result.requiresTotp) {
+      return { requiresTotp: true, tempToken: result.tempToken };
+    }
+
     // Get cookie configurations with proper isolation and security
     const accessCookie = this.getCookieConfig(
       'admin',
@@ -552,6 +562,82 @@ export class AuthController {
       message: 'Admin login successful',
       userType: 'admin',
     };
+  }
+
+  @Post('admin/totp/verify')
+  @Throttle({ medium: { limit: 5, ttl: 60000 } }) // 5 attempts per minute — TOTP brute-force protection
+  @ApiOperation({ summary: 'Complete admin login step 2 — verify TOTP code' })
+  @ApiResponse({ status: 201, description: 'TOTP verified. Tokens set as httpOnly cookies.' })
+  @ApiResponse({ status: 401, description: 'Invalid or expired code.' })
+  async adminTotpVerify(
+    @Body() body: TotpVerifyDto,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const result = await this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
+      this.authService.send('admin-totp-verify', body)
+    ));
+
+    const accessCookie = this.getCookieConfig('admin', 'access', false);
+    const refreshCookie = this.getCookieConfig('admin', 'refresh', false);
+    response.cookie(accessCookie.name, result.access_token, accessCookie.options);
+    response.cookie(refreshCookie.name, result.refresh_token, refreshCookie.options);
+
+    return { message: 'Admin login successful', userType: 'admin' };
+  }
+
+  @Post('admin/totp/setup')
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ medium: { limit: 5, ttl: 900000 } })
+  @ApiOperation({ summary: 'Initiate TOTP setup for admin account' })
+  @ApiResponse({ status: 201, description: 'Returns QR code URL, plain secret, and backup codes.' })
+  async adminTotpSetup(
+    @Req() request: Request & { user: { userId: string } }
+  ) {
+    return this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
+      this.authService.send('admin-totp-setup', { userId: request.user.userId })
+    ));
+  }
+
+  @Post('admin/totp/enable')
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ medium: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: 'Confirm first TOTP code and activate TOTP' })
+  @ApiResponse({ status: 201, description: 'TOTP enabled successfully.' })
+  @ApiResponse({ status: 401, description: 'Invalid TOTP code.' })
+  async adminTotpEnable(
+    @Req() request: Request & { user: { userId: string } },
+    @Body() dto: TotpEnableDto
+  ) {
+    return this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
+      this.authService.send('admin-totp-enable', { userId: request.user.userId, dto })
+    ));
+  }
+
+  @Delete('admin/totp')
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ medium: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: 'Disable TOTP for admin account' })
+  @ApiResponse({ status: 200, description: 'TOTP disabled successfully.' })
+  @ApiResponse({ status: 401, description: 'Invalid TOTP code.' })
+  async adminTotpDisable(
+    @Req() request: Request & { user: { userId: string } },
+    @Body() dto: TotpDisableDto
+  ) {
+    return this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
+      this.authService.send('admin-totp-disable', { userId: request.user.userId, dto })
+    ));
+  }
+
+  @Get('admin/totp/status')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get TOTP status for admin account' })
+  @ApiResponse({ status: 200, description: 'Returns TOTP enabled status and backup code count.' })
+  async adminTotpStatus(
+    @Req() request: Request & { user: { userId: string } }
+  ) {
+    return this.cb.fire('AUTH_SERVICE', () => firstValueFrom(
+      this.authService.send('admin-totp-status', { userId: request.user.userId })
+    ));
   }
 
   @Post('seller/upgrade')

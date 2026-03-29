@@ -13,15 +13,20 @@ import {
   GoogleAuthDto,
   ChangePasswordDto,
   UpgradeToSellerDto,
+  TotpEnableDto,
+  TotpDisableDto,
+  TotpVerifyDto,
 } from '@tec-shop/dto';
 import { AuthCoreService } from './auth-core.service';
 import { AuthRegistrationService } from './auth-registration.service';
+import { AuthTotpService } from './auth-totp.service';
 
 @Controller()
 export class AuthController {
   constructor(
     private readonly authCore: AuthCoreService,
     private readonly authRegistration: AuthRegistrationService,
+    private readonly authTotp: AuthTotpService,
   ) {}
 
   @MessagePattern('auth-signup')
@@ -140,5 +145,36 @@ export class AuthController {
     @Payload() payload: { userId: string; upgradeDto: UpgradeToSellerDto }
   ) {
     return this.authCore.upgradeToSeller(payload.userId, payload.upgradeDto);
+  }
+
+  // TOTP endpoints (admin only)
+
+  @MessagePattern('admin-totp-setup')
+  async adminTotpSetup(@Payload() payload: { userId: string }) {
+    return this.authTotp.setupTotp(payload.userId);
+  }
+
+  @MessagePattern('admin-totp-enable')
+  async adminTotpEnable(
+    @Payload() payload: { userId: string; dto: TotpEnableDto }
+  ) {
+    return this.authTotp.enableTotp(payload.userId, payload.dto.token);
+  }
+
+  @MessagePattern('admin-totp-verify')
+  async adminTotpVerify(@Payload() dto: TotpVerifyDto) {
+    return this.authCore.completeTotpLogin(dto.tempToken, dto.code);
+  }
+
+  @MessagePattern('admin-totp-disable')
+  async adminTotpDisable(
+    @Payload() payload: { userId: string; dto: TotpDisableDto }
+  ) {
+    return this.authTotp.disableTotp(payload.userId, payload.dto.token);
+  }
+
+  @MessagePattern('admin-totp-status')
+  async adminTotpStatus(@Payload() payload: { userId: string }) {
+    return this.authTotp.getTotpStatus(payload.userId);
   }
 }

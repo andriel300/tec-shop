@@ -1,0 +1,17 @@
+# TecShop — Worktrunk Project Configuration
+# Run `wt switch --create <branch>` to get a fully working worktree.
+#
+# node_modules strategy:
+#   pnpm install --prefer-offline → hardlinks from pnpm global store (~/.local/share/pnpm/store)
+#   Fast (seconds, not minutes), no downloads, no Turbopack symlink issues.
+#   NOTE: symlinks to node_modules outside the worktree root crash Turbopack.
+
+# BLOCKING — must complete before the worktree is usable
+[pre-start]
+env = "cp {{ primary_worktree_path }}/.env {{ worktree_path }}/.env"
+certs = "cp -r {{ primary_worktree_path }}/certs {{ worktree_path }}/certs"
+install = "pnpm install"
+
+# BACKGROUND — runs after post-create, in parallel
+# [post-start]
+# copy = "wt step copy-ignored"
