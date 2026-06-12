@@ -2,7 +2,9 @@
 
 export const dynamic = 'force-dynamic';
 
+import { useTranslations } from 'next-intl';
 import { useAuth } from '../../../../hooks/use-auth';
+import { useCurrency } from '../../../../hooks/use-currency';
 import useDeviceTracking from '../../../../hooks/use-device-tracking';
 import useLocationTracking from '../../../../hooks/use-location-tracking';
 import useStore from '../../../../store';
@@ -13,7 +15,9 @@ import { Heart, Minus, Plus, ShoppingCart, Trash2, ArrowRight, Home, ChevronRigh
 import React from 'react';
 
 const WishListPage = () => {
+  const t = useTranslations('Wishlist');
   const { user } = useAuth();
+  const { formatPrice } = useCurrency();
   const location = useLocationTracking();
   const deviceInfo = useDeviceTracking();
 
@@ -41,19 +45,19 @@ const WishListPage = () => {
 
   const removeItem = (id: string, name: string) => {
     removeFromWishList(id, user ?? undefined, location ?? undefined, deviceInfo ?? undefined);
-    toast.success('Removed from wishlist', { description: name });
+    toast.success(t('removedFromWishlist'), { description: name });
   };
 
   const handleAddToCart = (item: (typeof wishlist)[number]) => {
     addToCart(item, user ?? undefined, location ?? undefined, deviceInfo ?? undefined);
-    toast.success('Added to cart', { description: item.title });
+    toast.success(t('addedToCart'), { description: item.title });
   };
 
   const handleAddAllToCart = () => {
     wishlist.forEach((item) => {
       addToCart(item, user ?? undefined, location ?? undefined, deviceInfo ?? undefined);
     });
-    toast.success(`${wishlist.length} items added to cart`);
+    toast.success(t('itemsAddedToCart', { count: wishlist.length }));
   };
 
   const subtotal = wishlist.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -68,7 +72,7 @@ const WishListPage = () => {
             <Home size={14} />
           </Link>
           <ChevronRight size={14} className="text-gray-400 flex-shrink-0" />
-          <span className="text-gray-800 font-medium">Wishlist</span>
+          <span className="text-gray-800 font-medium">{t('breadcrumbWishlist')}</span>
         </nav>
 
         {/* Page header */}
@@ -76,10 +80,10 @@ const WishListPage = () => {
           <div className="flex items-center gap-3">
             <Heart size={24} className="text-red-500 fill-red-500" />
             <h1 className="text-2xl font-bold text-gray-900 font-heading">
-              My Wishlist
+              {t('pageTitle')}
               {wishlist.length > 0 && (
                 <span className="ml-2 text-base font-normal text-gray-400">
-                  ({wishlist.length} {wishlist.length === 1 ? 'item' : 'items'})
+                  ({t('itemCount', { count: wishlist.length })})
                 </span>
               )}
             </h1>
@@ -90,7 +94,7 @@ const WishListPage = () => {
               className="flex items-center gap-2 bg-brand-primary text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-brand-primary-800 transition-colors"
             >
               <ShoppingCart size={16} />
-              Add All to Cart
+              {t('addAllToCart')}
             </button>
           )}
         </div>
@@ -101,15 +105,15 @@ const WishListPage = () => {
             <div className="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center mb-5">
               <Heart size={36} className="text-red-300" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Your wishlist is empty</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">{t('emptyTitle')}</h2>
             <p className="text-gray-500 text-sm max-w-xs mb-6">
-              Save products you love and come back to them anytime. Start exploring our catalog!
+              {t('emptyDesc')}
             </p>
             <Link
               href="/all-products"
               className="flex items-center gap-2 bg-brand-primary text-white text-sm font-semibold px-6 py-3 rounded-full hover:bg-brand-primary-800 transition-colors"
             >
-              Browse Products
+              {t('browseProducts')}
               <ArrowRight size={16} />
             </Link>
           </div>
@@ -148,11 +152,11 @@ const WishListPage = () => {
 
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                       <span className="text-base font-bold text-brand-primary">
-                        ${item.price.toFixed(2)}
+                        {formatPrice(item.price)}
                       </span>
                       {item.quantity > 1 && (
                         <span className="text-xs text-gray-400">
-                          × {item.quantity} = <span className="font-semibold text-gray-600">${(item.price * item.quantity).toFixed(2)}</span>
+                          × {item.quantity} = <span className="font-semibold text-gray-600">{formatPrice(item.price * item.quantity)}</span>
                         </span>
                       )}
                     </div>
@@ -165,7 +169,7 @@ const WishListPage = () => {
                           onClick={() => decreaseQuantity(item.id)}
                           disabled={item.quantity <= 1}
                           className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                          aria-label="Decrease quantity"
+                          aria-label={t('decreaseQty')}
                         >
                           <Minus size={13} />
                         </button>
@@ -175,7 +179,7 @@ const WishListPage = () => {
                         <button
                           onClick={() => increaseQuantity(item.id)}
                           className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors"
-                          aria-label="Increase quantity"
+                          aria-label={t('increaseQty')}
                         >
                           <Plus size={13} />
                         </button>
@@ -187,17 +191,17 @@ const WishListPage = () => {
                         className="flex items-center gap-1.5 bg-brand-primary text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-brand-primary-800 transition-colors"
                       >
                         <ShoppingCart size={13} />
-                        Add to Cart
+                        {t('addToCart')}
                       </button>
 
                       {/* Remove */}
                       <button
                         onClick={() => removeItem(item.id, item.title)}
                         className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition-colors ml-auto"
-                        aria-label={`Remove ${item.title} from wishlist`}
+                        aria-label={t('removeAriaLabel', { title: item.title })}
                       >
                         <Trash2 size={14} />
-                        Remove
+                        {t('remove')}
                       </button>
                     </div>
                   </div>
@@ -210,30 +214,30 @@ const WishListPage = () => {
                 className="flex items-center justify-center gap-2 text-sm text-brand-primary font-medium hover:underline mt-1 py-2"
               >
                 <ArrowRight size={15} />
-                Continue Shopping
+                {t('continueShopping')}
               </Link>
             </div>
 
             {/* Summary panel */}
             <div className="bg-white rounded-2xl shadow-sm p-5 sticky top-24">
-              <h2 className="text-base font-bold text-gray-900 mb-4">Summary</h2>
+              <h2 className="text-base font-bold text-gray-900 mb-4">{t('summaryTitle')}</h2>
 
               <div className="space-y-2.5 text-sm">
                 <div className="flex justify-between text-gray-600">
-                  <span>Items</span>
+                  <span>{t('summaryItems')}</span>
                   <span className="font-medium text-gray-900">{wishlist.length}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
-                  <span>Subtotal</span>
-                  <span className="font-bold text-gray-900">${subtotal.toFixed(2)}</span>
+                  <span>{t('summarySubtotal')}</span>
+                  <span className="font-bold text-gray-900">{formatPrice(subtotal)}</span>
                 </div>
               </div>
 
               <div className="border-t border-gray-100 my-4" />
 
               <div className="flex justify-between text-base font-bold text-gray-900 mb-5">
-                <span>Estimated Total</span>
-                <span className="text-brand-primary">${subtotal.toFixed(2)}</span>
+                <span>{t('estimatedTotal')}</span>
+                <span className="text-brand-primary">{formatPrice(subtotal)}</span>
               </div>
 
               <button
@@ -241,14 +245,14 @@ const WishListPage = () => {
                 className="w-full flex items-center justify-center gap-2 bg-brand-primary text-white font-semibold text-sm py-3 rounded-xl hover:bg-brand-primary-800 transition-colors"
               >
                 <ShoppingCart size={16} />
-                Add All to Cart
+                {t('addAllToCart')}
               </button>
 
               <Link
                 href="/all-products"
                 className="block text-center text-sm text-gray-500 hover:text-brand-primary mt-3 transition-colors"
               >
-                Continue Shopping
+                {t('continueShopping')}
               </Link>
             </div>
           </div>

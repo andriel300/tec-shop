@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Tag, Calendar, Clock } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface ShopOffersTabProps {
   shopId: string;
@@ -9,6 +10,7 @@ interface ShopOffersTabProps {
 
 // Placeholder for future offers/events implementation
 const ShopOffersTab: React.FC<ShopOffersTabProps> = ({ shopId: _shopId }) => {
+  const t = useTranslations('ShopProfile');
   // TODO: Implement offers API and fetch actual offers
   const offers: {
     id: string;
@@ -25,10 +27,9 @@ const ShopOffersTab: React.FC<ShopOffersTabProps> = ({ shopId: _shopId }) => {
         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
           <Tag className="w-8 h-8 text-gray-400" />
         </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No active offers</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">{t('noActiveOffers')}</h3>
         <p className="text-gray-500 max-w-md mx-auto">
-          This shop doesn&apos;t have any active promotions or offers at the moment.
-          Check back later for exciting deals!
+          {t('noActiveOffersDesc')}
         </p>
       </div>
     );
@@ -49,7 +50,7 @@ const ShopOffersTab: React.FC<ShopOffersTabProps> = ({ shopId: _shopId }) => {
               {offer.isActive && (
                 <span className="flex items-center gap-1 text-xs text-green-600">
                   <Clock className="w-3 h-3" />
-                  Active
+                  {t('offerActive')}
                 </span>
               )}
             </div>
@@ -62,7 +63,7 @@ const ShopOffersTab: React.FC<ShopOffersTabProps> = ({ shopId: _shopId }) => {
 
             <div className="flex items-center gap-1.5 text-sm text-gray-500">
               <Calendar className="w-4 h-4" />
-              <span>Valid until {offer.validUntil}</span>
+              <span>{t('validUntil', { date: offer.validUntil })}</span>
             </div>
           </div>
         ))}

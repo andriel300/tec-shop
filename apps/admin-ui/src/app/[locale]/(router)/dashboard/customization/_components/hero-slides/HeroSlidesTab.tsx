@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   useReactTable,
   getCoreRowModel,
@@ -18,6 +19,7 @@ import HeroSlideFormModal from './HeroSlideFormModal';
 import DeleteConfirmModal from '../DeleteConfirmModal';
 
 const HeroSlidesTab = () => {
+  const t = useTranslations('Customization');
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingSlide, setEditingSlide] = useState<HeroSlide | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<HeroSlide | null>(null);
@@ -65,14 +67,14 @@ const HeroSlidesTab = () => {
 
   const columns: ColumnDef<HeroSlide>[] = [
     {
-      header: 'Order',
+      header: t('colOrder'),
       accessorKey: 'order',
       cell: ({ row }) => (
         <span className="text-slate-400 text-sm font-mono">#{row.original.order}</span>
       ),
     },
     {
-      header: 'Slide',
+      header: t('colSlide'),
       accessorKey: 'title',
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
@@ -95,7 +97,7 @@ const HeroSlidesTab = () => {
       ),
     },
     {
-      header: 'Action',
+      header: t('colAction'),
       cell: ({ row }) => (
         <span className="text-slate-400 text-sm">
           {row.original.actionUrl ? (
@@ -108,7 +110,7 @@ const HeroSlidesTab = () => {
       ),
     },
     {
-      header: 'Status',
+      header: t('colStatus'),
       accessorKey: 'isActive',
       cell: ({ row }) => (
         <span
@@ -118,21 +120,21 @@ const HeroSlidesTab = () => {
               : 'bg-slate-600/20 text-slate-400 border border-slate-600/30'
           }`}
         >
-          {row.original.isActive ? 'Active' : 'Inactive'}
+          {row.original.isActive ? t('statusActive') : t('statusInactive')}
         </span>
       ),
     },
     {
-      header: 'Actions',
+      header: t('colActions'),
       cell: ({ row }) => {
         const slide = row.original;
         return (
           <div className="flex gap-2">
             <button onClick={() => handleEdit(slide)} className="text-blue-400 hover:text-blue-300 px-2 py-1 rounded text-sm">
-              Edit
+              {t('actionEdit')}
             </button>
             <button onClick={() => setDeleteTarget(slide)} className="text-red-400 hover:text-red-300 px-2 py-1 rounded text-sm">
-              Delete
+              {t('actionDelete')}
             </button>
           </div>
         );
@@ -146,37 +148,37 @@ const HeroSlidesTab = () => {
     <div>
       <div className="flex justify-between items-center mb-4">
         <div className="text-slate-400 text-sm">
-          {slides.length} {slides.length === 1 ? 'slide' : 'slides'} total
+          {t('slideCount', { count: slides.length })}
         </div>
         <button
           onClick={() => { setEditingSlide(null); setFormModalOpen(true); }}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium"
         >
-          + Add Slide
+          {t('addSlide')}
         </button>
       </div>
 
       {isLoading ? (
         <div className="bg-slate-800/50 rounded-lg p-8 text-center border border-slate-700">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4" />
-          <p className="text-slate-400">Loading hero slides...</p>
+          <p className="text-slate-400">{t('loadingHeroSlides')}</p>
         </div>
       ) : error ? (
         <div className="bg-slate-800/50 rounded-lg p-8 text-center border border-red-700">
-          <p className="text-red-400">Error: {error.message}</p>
+          <p className="text-red-400">{t('error', { message: error.message })}</p>
         </div>
       ) : !slides.length ? (
         <div className="bg-slate-800/50 rounded-lg p-8 text-center border border-slate-700">
           <svg className="w-12 h-12 text-slate-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <p className="text-slate-400 mb-3">No hero slides yet</p>
-          <p className="text-slate-500 text-sm mb-4">Add slides to create an engaging carousel on the homepage</p>
+          <p className="text-slate-400 mb-3">{t('noSlidesTitle')}</p>
+          <p className="text-slate-500 text-sm mb-4">{t('noSlidesDesc')}</p>
           <button
             onClick={() => { setEditingSlide(null); setFormModalOpen(true); }}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium"
           >
-            Create Your First Slide
+            {t('createFirstSlide')}
           </button>
         </div>
       ) : (
@@ -221,7 +223,7 @@ const HeroSlidesTab = () => {
         onClose={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
         itemName={deleteTarget?.title || ''}
-        itemType="Hero Slide"
+        itemType={t('heroSlideType')}
         isPending={deleteMutation.isPending}
       />
     </div>

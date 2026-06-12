@@ -180,7 +180,7 @@ const Sidebar = () => {
         <SidebarGroup title={t('extras')}>
           <SidebarItem
             icon={<ShieldCheck size={18} color={iconColor('/dashboard/settings')} />}
-            title="Security"
+            title={t('security')}
             isActive={isActive('/dashboard/settings')}
             href="/dashboard/settings"
           />

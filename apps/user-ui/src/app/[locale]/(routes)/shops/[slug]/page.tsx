@@ -1,34 +1,29 @@
 import type { Metadata } from 'next';
 import SellerProfile from '../../../../../shared/modules/seller/seller-profile';
-import {
-  getShopById,
-  getShopFollowersCount,
-} from '../../../../../lib/api/shops';
+import { getShopBySlug, getShopFollowersCount } from '../../../../../lib/api/shops';
 import { createLogger } from '@tec-shop/next-logger';
+import { getTranslations } from 'next-intl/server';
 
 const logger = createLogger('user-ui:shops');
 
-async function fetchShopDetails(id: string) {
+async function fetchShopDetails(slug: string) {
   try {
-    const [shop, followersData] = await Promise.all([
-      getShopById(id),
-      getShopFollowersCount(id).catch(() => ({ count: 0 })),
-    ]);
+    const shop = await getShopBySlug(slug);
+    const followersData = await getShopFollowersCount(shop.id).catch(() => ({ count: 0 }));
     return { shop, followersCount: followersData.count };
   } catch (error) {
-    logger.error({ err: error, shopId: id }, 'Failed to fetch shop details');
+    logger.error({ err: error, slug }, 'Failed to fetch shop details');
     return { shop: null, followersCount: 0 };
   }
 }
 
-// Dynamic metadata generator
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const { id } = await params;
-  const { shop } = await fetchShopDetails(id);
+  const { slug } = await params;
+  const { shop } = await fetchShopDetails(slug);
 
   return {
     title: `${shop?.businessName || 'Shop'} | TecShop MarketPlace`,
@@ -72,19 +67,20 @@ export async function generateMetadata({
   };
 }
 
-const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
-  const { id } = await params;
-  const { shop, followersCount } = await fetchShopDetails(id);
+const Page = async ({ params }: { params: Promise<{ slug: string }> }) => {
+  const { slug } = await params;
+  const { shop, followersCount } = await fetchShopDetails(slug);
+  const t = await getTranslations('ShopProfile');
 
   if (!shop) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Shop Not Found
+            {t('shopNotFound')}
           </h1>
           <p className="text-gray-600">
-            The shop you are looking for does not exist or has been removed.
+            {t('shopNotFoundDesc')}
           </p>
         </div>
       </div>

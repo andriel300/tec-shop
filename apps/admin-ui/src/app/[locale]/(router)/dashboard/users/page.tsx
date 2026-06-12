@@ -7,6 +7,7 @@ import {
   flexRender,
   type ColumnDef,
 } from '@tanstack/react-table';
+import { useTranslations } from 'next-intl';
 import {
   useUsers,
   useBanUser,
@@ -26,6 +27,7 @@ const BanModal = ({
   onConfirm: (reason: string, duration: number) => void;
   userName: string;
 }) => {
+  const t = useTranslations('Users');
   const [reason, setReason] = useState('');
   const [duration, setDuration] = useState(0);
 
@@ -33,7 +35,7 @@ const BanModal = ({
 
   const handleSubmit = () => {
     if (!reason.trim()) {
-      alert('Please provide a reason for banning');
+      alert(t('banModalValidation'));
       return;
     }
     onConfirm(reason, duration);
@@ -45,37 +47,37 @@ const BanModal = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full">
         <h3 className="text-white text-xl font-semibold mb-4">
-          Ban User: {userName}
+          {t('banModalTitle', { name: userName })}
         </h3>
 
         <div className="space-y-4">
           <div>
             <label className="text-slate-300 text-sm block mb-2">
-              Reason *
+              {t('banModalReasonLabel')}
             </label>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600"
               rows={3}
-              placeholder="Enter reason for banning this user..."
+              placeholder={t('banModalReasonPlaceholder')}
             />
           </div>
 
           <div>
             <label className="text-slate-300 text-sm block mb-2">
-              Duration (days)
+              {t('banModalDurationLabel')}
             </label>
             <input
               type="number"
               value={duration}
               onChange={(e) => setDuration(Number(e.target.value))}
               className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600"
-              placeholder="0 = permanent ban"
+              placeholder={t('banModalDurationPlaceholder')}
               min="0"
             />
             <p className="text-slate-400 text-xs mt-1">
-              Leave as 0 for permanent ban
+              {t('banModalDurationHint')}
             </p>
           </div>
         </div>
@@ -85,13 +87,13 @@ const BanModal = ({
             onClick={handleSubmit}
             className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded p-3 font-medium"
           >
-            Ban User
+            {t('banModalConfirmBtn')}
           </button>
           <button
             onClick={onClose}
             className="flex-1 bg-slate-700 hover:bg-slate-600 text-white rounded p-3 font-medium"
           >
-            Cancel
+            {t('banModalCancelBtn')}
           </button>
         </div>
       </div>
@@ -100,6 +102,7 @@ const BanModal = ({
 };
 
 const UsersPage = () => {
+  const t = useTranslations('Users');
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [search, setSearch] = useState('');
@@ -112,7 +115,6 @@ const UsersPage = () => {
   const [banModalOpen, setBanModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
 
-  // API hooks
   const { data, isLoading, error } = useUsers({
     page,
     limit,
@@ -124,7 +126,6 @@ const UsersPage = () => {
   const banUserMutation = useBanUser();
   const unbanUserMutation = useUnbanUser();
 
-  // Handle ban user
   const handleBan = (user: UserResponse) => {
     setSelectedUser(user);
     setBanModalOpen(true);
@@ -132,7 +133,6 @@ const UsersPage = () => {
 
   const confirmBan = (reason: string, duration: number) => {
     if (!selectedUser) return;
-
     banUserMutation.mutate(
       { userId: selectedUser.id, data: { reason, duration } },
       {
@@ -144,17 +144,15 @@ const UsersPage = () => {
     );
   };
 
-  // Handle unban user
   const handleUnban = (userId: string) => {
-    if (confirm('Are you sure you want to unban this user?')) {
+    if (confirm(t('unbanConfirm'))) {
       unbanUserMutation.mutate(userId);
     }
   };
 
-  // Table columns
   const columns: ColumnDef<UserResponse>[] = [
     {
-      header: 'Name',
+      header: t('colName'),
       accessorKey: 'name',
       cell: ({ row }) => (
         <div>
@@ -164,7 +162,7 @@ const UsersPage = () => {
       ),
     },
     {
-      header: 'Type',
+      header: t('colType'),
       accessorKey: 'userType',
       cell: ({ getValue }) => {
         const value = getValue() as string;
@@ -185,7 +183,7 @@ const UsersPage = () => {
       },
     },
     {
-      header: 'Status',
+      header: t('colStatus'),
       accessorKey: 'isBanned',
       cell: ({ row }) => {
         const isBanned = row.original.isBanned;
@@ -196,11 +194,13 @@ const UsersPage = () => {
                 isBanned ? 'text-red-400' : 'text-green-400'
               } font-medium text-sm`}
             >
-              {isBanned ? 'Banned' : 'Active'}
+              {isBanned ? t('statusBanned') : t('statusActive')}
             </span>
             {isBanned && row.original.bannedUntil && (
               <div className="text-slate-400 text-xs mt-1">
-                Until: {new Date(row.original.bannedUntil).toLocaleDateString()}
+                {t('bannedUntil', {
+                  date: new Date(row.original.bannedUntil).toLocaleDateString(),
+                })}
               </div>
             )}
           </div>
@@ -208,22 +208,22 @@ const UsersPage = () => {
       },
     },
     {
-      header: 'Email Verified',
+      header: t('colEmailVerified'),
       accessorKey: 'isEmailVerified',
       cell: ({ getValue }) => (
         <span className={getValue() ? 'text-green-400' : 'text-yellow-400'}>
-          {getValue() ? 'Yes' : 'No'}
+          {getValue() ? t('emailVerifiedYes') : t('emailVerifiedNo')}
         </span>
       ),
     },
     {
-      header: 'Joined',
+      header: t('colJoined'),
       accessorKey: 'createdAt',
       cell: ({ getValue }) =>
         new Date(getValue() as string).toLocaleDateString(),
     },
     {
-      header: 'Actions',
+      header: t('colActions'),
       cell: ({ row }) => {
         const user = row.original;
         const canBan = user.userType !== 'ADMIN' && !user.isBanned;
@@ -237,7 +237,7 @@ const UsersPage = () => {
                 disabled={banUserMutation.isPending}
                 className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm disabled:opacity-50"
               >
-                Ban
+                {t('actionBan')}
               </button>
             )}
             {canUnban && (
@@ -246,7 +246,7 @@ const UsersPage = () => {
                 disabled={unbanUserMutation.isPending}
                 className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm disabled:opacity-50"
               >
-                Unban
+                {t('actionUnban')}
               </button>
             )}
           </div>
@@ -264,10 +264,8 @@ const UsersPage = () => {
   return (
     <div className="p-8">
       <div className="mb-6">
-        <h1 className="text-white text-3xl font-semibold">User Management</h1>
-        <p className="text-slate-400 mt-1">
-          Manage all users, customers, sellers, and admins
-        </p>
+        <h1 className="text-white text-3xl font-semibold">{t('pageTitle')}</h1>
+        <p className="text-slate-400 mt-1">{t('pageSubtitle')}</p>
       </div>
 
       {/* Filters */}
@@ -275,7 +273,7 @@ const UsersPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <input
             type="text"
-            placeholder="Search by name or email..."
+            placeholder={t('searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="bg-slate-700 text-white rounded p-3 border border-slate-600"
@@ -288,10 +286,10 @@ const UsersPage = () => {
             }
             className="bg-slate-700 text-white rounded p-3 border border-slate-600"
           >
-            <option value="">All User Types</option>
-            <option value="CUSTOMER">Customers</option>
-            <option value="SELLER">Sellers</option>
-            <option value="ADMIN">Admins</option>
+            <option value="">{t('filterAllTypes')}</option>
+            <option value="CUSTOMER">{t('filterCustomers')}</option>
+            <option value="SELLER">{t('filterSellers')}</option>
+            <option value="ADMIN">{t('filterAdmins')}</option>
           </select>
 
           <select
@@ -301,9 +299,9 @@ const UsersPage = () => {
             }
             className="bg-slate-700 text-white rounded p-3 border border-slate-600"
           >
-            <option value="">All Statuses</option>
-            <option value="ACTIVE">Active</option>
-            <option value="BANNED">Banned</option>
+            <option value="">{t('filterAllStatuses')}</option>
+            <option value="ACTIVE">{t('filterActive')}</option>
+            <option value="BANNED">{t('filterBanned')}</option>
           </select>
 
           <button
@@ -314,17 +312,17 @@ const UsersPage = () => {
             }}
             className="bg-slate-700 hover:bg-slate-600 text-white rounded p-3"
           >
-            Clear Filters
+            {t('clearFilters')}
           </button>
         </div>
       </div>
 
       {/* Table */}
       {isLoading ? (
-        <div className="text-white text-center py-8">Loading users...</div>
+        <div className="text-white text-center py-8">{t('loading')}</div>
       ) : error ? (
         <div className="text-red-400 text-center py-8">
-          Error loading users: {error.message}
+          {t('errorLoading', { message: error.message })}
         </div>
       ) : (
         <>
@@ -368,7 +366,10 @@ const UsersPage = () => {
           {data?.pagination && (
             <div className="flex items-center justify-between mt-6">
               <div className="text-slate-400">
-                Showing {data.data.length} of {data.pagination.total} users
+                {t('paginationShowing', {
+                  count: data.data.length,
+                  total: data.pagination.total,
+                })}
               </div>
               <div className="flex gap-2">
                 <button
@@ -376,10 +377,13 @@ const UsersPage = () => {
                   disabled={page === 1}
                   className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded disabled:opacity-50"
                 >
-                  Previous
+                  {t('prevPage')}
                 </button>
                 <span className="text-white px-4 py-2">
-                  Page {page} of {data.pagination.totalPages}
+                  {t('paginationPage', {
+                    page,
+                    totalPages: data.pagination.totalPages,
+                  })}
                 </span>
                 <button
                   onClick={() =>
@@ -388,7 +392,7 @@ const UsersPage = () => {
                   disabled={page === data.pagination.totalPages}
                   className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded disabled:opacity-50"
                 >
-                  Next
+                  {t('nextPage')}
                 </button>
               </div>
             </div>

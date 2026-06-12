@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Smile, ImagePlus, X } from 'lucide-react';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
 
 interface Attachment {
@@ -30,10 +31,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
   onTyping,
   disabled = false,
   isConnecting = false,
-  placeholder = 'Type a message...',
+  placeholder,
   maxAttachments = 4,
   maxFileSize = 5, // 5MB default
 }) => {
+  const t = useTranslations('Inbox');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -116,7 +118,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
       setUploadError(null);
 
       if (attachments.length + files.length > maxAttachments) {
-        setUploadError(`Maximum ${maxAttachments} images allowed`);
+        setUploadError(t('maxImagesError', { count: maxAttachments }));
         return;
       }
 
@@ -125,13 +127,13 @@ const ChatInput: React.FC<ChatInputProps> = ({
       for (const file of files) {
         // Check file type
         if (!file.type.startsWith('image/')) {
-          setUploadError('Only image files are allowed');
+          setUploadError(t('onlyImagesError'));
           continue;
         }
 
         // Check file size
         if (file.size > maxFileSize * 1024 * 1024) {
-          setUploadError(`File size must be less than ${maxFileSize}MB`);
+          setUploadError(t('fileSizeError', { size: maxFileSize }));
           continue;
         }
 
@@ -201,7 +203,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             <div key={`attachment-${index}`} className="relative group">
               <Image
                 src={attachment.preview}
-                alt={`Attachment ${index + 1}`}
+                alt={t('attachmentAlt', { index: index + 1 })}
                 width={64}
                 height={64}
                 className="w-16 h-16 object-cover rounded-lg border border-gray-200"
@@ -244,7 +246,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                   theme={Theme.LIGHT}
                   width={320}
                   height={400}
-                  searchPlaceHolder="Search emoji..."
+                  searchPlaceHolder={t('searchEmoji')}
                   previewConfig={{
                     showPreview: false,
                   }}
@@ -279,7 +281,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             type="text"
             value={value}
             onChange={handleInputChange}
-            placeholder={placeholder}
+            placeholder={placeholder ?? t('placeholder')}
             disabled={disabled}
             className="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
           />
@@ -297,7 +299,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
         {/* Connection status */}
         {isConnecting && (
           <p className="text-xs text-yellow-600 mt-2 text-center">
-            Connecting to chat server...
+            {t('connectingServer')}
           </p>
         )}
       </form>

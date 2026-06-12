@@ -17,6 +17,93 @@ export class ShopService {
     private readonly logProducer: LogProducerService
   ) {}
 
+  private toBaseSlug(name: string): string {
+    return (
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-') || 'shop'
+    );
+  }
+
+  private async generateUniqueSlug(businessName: string, excludeId?: string): Promise<string> {
+    const base = this.toBaseSlug(businessName);
+    let slug = base;
+    let suffix = 2;
+    while (true) {
+      const existing = await this.prisma.shop.findFirst({
+        where: { slug, ...(excludeId ? { NOT: { id: excludeId } } : {}) },
+      });
+      if (!existing) return slug;
+      slug = `${base}-${suffix++}`;
+    }
+  }
+
+  async getShopBySlug(slug: string) {
+    // 1. Try exact slug match
+    let shop = await this.prisma.shop.findFirst({
+      where: { slug },
+      include: {
+        seller: {
+          select: {
+            id: true,
+            authId: true,
+            name: true,
+            country: true,
+            isVerified: true,
+          },
+        },
+      },
+    });
+
+    if (shop) return shop;
+
+    // 2. Fallback for existing shops without a slug: match by businessName
+    const nameQuery = slug.replace(/-/g, ' ');
+    const shops = await this.prisma.shop.findMany({
+      where: {
+        businessName: { contains: nameQuery, mode: 'insensitive' },
+      },
+      include: {
+        seller: {
+          select: {
+            id: true,
+            authId: true,
+            name: true,
+            country: true,
+            isVerified: true,
+          },
+        },
+      },
+      take: 1,
+    });
+
+    if (shops.length > 0) {
+      // Persist the slug for future requests
+      const generated = await this.generateUniqueSlug(shops[0].businessName, shops[0].id);
+      shop = await this.prisma.shop.update({
+        where: { id: shops[0].id },
+        data: { slug: generated },
+        include: {
+          seller: {
+            select: {
+              id: true,
+              authId: true,
+              name: true,
+              country: true,
+              isVerified: true,
+            },
+          },
+        },
+      });
+      return shop;
+    }
+
+    throw new NotFoundException('Shop not found');
+  }
+
   async createShop(authId: string, shopData: CreateShopDto) {
     const seller = await this.prisma.seller.findUnique({
       where: { authId },
@@ -31,9 +118,11 @@ export class ShopService {
       throw new BadRequestException('Shop already exists for this seller');
     }
 
+    const slug = await this.generateUniqueSlug(shopData.businessName);
     const newShop = await this.prisma.shop.create({
       data: {
         businessName: shopData.businessName,
+        slug,
         bio: shopData.bio,
         category: shopData.category,
         address: shopData.address,
@@ -99,9 +188,11 @@ export class ShopService {
       );
     }
 
+    const slug = await this.generateUniqueSlug(shopData.businessName);
     const newShop = await this.prisma.shop.create({
       data: {
         businessName: shopData.businessName,
+        slug,
         bio: shopData.bio,
         category: shopData.category,
         address: shopData.address,

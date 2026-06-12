@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import { Plus } from 'lucide-react';
 import { Input } from '../../core/Input';
 import { ColorPicker } from './ColorPicker';
@@ -26,6 +27,7 @@ export const AttributeInput: React.FC<AttributeInputProps> = ({
   onInputChange,
   onAddValue,
 }) => {
+  const t = useTranslations('CreateProduct');
   if (isColorAttribute(attributeName)) {
     return (
       <ColorPicker
@@ -46,9 +48,10 @@ export const AttributeInput: React.FC<AttributeInputProps> = ({
     <div className="flex gap-2">
       <Input
         variant="dark"
-        placeholder={`Add ${attributeName.toLowerCase()} option (e.g., ${getAttributePlaceholder(
-          attributeName
-        )})`}
+        placeholder={t('variantAddOptionPlaceholder', {
+          name: attributeName.toLowerCase(),
+          example: getAttributePlaceholder(attributeName),
+        })}
         value={inputValue}
         onChange={(e) => onInputChange(e.target.value)}
         onKeyPress={(e) => {

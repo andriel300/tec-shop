@@ -115,6 +115,11 @@ export class SellerController {
     return this.shopService.getShopById(payload.shopId);
   }
 
+  @MessagePattern('seller-get-shop-by-slug')
+  async getShopBySlug(@Payload() payload: { slug: string }) {
+    return this.shopService.getShopBySlug(payload.slug);
+  }
+
   @MessagePattern('seller-get-filtered-shops')
   async getFilteredShops(
     @Payload()

@@ -21,6 +21,7 @@ import {
   Download,
   Calendar,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import apiClient from '../../../../../lib/api/client';
 import { exportToCSV } from '../../../../../lib/utils/csv-export';
 import { Link } from 'apps/admin-ui/src/i18n/navigation';
@@ -118,6 +119,7 @@ const fetchOrders = async () => {
 };
 
 const OrdersPage = () => {
+  const t = useTranslations('Orders');
   const [globalFilter, setGlobalFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
@@ -141,7 +143,7 @@ const OrdersPage = () => {
     () => [
       {
         accessorKey: 'id',
-        header: 'Order',
+        header: t('colOrder'),
         cell: ({ row }: { row: { original: Order } }) => (
           <div>
             <span className="font-mono text-sm font-semibold text-white">
@@ -159,7 +161,7 @@ const OrdersPage = () => {
       },
       {
         accessorKey: 'user.name',
-        header: 'Buyer',
+        header: t('colBuyer'),
         cell: ({ row }: { row: Row<Order> }) => {
           const name = row.original.user?.name;
           const initials = getInitials(name, row.original.userId);
@@ -174,7 +176,7 @@ const OrdersPage = () => {
                 </span>
               </div>
               <span className="text-sm text-white font-medium">
-                {name ?? `User ${row.original.userId.slice(0, 8)}`}
+                {name ?? t('buyerFallback', { id: row.original.userId.slice(0, 8) })}
               </span>
             </div>
           );
@@ -182,7 +184,7 @@ const OrdersPage = () => {
       },
       {
         accessorKey: 'shop.name',
-        header: 'Shop',
+        header: t('colShop'),
         cell: ({ row }: { row: Row<Order> }) => (
           <span className="text-sm text-gray-300">
             {row.original.shop?.name ?? '—'}
@@ -191,7 +193,7 @@ const OrdersPage = () => {
       },
       {
         accessorKey: 'items',
-        header: 'Product(s)',
+        header: t('colProducts'),
         cell: ({ row }: { row: { original: Order } }) => {
           const items = row.original.items.slice(0, 2);
           const overflow = row.original.items.length - 2;
@@ -222,7 +224,7 @@ const OrdersPage = () => {
       },
       {
         accessorKey: 'finalAmount',
-        header: 'Total',
+        header: t('colTotal'),
         cell: ({ row }: { row: { original: Order } }) => (
           <span className="text-sm font-semibold text-white">
             $
@@ -235,7 +237,7 @@ const OrdersPage = () => {
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: t('colStatus'),
         cell: ({ row }: { row: { original: Order } }) => {
           const cfg = STATUS_CONFIG[row.original.status] ?? {
             dot: 'bg-gray-400',
@@ -256,7 +258,7 @@ const OrdersPage = () => {
       },
       {
         accessorKey: 'paymentStatus',
-        header: 'Payment',
+        header: t('colPayment'),
         cell: ({ row }: { row: { original: Order } }) => (
           <span
             className={`text-xs font-semibold ${
@@ -268,19 +270,19 @@ const OrdersPage = () => {
         ),
       },
       {
-        header: 'Actions',
+        header: t('colActions'),
         cell: ({ row }: { row: { original: Order } }) => (
           <Link
             href={`/dashboard/order/${row.original.id}`}
             className="text-sm font-medium text-brand-primary-400
                        hover:text-brand-primary-300 transition-colors whitespace-nowrap"
           >
-            View Details
+            {t('viewDetails')}
           </Link>
         ),
       },
     ],
-    []
+    [t]
   );
 
   const table = useReactTable({
@@ -309,11 +311,11 @@ const OrdersPage = () => {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
-          <span>Dashboard</span>
+          <span>{t('breadcrumbDashboard')}</span>
           <span>/</span>
-          <span className="text-gray-300 font-medium">Orders</span>
+          <span className="text-gray-300 font-medium">{t('breadcrumbOrders')}</span>
         </div>
-        <h1 className="text-4xl font-bold text-white">Orders Management</h1>
+        <h1 className="text-4xl font-bold text-white">{t('pageTitle')}</h1>
       </div>
 
       {/* Stat Cards */}
@@ -326,10 +328,10 @@ const OrdersPage = () => {
                 <Package size={18} className="text-brand-primary-400" />
               </div>
               <span className="text-xs font-semibold text-gray-500 bg-gray-800 px-2.5 py-0.5 rounded-full">
-                All Time
+                {t('statAllTime')}
               </span>
             </div>
-            <p className="text-gray-400 text-sm mb-1">Total Orders</p>
+            <p className="text-gray-400 text-sm mb-1">{t('statTotalOrders')}</p>
             <p className="text-3xl font-bold text-white">
               {totalOrders.toLocaleString()}
             </p>
@@ -349,10 +351,10 @@ const OrdersPage = () => {
                 <DollarSign size={18} className="text-emerald-400" />
               </div>
               <span className="text-xs font-semibold text-gray-500 bg-gray-800 px-2.5 py-0.5 rounded-full">
-                Seller Payouts
+                {t('statSellerPayouts')}
               </span>
             </div>
-            <p className="text-gray-400 text-sm mb-1">Total Payouts</p>
+            <p className="text-gray-400 text-sm mb-1">{t('statTotalPayouts')}</p>
             <p className="text-3xl font-bold text-white">
               $
               {(totalPayouts / 100).toLocaleString(undefined, {
@@ -377,11 +379,11 @@ const OrdersPage = () => {
               </div>
               {pendingCount > 0 && (
                 <span className="text-xs font-semibold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full">
-                  Action Needed
+                  {t('statActionNeeded')}
                 </span>
               )}
             </div>
-            <p className="text-gray-400 text-sm mb-1">Pending Orders</p>
+            <p className="text-gray-400 text-sm mb-1">{t('statPendingOrders')}</p>
             <p className="text-3xl font-bold text-white">{pendingCount}</p>
           </div>
           <Clock
@@ -400,7 +402,7 @@ const OrdersPage = () => {
             <Search size={16} className="text-gray-500 shrink-0" />
             <input
               type="text"
-              placeholder="Search by buyer, shop, or order ID..."
+              placeholder={t('searchPlaceholder')}
               className="w-full bg-transparent text-white outline-none placeholder:text-gray-500 text-sm"
               value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
@@ -414,18 +416,18 @@ const OrdersPage = () => {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option value="">Status: All</option>
-              <option value="PENDING">Pending</option>
-              <option value="PAID">Paid</option>
-              <option value="SHIPPED">Shipped</option>
-              <option value="DELIVERED">Delivered</option>
-              <option value="CANCELLED">Cancelled</option>
+              <option value="">{t('filterStatusAll')}</option>
+              <option value="PENDING">{t('filterPending')}</option>
+              <option value="PAID">{t('filterPaid')}</option>
+              <option value="SHIPPED">{t('filterShipped')}</option>
+              <option value="DELIVERED">{t('filterDelivered')}</option>
+              <option value="CANCELLED">{t('filterCancelled')}</option>
             </select>
 
             <button className="flex items-center gap-2 bg-gray-800 border border-gray-700
                                text-gray-400 text-sm px-4 py-2.5 rounded-lg whitespace-nowrap">
               <Calendar size={15} className="text-gray-500" />
-              Last 30 Days
+              {t('last30Days')}
             </button>
 
             <button
@@ -467,7 +469,7 @@ const OrdersPage = () => {
                          font-medium transition-colors"
             >
               <Download size={15} />
-              Export CSV
+              {t('exportCsv')}
             </button>
           </div>
         </div>
@@ -510,10 +512,10 @@ const OrdersPage = () => {
                         <div className="flex flex-col items-center text-gray-500">
                           <Package size={40} className="mb-3 opacity-30" />
                           <p className="font-medium text-gray-300">
-                            No orders found
+                            {t('noOrdersTitle')}
                           </p>
                           <p className="text-sm mt-1">
-                            Platform orders will appear here once placed
+                            {t('noOrdersDesc')}
                           </p>
                         </div>
                       </td>
@@ -547,15 +549,7 @@ const OrdersPage = () => {
                            bg-gray-800/40 border-t border-gray-800"
               >
                 <span className="text-sm text-gray-500">
-                  Showing{' '}
-                  <span className="font-medium text-gray-300">
-                    {pageStart} – {pageEnd}
-                  </span>{' '}
-                  of{' '}
-                  <span className="font-medium text-gray-300">
-                    {filteredTotal.toLocaleString()}
-                  </span>{' '}
-                  orders
+                  {t('pagination', { start: pageStart, end: pageEnd, total: filteredTotal.toLocaleString() })}
                 </span>
 
                 <div className="flex items-center gap-1">

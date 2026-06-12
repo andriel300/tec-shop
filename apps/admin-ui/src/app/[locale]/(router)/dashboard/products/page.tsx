@@ -8,6 +8,7 @@ import {
   type ColumnDef,
 } from '@tanstack/react-table';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import apiClient from '../../../../../lib/api/client';
 import type { ProductResponse } from '../../../../../lib/api/products';
 
@@ -18,14 +19,12 @@ interface PublicProductsResponse {
   offset: number;
 }
 
-// Query keys
 const adminProductKeys = {
   all: ['admin', 'products'] as const,
   list: (filters?: Record<string, unknown>) =>
     [...adminProductKeys.all, 'list', filters] as const,
 };
 
-// Hook: Fetch public products for admin overview
 function useAdminProducts(filters?: {
   search?: string;
   categoryId?: string;
@@ -52,11 +51,11 @@ function useAdminProducts(filters?: {
 }
 
 const ProductsPage = () => {
+  const t = useTranslations('Products');
   const [search, setSearch] = useState('');
   const [offset, setOffset] = useState(0);
   const limit = 20;
 
-  // Fetch products from public endpoint (admin has read-only access)
   const { data, isLoading, error } = useAdminProducts({
     search: search || undefined,
     limit,
@@ -68,18 +67,12 @@ const ProductsPage = () => {
   const totalPages = Math.ceil(total / limit);
   const currentPage = Math.floor(offset / limit) + 1;
 
-  // Format price
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(price);
-  };
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
 
-  // Table columns
   const columns: ColumnDef<ProductResponse>[] = [
     {
-      header: 'Product',
+      header: t('colProduct'),
       accessorKey: 'name',
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
@@ -91,7 +84,7 @@ const ProductsPage = () => {
             />
           ) : (
             <div className="w-10 h-10 rounded bg-slate-700 flex items-center justify-center text-slate-400 text-xs">
-              No img
+              {t('noImage')}
             </div>
           )}
           <div className="min-w-0">
@@ -106,7 +99,7 @@ const ProductsPage = () => {
       ),
     },
     {
-      header: 'Price',
+      header: t('colPrice'),
       accessorKey: 'price',
       cell: ({ row }) => (
         <div>
@@ -115,14 +108,14 @@ const ProductsPage = () => {
           </div>
           {row.original.salePrice && (
             <div className="text-green-400 text-xs">
-              Sale: {formatPrice(row.original.salePrice)}
+              {t('salePrice', { price: formatPrice(row.original.salePrice) })}
             </div>
           )}
         </div>
       ),
     },
     {
-      header: 'Stock',
+      header: t('colStock'),
       accessorKey: 'stock',
       cell: ({ row }) => {
         const stock = row.original.stock;
@@ -142,7 +135,7 @@ const ProductsPage = () => {
       },
     },
     {
-      header: 'Status',
+      header: t('colStatus'),
       accessorKey: 'status',
       cell: ({ row }) => {
         const status = row.original.status;
@@ -164,7 +157,7 @@ const ProductsPage = () => {
       },
     },
     {
-      header: 'Category',
+      header: t('colCategory'),
       cell: ({ row }) => (
         <span className="text-slate-300 text-sm">
           {row.original.category?.name || '-'}
@@ -172,7 +165,7 @@ const ProductsPage = () => {
       ),
     },
     {
-      header: 'Brand',
+      header: t('colBrand'),
       cell: ({ row }) => (
         <span className="text-slate-300 text-sm">
           {row.original.brand?.name || '-'}
@@ -180,7 +173,7 @@ const ProductsPage = () => {
       ),
     },
     {
-      header: 'Views / Sales',
+      header: t('colViewsSales'),
       cell: ({ row }) => (
         <div className="text-sm">
           <span className="text-slate-300">{row.original.views}</span>
@@ -200,26 +193,24 @@ const ProductsPage = () => {
   return (
     <div className="p-8">
       <div className="mb-6">
-        <h1 className="text-white text-3xl font-semibold">Products</h1>
-        <p className="text-slate-400 mt-1">
-          View all published products across the platform
-        </p>
+        <h1 className="text-white text-3xl font-semibold">{t('pageTitle')}</h1>
+        <p className="text-slate-400 mt-1">{t('pageSubtitle')}</p>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-          <div className="text-slate-400 text-sm">Total Products</div>
+          <div className="text-slate-400 text-sm">{t('statTotalProducts')}</div>
           <div className="text-white text-2xl font-semibold mt-1">{total}</div>
         </div>
         <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-          <div className="text-slate-400 text-sm">On Sale</div>
+          <div className="text-slate-400 text-sm">{t('statOnSale')}</div>
           <div className="text-green-400 text-2xl font-semibold mt-1">
             {products.filter((p) => p.salePrice).length}
           </div>
         </div>
         <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-          <div className="text-slate-400 text-sm">Out of Stock</div>
+          <div className="text-slate-400 text-sm">{t('statOutOfStock')}</div>
           <div className="text-red-400 text-2xl font-semibold mt-1">
             {products.filter((p) => p.stock === 0).length}
           </div>
@@ -231,7 +222,7 @@ const ProductsPage = () => {
         <div className="flex flex-col md:flex-row gap-4">
           <input
             type="text"
-            placeholder="Search products..."
+            placeholder={t('searchPlaceholder')}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -246,7 +237,7 @@ const ProductsPage = () => {
             }}
             className="bg-slate-700 hover:bg-slate-600 text-white rounded px-4 py-3 transition-colors"
           >
-            Clear
+            {t('clearSearch')}
           </button>
         </div>
       </div>
@@ -255,17 +246,15 @@ const ProductsPage = () => {
       {isLoading ? (
         <div className="bg-slate-800 rounded-lg p-8 text-center border border-slate-700">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4" />
-          <p className="text-slate-400">Loading products...</p>
+          <p className="text-slate-400">{t('loading')}</p>
         </div>
       ) : error ? (
         <div className="bg-slate-800 rounded-lg p-8 text-center border border-red-700">
-          <p className="text-red-400">
-            Error loading products: {error.message}
-          </p>
+          <p className="text-red-400">{t('errorLoading', { message: error.message })}</p>
         </div>
       ) : !products.length ? (
         <div className="bg-slate-800 rounded-lg p-8 text-center border border-slate-700">
-          <p className="text-slate-400">No products found</p>
+          <p className="text-slate-400">{t('noProducts')}</p>
         </div>
       ) : (
         <>
@@ -309,7 +298,7 @@ const ProductsPage = () => {
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-6">
               <div className="text-slate-400">
-                Showing {products.length} of {total} products
+                {t('paginationShowing', { count: products.length, total })}
               </div>
               <div className="flex gap-2">
                 <button
@@ -317,17 +306,17 @@ const ProductsPage = () => {
                   disabled={offset === 0}
                   className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded disabled:opacity-50 transition-colors"
                 >
-                  Previous
+                  {t('prevPage')}
                 </button>
                 <span className="text-white px-4 py-2">
-                  Page {currentPage} of {totalPages}
+                  {t('paginationPage', { page: currentPage, totalPages })}
                 </span>
                 <button
                   onClick={() => setOffset(offset + limit)}
                   disabled={currentPage >= totalPages}
                   className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded disabled:opacity-50 transition-colors"
                 >
-                  Next
+                  {t('nextPage')}
                 </button>
               </div>
             </div>

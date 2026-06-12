@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   useReactTable,
   getCoreRowModel,
@@ -21,6 +22,7 @@ import BrandFormModal from './BrandFormModal';
 import DeleteConfirmModal from '../DeleteConfirmModal';
 
 const BrandsTab = () => {
+  const t = useTranslations('Customization');
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Brand | null>(null);
@@ -72,7 +74,7 @@ const BrandsTab = () => {
 
   const columns: ColumnDef<Brand>[] = [
     {
-      header: 'Brand',
+      header: t('colBrand'),
       accessorKey: 'name',
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
@@ -95,7 +97,7 @@ const BrandsTab = () => {
       ),
     },
     {
-      header: 'Description',
+      header: t('colDescription'),
       accessorKey: 'description',
       cell: ({ getValue }) => (
         <span className="text-slate-300 text-sm line-clamp-1">
@@ -104,7 +106,7 @@ const BrandsTab = () => {
       ),
     },
     {
-      header: 'Status',
+      header: t('colStatus'),
       accessorKey: 'isActive',
       cell: ({ row }) => (
         <span
@@ -114,21 +116,21 @@ const BrandsTab = () => {
               : 'bg-slate-600/20 text-slate-400 border border-slate-600/30'
           }`}
         >
-          {row.original.isActive ? 'Active' : 'Inactive'}
+          {row.original.isActive ? t('statusActive') : t('statusInactive')}
         </span>
       ),
     },
     {
-      header: 'Actions',
+      header: t('colActions'),
       cell: ({ row }) => {
         const brand = row.original;
         return (
           <div className="flex gap-2">
             <button onClick={() => handleEdit(brand)} className="text-blue-400 hover:text-blue-300 px-2 py-1 rounded text-sm">
-              Edit
+              {t('actionEdit')}
             </button>
             <button onClick={() => setDeleteTarget(brand)} className="text-red-400 hover:text-red-300 px-2 py-1 rounded text-sm">
-              Delete
+              {t('actionDelete')}
             </button>
           </div>
         );
@@ -142,7 +144,7 @@ const BrandsTab = () => {
     <div>
       <div className="flex justify-between items-center mb-4">
         <div className="text-slate-400 text-sm">
-          {brands?.length || 0} {(brands?.length || 0) === 1 ? 'brand' : 'brands'} total
+          {t('brandCount', { count: brands?.length || 0 })}
         </div>
         <div className="flex gap-2">
           <button
@@ -153,13 +155,13 @@ const BrandsTab = () => {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            Export CSV
+            {t('exportCsv')}
           </button>
           <button
             onClick={() => { setEditingBrand(null); setFormModalOpen(true); }}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium"
           >
-            + Add Brand
+            {t('addBrand')}
           </button>
         </div>
       </div>
@@ -167,23 +169,23 @@ const BrandsTab = () => {
       {isLoading ? (
         <div className="bg-slate-800/50 rounded-lg p-8 text-center border border-slate-700">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4" />
-          <p className="text-slate-400">Loading brands...</p>
+          <p className="text-slate-400">{t('loadingBrands')}</p>
         </div>
       ) : error ? (
         <div className="bg-slate-800/50 rounded-lg p-8 text-center border border-red-700">
-          <p className="text-red-400">Error: {error.message}</p>
+          <p className="text-red-400">{t('error', { message: error.message })}</p>
         </div>
       ) : !brands?.length ? (
         <div className="bg-slate-800/50 rounded-lg p-8 text-center border border-slate-700">
           <svg className="w-12 h-12 text-slate-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
           </svg>
-          <p className="text-slate-400 mb-3">No brands yet</p>
+          <p className="text-slate-400 mb-3">{t('noBrandsTitle')}</p>
           <button
             onClick={() => { setEditingBrand(null); setFormModalOpen(true); }}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium"
           >
-            Create Your First Brand
+            {t('createFirstBrand')}
           </button>
         </div>
       ) : (
@@ -228,7 +230,7 @@ const BrandsTab = () => {
         onClose={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
         itemName={deleteTarget?.name || ''}
-        itemType="Brand"
+        itemType={t('brandType')}
         isPending={deleteMutation.isPending}
       />
     </div>

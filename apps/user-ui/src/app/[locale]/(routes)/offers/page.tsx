@@ -11,16 +11,26 @@ import { Range } from 'react-range';
 import { ChevronDown, X, Tag } from 'lucide-react';
 import ProductCard from '../../../../components/cards/product-card';
 import type { Product } from '../../../../lib/api/products';
+import { useTranslations, useMessages } from 'next-intl';
 
 interface Category {
   id: string;
   name: string;
+  slug?: string;
 }
 
 const MIN = 0;
 const MAX = 1199;
 
 const Page = () => {
+  const t = useTranslations('Offers');
+  const tCat = useTranslations('Categories');
+  const messages = useMessages();
+  const catMessages = (messages.Categories ?? {}) as Record<string, string>;
+
+  const translateCategory = (slug: string, name: string): string =>
+    catMessages[slug] ? tCat(slug as Parameters<typeof tCat>[0]) : name;
+
   const [isProductLoading, setIsProductLoading] = React.useState(false);
   const [priceRange, setPriceRange] = React.useState([0, 1199]);
   const [selectedCategories, setSelectedCategories] = React.useState<string[]>(
@@ -212,12 +222,12 @@ const Page = () => {
 
   const getPageTitle = () => {
     if (selectedCategories.length === 1) {
-      return `${selectedCategories[0]} Deals`;
+      return t('categoryDeals', { category: selectedCategories[0] });
     }
     if (selectedCategories.length > 1) {
-      return 'Sale Items';
+      return t('saleItems');
     }
-    return 'Special Offers';
+    return t('title');
   };
 
   return (
@@ -227,22 +237,22 @@ const Page = () => {
           <div className="flex items-center gap-3 md:pt-[40px] mb-[14px]">
             <Tag className="w-10 h-10 text-red-600" />
             <h1 className="font-medium text-[44px] leading-1 font-Jost">
-              Special Offers
+              {t('title')}
             </h1>
           </div>
           <p className="text-gray-600 mb-4 text-lg">
-            Discover amazing deals and discounts on your favorite products
+            {t('subtitle')}
           </p>
           <Link href="/" className="text-[#55585b] hover:underline">
-            Home
+            {t('home')}
           </Link>
           <span className="inline-block p-[1.5px] mx-1 bg-[#a8acb0] rounded-full"></span>
-          <span className="text-[#55585b]">Offers</span>
+          <span className="text-[#55585b]">{t('offers')}</span>
         </div>
         <div className="w-full flex flex-col gap-8 lg:flex-row">
           {/* sidebar */}
           <aside className="w-full lg:w-[270px] !rounded bg-white p-4 space-y-6 shadow-md">
-            <h3 className="text-xl font-heading font-medium">Price Filter</h3>
+            <h3 className="text-xl font-heading font-medium">{t('priceFilter')}</h3>
             <div className="ml-2">
               <Range
                 step={1}
@@ -295,7 +305,7 @@ const Page = () => {
                 }}
                 className="text-sm px-4 py-1 bg-gray-200 hover:bg-blue-600 hover:text-white rounded-sm transition duration-200 ease-in-out"
               >
-                Apply
+                {t('apply')}
               </button>
             </div>
 
@@ -305,7 +315,7 @@ const Page = () => {
                 onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
                 className="w-full flex items-center justify-between text-xl font-heading font-medium border-b border-b-slate-300 pb-1 hover:text-blue-600 transition-colors"
               >
-                <span>Categories</span>
+                <span>{t('categories')}</span>
                 <ChevronDown
                   className={`w-5 h-5 transition-transform duration-200 ${
                     isCategoriesOpen ? 'rotate-180' : ''
@@ -317,7 +327,7 @@ const Page = () => {
                 <ul className="space-y-2 !mt-3 max-h-[300px] overflow-y-auto">
                   {isCategoriesLoading ? (
                     <p className="text-sm text-gray-500">
-                      Loading categories...
+                      {t('loadingCategories')}
                     </p>
                   ) : categories &&
                     Array.isArray(categories) &&
@@ -334,13 +344,13 @@ const Page = () => {
                             onChange={() => toggleCategory(category.name)}
                             className="w-4 h-4 accent-blue-600 cursor-pointer rounded-sm border-gray-300 focus:ring-2 focus:ring-blue-500"
                           />
-                          {category.name}
+                          {translateCategory(category.slug ?? '', category.name)}
                         </label>
                       </li>
                     ))
                   ) : (
                     <p className="text-sm text-gray-500">
-                      No categories available
+                      {t('noCategoriesAvailable')}
                     </p>
                   )}
                 </ul>
@@ -353,7 +363,7 @@ const Page = () => {
                 onClick={() => setIsColorsOpen(!isColorsOpen)}
                 className="w-full flex items-center justify-between text-xl font-heading font-medium border-b border-b-slate-300 pb-1 mt-6 hover:text-blue-600 transition-colors"
               >
-                <span>Filter by Color</span>
+                <span>{t('filterByColor')}</span>
                 <ChevronDown
                   className={`w-5 h-5 transition-transform duration-200 ${
                     isColorsOpen ? 'rotate-180' : ''
@@ -364,7 +374,7 @@ const Page = () => {
               {isColorsOpen && (
                 <ul className="space-y-2 !mt-3 max-h-[300px] overflow-y-auto">
                   {isFiltersLoading ? (
-                    <p className="text-sm text-gray-500">Loading colors...</p>
+                    <p className="text-sm text-gray-500">{t('loadingColors')}</p>
                   ) : filterOptions?.colors &&
                     filterOptions.colors.length > 0 ? (
                     filterOptions.colors.map((colorName) => (
@@ -388,7 +398,7 @@ const Page = () => {
                       </li>
                     ))
                   ) : (
-                    <p className="text-sm text-gray-500">No colors available</p>
+                    <p className="text-sm text-gray-500">{t('noColorsAvailable')}</p>
                   )}
                 </ul>
               )}
@@ -400,7 +410,7 @@ const Page = () => {
                 onClick={() => setIsSizesOpen(!isSizesOpen)}
                 className="w-full flex items-center justify-between text-xl font-heading font-medium border-b border-b-slate-300 pb-1 mt-6 hover:text-blue-600 transition-colors"
               >
-                <span>Filter by Size</span>
+                <span>{t('filterBySize')}</span>
                 <ChevronDown
                   className={`w-5 h-5 transition-transform duration-200 ${
                     isSizesOpen ? 'rotate-180' : ''
@@ -411,7 +421,7 @@ const Page = () => {
               {isSizesOpen && (
                 <ul className="space-y-2 !mt-3 max-h-[300px] overflow-y-auto">
                   {isFiltersLoading ? (
-                    <p className="text-sm text-gray-500">Loading sizes...</p>
+                    <p className="text-sm text-gray-500">{t('loadingSizes')}</p>
                   ) : filterOptions?.sizes && filterOptions.sizes.length > 0 ? (
                     filterOptions.sizes.map((size) => (
                       <li
@@ -430,7 +440,7 @@ const Page = () => {
                       </li>
                     ))
                   ) : (
-                    <p className="text-sm text-gray-500">No sizes available</p>
+                    <p className="text-sm text-gray-500">{t('noSizesAvailable')}</p>
                   )}
                 </ul>
               )}
@@ -445,12 +455,15 @@ const Page = () => {
                 <h2 className="text-2xl font-semibold text-gray-900">
                   {getPageTitle()}
                   <span className="text-gray-500 font-normal ml-2">
-                    ({total} {total === 1 ? 'product' : 'products'})
+                    ({total} {total === 1 ? t('product') : t('products')})
                   </span>
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  Showing {products.length > 0 ? (page - 1) * 12 + 1 : 0}-
-                  {Math.min(page * 12, total)} of {total} results
+                  {t('showing', {
+                    start: products.length > 0 ? (page - 1) * 12 + 1 : 0,
+                    end: Math.min(page * 12, total),
+                    total,
+                  })}
                 </p>
               </div>
 
@@ -460,7 +473,7 @@ const Page = () => {
                   htmlFor="sort"
                   className="text-sm text-gray-700 whitespace-nowrap"
                 >
-                  Sort by:
+                  {t('sortBy')}
                 </label>
                 <select
                   id="sort"
@@ -471,11 +484,11 @@ const Page = () => {
                   }}
                   className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white cursor-pointer"
                 >
-                  <option value="newest">Newest</option>
-                  <option value="price-asc">Price: Low to High</option>
-                  <option value="price-desc">Price: High to Low</option>
-                  <option value="popular">Most Popular</option>
-                  <option value="top-sales">Best Selling</option>
+                  <option value="newest">{t('newest')}</option>
+                  <option value="price-asc">{t('priceLowHigh')}</option>
+                  <option value="price-desc">{t('priceHighLow')}</option>
+                  <option value="popular">{t('mostPopular')}</option>
+                  <option value="top-sales">{t('bestSelling')}</option>
                 </select>
               </div>
             </div>
@@ -485,13 +498,13 @@ const Page = () => {
               <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-medium text-gray-700">
-                    Active Filters
+                    {t('activeFilters')}
                   </h3>
                   <button
                     onClick={clearAllFilters}
                     className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                   >
-                    Clear All
+                    {t('clearAll')}
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -501,7 +514,7 @@ const Page = () => {
                       key={category}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-800 rounded-full text-sm"
                     >
-                      <span className="font-medium">Category:</span> {category}
+                      <span className="font-medium">{t('categoryLabel')}</span> {category}
                       <button
                         onClick={() => toggleCategory(category)}
                         className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
@@ -537,7 +550,7 @@ const Page = () => {
                       key={size}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-800 rounded-full text-sm"
                     >
-                      <span className="font-medium">Size:</span> {size}
+                      <span className="font-medium">{t('sizeLabel')}</span> {size}
                       <button
                         onClick={() => toggleSize(size)}
                         className="hover:bg-green-200 rounded-full p-0.5 transition-colors"
@@ -550,7 +563,7 @@ const Page = () => {
                   {/* Price range filter */}
                   {(priceRange[0] !== 0 || priceRange[1] !== 1199) && (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-100 text-orange-800 rounded-full text-sm">
-                      <span className="font-medium">Price:</span> $
+                      <span className="font-medium">{t('priceLabel')}</span> $
                       {priceRange[0]} - ${priceRange[1]}
                       <button
                         onClick={() => {
@@ -601,19 +614,19 @@ const Page = () => {
                   </svg>
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  No products found
+                  {t('noProductsFound')}
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  We could not find any products matching your filters.
+                  {t('noProductsDesc')}
                   <br />
-                  Try adjusting your search criteria.
+                  {t('tryAdjusting')}
                 </p>
                 {hasActiveFilters && (
                   <button
                     onClick={clearAllFilters}
                     className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                   >
-                    Clear all filters
+                    {t('clearAllFilters')}
                   </button>
                 )}
               </div>

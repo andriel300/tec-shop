@@ -2,14 +2,9 @@
 
 import React from 'react';
 import { Tag } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Select } from '../../../../../../components/ui/core/Select';
 import { FormField } from '../../../../../../components/ui/form/FormField';
-
-const PRODUCT_STATUS = [
-  { value: 'draft', label: 'Draft' },
-  { value: 'published', label: 'Published' },
-  { value: 'scheduled', label: 'Scheduled' },
-];
 
 interface ProductStatusCardProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -17,16 +12,24 @@ interface ProductStatusCardProps {
 }
 
 export function ProductStatusCard({ form }: ProductStatusCardProps) {
+  const t = useTranslations('CreateProduct');
+
+  const PRODUCT_STATUS = [
+    { value: 'draft', label: t('statusDraft') },
+    { value: 'published', label: t('statusPublished') },
+    { value: 'scheduled', label: t('statusScheduled') },
+  ];
+
   return (
     <div className="bg-surface-container-lowest rounded-lg p-4 space-y-4 shadow-ambient">
       <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
         <Tag size={20} className="text-feedback-success" />
-        Product Status
+        {t('statusTitle')}
       </h3>
 
       <form.Field name="status">
         {(field: any) => ( // eslint-disable-line @typescript-eslint/no-explicit-any
-          <FormField field={field} label="Status">
+          <FormField field={field} label={t('statusFieldLabel')}>
             <Select
               value={field.state.value}
               onChange={(value: string) =>
@@ -52,7 +55,7 @@ export function ProductStatusCard({ form }: ProductStatusCardProps) {
               className="w-4 h-4 rounded bg-surface-container border-surface-container-highest text-brand-primary-600"
             />
             <label htmlFor="isFeatured" className="text-sm text-gray-500">
-              Mark as featured product
+              {t('markAsFeatured')}
             </label>
           </div>
         )}

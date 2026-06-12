@@ -3,6 +3,7 @@
 
 import { createLogger } from '@tec-shop/next-logger';
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 const logger = createLogger('seller-ui:events');
 import { useEvents, useDeleteEvent } from '../../../../../hooks/useEvents';
@@ -10,6 +11,7 @@ import type { EventResponse } from '../../../../../lib/api/events';
 import { useRouter } from 'apps/seller-ui/src/i18n/navigation';
 
 const EventsPage = () => {
+  const t = useTranslations('Events');
   const router = useRouter();
   const [filterStatus, setFilterStatus] = useState<string | undefined>(
     undefined
@@ -27,7 +29,7 @@ const EventsPage = () => {
   const deleteEventMutation = useDeleteEvent();
 
   const handleDelete = async (eventId: string) => {
-    if (window.confirm('Are you sure you want to delete this event?')) {
+    if (window.confirm(t('deleteConfirm'))) {
       try {
         await deleteEventMutation.mutateAsync(eventId);
       } catch (err) {
@@ -63,7 +65,7 @@ const EventsPage = () => {
   if (isLoading) {
     return (
       <div className="p-8">
-        <div className="text-gray-900 text-center py-8">Loading events...</div>
+        <div className="text-gray-900 text-center py-8">{t('loading')}</div>
       </div>
     );
   }
@@ -72,7 +74,7 @@ const EventsPage = () => {
     return (
       <div className="p-8">
         <div className="text-red-400 text-center py-8">
-          Error loading events: {error.message}
+          {t('loadError', { message: error.message })}
         </div>
       </div>
     );
@@ -82,32 +84,31 @@ const EventsPage = () => {
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Events</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('pageTitle')}</h1>
           <p className="text-slate-400 text-sm mt-1">
-            Manage your shop promotional events
+            {t('pageSubtitle')}
           </p>
         </div>
         <button
           onClick={() => router.push('/dashboard/create-event')}
           className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
         >
-          Create New Event
+          {t('createBtn')}
         </button>
       </div>
 
-      {/* Filters */}
       <div className="flex gap-4 mb-6">
         <select
           value={filterStatus || ''}
           onChange={(e) => setFilterStatus(e.target.value || undefined)}
           className="px-4 py-2 bg-[#ffffff] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-gray-900 dark:text-slate-200 rounded-lg outline-none"
         >
-          <option value="">All Statuses</option>
-          <option value="DRAFT">Draft</option>
-          <option value="SCHEDULED">Scheduled</option>
-          <option value="ACTIVE">Active</option>
-          <option value="COMPLETED">Completed</option>
-          <option value="CANCELLED">Cancelled</option>
+          <option value="">{t('filterAllStatuses')}</option>
+          <option value="DRAFT">{t('filterDraft')}</option>
+          <option value="SCHEDULED">{t('filterScheduled')}</option>
+          <option value="ACTIVE">{t('filterActive')}</option>
+          <option value="COMPLETED">{t('filterCompleted')}</option>
+          <option value="CANCELLED">{t('filterCancelled')}</option>
         </select>
 
         <select
@@ -124,22 +125,21 @@ const EventsPage = () => {
           }}
           className="px-4 py-2 bg-[#ffffff] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-gray-900 dark:text-slate-200 rounded-lg outline-none"
         >
-          <option value="">All Events</option>
-          <option value="active">Active Only</option>
-          <option value="inactive">Inactive Only</option>
+          <option value="">{t('filterAllEvents')}</option>
+          <option value="active">{t('filterActiveOnly')}</option>
+          <option value="inactive">{t('filterInactiveOnly')}</option>
         </select>
       </div>
 
-      {/* Events Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {data?.data?.length === 0 ? (
           <div className="col-span-full bg-gray-50 dark:bg-slate-800/50 rounded-lg p-8 border border-slate-200 dark:border-slate-700 text-center">
-            <p className="text-slate-400 mb-4">No events found</p>
+            <p className="text-slate-400 mb-4">{t('emptyDesc')}</p>
             <button
               onClick={() => router.push('/dashboard/create-event')}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
             >
-              Create Your First Event
+              {t('emptyCreateBtn')}
             </button>
           </div>
         ) : (
@@ -165,7 +165,7 @@ const EventsPage = () => {
                   </h3>
                   {isEventActive(event) && (
                     <span className="px-2 py-1 bg-green-500 text-white text-xs rounded-full animate-pulse">
-                      Live
+                      {t('cardLive')}
                     </span>
                   )}
                 </div>
@@ -176,13 +176,13 @@ const EventsPage = () => {
 
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="text-slate-500">Start:</span>
+                    <span className="text-slate-500">{t('cardStart')}</span>
                     <span className="text-gray-700 dark:text-slate-300">
                       {new Date(event.startDate).toLocaleDateString()}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="text-slate-500">End:</span>
+                    <span className="text-slate-500">{t('cardEnd')}</span>
                     <span className="text-gray-700 dark:text-slate-300">
                       {new Date(event.endDate).toLocaleDateString()}
                     </span>
@@ -199,7 +199,7 @@ const EventsPage = () => {
                   </span>
                   {event.isActive && (
                     <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400">
-                      Active
+                      {t('cardActive')}
                     </span>
                   )}
                 </div>
@@ -211,14 +211,14 @@ const EventsPage = () => {
                     }
                     className="flex-1 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition"
                   >
-                    Edit
+                    {t('editBtn')}
                   </button>
                   <button
                     onClick={() => handleDelete(event.id)}
                     disabled={deleteEventMutation.isPending}
                     className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50 transition"
                   >
-                    Delete
+                    {t('deleteBtn')}
                   </button>
                 </div>
               </div>

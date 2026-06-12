@@ -20,6 +20,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 import apiClient from '../../../../../../lib/api/client';
 import { Link } from 'apps/admin-ui/src/i18n/navigation';
 
@@ -92,20 +93,21 @@ const getStatusConfig = (status: string) => {
   return configs[status] ?? configs.PENDING;
 };
 
-const deliverySteps = [
-  { key: 'PAID',      label: 'Order Confirmed', icon: CheckCircle },
-  { key: 'SHIPPED',   label: 'In Transit',      icon: Truck       },
-  { key: 'DELIVERED', label: 'Delivered',        icon: Package     },
-];
-
 const OrderDetailsPage = ({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) => {
+  const t = useTranslations('OrderDetail');
   const { id: orderId } = use(params);
   const queryClient = useQueryClient();
   const [trackingNumber, setTrackingNumber] = useState('');
+
+  const deliverySteps = [
+    { key: 'PAID',      label: t('stepOrderConfirmed'), icon: CheckCircle },
+    { key: 'SHIPPED',   label: t('stepInTransit'),      icon: Truck       },
+    { key: 'DELIVERED', label: t('stepDelivered'),       icon: Package     },
+  ];
 
   const { data: order, isLoading } = useQuery<Order>({
     queryKey: ['order-details', orderId],
@@ -117,17 +119,17 @@ const OrderDetailsPage = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order-details', orderId] });
       queryClient.invalidateQueries({ queryKey: ['admin-orders'] });
-      toast.success('Order status updated successfully');
+      toast.success(t('toastUpdateSuccess'));
       setTrackingNumber('');
     },
     onError: () => {
-      toast.error('Failed to update order status');
+      toast.error(t('toastUpdateError'));
     },
   });
 
   const handleStatusUpdate = (status: string) => {
     if (status === 'SHIPPED' && !order?.trackingNumber && !trackingNumber) {
-      toast.error('Please enter a tracking number before marking as shipped');
+      toast.error(t('toastTrackingRequired'));
       return;
     }
     updateStatusMutation.mutate({
@@ -144,7 +146,6 @@ const OrderDetailsPage = ({
     const stepIndex = steps.indexOf(stepKey);
     if (stepIndex < currentIndex) return 'completed';
     if (stepIndex === currentIndex) {
-      // DELIVERED is a terminal state — always show as completed, not "in progress"
       if (stepKey === 'DELIVERED') return 'completed';
       return 'current';
     }
@@ -162,19 +163,13 @@ const OrderDetailsPage = ({
   if (!order) {
     return (
       <div className="w-full min-h-screen p-8">
-        <div className="text-center text-gray-500 mt-20">Order not found</div>
+        <div className="text-center text-gray-500 mt-20">{t('orderNotFound')}</div>
       </div>
     );
   }
 
-  const totalPlatformFee = order.items.reduce(
-    (sum, item) => sum + item.platformFee,
-    0
-  );
-  const totalSellerPayout = order.items.reduce(
-    (sum, item) => sum + item.sellerPayout,
-    0
-  );
+  const totalPlatformFee  = order.items.reduce((sum, item) => sum + item.platformFee, 0);
+  const totalSellerPayout = order.items.reduce((sum, item) => sum + item.sellerPayout, 0);
   const statusCfg = getStatusConfig(order.status);
   const StatusIcon = statusCfg.icon;
 
@@ -188,18 +183,18 @@ const OrderDetailsPage = ({
                      transition-colors mb-4 text-sm"
         >
           <ChevronLeft size={16} />
-          Back to Orders
+          {t('backToOrders')}
         </Link>
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-          <span>Dashboard</span>
+          <span>{t('breadcrumbDashboard')}</span>
           <span>/</span>
           <Link href="/dashboard/orders" className="hover:text-gray-300 transition-colors">
-            Orders
+            {t('breadcrumbOrders')}
           </Link>
           <span>/</span>
-          <span className="text-gray-300 font-medium">Order Details</span>
+          <span className="text-gray-300 font-medium">{t('breadcrumbDetail')}</span>
         </div>
-        <h1 className="text-4xl font-bold text-white">Order Details</h1>
+        <h1 className="text-4xl font-bold text-white">{t('pageTitle')}</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -210,7 +205,7 @@ const OrderDetailsPage = ({
             <div className="flex items-start justify-between mb-6">
               <div>
                 <p className="text-gray-500 text-xs font-semibold uppercase tracking-widest mb-1">
-                  Order Number
+                  {t('labelOrderNumber')}
                 </p>
                 <p className="text-white text-2xl font-mono font-bold">
                   {order.orderNumber}
@@ -229,7 +224,7 @@ const OrderDetailsPage = ({
               <div>
                 <p className="text-gray-500 flex items-center gap-1.5 mb-1">
                   <Calendar size={13} />
-                  Order Date
+                  {t('labelOrderDate')}
                 </p>
                 <p className="text-gray-200">
                   {new Date(order.createdAt).toLocaleDateString('en-US', {
@@ -249,7 +244,7 @@ const OrderDetailsPage = ({
               <div>
                 <p className="text-gray-500 flex items-center gap-1.5 mb-1">
                   <Tag size={13} />
-                  Payment Status
+                  {t('labelPaymentStatus')}
                 </p>
                 <p
                   className={`font-semibold ${
@@ -268,7 +263,7 @@ const OrderDetailsPage = ({
                 <div>
                   <p className="text-gray-500 flex items-center gap-1.5 mb-1">
                     <Truck size={13} />
-                    Tracking
+                    {t('labelTracking')}
                   </p>
                   <p className="text-gray-200 font-mono text-xs">
                     {order.trackingNumber}
@@ -280,9 +275,8 @@ const OrderDetailsPage = ({
 
           {/* Delivery Progress */}
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-            <h3 className="text-white font-semibold mb-8">Delivery Progress</h3>
+            <h3 className="text-white font-semibold mb-8">{t('sectionDelivery')}</h3>
 
-            {/* Flex-based stepper: connectors are explicit siblings, no absolute positioning */}
             <div className="flex items-start w-full">
               {deliverySteps.map((step, index) => {
                 const status = getStepStatus(step.key);
@@ -291,7 +285,6 @@ const OrderDetailsPage = ({
                 const isCurrent = status === 'current';
                 const isDone = isCompleted || isCurrent;
 
-                // Connector after this step (not after last)
                 const nextStatus = index < deliverySteps.length - 1
                   ? getStepStatus(deliverySteps[index + 1].key)
                   : null;
@@ -300,7 +293,6 @@ const OrderDetailsPage = ({
                 return (
                   <React.Fragment key={step.key}>
                     <div className="flex flex-col items-center text-center flex-shrink-0">
-                      {/* Icon circle */}
                       <div
                         className={`w-11 h-11 rounded-full flex items-center justify-center border-2 transition-colors ${
                           isCompleted
@@ -313,20 +305,18 @@ const OrderDetailsPage = ({
                         <Icon size={18} />
                       </div>
 
-                      {/* Label */}
                       <p className={`text-xs font-semibold mt-2.5 whitespace-nowrap ${
                         isDone ? 'text-white' : 'text-gray-600'
                       }`}>
                         {step.label}
                       </p>
                       <p className="text-[11px] text-gray-500 mt-0.5">
-                        {isCompleted && 'Completed'}
-                        {isCurrent && 'In Progress'}
-                        {!isDone && 'Pending'}
+                        {isCompleted && t('stepCompleted')}
+                        {isCurrent && t('stepInProgress')}
+                        {!isDone && t('stepPending')}
                       </p>
                     </div>
 
-                    {/* Connector line — between steps, not after the last */}
                     {index < deliverySteps.length - 1 && (
                       <div className={`flex-1 h-0.5 mt-[22px] mx-3 transition-colors ${
                         connectorActive ? 'bg-brand-primary-600' : 'bg-gray-800'
@@ -341,14 +331,14 @@ const OrderDetailsPage = ({
             {order.status !== 'DELIVERED' && order.status !== 'CANCELLED' && (
               <div className="mt-6 pt-6 border-t border-gray-800">
                 <h4 className="text-white text-sm font-semibold mb-3">
-                  Update Status
+                  {t('sectionUpdateStatus')}
                 </h4>
 
                 {order.status === 'PAID' && (
                   <div className="space-y-3">
                     <input
                       type="text"
-                      placeholder="Enter tracking number"
+                      placeholder={t('trackingPlaceholder')}
                       value={trackingNumber}
                       onChange={(e) => setTrackingNumber(e.target.value)}
                       className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-lg
@@ -363,7 +353,7 @@ const OrderDetailsPage = ({
                                  text-white rounded-lg transition-colors flex items-center justify-center gap-2 text-sm font-medium"
                     >
                       <Truck size={16} />
-                      Mark as Shipped
+                      {t('btnMarkShipped')}
                     </button>
                   </div>
                 )}
@@ -377,7 +367,7 @@ const OrderDetailsPage = ({
                                text-white rounded-lg transition-colors flex items-center justify-center gap-2 text-sm font-medium"
                   >
                     <Package size={16} />
-                    Mark as Delivered
+                    {t('btnMarkDelivered')}
                   </button>
                 )}
               </div>
@@ -387,9 +377,9 @@ const OrderDetailsPage = ({
           {/* Order Items */}
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
             <h3 className="text-white font-semibold mb-4">
-              Order Items
+              {t('sectionOrderItems')}
               <span className="ml-2 text-sm text-gray-500 font-normal">
-                ({order.items.length} item{order.items.length !== 1 ? 's' : ''})
+                {t('itemCount', { count: order.items.length })}
               </span>
             </h3>
 
@@ -421,7 +411,7 @@ const OrderDetailsPage = ({
                     </p>
                     {item.sku && (
                       <p className="text-xs text-gray-500 mt-0.5">
-                        SKU: {item.sku}
+                        {t('skuLabel', { sku: item.sku })}
                       </p>
                     )}
                     <p className="text-xs text-gray-500 mt-0.5">
@@ -434,10 +424,10 @@ const OrderDetailsPage = ({
                       ${(item.subtotal / 100).toFixed(2)}
                     </p>
                     <p className="text-xs text-emerald-400 mt-0.5">
-                      Fee: ${(item.platformFee / 100).toFixed(2)}
+                      {t('feeLabel', { amount: `$${(item.platformFee / 100).toFixed(2)}` })}
                     </p>
                     <p className="text-xs text-gray-500">
-                      Payout: ${(item.sellerPayout / 100).toFixed(2)}
+                      {t('payoutLabel', { amount: `$${(item.sellerPayout / 100).toFixed(2)}` })}
                     </p>
                   </div>
                 </div>
@@ -452,30 +442,30 @@ const OrderDetailsPage = ({
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
             <div className="flex items-center gap-2 text-brand-primary-400 mb-4">
               <TrendingUp size={18} />
-              <h3 className="font-semibold">Platform Revenue</h3>
+              <h3 className="font-semibold">{t('sectionPlatformRevenue')}</h3>
             </div>
 
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-400">Order Total</span>
+                <span className="text-gray-400">{t('labelOrderTotal')}</span>
                 <span className="text-white font-medium">
                   ${(order.finalAmount / 100).toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Platform Fee</span>
+                <span className="text-gray-400">{t('labelPlatformFee')}</span>
                 <span className="text-emerald-400 font-semibold">
                   +${(totalPlatformFee / 100).toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-400">Seller Payout</span>
+                <span className="text-gray-400">{t('labelSellerPayout')}</span>
                 <span className="text-gray-300">
                   ${(totalSellerPayout / 100).toFixed(2)}
                 </span>
               </div>
               <div className="pt-3 border-t border-gray-800 flex justify-between">
-                <span className="text-white font-semibold">Net Admin Revenue</span>
+                <span className="text-white font-semibold">{t('labelNetAdminRevenue')}</span>
                 <span className="text-emerald-400 font-bold">
                   ${(totalPlatformFee / 100).toFixed(2)}
                 </span>
@@ -487,32 +477,32 @@ const OrderDetailsPage = ({
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
             <div className="flex items-center gap-2 text-gray-300 mb-4">
               <DollarSign size={18} />
-              <h3 className="font-semibold">Order Summary</h3>
+              <h3 className="font-semibold">{t('sectionOrderSummary')}</h3>
             </div>
 
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-400">Subtotal</span>
+                <span className="text-gray-400">{t('labelSubtotal')}</span>
                 <span className="text-gray-200">
                   ${(order.subtotalAmount / 100).toFixed(2)}
                 </span>
               </div>
               {order.discountAmount > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Discount</span>
+                  <span className="text-gray-400">{t('labelDiscount')}</span>
                   <span className="text-emerald-400">
                     -${(order.discountAmount / 100).toFixed(2)}
                   </span>
                 </div>
               )}
               <div className="flex justify-between">
-                <span className="text-gray-400">Shipping</span>
+                <span className="text-gray-400">{t('labelShipping')}</span>
                 <span className="text-gray-200">
                   ${(order.shippingCost / 100).toFixed(2)}
                 </span>
               </div>
               <div className="pt-3 border-t border-gray-800 flex justify-between">
-                <span className="text-white font-semibold">Total</span>
+                <span className="text-white font-semibold">{t('labelTotal')}</span>
                 <span className="text-white font-bold">
                   ${(order.finalAmount / 100).toFixed(2)}
                 </span>
@@ -524,7 +514,7 @@ const OrderDetailsPage = ({
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
             <div className="flex items-center gap-2 text-gray-300 mb-4">
               <MapPin size={18} />
-              <h3 className="font-semibold">Shipping Address</h3>
+              <h3 className="font-semibold">{t('sectionShippingAddress')}</h3>
             </div>
 
             <div className="space-y-2 text-sm">

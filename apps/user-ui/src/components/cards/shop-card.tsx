@@ -2,7 +2,9 @@
 import { ArrowUpRight, MapPin, Star, BadgeCheck } from 'lucide-react';
 import Image from 'next/image';
 import { Link } from '../../i18n/navigation';
+import { useTranslations, useMessages } from 'next-intl';
 import React from 'react';
+import { getShopSlug } from '../../lib/api/shops';
 
 interface ShopCardProps {
   shop: {
@@ -28,6 +30,22 @@ interface ShopCardProps {
 }
 
 const ShopCard: React.FC<ShopCardProps> = ({ shop }) => {
+  const t = useTranslations('Shops');
+  const tCat = useTranslations('ShopCategories');
+  const messages = useMessages();
+  const shopCatMessages = (messages.ShopCategories ?? {}) as Record<string, string>;
+
+  const translateCategory = (category: string): string => {
+    // Try exact key, then title-cased key — no lookup if key is absent (avoids console error)
+    const titleCased = category.replace(/\b\w/g, (c) => c.toUpperCase());
+    const key = shopCatMessages[category]
+      ? category
+      : shopCatMessages[titleCased]
+        ? titleCased
+        : null;
+    return key ? tCat(key as Parameters<typeof tCat>[0]) : category;
+  };
+
   const displayLocation =
     shop.city && shop.country
       ? `${shop.city}, ${shop.country}`
@@ -89,7 +107,7 @@ const ShopCard: React.FC<ShopCardProps> = ({ shop }) => {
           <span className="flex items-center gap-1">
             <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
             <span className="font-medium text-gray-700">
-              {shop.rating?.toFixed(1) ?? 'N/A'}
+              {shop.rating?.toFixed(1) ?? t('noRating')}
             </span>
             {shop.totalRatings !== undefined && (
               <span className="text-gray-400">({shop.totalRatings})</span>
@@ -101,7 +119,7 @@ const ShopCard: React.FC<ShopCardProps> = ({ shop }) => {
         {shop.category && (
           <div className="mt-3 flex justify-center">
             <span className="bg-blue-50 capitalize text-blue-600 px-2.5 py-1 rounded-full font-medium text-xs">
-              {shop.category}
+              {translateCategory(shop.category)}
             </span>
           </div>
         )}
@@ -109,10 +127,10 @@ const ShopCard: React.FC<ShopCardProps> = ({ shop }) => {
         {/* Visit Shop Button */}
         <div className="mt-4">
           <Link
-            href={`/shops/${shop.id}`}
+            href={`/shops/${getShopSlug(shop)}`}
             className="inline-flex items-center text-sm text-blue-600 font-medium hover:underline hover:text-blue-700 transition"
           >
-            Visit Shop
+            {t('visitShop')}
             <ArrowUpRight className="w-4 h-4 ml-1" />
           </Link>
         </div>

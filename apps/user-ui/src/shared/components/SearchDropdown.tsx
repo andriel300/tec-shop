@@ -3,6 +3,7 @@
 import { Link } from '../../i18n/navigation';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import { useCurrency } from '../../hooks/use-currency';
 import { Product, Shop } from './SearchBar';
 
 interface Props {
@@ -26,6 +27,7 @@ const SearchDropdown = ({
   clear,
 }: Props) => {
   const t = useTranslations('Navbar');
+  const { formatPrice } = useCurrency();
 
   if (!show) return null;
 
@@ -75,7 +77,7 @@ const SearchDropdown = ({
                   {product.name}
                 </p>
                 <p className="text-sm text-brand-primary font-semibold">
-                  R$ {product.price.toFixed(2)}
+                  {formatPrice(product.price)}
                 </p>
               </div>
             </Link>

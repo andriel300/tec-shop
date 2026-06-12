@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Tag, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Input } from '../core/Input';
 
 export interface TagInputProps {
@@ -12,10 +13,6 @@ export interface TagInputProps {
   className?: string;
 }
 
-/**
- * TagInput Component
- * Input for adding/removing product tags (e.g., "sale", "bestseller", "new-arrival")
- */
 const TagInput: React.FC<TagInputProps> = ({
   value = [],
   onChange,
@@ -23,6 +20,7 @@ const TagInput: React.FC<TagInputProps> = ({
   placeholder = 'Add tag (e.g., sale, bestseller, new)',
   className = '',
 }) => {
+  const t = useTranslations('CreateProduct');
   const [inputValue, setInputValue] = useState('');
 
   const addTag = (tag: string) => {
@@ -56,7 +54,7 @@ const TagInput: React.FC<TagInputProps> = ({
         <div className="flex items-center gap-2">
           <Tag size={14} className="text-brand-primary" />
           <label className="block text-sm font-semibold text-gray-900">
-            Product Tags
+            {t('tagsLabel')}
           </label>
         </div>
         <span className="text-xs text-gray-500">
@@ -64,7 +62,6 @@ const TagInput: React.FC<TagInputProps> = ({
         </span>
       </div>
 
-      {/* Tag Chips */}
       {value.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-3">
           {value.map((tag, index) => (
@@ -78,7 +75,7 @@ const TagInput: React.FC<TagInputProps> = ({
                 type="button"
                 onClick={() => removeTag(index)}
                 className="ml-0.5 flex-shrink-0 hover:opacity-70 transition-opacity cursor-pointer"
-                aria-label={`Remove ${tag}`}
+                aria-label={t('tagsRemoveAriaLabel', { tag })}
               >
                 <X size={11} />
               </button>
@@ -87,7 +84,6 @@ const TagInput: React.FC<TagInputProps> = ({
         </div>
       )}
 
-      {/* Input */}
       {value.length < maxTags && (
         <div className="flex gap-2">
           <Input
@@ -105,19 +101,18 @@ const TagInput: React.FC<TagInputProps> = ({
             disabled={!inputValue.trim() || value.length >= maxTags}
             className="px-4 py-2 bg-brand-primary text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed text-sm font-medium cursor-pointer"
           >
-            Add
+            {t('tagsAdd')}
           </button>
         </div>
       )}
 
       <p className="mt-2 text-xs text-gray-500">
-        Tags help customers find your product (e.g., &quot;sale&quot;, &quot;trending&quot;,
-        &quot;new-arrival&quot;). Press Enter or click Add.
+        {t('tagsHelperText')}
       </p>
 
       {value.length >= maxTags && (
         <p className="mt-1.5 text-xs text-feedback-warning">
-          Maximum {maxTags} tags reached. Remove a tag to add more.
+          {t('tagsMaxReached', { maxTags })}
         </p>
       )}
     </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useForm } from '@tanstack/react-form';
+import { useTranslations } from 'next-intl';
 import { Plus, X, Edit2, Trash2, Copy, Star } from 'lucide-react';
 import React, { useState } from 'react';
 import { countries } from '../../lib/utils/countries';
@@ -15,6 +16,7 @@ import {
 import type { ShippingAddress } from '../../lib/api/address';
 
 const ShippingAddressSection = () => {
+  const t = useTranslations('ShippingAddress');
   const [showModal, setShowModal] = useState(false);
   const [editingAddress, setEditingAddress] = useState<ShippingAddress | null>(
     null
@@ -119,7 +121,7 @@ const ShippingAddressSection = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-semibold text-gray-800">
-          Saved Addresses ({addressCount}/{maxAddresses})
+          {t('savedAddresses', { count: addressCount, max: maxAddresses })}
         </h2>
 
         <button
@@ -132,11 +134,11 @@ const ShippingAddressSection = () => {
           }`}
           title={
             !canAddMore
-              ? 'Maximum limit of 5 addresses reached'
-              : 'Add new address'
+              ? t('maxLimitReached')
+              : t('addNewAddress')
           }
         >
-          <Plus className="w-4 h-4" /> Add New Address
+          <Plus className="w-4 h-4" /> {t('addNewAddress')}
         </button>
       </div>
 
@@ -144,7 +146,7 @@ const ShippingAddressSection = () => {
       {isLoading && (
         <div className="text-center py-8">
           <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
-          <p className="mt-2 text-sm text-gray-600">Loading addresses...</p>
+          <p className="mt-2 text-sm text-gray-600">{t('loading')}</p>
         </div>
       )}
 
@@ -152,7 +154,7 @@ const ShippingAddressSection = () => {
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <p className="text-sm text-red-600">
-            Failed to load addresses. Please try again.
+            {t('failedToLoad')}
           </p>
         </div>
       )}
@@ -161,13 +163,13 @@ const ShippingAddressSection = () => {
       {!isLoading && !error && addressCount === 0 && (
         <div className="text-center py-8 bg-gray-50 rounded-md">
           <p className="text-sm text-gray-600">
-            No shipping addresses saved yet.
+            {t('noAddresses')}
           </p>
           <button
             onClick={() => setShowModal(true)}
             className="mt-4 inline-flex items-center gap-1 text-sm text-blue-600 hover:underline"
           >
-            <Plus className="w-4 h-4" /> Add your first address
+            <Plus className="w-4 h-4" /> {t('addFirstAddress')}
           </button>
         </div>
       )}
@@ -188,7 +190,7 @@ const ShippingAddressSection = () => {
               {address.isDefault && (
                 <div className="absolute top-2 right-2">
                   <span className="inline-flex items-center gap-1 bg-blue-600 text-white text-xs font-medium px-2 py-1 rounded">
-                    <Star className="w-3 h-3 fill-current" /> Default
+                    <Star className="w-3 h-3 fill-current" /> {t('defaultBadge')}
                   </span>
                 </div>
               )}
@@ -207,7 +209,7 @@ const ShippingAddressSection = () => {
                 </p>
                 {address.phoneNumber && (
                   <p className="text-sm text-gray-600 mt-1">
-                    Phone: {address.phoneNumber}
+                    {t('phone', { number: address.phoneNumber })}
                   </p>
                 )}
               </div>
@@ -220,30 +222,28 @@ const ShippingAddressSection = () => {
                     disabled={setDefaultMutation.isPending}
                     className="text-xs text-blue-600 hover:underline disabled:text-gray-400"
                   >
-                    Set as Default
+                    {t('setAsDefault')}
                   </button>
                 )}
                 <button
                   onClick={() => handleEdit(address)}
                   className="text-xs text-gray-600 hover:underline flex items-center gap-1"
                 >
-                  <Edit2 className="w-3 h-3" /> Edit
+                  <Edit2 className="w-3 h-3" /> {t('edit')}
                 </button>
                 <button
                   onClick={() => handleCopy(address.id)}
                   disabled={copyMutation.isPending || !canAddMore}
                   className="text-xs text-gray-600 hover:underline flex items-center gap-1 disabled:text-gray-400"
-                  title={
-                    !canAddMore ? 'Maximum limit reached' : 'Copy this address'
-                  }
+                  title={!canAddMore ? t('maxLimitCopy') : t('copyTitle')}
                 >
-                  <Copy className="w-3 h-3" /> Copy
+                  <Copy className="w-3 h-3" /> {t('copy')}
                 </button>
                 <button
                   onClick={() => setDeleteConfirm(address.id)}
                   className="text-xs text-red-600 hover:underline flex items-center gap-1"
                 >
-                  <Trash2 className="w-3 h-3" /> Delete
+                  <Trash2 className="w-3 h-3" /> {t('delete')}
                 </button>
               </div>
 
@@ -252,7 +252,7 @@ const ShippingAddressSection = () => {
                 <div className="absolute inset-0 bg-white bg-opacity-95 flex items-center justify-center rounded-md">
                   <div className="text-center p-4">
                     <p className="text-sm font-medium text-gray-800 mb-3">
-                      Delete this address?
+                      {t('deleteConfirm')}
                     </p>
                     <div className="flex gap-2 justify-center">
                       <button
@@ -261,14 +261,14 @@ const ShippingAddressSection = () => {
                         className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:bg-gray-400"
                       >
                         {deleteMutation.isPending
-                          ? 'Deleting...'
-                          : 'Yes, Delete'}
+                          ? t('deleting')
+                          : t('yesDelete')}
                       </button>
                       <button
                         onClick={() => setDeleteConfirm(null)}
                         className="px-3 py-1 bg-gray-200 text-gray-800 text-sm rounded hover:bg-gray-300"
                       >
-                        Cancel
+                        {t('cancel')}
                       </button>
                     </div>
                   </div>
@@ -291,7 +291,7 @@ const ShippingAddressSection = () => {
             </button>
 
             <h3 className="text-lg font-semibold mb-4 text-gray-800">
-              {editingAddress ? 'Edit Address' : 'Add New Address'}
+              {editingAddress ? t('modalTitleEdit') : t('modalTitleAdd')}
             </h3>
 
             {/* Form */}
@@ -307,16 +307,16 @@ const ShippingAddressSection = () => {
                 {(field) => (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Label <span className="text-red-500">*</span>
+                      {t('labelField')} <span className="text-red-500">*</span>
                     </label>
                     <select
                       className="border rounded-sm w-full p-2"
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
                     >
-                      <option value="Home">Home</option>
-                      <option value="Work">Work</option>
-                      <option value="Others">Others</option>
+                      <option value="Home">{t('labelHome')}</option>
+                      <option value="Work">{t('labelWork')}</option>
+                      <option value="Others">{t('labelOthers')}</option>
                     </select>
                   </div>
                 )}
@@ -327,16 +327,16 @@ const ShippingAddressSection = () => {
                 name="name"
                 validators={{
                   onChange: ({ value }) =>
-                    !value ? 'Full name is required' : undefined,
+                    !value ? t('nameRequired') : undefined,
                 }}
               >
                 {(field) => (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Full Name <span className="text-red-500">*</span>
+                      {t('nameField')} <span className="text-red-500">*</span>
                     </label>
                     <input
-                      placeholder="Your name"
+                      placeholder={t('namePlaceholder')}
                       className="border rounded-sm w-full p-2"
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
@@ -355,16 +355,16 @@ const ShippingAddressSection = () => {
                 name="street"
                 validators={{
                   onChange: ({ value }) =>
-                    !value ? 'Street address is required' : undefined,
+                    !value ? t('streetRequired') : undefined,
                 }}
               >
                 {(field) => (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Street Address <span className="text-red-500">*</span>
+                      {t('streetField')} <span className="text-red-500">*</span>
                     </label>
                     <input
-                      placeholder="123 Main St, Apt 4B"
+                      placeholder={t('streetPlaceholder')}
                       className="border rounded-sm w-full p-2"
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
@@ -383,16 +383,16 @@ const ShippingAddressSection = () => {
                 name="city"
                 validators={{
                   onChange: ({ value }) =>
-                    !value ? 'City is required' : undefined,
+                    !value ? t('cityRequired') : undefined,
                 }}
               >
                 {(field) => (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      City <span className="text-red-500">*</span>
+                      {t('cityField')} <span className="text-red-500">*</span>
                     </label>
                     <input
-                      placeholder="City"
+                      placeholder={t('cityPlaceholder')}
                       className="border rounded-sm w-full p-2"
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
@@ -411,10 +411,10 @@ const ShippingAddressSection = () => {
                 {(field) => (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      State/Province (Optional)
+                      {t('stateField')}
                     </label>
                     <input
-                      placeholder="CA"
+                      placeholder={t('statePlaceholder')}
                       className="border rounded-sm w-full p-2"
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
@@ -428,16 +428,16 @@ const ShippingAddressSection = () => {
                 name="zipCode"
                 validators={{
                   onChange: ({ value }) =>
-                    !value ? 'ZIP code is required' : undefined,
+                    !value ? t('zipRequired') : undefined,
                 }}
               >
                 {(field) => (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      ZIP Code <span className="text-red-500">*</span>
+                      {t('zipField')} <span className="text-red-500">*</span>
                     </label>
                     <input
-                      placeholder="01310-100"
+                      placeholder={t('zipPlaceholder')}
                       className="border rounded-sm w-full p-2"
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
@@ -456,7 +456,7 @@ const ShippingAddressSection = () => {
                 {(field) => (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Country <span className="text-red-500">*</span>
+                      {t('countryField')} <span className="text-red-500">*</span>
                     </label>
                     <select
                       className="border rounded-sm w-full p-2"
@@ -478,10 +478,10 @@ const ShippingAddressSection = () => {
                 {(field) => (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Phone Number (Optional)
+                      {t('phoneField')}
                     </label>
                     <input
-                      placeholder="+55 11 98765-4321"
+                      placeholder={t('phonePlaceholder')}
                       className="border rounded-sm w-full p-2"
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
@@ -499,7 +499,7 @@ const ShippingAddressSection = () => {
                       checked={field.state.value}
                       onChange={(e) => field.handleChange(e.target.checked)}
                     />
-                    Set as default address
+                    {t('isDefaultCheckbox')}
                   </label>
                 )}
               </form.Field>
@@ -510,10 +510,10 @@ const ShippingAddressSection = () => {
                 className="bg-blue-600 text-white px-4 py-2 rounded-sm w-full mt-2 disabled:bg-gray-400"
               >
                 {createMutation.isPending || updateMutation.isPending
-                  ? 'Saving...'
+                  ? t('saving')
                   : editingAddress
-                  ? 'Update Address'
-                  : 'Save Address'}
+                  ? t('updateAddress')
+                  : t('saveAddress')}
               </button>
             </form>
           </div>

@@ -23,6 +23,7 @@ export const useUserRating = (
     queryKey: ['userRating', productId],
     queryFn: () => getUserRating(productId),
     enabled,
+    retry: false,
   });
 };
 

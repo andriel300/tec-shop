@@ -6,11 +6,11 @@ import { apiClient } from '../../../../lib/api/client';
 const logger = createLogger('user-ui:shops');
 import { Link } from '../../../../i18n/navigation';
 import React, { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { ChevronDown, X, Store, Search, Star } from 'lucide-react';
 import ShopCard from '../../../../components/cards/shop-card';
 import { countries } from '../../../../lib/utils/countries';
 
-// Shop categories (different from product categories)
 const SHOP_CATEGORIES = [
   'Electronics',
   'Fashion & Apparel',
@@ -27,9 +27,12 @@ const SHOP_CATEGORIES = [
   'Jewelry & Accessories',
   'Arts & Crafts',
   'Musical Instruments',
-];
+] as const;
 
 const Page = () => {
+  const t = useTranslations('Shops');
+  const tCat = useTranslations('ShopCategories');
+
   const [isShopLoading, setIsShopLoading] = React.useState(false);
   const [selectedCategory, setSelectedCategory] = React.useState('');
   const [selectedCountry, setSelectedCountry] = React.useState('');
@@ -57,27 +60,11 @@ const Page = () => {
     try {
       const query = new URLSearchParams();
 
-      // Search query
-      if (searchQuery) {
-        query.set('search', searchQuery);
-      }
+      if (searchQuery) query.set('search', searchQuery);
+      if (selectedCategory) query.set('category', selectedCategory);
+      if (selectedCountry) query.set('country', selectedCountry);
+      if (minRating > 0) query.set('minRating', minRating.toString());
 
-      // Category filter
-      if (selectedCategory) {
-        query.set('category', selectedCategory);
-      }
-
-      // Country filter
-      if (selectedCountry) {
-        query.set('country', selectedCountry);
-      }
-
-      // Rating filter
-      if (minRating > 0) {
-        query.set('minRating', minRating.toString());
-      }
-
-      // Pagination
       const limit = 12;
       const offset = (page - 1) * limit;
       query.set('limit', limit.toString());
@@ -87,7 +74,6 @@ const Page = () => {
 
       setShops(res.data.shops || []);
 
-      // Calculate total pages from total count
       const totalCount = res.data.total || 0;
       setTotal(totalCount);
       setTotalPages(Math.ceil(totalCount / limit));
@@ -121,9 +107,9 @@ const Page = () => {
 
   const getPageTitle = () => {
     if (selectedCategory) {
-      return `${selectedCategory} Shops`;
+      return t('categoryTitle', { category: tCat(selectedCategory as Parameters<typeof tCat>[0]) });
     }
-    return 'All Shops';
+    return t('title');
   };
 
   return (
@@ -133,25 +119,24 @@ const Page = () => {
           <div className="flex items-center gap-3 md:pt-[40px] mb-[14px]">
             <Store className="w-10 h-10 text-blue-600" />
             <h1 className="font-medium text-[44px] leading-1 font-Jost">
-              Discover Shops
+              {t('discoverShops')}
             </h1>
           </div>
-          <p className="text-gray-600 mb-4 text-lg">
-            Browse trusted sellers and find the perfect shop for you
-          </p>
+          <p className="text-gray-600 mb-4 text-lg">{t('subtitle')}</p>
           <Link href="/" className="text-[#55585b] hover:underline">
-            Home
+            {t('home')}
           </Link>
-          <span className="inline-block p-[1.5px] mx-1 bg-[#a8acb0] rounded-full"></span>
-          <span className="text-[#55585b]">Shops</span>
+          <span className="inline-block p-[1.5px] mx-1 bg-[#a8acb0] rounded-full" />
+          <span className="text-[#55585b]">{t('shops')}</span>
         </div>
+
         <div className="w-full flex flex-col gap-8 lg:flex-row">
-          {/* sidebar */}
+          {/* Sidebar */}
           <aside className="w-full lg:w-[270px] !rounded bg-white p-4 space-y-6 shadow-md">
             {/* Search */}
             <div>
               <h3 className="text-xl font-heading font-medium mb-3">
-                Search Shops
+                {t('searchShops')}
               </h3>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -162,7 +147,7 @@ const Page = () => {
                     setSearchQuery(e.target.value);
                     setPage(1);
                   }}
-                  placeholder="Search by name..."
+                  placeholder={t('searchPlaceholder')}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -174,7 +159,7 @@ const Page = () => {
                 onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
                 className="w-full flex items-center justify-between text-xl font-heading font-medium border-b border-b-slate-300 pb-1 hover:text-blue-600 transition-colors"
               >
-                <span>Shop Category</span>
+                <span>{t('shopCategory')}</span>
                 <ChevronDown
                   className={`w-5 h-5 transition-transform duration-200 ${
                     isCategoriesOpen ? 'rotate-180' : ''
@@ -196,7 +181,7 @@ const Page = () => {
                         }}
                         className="w-4 h-4 accent-blue-600 cursor-pointer"
                       />
-                      All Categories
+                      {t('allCategories')}
                     </label>
                   </li>
                   {SHOP_CATEGORIES.map((category) => (
@@ -212,7 +197,7 @@ const Page = () => {
                           }}
                           className="w-4 h-4 accent-blue-600 cursor-pointer"
                         />
-                        {category}
+                        {tCat(category)}
                       </label>
                     </li>
                   ))}
@@ -226,7 +211,7 @@ const Page = () => {
                 onClick={() => setIsCountriesOpen(!isCountriesOpen)}
                 className="w-full flex items-center justify-between text-xl font-heading font-medium border-b border-b-slate-300 pb-1 hover:text-blue-600 transition-colors"
               >
-                <span>Country</span>
+                <span>{t('country')}</span>
                 <ChevronDown
                   className={`w-5 h-5 transition-transform duration-200 ${
                     isCountriesOpen ? 'rotate-180' : ''
@@ -248,7 +233,7 @@ const Page = () => {
                         }}
                         className="w-4 h-4 accent-blue-600 cursor-pointer"
                       />
-                      All Countries
+                      {t('allCountries')}
                     </label>
                   </li>
                   {countries.map((country) => (
@@ -275,7 +260,7 @@ const Page = () => {
             {/* Rating Filter */}
             <div>
               <h3 className="text-xl font-heading font-medium border-b border-b-slate-300 pb-1">
-                Minimum Rating
+                {t('minimumRating')}
               </h3>
               <ul className="space-y-2 !mt-3">
                 {[0, 3, 4, 4.5].map((rating) => (
@@ -292,12 +277,12 @@ const Page = () => {
                         className="w-4 h-4 accent-blue-600 cursor-pointer"
                       />
                       {rating === 0 ? (
-                        'Any Rating'
+                        t('anyRating')
                       ) : (
                         <div className="flex items-center gap-1">
                           {rating}
                           <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                          & up
+                          {t('andUp')}
                         </div>
                       )}
                     </label>
@@ -307,20 +292,23 @@ const Page = () => {
             </div>
           </aside>
 
-          {/* shop grid */}
+          {/* Shop grid */}
           <div className="flex-1 px-2 lg:px-3">
-            {/* Header with title, count */}
+            {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
               <div>
                 <h2 className="text-2xl font-semibold text-gray-900">
                   {getPageTitle()}
                   <span className="text-gray-500 font-normal ml-2">
-                    ({total} {total === 1 ? 'shop' : 'shops'})
+                    ({total} {total === 1 ? t('shop') : t('shopsCount')})
                   </span>
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  Showing {shops.length > 0 ? (page - 1) * 12 + 1 : 0}-
-                  {Math.min(page * 12, total)} of {total} results
+                  {t('showing', {
+                    start: shops.length > 0 ? (page - 1) * 12 + 1 : 0,
+                    end: Math.min(page * 12, total),
+                    total,
+                  })}
                 </p>
               </div>
             </div>
@@ -330,20 +318,20 @@ const Page = () => {
               <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-medium text-gray-700">
-                    Active Filters
+                    {t('activeFilters')}
                   </h3>
                   <button
                     onClick={clearAllFilters}
                     className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                   >
-                    Clear All
+                    {t('clearAll')}
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {selectedCategory && (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-800 rounded-full text-sm">
-                      <span className="font-medium">Category:</span>{' '}
-                      {selectedCategory}
+                      <span className="font-medium">{t('categoryLabel')}</span>{' '}
+                      {tCat(selectedCategory as Parameters<typeof tCat>[0])}
                       <button
                         onClick={() => setSelectedCategory('')}
                         className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
@@ -355,7 +343,7 @@ const Page = () => {
 
                   {selectedCountry && (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 text-purple-800 rounded-full text-sm">
-                      <span className="font-medium">Country:</span>{' '}
+                      <span className="font-medium">{t('countryLabel')}</span>{' '}
                       {selectedCountry}
                       <button
                         onClick={() => setSelectedCountry('')}
@@ -368,7 +356,8 @@ const Page = () => {
 
                   {searchQuery && (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-800 rounded-full text-sm">
-                      <span className="font-medium">Search:</span> {searchQuery}
+                      <span className="font-medium">{t('searchLabel')}</span>{' '}
+                      {searchQuery}
                       <button
                         onClick={() => setSearchQuery('')}
                         className="hover:bg-green-200 rounded-full p-0.5 transition-colors"
@@ -380,8 +369,8 @@ const Page = () => {
 
                   {minRating > 0 && (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-yellow-100 text-yellow-800 rounded-full text-sm">
-                      <span className="font-medium">Rating:</span> {minRating}+
-                      ⭐
+                      <span className="font-medium">{t('ratingLabel')}</span>{' '}
+                      {minRating}+ ⭐
                       <button
                         onClick={() => setMinRating(0)}
                         className="hover:bg-yellow-200 rounded-full p-0.5 transition-colors"
@@ -401,7 +390,7 @@ const Page = () => {
                   <div
                     key={index}
                     className="h-[250px] bg-gray-200 animate-pulse rounded-xl"
-                  ></div>
+                  />
                 ))}
               </div>
             ) : shops.length > 0 ? (
@@ -416,19 +405,19 @@ const Page = () => {
                   <Store className="w-full h-full" />
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  No shops found
+                  {t('noShopsFound')}
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  We could not find any shops matching your filters.
+                  {t('noShopsDesc')}
                   <br />
-                  Try adjusting your search criteria.
+                  {t('tryAdjusting')}
                 </p>
                 {hasActiveFilters && (
                   <button
                     onClick={clearAllFilters}
                     className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                   >
-                    Clear all filters
+                    {t('clearAllFilters')}
                   </button>
                 )}
               </div>

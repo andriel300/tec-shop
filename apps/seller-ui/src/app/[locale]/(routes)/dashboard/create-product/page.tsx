@@ -4,6 +4,7 @@ import { createLogger } from '@tec-shop/next-logger';
 import { useForm } from '@tanstack/react-form';
 import React, { useState } from 'react';
 import { Package, Boxes, Tag } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 const logger = createLogger('seller-ui:create-product');
 
@@ -25,16 +26,10 @@ import { BasicInfoTab } from './_components/BasicInfoTab';
 import { ProductStatusCard } from './_components/ProductStatusCard';
 import { ProductFormActions } from './_components/ProductFormActions';
 
-const TABS = [
-  { id: 'basic', label: 'Basic Info', icon: Package },
-  { id: 'variants', label: 'Variants', icon: Boxes },
-  { id: 'shipping', label: 'Shipping', icon: Package },
-  { id: 'seo', label: 'SEO', icon: Tag },
-] as const;
-
-type TabId = (typeof TABS)[number]['id'];
+type TabId = 'basic' | 'variants' | 'shipping' | 'seo';
 
 const Page = () => {
+  const t = useTranslations('CreateProduct');
   const router = useRouter();
   const [productImages, setProductImages] = useState<(File | null)[]>([
     null,
@@ -50,6 +45,13 @@ const Page = () => {
     Record<string, unknown>
   >({});
   const [activeTab, setActiveTab] = useState<TabId>('basic');
+
+  const tabs = [
+    { id: 'basic' as const, label: t('tabBasicInfo'), icon: Package },
+    { id: 'variants' as const, label: t('tabVariants'), icon: Boxes },
+    { id: 'shipping' as const, label: t('tabShipping'), icon: Package },
+    { id: 'seo' as const, label: t('tabSeo'), icon: Tag },
+  ];
 
   const form = useForm({
     defaultValues: {
@@ -98,7 +100,7 @@ const Page = () => {
         );
 
         if (validImages.length === 0) {
-          setSubmitError('At least one product image is required');
+          setSubmitError(t('imageRequired'));
           return;
         }
 
@@ -126,7 +128,7 @@ const Page = () => {
         setSubmitError(
           error instanceof Error
             ? error.message
-            : 'Failed to create product. Please try again.'
+            : t('createFailed')
         );
       }
     },
@@ -143,28 +145,28 @@ const Page = () => {
   return (
     <div className="w-full mx-auto p-8 bg-surface-dark text-gray-900">
       <h2 className="text-2xl py-2 font-semibold font-heading text-gray-900">
-        Create Product
+        {t('pageTitle')}
       </h2>
 
       <Breadcrumb
         items={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Create Product' },
+          { label: t('breadcrumbDashboard'), href: '/dashboard' },
+          { label: t('breadcrumbCreateProduct') },
         ]}
       />
 
       {submitSuccess && (
         <Alert
           variant="success"
-          title="Product Created Successfully!"
-          description="Redirecting to products list..."
+          title={t('successTitle')}
+          description={t('successDesc')}
         />
       )}
 
       {submitError && (
         <Alert
           variant="error"
-          title="Error Creating Product"
+          title={t('errorTitle')}
           description={submitError}
         />
       )}
@@ -191,7 +193,7 @@ const Page = () => {
           <div className="lg:col-span-2 space-y-6">
             {/* Tab Navigation */}
             <div className="flex gap-2 border-b border-surface-container-highest">
-              {TABS.map((tab) => (
+              {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   type="button"

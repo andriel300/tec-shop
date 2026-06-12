@@ -796,8 +796,14 @@ export class PublicShopsController {
   async getShopById(@Param('shopId') shopId: string) {
     this.logger.log(`Fetching shop details for shopId: ${shopId}`);
 
+    const isMongoId = /^[a-f\d]{24}$/i.test(shopId);
+    if (isMongoId) {
+      return this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
+        this.sellerService.send('seller-get-shop-by-id', { shopId })
+      ));
+    }
     return this.cb.fire('SELLER_SERVICE', () => firstValueFrom(
-      this.sellerService.send('seller-get-shop-by-id', { shopId })
+      this.sellerService.send('seller-get-shop-by-slug', { slug: shopId })
     ));
   }
 

@@ -13,7 +13,10 @@ const withNextIntl = createNextIntlPlugin(i18nRequestPath.startsWith('.') ? i18n
 const nextConfig = {
   nx: {},
   productionBrowserSourceMaps: false,
-  serverExternalPackages: ['pino', 'pino-pretty', 'thread-stream'],
+  // isomorphic-dompurify + jsdom: keeping them external prevents Turbopack from
+  // bundling jsdom's massive dependency graph (~12s compile, ~1GB memory) into
+  // the server bundle, which was causing cache eviction and recompile loops.
+  serverExternalPackages: ['pino', 'pino-pretty', 'thread-stream', 'isomorphic-dompurify', 'jsdom'],
   experimental: {
     webpackMemoryOptimizations: true,
   },
@@ -71,7 +74,7 @@ module.exports = async (phase, context) => {
 
   // Preserve these options after withNx may override them
   updatedConfig.images = nextConfig.images;
-  updatedConfig.serverExternalPackages = ['pino', 'pino-pretty', 'thread-stream'];
+  updatedConfig.serverExternalPackages = ['pino', 'pino-pretty', 'thread-stream', 'isomorphic-dompurify', 'jsdom'];
 
   return updatedConfig;
 };

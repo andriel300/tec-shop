@@ -225,8 +225,14 @@ export const deleteRating = async (ratingId: string): Promise<void> => {
 export const getUserRating = async (
   productId: string
 ): Promise<Rating | null> => {
-  const response = await apiClient.get(`/products/${productId}/ratings/me`);
-  return response.data;
+  try {
+    const response = await apiClient.get(`/products/${productId}/ratings/me`);
+    return response.data ?? null;
+  } catch {
+    // 404 = user hasn't rated yet (expected); any other error (500, network) also
+    // means we can't show an existing rating — treat both as "no rating".
+    return null;
+  }
 };
 
 export const getProductReviews = async (

@@ -24,6 +24,7 @@ import {
   ArrowUpDown,
   Download,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import apiClient from '../../../../../lib/api/client';
 import { exportToCSV } from '../../../../../lib/utils/csv-export';
 
@@ -91,10 +92,10 @@ const PAYOUT_STATUS_CONFIG: Record<
   string,
   { icon: typeof CheckCircle; color: string; bg: string }
 > = {
-  PENDING:    { icon: Clock,        color: 'text-amber-400',   bg: 'bg-amber-500/10 border-amber-500/20'   },
-  PROCESSING: { icon: TrendingUp,   color: 'text-blue-400',    bg: 'bg-blue-500/10 border-blue-500/20'    },
-  COMPLETED:  { icon: CheckCircle,  color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
-  FAILED:     { icon: XCircle,      color: 'text-red-400',     bg: 'bg-red-500/10 border-red-500/20'     },
+  PENDING:    { icon: Clock,        color: 'text-amber-400',   bg: 'bg-amber-500/10 border-amber-500/20'      },
+  PROCESSING: { icon: TrendingUp,   color: 'text-blue-400',    bg: 'bg-blue-500/10 border-blue-500/20'        },
+  COMPLETED:  { icon: CheckCircle,  color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20'  },
+  FAILED:     { icon: XCircle,      color: 'text-red-400',     bg: 'bg-red-500/10 border-red-500/20'          },
 };
 
 const ORDER_STATUS_COLORS: Record<string, string> = {
@@ -104,6 +105,7 @@ const ORDER_STATUS_COLORS: Record<string, string> = {
 };
 
 const PaymentsPage = () => {
+  const t = useTranslations('Payments');
   const [globalFilter, setGlobalFilter] = useState('');
   const [payoutStatusFilter, setPayoutStatusFilter] = useState('');
 
@@ -151,29 +153,21 @@ const PaymentsPage = () => {
       .filter((p) => !payoutStatusFilter || p.payoutStatus === payoutStatusFilter);
   }, [orders, payoutStatusFilter]);
 
-  const platformRevenue = payments.reduce((sum, p) => sum + p.platformFees, 0);
-  const pendingPayouts  = payments
-    .filter((p) => p.payoutStatus === 'PENDING')
-    .reduce((sum, p) => sum + p.sellerEarnings, 0);
-  const completedPayouts = payments
-    .filter((p) => p.payoutStatus === 'COMPLETED')
-    .reduce((sum, p) => sum + p.sellerEarnings, 0);
+  const platformRevenue   = payments.reduce((sum, p) => sum + p.platformFees, 0);
+  const pendingPayouts    = payments.filter((p) => p.payoutStatus === 'PENDING').reduce((sum, p) => sum + p.sellerEarnings, 0);
+  const completedPayouts  = payments.filter((p) => p.payoutStatus === 'COMPLETED').reduce((sum, p) => sum + p.sellerEarnings, 0);
   const totalTransactions = payments.length;
 
   const columns = useMemo(
     () => [
       {
         accessorKey: 'orderNumber',
-        header: ({
-          column,
-        }: {
-          column: { toggleSorting: () => void };
-        }) => (
+        header: ({ column }: { column: { toggleSorting: () => void } }) => (
           <button
             onClick={() => column.toggleSorting()}
             className="flex items-center gap-2 hover:text-white transition-colors"
           >
-            Order Number
+            {t('colOrderNumber')}
             <ArrowUpDown size={14} />
           </button>
         ),
@@ -185,16 +179,12 @@ const PaymentsPage = () => {
       },
       {
         accessorKey: 'orderDate',
-        header: ({
-          column,
-        }: {
-          column: { toggleSorting: () => void };
-        }) => (
+        header: ({ column }: { column: { toggleSorting: () => void } }) => (
           <button
             onClick={() => column.toggleSorting()}
             className="flex items-center gap-2 hover:text-white transition-colors"
           >
-            Date
+            {t('colDate')}
             <ArrowUpDown size={14} />
           </button>
         ),
@@ -213,28 +203,24 @@ const PaymentsPage = () => {
       },
       {
         accessorKey: 'itemCount',
-        header: 'Items',
+        header: t('colItems'),
         cell: ({ row }: { row: { original: (typeof payments)[0] } }) => (
           <div className="flex items-center gap-2 text-gray-400">
             <Package size={14} className="text-gray-500 shrink-0" />
             <span className="text-sm">
-              {row.original.itemCount} item{row.original.itemCount !== 1 ? 's' : ''}
+              {t('itemCount', { count: row.original.itemCount })}
             </span>
           </div>
         ),
       },
       {
         accessorKey: 'totalSales',
-        header: ({
-          column,
-        }: {
-          column: { toggleSorting: () => void };
-        }) => (
+        header: ({ column }: { column: { toggleSorting: () => void } }) => (
           <button
             onClick={() => column.toggleSorting()}
             className="flex items-center gap-2 hover:text-white transition-colors"
           >
-            Total Sales
+            {t('colTotalSales')}
             <ArrowUpDown size={14} />
           </button>
         ),
@@ -246,7 +232,7 @@ const PaymentsPage = () => {
       },
       {
         accessorKey: 'platformFees',
-        header: 'Platform Fee',
+        header: t('colPlatformFee'),
         cell: ({ row }: { row: { original: (typeof payments)[0] } }) => (
           <span className="text-emerald-400 text-sm font-semibold">
             +${(row.original.platformFees / 100).toFixed(2)}
@@ -255,16 +241,12 @@ const PaymentsPage = () => {
       },
       {
         accessorKey: 'sellerEarnings',
-        header: ({
-          column,
-        }: {
-          column: { toggleSorting: () => void };
-        }) => (
+        header: ({ column }: { column: { toggleSorting: () => void } }) => (
           <button
             onClick={() => column.toggleSorting()}
             className="flex items-center gap-2 hover:text-white transition-colors"
           >
-            Seller Earnings
+            {t('colSellerEarnings')}
             <ArrowUpDown size={14} />
           </button>
         ),
@@ -277,7 +259,7 @@ const PaymentsPage = () => {
       },
       {
         accessorKey: 'payoutStatus',
-        header: 'Payout Status',
+        header: t('colPayoutStatus'),
         cell: ({ row }: { row: { original: (typeof payments)[0] } }) => {
           const cfg =
             PAYOUT_STATUS_CONFIG[row.original.payoutStatus] ??
@@ -306,7 +288,7 @@ const PaymentsPage = () => {
       },
       {
         accessorKey: 'orderStatus',
-        header: 'Order Status',
+        header: t('colOrderStatus'),
         cell: ({ row }: { row: { original: (typeof payments)[0] } }) => (
           <span
             className={`px-2.5 py-1 rounded-full text-xs font-semibold border
@@ -317,7 +299,7 @@ const PaymentsPage = () => {
         ),
       },
     ],
-    []
+    [t]
   );
 
   const table = useReactTable({
@@ -336,11 +318,11 @@ const PaymentsPage = () => {
     },
   });
 
-  const currentPage = table.getState().pagination.pageIndex;
-  const pageCount = table.getPageCount();
+  const currentPage  = table.getState().pagination.pageIndex;
+  const pageCount    = table.getPageCount();
   const filteredTotal = table.getFilteredRowModel().rows.length;
-  const pageStart = currentPage * table.getState().pagination.pageSize + 1;
-  const pageEnd = Math.min(
+  const pageStart    = currentPage * table.getState().pagination.pageSize + 1;
+  const pageEnd      = Math.min(
     (currentPage + 1) * table.getState().pagination.pageSize,
     filteredTotal
   );
@@ -350,11 +332,11 @@ const PaymentsPage = () => {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
-          <span>Dashboard</span>
+          <span>{t('breadcrumbDashboard')}</span>
           <span>/</span>
-          <span className="text-gray-300 font-medium">Payments</span>
+          <span className="text-gray-300 font-medium">{t('breadcrumbPayments')}</span>
         </div>
-        <h1 className="text-4xl font-bold text-white">Payments & Payouts</h1>
+        <h1 className="text-4xl font-bold text-white">{t('pageTitle')}</h1>
       </div>
 
       {/* Stat Cards */}
@@ -367,10 +349,10 @@ const PaymentsPage = () => {
                 <TrendingUp size={18} className="text-emerald-400" />
               </div>
               <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">
-                Admin Revenue
+                {t('statAdminRevenue')}
               </span>
             </div>
-            <p className="text-gray-400 text-sm mb-1">Platform Revenue</p>
+            <p className="text-gray-400 text-sm mb-1">{t('statPlatformRevenue')}</p>
             <p className="text-3xl font-bold text-white">
               ${(platformRevenue / 100).toFixed(2)}
             </p>
@@ -390,10 +372,10 @@ const PaymentsPage = () => {
                 <CheckCircle size={18} className="text-brand-primary-400" />
               </div>
               <span className="text-xs font-semibold text-brand-primary-400 bg-brand-primary-600/10 px-2.5 py-0.5 rounded-full">
-                Disbursed
+                {t('statDisbursed')}
               </span>
             </div>
-            <p className="text-gray-400 text-sm mb-1">Completed Payouts</p>
+            <p className="text-gray-400 text-sm mb-1">{t('statCompletedPayouts')}</p>
             <p className="text-3xl font-bold text-white">
               ${(completedPayouts / 100).toFixed(2)}
             </p>
@@ -414,11 +396,11 @@ const PaymentsPage = () => {
               </div>
               {pendingPayouts > 0 && (
                 <span className="text-xs font-semibold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full">
-                  Queued
+                  {t('statQueued')}
                 </span>
               )}
             </div>
-            <p className="text-gray-400 text-sm mb-1">Pending Payouts</p>
+            <p className="text-gray-400 text-sm mb-1">{t('statPendingPayouts')}</p>
             <p className="text-3xl font-bold text-white">
               ${(pendingPayouts / 100).toFixed(2)}
             </p>
@@ -438,10 +420,10 @@ const PaymentsPage = () => {
                 <DollarSign size={18} className="text-purple-400" />
               </div>
               <span className="text-xs font-semibold text-gray-500 bg-gray-800 px-2.5 py-0.5 rounded-full">
-                All Time
+                {t('statAllTime')}
               </span>
             </div>
-            <p className="text-gray-400 text-sm mb-1">Total Transactions</p>
+            <p className="text-gray-400 text-sm mb-1">{t('statTotalTransactions')}</p>
             <p className="text-3xl font-bold text-white">
               {totalTransactions.toLocaleString()}
             </p>
@@ -462,7 +444,7 @@ const PaymentsPage = () => {
             <Search size={16} className="text-gray-500 shrink-0" />
             <input
               type="text"
-              placeholder="Search by order number..."
+              placeholder={t('searchPlaceholder')}
               className="w-full bg-transparent text-white outline-none placeholder:text-gray-500 text-sm"
               value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
@@ -476,24 +458,22 @@ const PaymentsPage = () => {
               value={payoutStatusFilter}
               onChange={(e) => setPayoutStatusFilter(e.target.value)}
             >
-              <option value="">Payout: All</option>
-              <option value="PENDING">Pending</option>
-              <option value="PROCESSING">Processing</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="FAILED">Failed</option>
+              <option value="">{t('filterPayoutAll')}</option>
+              <option value="PENDING">{t('filterPending')}</option>
+              <option value="PROCESSING">{t('filterProcessing')}</option>
+              <option value="COMPLETED">{t('filterCompleted')}</option>
+              <option value="FAILED">{t('filterFailed')}</option>
             </select>
 
             <button className="flex items-center gap-2 bg-gray-800 border border-gray-700
                                text-gray-400 text-sm px-4 py-2.5 rounded-lg whitespace-nowrap">
               <Calendar size={15} className="text-gray-500" />
-              Last 30 Days
+              {t('last30Days')}
             </button>
 
             <button
               onClick={() => {
-                const rows = table
-                  .getFilteredRowModel()
-                  .rows.map((r) => r.original);
+                const rows = table.getFilteredRowModel().rows.map((r) => r.original);
                 const date = new Date().toISOString().slice(0, 10);
                 exportToCSV(
                   rows as unknown as Record<string, unknown>[],
@@ -509,20 +489,17 @@ const PaymentsPage = () => {
                     {
                       key: 'totalSales',
                       header: 'Total Sales',
-                      transform: (v) =>
-                        `$${(((v as number) ?? 0) / 100).toFixed(2)}`,
+                      transform: (v) => `$${(((v as number) ?? 0) / 100).toFixed(2)}`,
                     },
                     {
                       key: 'platformFees',
                       header: 'Platform Fee',
-                      transform: (v) =>
-                        `$${(((v as number) ?? 0) / 100).toFixed(2)}`,
+                      transform: (v) => `$${(((v as number) ?? 0) / 100).toFixed(2)}`,
                     },
                     {
                       key: 'sellerEarnings',
                       header: 'Seller Earnings',
-                      transform: (v) =>
-                        `$${(((v as number) ?? 0) / 100).toFixed(2)}`,
+                      transform: (v) => `$${(((v as number) ?? 0) / 100).toFixed(2)}`,
                     },
                     { key: 'payoutStatus', header: 'Payout Status' },
                     { key: 'orderStatus', header: 'Order Status' },
@@ -535,7 +512,7 @@ const PaymentsPage = () => {
                          font-medium transition-colors"
             >
               <Download size={15} />
-              Export CSV
+              {t('exportCsv')}
             </button>
           </div>
         </div>
@@ -576,16 +553,11 @@ const PaymentsPage = () => {
                         className="px-6 py-16 text-center"
                       >
                         <div className="flex flex-col items-center text-gray-500">
-                          <DollarSign
-                            size={40}
-                            className="mb-3 opacity-30"
-                          />
+                          <DollarSign size={40} className="mb-3 opacity-30" />
                           <p className="font-medium text-gray-300">
-                            No payments found
+                            {t('noPaymentsTitle')}
                           </p>
-                          <p className="text-sm mt-1">
-                            Completed order payments will appear here
-                          </p>
+                          <p className="text-sm mt-1">{t('noPaymentsDesc')}</p>
                         </div>
                       </td>
                     </tr>
@@ -618,15 +590,7 @@ const PaymentsPage = () => {
                            bg-gray-800/40 border-t border-gray-800"
               >
                 <span className="text-sm text-gray-500">
-                  Showing{' '}
-                  <span className="font-medium text-gray-300">
-                    {pageStart} – {pageEnd}
-                  </span>{' '}
-                  of{' '}
-                  <span className="font-medium text-gray-300">
-                    {filteredTotal.toLocaleString()}
-                  </span>{' '}
-                  results
+                  {t('pagination', { start: pageStart, end: pageEnd, total: filteredTotal.toLocaleString() })}
                 </span>
 
                 <div className="flex items-center gap-1">

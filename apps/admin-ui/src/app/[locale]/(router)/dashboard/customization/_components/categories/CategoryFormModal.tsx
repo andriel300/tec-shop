@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type { Category, CreateCategoryData, UpdateCategoryData } from '../../../../../../../hooks/useCategories';
 import ModalShell from '../ModalShell';
 
@@ -31,6 +32,7 @@ const CategoryFormModal = (props: {
   initialData?: Category | null;
   allCategories: Category[];
 }) => {
+  const t = useTranslations('Customization');
   const [formData, setFormData] = useState({
     name: props.initialData?.name || '',
     slug: props.initialData?.slug || '',
@@ -60,7 +62,7 @@ const CategoryFormModal = (props: {
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.name.trim()) newErrors.name = 'Name is required';
+    if (!formData.name.trim()) newErrors.name = t('nameRequired');
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -78,10 +80,10 @@ const CategoryFormModal = (props: {
   };
 
   return (
-    <ModalShell isOpen={props.isOpen} onClose={props.onClose} title={isEditing ? 'Edit Category' : 'Add New Category'}>
+    <ModalShell isOpen={props.isOpen} onClose={props.onClose} title={isEditing ? t('editCategory') : t('addNewCategory')}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="text-slate-300 text-sm block mb-2">Name *</label>
+          <label className="text-slate-300 text-sm block mb-2">{t('fieldName')}</label>
           <input
             type="text"
             value={formData.name}
@@ -90,41 +92,41 @@ const CategoryFormModal = (props: {
               setFormData({ ...formData, name, slug: formData.slug || generateSlug(name) });
             }}
             className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
-            placeholder="e.g. Electronics"
+            placeholder={t('categoryNamePlaceholder')}
           />
           {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
         </div>
 
         <div>
-          <label className="text-slate-300 text-sm block mb-2">Slug</label>
+          <label className="text-slate-300 text-sm block mb-2">{t('fieldSlug')}</label>
           <input
             type="text"
             value={formData.slug}
             onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
             className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
-            placeholder="Auto-generated from name"
+            placeholder={t('slugPlaceholder')}
           />
         </div>
 
         <div>
-          <label className="text-slate-300 text-sm block mb-2">Description</label>
+          <label className="text-slate-300 text-sm block mb-2">{t('fieldDescription')}</label>
           <textarea
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
             rows={3}
-            placeholder="Brief description of this category..."
+            placeholder={t('categoryDescriptionPlaceholder')}
           />
         </div>
 
         <div>
-          <label className="text-slate-300 text-sm block mb-2">Parent Category</label>
+          <label className="text-slate-300 text-sm block mb-2">{t('fieldParentCategory')}</label>
           <select
             value={formData.parentId}
             onChange={(e) => setFormData({ ...formData, parentId: e.target.value })}
             className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
           >
-            <option value="">None (Top Level)</option>
+            <option value="">{t('parentCategoryNone')}</option>
             {parentOptions.map((opt) => (
               <option key={opt.id} value={opt.id}>
                 {'  '.repeat(opt.level)}{opt.level > 0 ? '-- ' : ''}{opt.name}
@@ -143,7 +145,7 @@ const CategoryFormModal = (props: {
             />
             <div className="w-11 h-6 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600" />
           </label>
-          <span className="text-slate-300 text-sm">Active</span>
+          <span className="text-slate-300 text-sm">{t('fieldActive')}</span>
         </div>
 
         <div className="flex gap-3 mt-6">
@@ -152,7 +154,7 @@ const CategoryFormModal = (props: {
             disabled={props.isPending}
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded p-3 font-medium disabled:opacity-50"
           >
-            {props.isPending ? 'Saving...' : isEditing ? 'Update Category' : 'Create Category'}
+            {props.isPending ? t('saving') : isEditing ? t('updateCategory') : t('createCategory')}
           </button>
           <button
             type="button"
@@ -160,7 +162,7 @@ const CategoryFormModal = (props: {
             disabled={props.isPending}
             className="flex-1 bg-slate-700 hover:bg-slate-600 text-white rounded p-3 font-medium disabled:opacity-50"
           >
-            Cancel
+            {t('cancel')}
           </button>
         </div>
       </form>

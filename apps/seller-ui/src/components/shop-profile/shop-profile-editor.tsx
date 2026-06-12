@@ -20,8 +20,10 @@ import { updateShop, type UpdateShopData } from '../../lib/api/seller';
 import EditableBanner from './editable-banner';
 import EditableLogo from './editable-logo';
 import EditProfileModal from './edit-profile-modal';
+import { useTranslations } from 'next-intl';
 
 const ShopProfileEditor: React.FC = () => {
+  const t = useTranslations('ShopProfile');
   const { seller, isLoading: isSellerLoading } = useSeller();
   const { data: statistics, isLoading: isStatsLoading } = useSellerStatistics();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -61,18 +63,17 @@ const ShopProfileEditor: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Set Up Your Shop
+            {t('setupTitle')}
           </h2>
           <p className="text-gray-600 mb-6">
-            You haven&apos;t created a shop yet. Set up your shop to start
-            selling.
+            {t('setupDesc')}
           </p>
           <Link
             href="/dashboard/settings"
             className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Settings className="w-5 h-5" />
-            Set Up Shop
+            {t('setupBtn')}
           </Link>
         </div>
       </div>
@@ -114,7 +115,7 @@ const ShopProfileEditor: React.FC = () => {
                 <button
                   onClick={() => setIsEditModalOpen(true)}
                   className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
-                  title="Edit profile"
+                  title={t('editProfile')}
                 >
                   <Pencil className="w-4 h-4" />
                 </button>
@@ -160,7 +161,7 @@ const ShopProfileEditor: React.FC = () => {
                 <div className="flex items-center gap-1.5 text-gray-700">
                   <Users className="w-4 h-4 text-gray-400" />
                   <span className="font-semibold">0</span>
-                  <span className="text-gray-500">followers</span>
+                  <span className="text-gray-500">{t('followers')}</span>
                 </div>
 
                 <div className="flex items-center gap-1.5 text-gray-700">
@@ -170,7 +171,7 @@ const ShopProfileEditor: React.FC = () => {
                       shop.totalOrders?.toLocaleString() ??
                       0}
                   </span>
-                  <span className="text-gray-500">orders</span>
+                  <span className="text-gray-500">{t('orders')}</span>
                 </div>
               </div>
             </div>
@@ -182,7 +183,7 @@ const ShopProfileEditor: React.FC = () => {
                 className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 transition-all"
               >
                 <Settings className="w-4 h-4" />
-                Go to Dashboard
+                {t('goToDashboard')}
               </Link>
 
               <Link
@@ -194,7 +195,7 @@ const ShopProfileEditor: React.FC = () => {
                 className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300 transition-all"
               >
                 <ExternalLink className="w-4 h-4" />
-                View Public Profile
+                {t('viewPublicProfile')}
               </Link>
             </div>
           </div>
@@ -205,25 +206,25 @@ const ShopProfileEditor: React.FC = () => {
       {statistics && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <p className="text-sm text-gray-500">Total Revenue</p>
+            <p className="text-sm text-gray-500">{t('totalRevenue')}</p>
             <p className="text-2xl font-bold text-gray-900">
               ${statistics.revenue?.total?.toLocaleString() ?? 0}
             </p>
           </div>
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <p className="text-sm text-gray-500">Total Orders</p>
+            <p className="text-sm text-gray-500">{t('totalOrders')}</p>
             <p className="text-2xl font-bold text-gray-900">
               {statistics.orders?.total?.toLocaleString() ?? 0}
             </p>
           </div>
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <p className="text-sm text-gray-500">Active Products</p>
+            <p className="text-sm text-gray-500">{t('activeProducts')}</p>
             <p className="text-2xl font-bold text-gray-900">
               {statistics.products?.active?.toLocaleString() ?? 0}
             </p>
           </div>
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <p className="text-sm text-gray-500">Pending Orders</p>
+            <p className="text-sm text-gray-500">{t('pendingOrders')}</p>
             <p className="text-2xl font-bold text-gray-900">
               {statistics.orders?.pending?.toLocaleString() ?? 0}
             </p>

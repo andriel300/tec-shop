@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, Loader2, Award, CheckCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Input } from '../core/Input';
 import { useBrands, useCreateBrand, type Brand } from '../../../hooks/useBrands';
 
@@ -37,6 +38,7 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
   variant = 'dark',
   required = false,
 }) => {
+  const t = useTranslations('CreateProduct');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -45,7 +47,7 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
   const { data: brands = [] as Brand[], isLoading: loading, error: fetchError } = useBrands();
   const { mutate: createBrand, isPending: creating } = useCreateBrand();
 
-  const error = fetchError ? 'Failed to load brands.' : null;
+  const error = fetchError ? t('brandLoadFailed') : null;
 
   // Update selected brand when value changes
   useEffect(() => {
@@ -105,7 +107,7 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
     return (
       <div className={`flex items-center justify-center p-8 ${className}`}>
         <Loader2 className="animate-spin text-blue-500" size={24} />
-        <span className="ml-2 text-gray-500">Loading brands...</span>
+        <span className="ml-2 text-gray-500">{t('brandLoading')}</span>
       </div>
     );
   }
@@ -113,7 +115,7 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
   return (
     <div className={`space-y-2 ${className}`}>
       <label className="block text-sm font-medium text-gray-900 mb-2">
-        Brand {required && <span className="text-feedback-error">*</span>}
+        {t('brandLabel')} {required && <span className="text-feedback-error">*</span>}
       </label>
 
       {error && (
@@ -136,7 +138,7 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
             setShowDropdown(true);
           }}
           onFocus={() => setShowDropdown(true)}
-          placeholder="Search or create brand..."
+          placeholder={t('brandSearchPlaceholder')}
           className="pl-10 pr-10"
         />
         {selectedBrand && (
@@ -162,12 +164,12 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
                 {creating ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    <span>Creating &quot;{searchTerm.trim()}&quot;...</span>
+                    <span>{t('brandCreating', { name: searchTerm.trim() })}</span>
                   </>
                 ) : (
                   <>
                     <Plus size={16} />
-                    <span>Create &quot;{searchTerm.trim()}&quot;</span>
+                    <span>{t('brandCreate', { name: searchTerm.trim() })}</span>
                   </>
                 )}
               </button>
@@ -214,7 +216,7 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
               </div>
             ) : !showCreateOption ? (
               <div className="p-4 text-center text-gray-500 text-sm">
-                No brands found. Start typing to create a new brand.
+                {t('brandNoneFound')}
               </div>
             ) : null}
           </div>
@@ -233,7 +235,7 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
           <div className="flex items-center gap-2">
             <Award size={16} className="text-brand-primary" />
             <span className="text-sm text-gray-900">
-              Selected: <span className="font-medium">{selectedBrand.name}</span>
+              {t('brandSelected')} <span className="font-medium">{selectedBrand.name}</span>
             </span>
           </div>
           {!required && (
@@ -242,7 +244,7 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
               onClick={handleClearSelection}
               className="text-xs text-feedback-error hover:opacity-75 transition-opacity"
             >
-              Clear
+              {t('brandClear')}
             </button>
           )}
         </div>
@@ -250,7 +252,7 @@ const BrandSelector: React.FC<BrandSelectorProps> = ({
 
       {/* Help text */}
       <p className="text-xs text-gray-500">
-        Type to search existing brands or create a new one instantly.
+        {t('brandSubtitle')}
       </p>
     </div>
   );

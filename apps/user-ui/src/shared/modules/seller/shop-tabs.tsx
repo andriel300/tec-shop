@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Package, Tag, Star } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export type ShopTab = 'products' | 'offers' | 'reviews';
 
@@ -11,29 +12,31 @@ interface ShopTabsProps {
   productCount?: number;
 }
 
-const tabs: { id: ShopTab; label: string; icon: React.ReactNode }[] = [
-  {
-    id: 'products',
-    label: 'Products',
-    icon: <Package className="w-4 h-4" />,
-  },
-  {
-    id: 'offers',
-    label: 'Offers',
-    icon: <Tag className="w-4 h-4" />,
-  },
-  {
-    id: 'reviews',
-    label: 'Reviews',
-    icon: <Star className="w-4 h-4" />,
-  },
-];
-
 const ShopTabs: React.FC<ShopTabsProps> = ({
   activeTab,
   onTabChange,
   productCount,
 }) => {
+  const t = useTranslations('ShopProfile');
+
+  const tabs: { id: ShopTab; label: string; icon: React.ReactNode }[] = [
+    {
+      id: 'products',
+      label: t('tabProducts'),
+      icon: <Package className="w-4 h-4" />,
+    },
+    {
+      id: 'offers',
+      label: t('tabOffers'),
+      icon: <Tag className="w-4 h-4" />,
+    },
+    {
+      id: 'reviews',
+      label: t('tabReviews'),
+      icon: <Star className="w-4 h-4" />,
+    },
+  ];
+
   return (
     <div className="bg-white border-b border-gray-200">
       <div className="flex items-center gap-1 overflow-x-auto">

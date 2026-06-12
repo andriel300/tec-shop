@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import QRCode from 'qrcode';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
@@ -28,6 +29,7 @@ async function fetchTotpStatus(): Promise<TotpStatus> {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 const QrCode = ({ url }: { url: string }) => {
+  const t = useTranslations('Settings');
   const [imgSrc, setImgSrc] = useState<string | null>(null);
 
   React.useEffect(() => {
@@ -41,7 +43,7 @@ const QrCode = ({ url }: { url: string }) => {
   return (
     <img
       src={imgSrc}
-      alt="TOTP QR Code"
+      alt={t('qrCodeAlt')}
       width={180}
       height={180}
       className="rounded-xl border border-slate-700/50"
@@ -52,6 +54,7 @@ const QrCode = ({ url }: { url: string }) => {
 // ─── Setup flow ───────────────────────────────────────────────────────────────
 
 const SetupFlow = ({ onDone }: { onDone: () => void }) => {
+  const t = useTranslations('Settings');
   const queryClient = useQueryClient();
   const [phase, setPhase] = useState<'init' | 'scan' | 'confirm' | 'backup'>('init');
   const [setupData, setSetupData] = useState<TotpSetupData | null>(null);
@@ -68,7 +71,7 @@ const SetupFlow = ({ onDone }: { onDone: () => void }) => {
       setPhase('scan');
     },
     onError: (error: AxiosError) => {
-      toast.error((error.response?.data as { message: string })?.message ?? 'Failed to initiate TOTP setup');
+      toast.error((error.response?.data as { message: string })?.message ?? t('setupInitError'));
     },
   });
 
@@ -81,7 +84,7 @@ const SetupFlow = ({ onDone }: { onDone: () => void }) => {
       setPhase('backup');
     },
     onError: (error: AxiosError) => {
-      setConfirmError((error.response?.data as { message: string })?.message ?? 'Invalid code');
+      setConfirmError((error.response?.data as { message: string })?.message ?? t('setupScanInvalidCode'));
       setConfirmCode('');
     },
   });
@@ -118,15 +121,14 @@ const SetupFlow = ({ onDone }: { onDone: () => void }) => {
     return (
       <div className="text-center">
         <p className="text-slate-400 text-sm mb-6 max-w-sm mx-auto">
-          TOTP adds a second factor to your admin login. You will need an authenticator app
-          such as Google Authenticator, Authy, or 1Password.
+          {t('setupInitDesc')}
         </p>
         <button
           onClick={() => setupMutation.mutate()}
           disabled={setupMutation.isPending}
           className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer"
         >
-          {setupMutation.isPending ? 'Setting up...' : 'Begin setup'}
+          {setupMutation.isPending ? t('setupInitBtnPending') : t('setupInitBtn')}
         </button>
       </div>
     );
@@ -136,21 +138,21 @@ const SetupFlow = ({ onDone }: { onDone: () => void }) => {
     return (
       <div>
         <p className="text-slate-400 text-sm mb-6">
-          Scan the QR code with your authenticator app, then enter the 6-digit code below to confirm.
+          {t('setupScanDesc')}
         </p>
 
         <div className="flex flex-col items-center gap-6 mb-6">
           <QrCode url={setupData.qrCodeUrl} />
 
           <div className="w-full p-3 bg-slate-800/60 border border-slate-700/50 rounded-xl">
-            <p className="text-xs text-slate-500 mb-1.5">Manual entry key</p>
+            <p className="text-xs text-slate-500 mb-1.5">{t('setupScanManualKey')}</p>
             <p className="text-slate-200 text-sm font-mono tracking-wider break-all">{setupData.secret}</p>
           </div>
         </div>
 
         <div className="mb-4">
           <label htmlFor="confirm-totp" className="block text-sm font-medium text-slate-300 mb-1.5">
-            Confirm with your first code
+            {t('setupScanConfirmLabel')}
           </label>
           <input
             id="confirm-totp"
@@ -171,7 +173,7 @@ const SetupFlow = ({ onDone }: { onDone: () => void }) => {
           {enableMutation.isPending && (
             <p className="text-slate-500 text-xs mt-1.5 flex items-center gap-1.5">
               <span className="w-3 h-3 border border-slate-500 border-t-slate-300 rounded-full animate-spin inline-block" />
-              Verifying...
+              {t('setupScanVerifying')}
             </p>
           )}
         </div>
@@ -181,7 +183,7 @@ const SetupFlow = ({ onDone }: { onDone: () => void }) => {
           onClick={() => setPhase('init')}
           className="text-slate-600 hover:text-slate-400 text-xs transition-colors cursor-pointer"
         >
-          Cancel
+          {t('setupScanCancel')}
         </button>
       </div>
     );
@@ -196,14 +198,13 @@ const SetupFlow = ({ onDone }: { onDone: () => void }) => {
               <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
             </svg>
           </div>
-          <p className="text-green-400 text-sm font-medium">TOTP enabled successfully</p>
+          <p className="text-green-400 text-sm font-medium">{t('setupBackupSuccess')}</p>
         </div>
 
         <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-xl mb-5">
-          <p className="text-amber-400 text-xs font-medium mb-1">Save your backup codes now</p>
+          <p className="text-amber-400 text-xs font-medium mb-1">{t('setupBackupWarningTitle')}</p>
           <p className="text-slate-400 text-xs">
-            These 10 codes let you access your account if you lose your authenticator.
-            Each code can only be used once. Store them somewhere safe.
+            {t('setupBackupWarningDesc')}
           </p>
         </div>
 
@@ -223,13 +224,13 @@ const SetupFlow = ({ onDone }: { onDone: () => void }) => {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-4 h-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
             </svg>
-            Download
+            {t('setupBackupDownload')}
           </button>
           <button
             onClick={onDone}
             className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer"
           >
-            Done
+            {t('setupBackupDone')}
           </button>
         </div>
       </div>
@@ -242,6 +243,7 @@ const SetupFlow = ({ onDone }: { onDone: () => void }) => {
 // ─── Disable flow ─────────────────────────────────────────────────────────────
 
 const DisableFlow = ({ onDone }: { onDone: () => void }) => {
+  const t = useTranslations('Settings');
   const queryClient = useQueryClient();
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
@@ -252,11 +254,11 @@ const DisableFlow = ({ onDone }: { onDone: () => void }) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['totp-status'] });
-      toast.success('Two-factor authentication disabled');
+      toast.success(t('disableSuccessToast'));
       onDone();
     },
     onError: (err: AxiosError) => {
-      setError((err.response?.data as { message: string })?.message ?? 'Invalid code');
+      setError((err.response?.data as { message: string })?.message ?? t('disableInvalidCode'));
       setCode('');
     },
   });
@@ -273,13 +275,13 @@ const DisableFlow = ({ onDone }: { onDone: () => void }) => {
   return (
     <div>
       <div className="p-3.5 bg-red-500/8 border border-red-500/20 rounded-xl mb-5">
-        <p className="text-red-400 text-xs font-medium mb-0.5">Disabling two-factor authentication</p>
-        <p className="text-slate-400 text-xs">Enter your current authenticator code to confirm. Your account will be less secure without 2FA.</p>
+        <p className="text-red-400 text-xs font-medium mb-0.5">{t('disableWarningTitle')}</p>
+        <p className="text-slate-400 text-xs">{t('disableWarningDesc')}</p>
       </div>
 
       <div className="mb-4">
         <label htmlFor="disable-totp" className="block text-sm font-medium text-slate-300 mb-1.5">
-          Current authenticator code
+          {t('disableCodeLabel')}
         </label>
         <input
           id="disable-totp"
@@ -298,7 +300,7 @@ const DisableFlow = ({ onDone }: { onDone: () => void }) => {
         {disableMutation.isPending && (
           <p className="text-slate-500 text-xs mt-1.5 flex items-center gap-1.5">
             <span className="w-3 h-3 border border-slate-500 border-t-slate-300 rounded-full animate-spin inline-block" />
-            Verifying...
+            {t('disableVerifying')}
           </p>
         )}
       </div>
@@ -308,7 +310,7 @@ const DisableFlow = ({ onDone }: { onDone: () => void }) => {
         onClick={onDone}
         className="text-slate-600 hover:text-slate-400 text-xs transition-colors cursor-pointer"
       >
-        Cancel
+        {t('disableCancel')}
       </button>
     </div>
   );
@@ -317,6 +319,7 @@ const DisableFlow = ({ onDone }: { onDone: () => void }) => {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 const SettingsPage = () => {
+  const t = useTranslations('Settings');
   const [view, setView] = useState<'idle' | 'setup' | 'disable'>('idle');
 
   const { data: totpStatus, isLoading } = useQuery({
@@ -327,8 +330,8 @@ const SettingsPage = () => {
   return (
     <div className="flex-1 p-6 bg-gray-900 min-h-screen">
       <div className="mb-6">
-        <h1 className="text-xl font-bold text-white">Security Settings</h1>
-        <p className="text-slate-500 text-sm mt-1">Manage authentication and account security</p>
+        <h1 className="text-xl font-bold text-white">{t('pageTitle')}</h1>
+        <p className="text-slate-500 text-sm mt-1">{t('pageSubtitle')}</p>
       </div>
 
       {/* TOTP Card */}
@@ -343,8 +346,8 @@ const SettingsPage = () => {
                 </svg>
               </div>
               <div>
-                <p className="text-white text-sm font-semibold">Two-factor authentication</p>
-                <p className="text-slate-500 text-xs mt-0.5">Authenticator app (TOTP)</p>
+                <p className="text-white text-sm font-semibold">{t('totpCardTitle')}</p>
+                <p className="text-slate-500 text-xs mt-0.5">{t('totpCardSubtitle')}</p>
               </div>
             </div>
 
@@ -353,12 +356,12 @@ const SettingsPage = () => {
                 {totpStatus.enabled ? (
                   <span className="flex items-center gap-1.5 px-2.5 py-1 bg-green-500/10 border border-green-500/20 rounded-full text-green-400 text-xs font-medium">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                    Enabled
+                    {t('statusEnabled')}
                   </span>
                 ) : (
                   <span className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-700/50 border border-slate-600/40 rounded-full text-slate-400 text-xs font-medium">
                     <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
-                    Disabled
+                    {t('statusDisabled')}
                   </span>
                 )}
               </div>
@@ -382,14 +385,14 @@ const SettingsPage = () => {
                   <>
                     <div className="flex items-center justify-between mb-5">
                       <div>
-                        <p className="text-slate-300 text-sm">Backup codes remaining</p>
+                        <p className="text-slate-300 text-sm">{t('backupCodesRemaining')}</p>
                         <p className="text-2xl font-bold text-white mt-0.5">
                           {totpStatus.backupCodesRemaining}
                           <span className="text-slate-500 text-sm font-normal"> / 10</span>
                         </p>
                         {totpStatus.backupCodesRemaining <= 2 && (
                           <p className="text-amber-400 text-xs mt-1">
-                            Running low — consider re-enrolling to regenerate codes.
+                            {t('backupCodesLow')}
                           </p>
                         )}
                       </div>
@@ -399,20 +402,19 @@ const SettingsPage = () => {
                       onClick={() => setView('disable')}
                       className="w-full px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-sm font-medium rounded-xl transition-colors cursor-pointer"
                     >
-                      Disable two-factor authentication
+                      {t('disableTotpBtn')}
                     </button>
                   </>
                 ) : (
                   <>
                     <p className="text-slate-400 text-sm mb-5">
-                      Protect your admin account with a second factor. After setup, every login
-                      will require a code from your authenticator app.
+                      {t('enableTotpDesc')}
                     </p>
                     <button
                       onClick={() => setView('setup')}
                       className="w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer"
                     >
-                      Enable two-factor authentication
+                      {t('enableTotpBtn')}
                     </button>
                   </>
                 )}

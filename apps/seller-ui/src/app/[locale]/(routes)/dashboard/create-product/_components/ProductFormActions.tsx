@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 
 interface ProductFormActionsProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -14,6 +15,8 @@ export function ProductFormActions({
   onReset,
   onCancel,
 }: ProductFormActionsProps) {
+  const t = useTranslations('CreateProduct');
+
   return (
     <form.Subscribe
       selector={(state: { canSubmit: boolean; isSubmitting: boolean }) => [
@@ -50,10 +53,10 @@ export function ProductFormActions({
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   />
                 </svg>
-                Creating Product...
+                {t('submitCreating')}
               </>
             ) : (
-              'Create Product'
+              t('submitCreate')
             )}
           </button>
 
@@ -62,7 +65,7 @@ export function ProductFormActions({
             onClick={onReset}
             className="px-8 py-3 bg-surface-container text-gray-900 rounded-lg font-medium hover:bg-surface-container-highest transition-colors"
           >
-            Reset Form
+            {t('resetForm')}
           </button>
 
           <button
@@ -70,7 +73,7 @@ export function ProductFormActions({
             onClick={onCancel}
             className="px-8 py-3 border border-surface-container-highest text-gray-500 rounded-lg font-medium hover:bg-surface-container-low transition-colors"
           >
-            Cancel
+            {t('cancel')}
           </button>
         </div>
       )}

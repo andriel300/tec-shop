@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type { Category } from '../../../../../../../hooks/useCategories';
 
 const CategoryTreeItem = (props: {
@@ -9,6 +10,7 @@ const CategoryTreeItem = (props: {
   onEdit: (cat: Category) => void;
   onDelete: (cat: Category) => void;
 }) => {
+  const t = useTranslations('Customization');
   const [expanded, setExpanded] = useState(true);
   const hasChildren = props.category.children && props.category.children.length > 0;
 
@@ -56,14 +58,14 @@ const CategoryTreeItem = (props: {
               : 'bg-slate-600/20 text-slate-400'
           }`}
         >
-          {props.category.isActive ? 'Active' : 'Inactive'}
+          {props.category.isActive ? t('statusActive') : t('statusInactive')}
         </span>
 
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={() => props.onEdit(props.category)}
             className="text-blue-400 hover:text-blue-300 p-1"
-            title="Edit"
+            title={t('actionEdit')}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -77,7 +79,7 @@ const CategoryTreeItem = (props: {
           <button
             onClick={() => props.onDelete(props.category)}
             className="text-red-400 hover:text-red-300 p-1"
-            title="Delete"
+            title={t('actionDelete')}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path

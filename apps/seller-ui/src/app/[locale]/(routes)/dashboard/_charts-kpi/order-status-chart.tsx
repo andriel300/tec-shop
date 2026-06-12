@@ -10,14 +10,24 @@ import {
 } from 'recharts';
 import type { OrderStatusDataPoint } from '../../../../../lib/api/seller';
 import { useUIStore } from '../../../../../store/ui.store';
+import { useTranslations } from 'next-intl';
 
 interface OrderStatusChartProps {
   data: OrderStatusDataPoint[];
 }
 
 const OrderStatusChart = ({ data }: OrderStatusChartProps) => {
+  const t = useTranslations('Dashboard');
   const theme = useUIStore((s) => s.theme);
   const isDark = theme === 'dark';
+
+  const statusMap: Record<string, string> = {
+    Completed: t('statusCompleted'),
+    Pending: t('statusPending'),
+    Cancelled: t('statusCancelled'),
+  };
+
+  const translatedData = data.map((d) => ({ ...d, name: statusMap[d.name] ?? d.name }));
 
   const tooltipStyle = isDark
     ? { backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#f1f5f9' }
@@ -28,12 +38,12 @@ const OrderStatusChart = ({ data }: OrderStatusChartProps) => {
 
   return (
   <div className="bg-surface-container-lowest rounded-lg p-5 shadow-ambient">
-    <h2 className="text-gray-900 font-display text-lg font-semibold">Order Status Distribution</h2>
-    <p className="text-gray-500 text-sm mb-4">Current order breakdown</p>
+    <h2 className="text-gray-900 font-display text-lg font-semibold">{t('orderStatusDistribution')}</h2>
+    <p className="text-gray-500 text-sm mb-4">{t('currentOrderBreakdown')}</p>
     <ResponsiveContainer width="100%" height={250}>
       <PieChart>
         <Pie
-          data={data}
+          data={translatedData}
           dataKey="value"
           nameKey="name"
           cx="50%"

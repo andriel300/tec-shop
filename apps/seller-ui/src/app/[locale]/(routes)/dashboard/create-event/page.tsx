@@ -3,6 +3,7 @@
 
 import { createLogger } from '@tec-shop/next-logger';
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 const logger = createLogger('seller-ui:create-event');
 import { useCreateEvent } from '../../../../../hooks/useEvents';
@@ -23,6 +24,7 @@ const inputNormal = `${inputBase} border-surface-container-highest focus:ring-br
 const inputError = `${inputBase} border-feedback-error/50 focus:ring-feedback-error/20`;
 
 const CreateEventPage = () => {
+  const t = useTranslations('CreateEvent');
   const router = useRouter();
   const createEventMutation = useCreateEvent();
 
@@ -67,34 +69,34 @@ const CreateEventPage = () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = 'Title is required';
+      newErrors.title = t('validationTitleRequired');
     } else if (formData.title.length < 3) {
-      newErrors.title = 'Title must be at least 3 characters';
+      newErrors.title = t('validationTitleMin');
     } else if (formData.title.length > 200) {
-      newErrors.title = 'Title must not exceed 200 characters';
+      newErrors.title = t('validationTitleMax');
     }
 
     if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
+      newErrors.description = t('validationDescRequired');
     } else if (formData.description.length < 10) {
-      newErrors.description = 'Description must be at least 10 characters';
+      newErrors.description = t('validationDescMin');
     } else if (formData.description.length > 2000) {
-      newErrors.description = 'Description must not exceed 2000 characters';
+      newErrors.description = t('validationDescMax');
     }
 
     if (!formData.startDate) {
-      newErrors.startDate = 'Start date is required';
+      newErrors.startDate = t('validationStartRequired');
     }
 
     if (!formData.endDate) {
-      newErrors.endDate = 'End date is required';
+      newErrors.endDate = t('validationEndRequired');
     }
 
     if (formData.startDate && formData.endDate) {
       const start = new Date(formData.startDate);
       const end = new Date(formData.endDate);
       if (end <= start) {
-        newErrors.endDate = 'End date must be after start date';
+        newErrors.endDate = t('validationEndAfterStart');
       }
     }
 
@@ -125,7 +127,7 @@ const CreateEventPage = () => {
         submit:
           error instanceof Error
             ? error.message
-            : 'Failed to create event. Please try again.',
+            : t('defaultError'),
       });
     }
   };
@@ -141,25 +143,23 @@ const CreateEventPage = () => {
 
   return (
     <div className="w-full p-8 space-y-6">
-      {/* Page Header */}
       <div>
         <div className="flex items-center gap-3 mb-1">
           <div className="p-2 bg-brand-primary/10 rounded-lg">
             <Zap size={20} className="text-brand-primary" />
           </div>
-          <h1 className="text-2xl font-semibold text-gray-900">Create Event</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">{t('pageTitle')}</h1>
         </div>
         <Breadcrumb
           items={[
-            { label: 'Dashboard', href: '/dashboard' },
-            { label: 'Events', href: '/dashboard/events' },
-            { label: 'Create Event' },
+            { label: t('breadcrumbDashboard'), href: '/dashboard' },
+            { label: t('breadcrumbEvents'), href: '/dashboard/events' },
+            { label: t('breadcrumbCreate') },
           ]}
         />
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Submit Error */}
         {errors.submit && (
           <div className="flex items-start gap-3 p-4 bg-feedback-error/10 border border-feedback-error/30 rounded-xl">
             <AlertCircle
@@ -175,20 +175,19 @@ const CreateEventPage = () => {
           <div>
             <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
               <FileText size={16} className="text-brand-primary" />
-              Event Details
+              {t('detailsCardTitle')}
             </h3>
             <p className="text-sm text-gray-500 mt-0.5">
-              Provide the core information for your promotional event
+              {t('detailsCardSubtitle')}
             </p>
           </div>
 
-          {/* Title */}
           <div>
             <label
               htmlFor="title"
               className="block text-sm font-medium text-gray-900 mb-2"
             >
-              Event Title <span className="text-feedback-error">*</span>
+              {t('titleLabel')} <span className="text-feedback-error">*</span>
             </label>
             <input
               type="text"
@@ -196,7 +195,7 @@ const CreateEventPage = () => {
               name="title"
               value={formData.title}
               onChange={handleChange}
-              placeholder="e.g., Summer Sale 2025"
+              placeholder={t('titlePlaceholder')}
               className={errors.title ? inputError : inputNormal}
             />
             {errors.title && (
@@ -207,20 +206,19 @@ const CreateEventPage = () => {
             </p>
           </div>
 
-          {/* Description */}
           <div>
             <label
               htmlFor="description"
               className="block text-sm font-medium text-gray-900 mb-2"
             >
-              Description <span className="text-feedback-error">*</span>
+              {t('descLabel')} <span className="text-feedback-error">*</span>
             </label>
             <textarea
               id="description"
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="Describe your event and what customers can expect..."
+              placeholder={t('descPlaceholder')}
               rows={5}
               className={`${errors.description ? inputError : inputNormal} resize-none`}
             />
@@ -250,14 +248,13 @@ const CreateEventPage = () => {
             </div>
           </div>
 
-          {/* Banner Image URL */}
           <div>
             <label
               htmlFor="bannerImage"
               className="block text-sm font-medium text-gray-900 mb-2"
             >
-              Banner Image URL{' '}
-              <span className="text-gray-500 font-normal">(Optional)</span>
+              {t('bannerLabel')}{' '}
+              <span className="text-gray-500 font-normal">{t('bannerOptional')}</span>
             </label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
@@ -274,7 +271,7 @@ const CreateEventPage = () => {
               />
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              Provide a URL to an image for your event banner
+              {t('bannerHint')}
             </p>
           </div>
         </div>
@@ -284,21 +281,20 @@ const CreateEventPage = () => {
           <div>
             <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
               <Calendar size={16} className="text-brand-primary" />
-              Date &amp; Schedule
+              {t('scheduleCardTitle')}
             </h3>
             <p className="text-sm text-gray-500 mt-0.5">
-              Set when your event starts and ends
+              {t('scheduleCardSubtitle')}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Start Date */}
             <div>
               <label
                 htmlFor="startDate"
                 className="block text-sm font-medium text-gray-900 mb-2"
               >
-                Start Date <span className="text-feedback-error">*</span>
+                {t('startDateLabel')} <span className="text-feedback-error">*</span>
               </label>
               <input
                 type="date"
@@ -315,13 +311,12 @@ const CreateEventPage = () => {
               )}
             </div>
 
-            {/* End Date */}
             <div>
               <label
                 htmlFor="endDate"
                 className="block text-sm font-medium text-gray-900 mb-2"
               >
-                End Date <span className="text-feedback-error">*</span>
+                {t('endDateLabel')} <span className="text-feedback-error">*</span>
               </label>
               <input
                 type="date"
@@ -345,20 +340,19 @@ const CreateEventPage = () => {
           <div>
             <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
               <Settings2 size={16} className="text-brand-primary" />
-              Event Settings
+              {t('settingsCardTitle')}
             </h3>
             <p className="text-sm text-gray-500 mt-0.5">
-              Configure the status and visibility of your event
+              {t('settingsCardSubtitle')}
             </p>
           </div>
 
-          {/* Status */}
           <div>
             <label
               htmlFor="status"
               className="block text-sm font-medium text-gray-900 mb-2"
             >
-              Event Status
+              {t('statusLabel')}
             </label>
             <select
               id="status"
@@ -367,23 +361,22 @@ const CreateEventPage = () => {
               onChange={handleChange}
               className={`${inputNormal} appearance-none cursor-pointer`}
             >
-              <option value="DRAFT">Draft</option>
-              <option value="SCHEDULED">Scheduled</option>
-              <option value="ACTIVE">Active</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="CANCELLED">Cancelled</option>
+              <option value="DRAFT">{t('statusDraft')}</option>
+              <option value="SCHEDULED">{t('statusScheduled')}</option>
+              <option value="ACTIVE">{t('statusActive')}</option>
+              <option value="COMPLETED">{t('statusCompleted')}</option>
+              <option value="CANCELLED">{t('statusCancelled')}</option>
             </select>
             <p className="text-xs text-gray-500 mt-1">
-              Set the initial status of your event
+              {t('statusHint')}
             </p>
           </div>
 
-          {/* Is Active Toggle */}
           <div className="flex items-center justify-between py-1">
             <div>
-              <p className="text-sm font-medium text-gray-900">Event is active</p>
+              <p className="text-sm font-medium text-gray-900">{t('isActiveLabel')}</p>
               <p className="text-xs text-gray-500 mt-0.5">
-                Active events are visible to customers on your store
+                {t('isActiveDesc')}
               </p>
             </div>
             <button
@@ -407,21 +400,20 @@ const CreateEventPage = () => {
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-3 pt-2">
           <button
             type="submit"
             disabled={createEventMutation.isPending}
             className="px-6 py-2.5 bg-brand-primary text-white rounded-lg hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity text-sm font-semibold cursor-pointer"
           >
-            {createEventMutation.isPending ? 'Creating...' : 'Create Event'}
+            {createEventMutation.isPending ? t('submitCreating') : t('submitCreate')}
           </button>
           <button
             type="button"
             onClick={() => router.push('/dashboard/events')}
             className="px-6 py-2.5 bg-surface-container text-gray-900 rounded-lg hover:bg-surface-container-high transition-colors text-sm font-medium cursor-pointer"
           >
-            Cancel
+            {t('cancelBtn')}
           </button>
         </div>
       </form>

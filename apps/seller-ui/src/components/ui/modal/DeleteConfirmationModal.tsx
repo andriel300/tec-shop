@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import { AlertTriangle, X, Trash2 } from 'lucide-react';
 
 interface DeleteConfirmationModalProps {
@@ -16,6 +19,8 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
   productName,
   isDeleting = false,
 }) => {
+  const t = useTranslations('AllProducts');
+
   if (!isOpen) return null;
 
   return (
@@ -38,13 +43,13 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
               <Trash2 className="text-feedback-error" size={18} />
             </div>
             <h3 className="text-base font-semibold text-on-surface font-heading">
-              Delete Product
+              {t('deleteTitle')}
             </h3>
           </div>
           <button
             onClick={onClose}
             disabled={isDeleting}
-            aria-label="Close dialog"
+            aria-label={t('deleteClose')}
             className="p-1.5 rounded-md text-gray-400 hover:text-on-surface hover:bg-surface-container transition-colors disabled:opacity-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-outline-variant"
           >
             <X size={18} />
@@ -54,9 +59,12 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
         {/* Body */}
         <div className="px-6 py-5 space-y-4">
           <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-            Are you sure you want to delete{' '}
-            <span className="font-semibold text-on-surface">{productName}</span>?
-            This action cannot be undone immediately.
+            {t.rich('deleteConfirmText', {
+              name: productName,
+              strong: (chunks) => (
+                <span className="font-semibold text-on-surface">{chunks}</span>
+              ),
+            })}
           </p>
 
           <div className="bg-feedback-warning/10 border border-feedback-warning/30 rounded-md p-4">
@@ -64,12 +72,12 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
               <AlertTriangle className="text-feedback-warning flex-shrink-0 mt-0.5" size={16} />
               <div className="space-y-1.5">
                 <p className="text-xs font-semibold text-feedback-warning">
-                  Product will enter a deleted state
+                  {t('deleteWarningTitle')}
                 </p>
                 <ul className="text-xs text-gray-500 dark:text-gray-400 space-y-1 list-disc list-inside">
-                  <li>Hidden from your active listings immediately</li>
-                  <li>Permanently removed after 24 hours</li>
-                  <li>Recoverable from trash before then</li>
+                  <li>{t('deleteWarning1')}</li>
+                  <li>{t('deleteWarning2')}</li>
+                  <li>{t('deleteWarning3')}</li>
                 </ul>
               </div>
             </div>
@@ -83,7 +91,7 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
             disabled={isDeleting}
             className="flex-1 px-4 py-2.5 bg-surface-container text-on-surface rounded-lg text-sm font-medium hover:bg-surface-container-highest transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus:outline-none focus:ring-2 focus:ring-outline-variant"
           >
-            Cancel
+            {t('deleteCancel')}
           </button>
           <button
             onClick={onConfirm}
@@ -93,12 +101,12 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
             {isDeleting ? (
               <>
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>Deleting...</span>
+                <span>{t('deleteDeleting')}</span>
               </>
             ) : (
               <>
                 <Trash2 size={14} />
-                <span>Delete Product</span>
+                <span>{t('deleteConfirmBtn')}</span>
               </>
             )}
           </button>

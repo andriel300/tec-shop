@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   useCategories,
   useCreateCategory,
@@ -24,6 +25,7 @@ const flattenAll = (cats: Category[], result: Category[] = []): Category[] => {
 };
 
 const CategoriesTab = () => {
+  const t = useTranslations('Customization');
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
@@ -82,7 +84,7 @@ const CategoriesTab = () => {
     <div>
       <div className="flex justify-between items-center mb-4">
         <div className="text-slate-400 text-sm">
-          {totalCount} {totalCount === 1 ? 'category' : 'categories'} total
+          {t('categoryCount', { count: totalCount })}
         </div>
         <div className="flex gap-2">
           <button
@@ -93,13 +95,13 @@ const CategoriesTab = () => {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            Export CSV
+            {t('exportCsv')}
           </button>
           <button
             onClick={() => { setEditingCategory(null); setFormModalOpen(true); }}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium"
           >
-            + Add Category
+            {t('addCategory')}
           </button>
         </div>
       </div>
@@ -107,23 +109,23 @@ const CategoriesTab = () => {
       {isLoading ? (
         <div className="bg-slate-800/50 rounded-lg p-8 text-center border border-slate-700">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4" />
-          <p className="text-slate-400">Loading categories...</p>
+          <p className="text-slate-400">{t('loadingCategories')}</p>
         </div>
       ) : error ? (
         <div className="bg-slate-800/50 rounded-lg p-8 text-center border border-red-700">
-          <p className="text-red-400">Error: {error.message}</p>
+          <p className="text-red-400">{t('error', { message: error.message })}</p>
         </div>
       ) : !categories?.length ? (
         <div className="bg-slate-800/50 rounded-lg p-8 text-center border border-slate-700">
           <svg className="w-12 h-12 text-slate-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
           </svg>
-          <p className="text-slate-400 mb-3">No categories yet</p>
+          <p className="text-slate-400 mb-3">{t('noCategoriesTitle')}</p>
           <button
             onClick={() => { setEditingCategory(null); setFormModalOpen(true); }}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium"
           >
-            Create Your First Category
+            {t('createFirstCategory')}
           </button>
         </div>
       ) : (
@@ -154,7 +156,7 @@ const CategoriesTab = () => {
         onClose={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
         itemName={deleteTarget?.name || ''}
-        itemType="Category"
+        itemType={t('categoryType')}
         isPending={deleteMutation.isPending}
       />
     </div>

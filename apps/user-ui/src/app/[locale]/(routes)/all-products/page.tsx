@@ -4,29 +4,40 @@ export const dynamic = 'force-dynamic';
 
 import { createLogger } from '@tec-shop/next-logger';
 import { useQuery } from '@tanstack/react-query';
-
-const logger = createLogger('user-ui:products');
 import { apiClient } from '../../../../lib/api/client';
 import { Link } from '../../../../i18n/navigation';
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Range } from 'react-range';
+import { useTranslations, useMessages } from 'next-intl';
+import nextDynamic from 'next/dynamic';
 import { ChevronDown, X } from 'lucide-react';
 import ProductCard from '../../../../components/cards/product-card';
 import type { Product } from '../../../../lib/api/products';
 
-const MIN = 0;
-const MAX = 1199;
+const logger = createLogger('user-ui:products');
+const PriceRangeSlider = nextDynamic(() => import('./price-range-slider'), { ssr: false });
 
 const ProductsPage = () => {
+  const t = useTranslations('AllProducts');
+  const tCat = useTranslations('Categories');
+  const messages = useMessages();
+  const catMessages = (messages.Categories ?? {}) as Record<string, string>;
   const searchParams = useSearchParams();
+
+  const translateCategory = (slug: string, name: string): string => {
+    return catMessages[slug]
+      ? tCat(slug as Parameters<typeof tCat>[0])
+      : name;
+  };
+  const categoryIdParam = searchParams.get('categoryId');
+  const isMounted = useRef(false);
   const [isProductLoading, setIsProductLoading] = React.useState(false);
   const [priceRange, setPriceRange] = React.useState([0, 1199]);
   const [selectedCategoryIds, setSelectedCategoryIds] = React.useState<
     string[]
   >(() => {
     const catId = searchParams.get('categoryId');
-    return catId ? [catId] : [];
+    return catId ? catId.split(',').filter(Boolean) : [];
   });
   const [selectedSizes, setSelectedSizes] = React.useState<string[]>([]);
   const [selectedColors, setSelectedColors] = React.useState<string[]>([]);
@@ -39,6 +50,29 @@ const ProductsPage = () => {
   const [isColorsOpen, setIsColorsOpen] = React.useState(true);
   const [isSizesOpen, setIsSizesOpen] = React.useState(true);
   const [sortBy, setSortBy] = React.useState('newest');
+
+  // Sync selectedCategoryIds when the URL param changes via external navigation
+  // (e.g. clicking a category from the dropdown while already on this page).
+  // The isMounted guard skips the first run so we don't double-fetch on mount.
+  useEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
+    }
+    const newIds = categoryIdParam ? categoryIdParam.split(',').filter(Boolean) : [];
+    // Use functional update: return the same reference if content is unchanged
+    // so React skips re-render and avoids a double-fetch
+    setSelectedCategoryIds((prev) => {
+      const isSame =
+        prev.length === newIds.length && newIds.every((id) => prev.includes(id));
+      return isSame ? prev : newIds;
+    });
+    setPriceRange([0, 1199]);
+    setTempPriceRange([0, 1199]);
+    setSelectedColors([]);
+    setSelectedSizes([]);
+    setPage(1);
+  }, [categoryIdParam]);
 
   // Helper function to get color hex code from color name
   const getColorCode = (colorName: string): string => {
@@ -218,9 +252,10 @@ const ProductsPage = () => {
 
   const getCategoryName = (id: string): string => {
     const cat = (
-      categories as { id: string; name: string }[] | undefined
+      categories as { id: string; name: string; slug: string }[] | undefined
     )?.find((c) => c.id === id);
-    return cat?.name || id;
+    if (!cat) return id;
+    return translateCategory(cat.slug, cat.name);
   };
 
   const getPageTitle = () => {
@@ -228,9 +263,9 @@ const ProductsPage = () => {
       return getCategoryName(selectedCategoryIds[0]);
     }
     if (selectedCategoryIds.length > 1) {
-      return 'Multiple Categories';
+      return t('multipleCategories');
     }
-    return 'All Products';
+    return t('title');
   };
 
   return (
@@ -238,55 +273,20 @@ const ProductsPage = () => {
       <div className="w-[90%] lg:w-[80%] m-auto">
         <div className="pt-6 pb-5">
           <div className="flex items-center gap-1.5 text-sm text-[#55585b] mb-1">
-            <Link href="/" className="hover:underline">Home</Link>
+            <Link href="/" className="hover:underline">{t('home')}</Link>
             <span className="inline-block w-1 h-1 bg-[#a8acb0] rounded-full"></span>
-            <span>All Products</span>
+            <span>{t('title')}</span>
           </div>
-          <h1 className="font-medium text-3xl font-Jost text-gray-900">All Products</h1>
+          <h1 className="font-medium text-3xl font-Jost text-gray-900">{t('title')}</h1>
         </div>
         <div className="w-full flex flex-col gap-8 lg:flex-row">
           {/* sidebar */}
           <aside className="w-full lg:w-[270px] !rounded bg-white p-4 space-y-6 shadow-md">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Price Filter</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">{t('priceFilter')}</h3>
             <div className="ml-2">
-              <Range
-                step={1}
-                min={MIN}
-                max={MAX}
+              <PriceRangeSlider
                 values={tempPriceRange}
                 onChange={(values) => setTempPriceRange(values)}
-                renderTrack={({ props, children }) => {
-                  const [min, max] = tempPriceRange;
-                  const percentageLeft = ((min - MIN) / (MAX - MIN)) * 100;
-                  const percentageRight = ((max - MIN) / (MAX - MIN)) * 100;
-
-                  return (
-                    <div
-                      {...props}
-                      className="h-[6px] bg-blue-200 rounded relative"
-                      style={{ ...props.style }}
-                    >
-                      <div
-                        className="absolute h-full bg-blue-600 rounded"
-                        style={{
-                          left: `${percentageLeft}%`,
-                          width: `${percentageRight - percentageLeft}%`,
-                        }}
-                      />
-                      {children}
-                    </div>
-                  );
-                }}
-                renderThumb={({ props }) => {
-                  const { key, ...rest } = props;
-                  return (
-                    <div
-                      key={key}
-                      {...rest}
-                      className="w-[16px] h-[16px] bg-blue-600 rounded-full shadow"
-                    />
-                  );
-                }}
               />
             </div>
             <div className="flex justify-between items-center mt-2">
@@ -300,7 +300,7 @@ const ProductsPage = () => {
                 }}
                 className="text-sm px-4 py-1 bg-gray-200 hover:bg-blue-600 hover:text-white rounded-sm transition duration-200 ease-in-out"
               >
-                Apply
+                {t('apply')}
               </button>
             </div>
 
@@ -310,7 +310,7 @@ const ProductsPage = () => {
                 onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
                 className="w-full flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-gray-500 border-b border-b-slate-200 pb-1 hover:text-blue-600 transition-colors"
               >
-                <span>Categories</span>
+                <span>{t('categories')}</span>
                 <ChevronDown
                   className={`w-5 h-5 transition-transform duration-200 ${
                     isCategoriesOpen ? 'rotate-180' : ''
@@ -322,12 +322,12 @@ const ProductsPage = () => {
                 <ul className="space-y-2 !mt-3 max-h-[300px] overflow-y-auto">
                   {isCategoriesLoading ? (
                     <p className="text-sm text-gray-500">
-                      Loading categories...
+                      {t('loadingCategories')}
                     </p>
                   ) : categories &&
                     Array.isArray(categories) &&
                     categories.length > 0 ? (
-                    categories.map((category: { id: string; name: string }) => (
+                    categories.map((category: { id: string; name: string; slug: string }) => (
                       <li
                         key={category.id}
                         className="flex items-center justify-between"
@@ -339,13 +339,13 @@ const ProductsPage = () => {
                             onChange={() => toggleCategory(category.id)}
                             className="w-4 h-4 accent-blue-600 cursor-pointer rounded-sm border-gray-300 focus:ring-2 focus:ring-blue-500"
                           />
-                          {category.name}
+                          {translateCategory(category.slug, category.name)}
                         </label>
                       </li>
                     ))
                   ) : (
                     <p className="text-sm text-gray-500">
-                      No categories available
+                      {t('noCategoriesAvailable')}
                     </p>
                   )}
                 </ul>
@@ -358,7 +358,7 @@ const ProductsPage = () => {
                 onClick={() => setIsColorsOpen(!isColorsOpen)}
                 className="w-full flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-gray-500 border-b border-b-slate-200 pb-1 mt-6 hover:text-blue-600 transition-colors"
               >
-                <span>Colors</span>
+                <span>{t('colors')}</span>
                 <ChevronDown
                   className={`w-5 h-5 transition-transform duration-200 ${
                     isColorsOpen ? 'rotate-180' : ''
@@ -369,7 +369,7 @@ const ProductsPage = () => {
               {isColorsOpen && (
                 <div className="mt-3">
                   {isFiltersLoading ? (
-                    <p className="text-sm text-gray-500">Loading colors...</p>
+                    <p className="text-sm text-gray-500">{t('loadingColors')}</p>
                   ) : filterOptions?.colors && filterOptions.colors.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {filterOptions.colors.map((colorName) => {
@@ -393,7 +393,7 @@ const ProductsPage = () => {
                       })}
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-500">No colors available</p>
+                    <p className="text-sm text-gray-500">{t('noColorsAvailable')}</p>
                   )}
                 </div>
               )}
@@ -405,7 +405,7 @@ const ProductsPage = () => {
                 onClick={() => setIsSizesOpen(!isSizesOpen)}
                 className="w-full flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-gray-500 border-b border-b-slate-200 pb-1 mt-6 hover:text-blue-600 transition-colors"
               >
-                <span>Sizes</span>
+                <span>{t('sizes')}</span>
                 <ChevronDown
                   className={`w-5 h-5 transition-transform duration-200 ${
                     isSizesOpen ? 'rotate-180' : ''
@@ -416,7 +416,7 @@ const ProductsPage = () => {
               {isSizesOpen && (
                 <ul className="space-y-2 !mt-3 max-h-[300px] overflow-y-auto">
                   {isFiltersLoading ? (
-                    <p className="text-sm text-gray-500">Loading sizes...</p>
+                    <p className="text-sm text-gray-500">{t('loadingSizes')}</p>
                   ) : filterOptions?.sizes && filterOptions.sizes.length > 0 ? (
                     filterOptions.sizes.map((size) => (
                       <li
@@ -435,7 +435,7 @@ const ProductsPage = () => {
                       </li>
                     ))
                   ) : (
-                    <p className="text-sm text-gray-500">No sizes available</p>
+                    <p className="text-sm text-gray-500">{t('noSizesAvailable')}</p>
                   )}
                 </ul>
               )}
@@ -450,12 +450,15 @@ const ProductsPage = () => {
                 <h2 className="text-2xl font-semibold text-gray-900">
                   {getPageTitle()}
                   <span className="text-gray-500 font-normal ml-2">
-                    ({total} {total === 1 ? 'product' : 'products'})
+                    ({total} {total === 1 ? t('product') : t('products')})
                   </span>
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  Showing {products.length > 0 ? (page - 1) * 12 + 1 : 0}-
-                  {Math.min(page * 12, total)} of {total} results
+                  {t('showing', {
+                    start: products.length > 0 ? (page - 1) * 12 + 1 : 0,
+                    end: Math.min(page * 12, total),
+                    total,
+                  })}
                 </p>
               </div>
 
@@ -465,7 +468,7 @@ const ProductsPage = () => {
                   htmlFor="sort"
                   className="text-sm text-gray-700 whitespace-nowrap"
                 >
-                  Sort by:
+                  {t('sortBy')}
                 </label>
                 <select
                   id="sort"
@@ -476,11 +479,11 @@ const ProductsPage = () => {
                   }}
                   className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white cursor-pointer"
                 >
-                  <option value="newest">Newest</option>
-                  <option value="price-asc">Price: Low to High</option>
-                  <option value="price-desc">Price: High to Low</option>
-                  <option value="popular">Most Popular</option>
-                  <option value="top-sales">Best Selling</option>
+                  <option value="newest">{t('newest')}</option>
+                  <option value="price-asc">{t('priceLowHigh')}</option>
+                  <option value="price-desc">{t('priceHighLow')}</option>
+                  <option value="popular">{t('mostPopular')}</option>
+                  <option value="top-sales">{t('bestSelling')}</option>
                 </select>
               </div>
             </div>
@@ -490,13 +493,13 @@ const ProductsPage = () => {
               <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-medium text-gray-700">
-                    Active Filters
+                    {t('activeFilters')}
                   </h3>
                   <button
                     onClick={clearAllFilters}
                     className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                   >
-                    Clear All
+                    {t('clearAll')}
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -506,7 +509,7 @@ const ProductsPage = () => {
                       key={catId}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-800 rounded-full text-sm"
                     >
-                      <span className="font-medium">Category:</span>{' '}
+                      <span className="font-medium">{t('categoryLabel')}</span>{' '}
                       {getCategoryName(catId)}
                       <button
                         onClick={() => toggleCategory(catId)}
@@ -543,7 +546,7 @@ const ProductsPage = () => {
                       key={size}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-800 rounded-full text-sm"
                     >
-                      <span className="font-medium">Size:</span> {size}
+                      <span className="font-medium">{t('sizeLabel')}</span> {size}
                       <button
                         onClick={() => toggleSize(size)}
                         className="hover:bg-green-200 rounded-full p-0.5 transition-colors"
@@ -556,7 +559,7 @@ const ProductsPage = () => {
                   {/* Price range filter */}
                   {(priceRange[0] !== 0 || priceRange[1] !== 1199) && (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-100 text-orange-800 rounded-full text-sm">
-                      <span className="font-medium">Price:</span> $
+                      <span className="font-medium">{t('priceLabel')}</span> $
                       {priceRange[0]} - ${priceRange[1]}
                       <button
                         onClick={() => {
@@ -607,19 +610,19 @@ const ProductsPage = () => {
                   </svg>
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  No products found
+                  {t('noProductsFound')}
                 </h3>
                 <p className="text-gray-600 mb-6">
-                  We could not find any products matching your filters.
+                  {t('noProductsDesc')}
                   <br />
-                  Try adjusting your search criteria.
+                  {t('tryAdjusting')}
                 </p>
                 {hasActiveFilters && (
                   <button
                     onClick={clearAllFilters}
                     className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                   >
-                    Clear all filters
+                    {t('clearAllFilters')}
                   </button>
                 )}
               </div>
@@ -632,7 +635,7 @@ const ProductsPage = () => {
                   disabled={page === 1}
                   className="px-3 py-1.5 rounded border border-gray-200 text-sm bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
-                  Prev
+                  {t('prev')}
                 </button>
 
                 {(() => {
@@ -672,7 +675,7 @@ const ProductsPage = () => {
                   disabled={page === totalPages}
                   className="px-3 py-1.5 rounded border border-gray-200 text-sm bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
-                  Next
+                  {t('next')}
                 </button>
               </div>
             )}

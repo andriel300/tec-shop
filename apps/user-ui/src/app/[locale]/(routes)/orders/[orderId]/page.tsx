@@ -20,6 +20,8 @@ import { Link } from '../../../../../i18n/navigation';
 import { useRouter } from '../../../../../i18n/navigation';
 import { useParams } from 'next/navigation';
 import React, { useEffect, useState, useCallback } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
+import { useCurrency } from '../../../../../hooks/use-currency';
 
 interface OrderItem {
   id: string;
@@ -64,10 +66,10 @@ interface Order {
 
 // Steps for order progress tracking
 const ORDER_STEPS = [
-  { key: 'PENDING', label: 'Order Placed', icon: Package },
-  { key: 'PAID', label: 'Payment Confirmed', icon: Check },
-  { key: 'SHIPPED', label: 'Shipped', icon: Package },
-  { key: 'DELIVERED', label: 'Delivered', icon: Check },
+  { key: 'PENDING', icon: Package },
+  { key: 'PAID', icon: Check },
+  { key: 'SHIPPED', icon: Package },
+  { key: 'DELIVERED', icon: Check },
 ] as const;
 
 // Get the index of current status in the steps
@@ -77,18 +79,25 @@ const getStatusIndex = (status: OrderStatus): number => {
   return index >= 0 ? index : 0;
 };
 
-// Safe amount formatter - converts cents to dollars
-const formatCents = (cents: number | undefined | null): string => {
-  if (cents === undefined || cents === null || isNaN(cents)) {
-    return '$0.00';
-  }
-  return `$${(cents / 100).toFixed(2)}`;
-};
-
 const Page = () => {
+  const t = useTranslations('OrderDetail');
+  const locale = useLocale();
   const params = useParams();
   const router = useRouter();
   const orderId = params.orderId as string;
+  const { formatPrice } = useCurrency();
+
+  const stepLabels: Record<string, string> = {
+    PENDING: t('stepOrderPlaced'),
+    PAID: t('stepPaymentConfirmed'),
+    SHIPPED: t('stepShipped'),
+    DELIVERED: t('stepDelivered'),
+  };
+
+  const formatCents = (cents: number | undefined | null): string => {
+    if (cents === undefined || cents === null || isNaN(cents)) return formatPrice(0);
+    return formatPrice(cents / 100);
+  };
 
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
@@ -117,9 +126,9 @@ const Page = () => {
     try {
       await apiClient.post(`/orders/${order.id}/confirm-delivery`);
       setOrder((prev) => prev ? { ...prev, status: 'DELIVERED' } : prev);
-      toast.success('Thank you! Your order has been marked as delivered.');
+      toast.success(t('confirmDeliverySuccess'));
     } catch {
-      toast.error('Failed to confirm delivery. Please try again.');
+      toast.error(t('confirmDeliveryError'));
     } finally {
       setConfirming(false);
     }
@@ -137,12 +146,12 @@ const Page = () => {
     return (
       <div className="flex flex-col items-center justify-center h-[40vh] gap-4">
         <PackageX size={48} className="text-gray-400" />
-        <p className="text-gray-600">{error || 'Order not found'}</p>
+        <p className="text-gray-600">{error || t('orderNotFound')}</p>
         <button
           onClick={() => router.push('/profile?active=My+Orders')}
           className="text-brand-primary hover:underline"
         >
-          Back to Orders
+          {t('backToOrders')}
         </button>
       </div>
     );
@@ -167,11 +176,12 @@ const Page = () => {
             Order #{order.orderNumber || order.id.slice(-6)}
           </h1>
           <p className="text-sm text-gray-500">
-            Placed on{' '}
-            {new Date(order.createdAt).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
+            {t('placedOn', {
+              date: new Date(order.createdAt).toLocaleDateString(locale, {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              }),
             })}
           </p>
         </div>
@@ -181,7 +191,7 @@ const Page = () => {
       {isCancelled && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
           <p className="text-red-600 font-medium">
-            This order has been cancelled.
+            {t('cancelledBanner')}
           </p>
         </div>
       )}
@@ -190,7 +200,7 @@ const Page = () => {
       {!isCancelled && (
         <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-6">
-            Order Status
+            {t('orderStatus')}
           </h2>
 
           {/* Progress Steps */}
@@ -245,7 +255,7 @@ const Page = () => {
                           : 'text-gray-400'
                       }`}
                     >
-                      {step.label}
+                      {stepLabels[step.key]}
                     </span>
                   </div>
                 );
@@ -257,7 +267,7 @@ const Page = () => {
           {isDelivered && (
             <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
               <p className="text-green-700 text-sm font-medium">
-                Your order has been delivered successfully!
+                {t('deliveredMessage')}
               </p>
             </div>
           )}
@@ -268,7 +278,7 @@ const Page = () => {
               <div className="flex items-center gap-2 flex-1">
                 <Truck size={18} className="text-blue-500 shrink-0" />
                 <p className="text-sm text-blue-800">
-                  <span className="font-semibold">Package on its way!</span> Once you receive it, confirm delivery so the seller knows it arrived.
+                  <span className="font-semibold">{t('packageOnWay')}</span> {t('confirmDeliveryPrompt')}
                 </p>
               </div>
               <button
@@ -281,7 +291,7 @@ const Page = () => {
                 ) : (
                   <Check size={15} />
                 )}
-                I&apos;ve received my order
+                {t('iveReceived')}
               </button>
             </div>
           )}
@@ -292,7 +302,7 @@ const Page = () => {
         {/* Order Items - Takes 2 columns */}
         <div className="lg:col-span-2 bg-white border border-gray-200 rounded-lg p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">
-            Order Items ({order.items?.length || 0})
+            {t('orderItems', { count: order.items?.length || 0 })}
           </h2>
 
           {order.items && order.items.length > 0 ? (
@@ -328,11 +338,11 @@ const Page = () => {
                     </Link>
                     {item.shopName && (
                       <p className="text-xs text-gray-400">
-                        Sold by {item.shopName}
+                        {t('soldBy', { shop: item.shopName })}
                       </p>
                     )}
                     <p className="text-sm text-gray-500 mt-1">
-                      Qty: {item.quantity} x {formatCents(item.unitPrice)}
+                      {t('qty', { count: item.quantity, price: formatCents(item.unitPrice) })}
                     </p>
                   </div>
 
@@ -346,7 +356,7 @@ const Page = () => {
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-sm">No items in this order</p>
+            <p className="text-gray-500 text-sm">{t('noItems')}</p>
           )}
         </div>
 
@@ -355,29 +365,29 @@ const Page = () => {
           {/* Order Summary */}
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">
-              Order Summary
+              {t('orderSummary')}
             </h2>
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Subtotal</span>
+                <span className="text-gray-600">{t('subtotal')}</span>
                 <span>{formatCents(order.subtotal)}</span>
               </div>
               {order.discount > 0 && (
                 <div className="flex justify-between text-green-600">
-                  <span>Discount</span>
+                  <span>{t('discount')}</span>
                   <span>-{formatCents(order.discount)}</span>
                 </div>
               )}
               <div className="flex justify-between">
-                <span className="text-gray-600">Shipping</span>
+                <span className="text-gray-600">{t('shipping')}</span>
                 <span>{formatCents(order.shippingCost)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Tax</span>
+                <span className="text-gray-600">{t('tax')}</span>
                 <span>{formatCents(order.tax)}</span>
               </div>
               <div className="flex justify-between font-semibold text-base pt-3 border-t border-gray-200">
-                <span>Total</span>
+                <span>{t('total')}</span>
                 <span className="text-brand-primary">
                   {formatCents(order.finalAmount)}
                 </span>
@@ -390,7 +400,7 @@ const Page = () => {
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                 <MapPin size={18} className="text-gray-500" />
-                Shipping Address
+                {t('shippingAddress')}
               </h2>
               <div className="text-sm text-gray-600 space-y-1">
                 <p className="font-medium text-gray-800">
@@ -417,10 +427,10 @@ const Page = () => {
           {/* Payment Info */}
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">
-              Payment
+              {t('payment')}
             </h2>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Status</span>
+              <span className="text-sm text-gray-600">{t('paymentStatus')}</span>
               <span
                 className={`text-sm font-medium px-2 py-1 rounded-full ${
                   order.paymentStatus === 'COMPLETED'

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { ChevronRight, Folder, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Input } from '../core/Input';
 import { useCategories, type Category } from '../../../hooks/useCategories';
 
@@ -38,6 +39,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
   className = '',
   variant = 'dark',
 }) => {
+  const t = useTranslations('CreateProduct');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     null
@@ -47,7 +49,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
   // React Query hook
   const { data: categories = [], isLoading: loading, error: fetchError } = useCategories();
 
-  const error = fetchError ? 'Failed to load categories.' : null;
+  const error = fetchError ? t('categoryLoadFailed') : null;
 
   // Helper function to find category by ID recursively
   const findCategoryById = (id: string, cats: Category[]): Category | null => {
@@ -137,7 +139,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
     return (
       <div className={`flex items-center justify-center p-8 ${className}`}>
         <Loader2 className="animate-spin text-brand-primary-600" size={24} />
-        <span className="ml-2 text-gray-500">Loading categories...</span>
+        <span className="ml-2 text-gray-500">{t('categoryLoading')}</span>
       </div>
     );
   }
@@ -157,7 +159,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
       {/* Selected Category Breadcrumb */}
       {breadcrumb.length > 0 && (
         <div className="flex items-center gap-2 p-3 bg-surface-container rounded-lg">
-          <span className="text-sm text-gray-500">Selected:</span>
+          <span className="text-sm text-gray-500">{t('categorySelected')}</span>
           {breadcrumb.map((cat, index) => (
             <React.Fragment key={cat.id}>
               {index > 0 && (
@@ -174,7 +176,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
         variant={variant}
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        placeholder="Search categories..."
+        placeholder={t('categorySearchPlaceholder')}
         className="mb-2"
       />
 
@@ -185,8 +187,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
 
       {/* Info Message */}
       <p className="text-xs text-gray-500 text-center">
-        Can&apos;t find your category? Contact support to request a new
-        category.
+        {t('categoryNotFound')}
       </p>
     </div>
   );

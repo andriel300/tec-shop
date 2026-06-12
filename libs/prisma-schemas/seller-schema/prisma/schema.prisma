@@ -53,6 +53,7 @@ model Shop {
   seller   Seller @relation(fields: [sellerId], references: [id])
 
   businessName String
+  slug         String? // URL-friendly identifier derived from businessName
   bio          String?
   description  String? // Deprecated in favor of bio
   category     String

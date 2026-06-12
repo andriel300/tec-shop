@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import { Trash2 } from 'lucide-react';
 import { Input } from '../../core/Input';
 import { COLOR_PALETTE } from './constants';
@@ -35,6 +36,8 @@ export const VariantTable: React.FC<VariantTableProps> = ({
   onUpdateVariant,
   onRemoveVariant,
 }) => {
+  const t = useTranslations('CreateProduct');
+
   if (variants.length === 0) {
     return null;
   }
@@ -47,11 +50,10 @@ export const VariantTable: React.FC<VariantTableProps> = ({
       <div className="px-5 py-4 flex items-center justify-between">
         <div>
           <h3 className="text-base font-semibold text-gray-900">
-            Manage Variants
+            {t('variantTableTitle')}
           </h3>
           <p className="text-xs text-gray-500 mt-0.5">
-            {variants.length} variant{variants.length !== 1 ? 's' : ''} &middot;{' '}
-            {activeCount} active
+            {t('variantTableSubtitle', { count: variants.length, active: activeCount })}
           </p>
         </div>
       </div>
@@ -62,22 +64,22 @@ export const VariantTable: React.FC<VariantTableProps> = ({
           <thead className="bg-surface-container">
             <tr>
               <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                SKU
+                {t('variantColSku')}
               </th>
               <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Attributes
+                {t('variantColAttributes')}
               </th>
               <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Price
+                {t('variantColPrice')}
               </th>
               <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Sale Price
+                {t('variantColSalePrice')}
               </th>
               <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Stock
+                {t('variantColStock')}
               </th>
               <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Active
+                {t('variantColActive')}
               </th>
               <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                 &nbsp;
@@ -170,7 +172,7 @@ export const VariantTable: React.FC<VariantTableProps> = ({
                       )
                     }
                     className="w-24 text-xs"
-                    placeholder="Optional"
+                    placeholder={t('variantSalePricePlaceholder')}
                   />
                 </td>
 
@@ -221,7 +223,7 @@ export const VariantTable: React.FC<VariantTableProps> = ({
                     type="button"
                     onClick={() => onRemoveVariant(index)}
                     className="p-1.5 rounded-md text-feedback-error hover:bg-feedback-error/10 transition-colors cursor-pointer"
-                    title="Remove variant"
+                    title={t('variantRemove')}
                   >
                     <Trash2 size={14} />
                   </button>

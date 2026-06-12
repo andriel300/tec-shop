@@ -7,6 +7,7 @@ import {
   flexRender,
   type ColumnDef,
 } from '@tanstack/react-table';
+import { useTranslations } from 'next-intl';
 import {
   useAdmins,
   useCreateAdmin,
@@ -14,7 +15,6 @@ import {
 } from '../../../../../hooks/useAdminData';
 import type { AdminResponse } from '../../../../../lib/api/admin';
 
-// Modal Component for Confirming Admin Deletion
 const DeleteAdminModal = ({
   isOpen,
   adminName,
@@ -28,6 +28,7 @@ const DeleteAdminModal = ({
   onConfirm: (confirmPassword: string) => void;
   isLoading: boolean;
 }) => {
+  const t = useTranslations('Management');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
@@ -36,7 +37,7 @@ const DeleteAdminModal = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!password) {
-      setError('Your password is required to confirm this action');
+      setError(t('deleteModalPasswordRequired'));
       return;
     }
     onConfirm(password);
@@ -51,21 +52,27 @@ const DeleteAdminModal = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full">
-        <h3 className="text-white text-xl font-semibold mb-2">Delete Admin Account</h3>
+        <h3 className="text-white text-xl font-semibold mb-2">
+          {t('deleteModalTitle')}
+        </h3>
         <p className="text-slate-400 text-sm mb-4">
-          You are about to permanently delete <strong className="text-white">{adminName}</strong>.
-          This action cannot be undone. Enter your password to confirm.
+          {t.rich('deleteModalDesc', {
+            name: adminName,
+            bold: (chunks) => <strong className="text-white">{chunks}</strong>,
+          })}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-slate-300 text-sm block mb-2">Your Password *</label>
+            <label className="text-slate-300 text-sm block mb-2">
+              {t('deleteModalPasswordLabel')}
+            </label>
             <input
               type="password"
               value={password}
               onChange={(e) => { setPassword(e.target.value); setError(''); }}
               className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600"
-              placeholder="Enter your current password"
+              placeholder={t('deleteModalPasswordPlaceholder')}
               autoFocus
             />
             {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
@@ -77,7 +84,7 @@ const DeleteAdminModal = ({
               disabled={isLoading}
               className="flex-1 bg-red-600 hover:bg-red-700 text-white rounded p-3 font-medium disabled:opacity-50"
             >
-              {isLoading ? 'Deleting...' : 'Delete Admin'}
+              {isLoading ? t('deleteModalBtnDeleting') : t('deleteModalBtnDelete')}
             </button>
             <button
               type="button"
@@ -85,7 +92,7 @@ const DeleteAdminModal = ({
               disabled={isLoading}
               className="flex-1 bg-slate-700 hover:bg-slate-600 text-white rounded p-3 font-medium disabled:opacity-50"
             >
-              Cancel
+              {t('deleteModalBtnCancel')}
             </button>
           </div>
         </form>
@@ -94,7 +101,6 @@ const DeleteAdminModal = ({
   );
 };
 
-// Modal Component for Adding New Admin
 const AddAdminModal = ({
   isOpen,
   onClose,
@@ -106,6 +112,7 @@ const AddAdminModal = ({
   onSubmit: (data: { email: string; name: string; password: string }) => void;
   isLoading: boolean;
 }) => {
+  const t = useTranslations('Management');
   const [formData, setFormData] = useState({
     email: '',
     name: '',
@@ -120,28 +127,27 @@ const AddAdminModal = ({
     const newErrors: Record<string, string> = {};
 
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('validationEmailRequired');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
+      newErrors.email = t('validationEmailInvalid');
     }
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = t('validationNameRequired');
     }
 
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('validationPasswordRequired');
     } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
+      newErrors.password = t('validationPasswordTooShort');
     } else if (
       !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(formData.password)
     ) {
-      newErrors.password =
-        'Password must contain uppercase, lowercase, number, and special character (@$!%*?&)';
+      newErrors.password = t('validationPasswordWeak');
     }
 
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = t('validationPasswordMismatch');
     }
 
     setErrors(newErrors);
@@ -170,19 +176,21 @@ const AddAdminModal = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full">
-        <h3 className="text-white text-xl font-semibold mb-4">Add New Admin</h3>
+        <h3 className="text-white text-xl font-semibold mb-4">
+          {t('addModalTitle')}
+        </h3>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-slate-300 text-sm block mb-2">Email *</label>
+            <label className="text-slate-300 text-sm block mb-2">
+              {t('addModalEmailLabel')}
+            </label>
             <input
               type="email"
               value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600"
-              placeholder="admin@tec-shop.com"
+              placeholder={t('addModalEmailPlaceholder')}
             />
             {errors.email && (
               <p className="text-red-400 text-xs mt-1">{errors.email}</p>
@@ -191,16 +199,14 @@ const AddAdminModal = ({
 
           <div>
             <label className="text-slate-300 text-sm block mb-2">
-              Full Name *
+              {t('addModalNameLabel')}
             </label>
             <input
               type="text"
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600"
-              placeholder="John Doe"
+              placeholder={t('addModalNamePlaceholder')}
             />
             {errors.name && (
               <p className="text-red-400 text-xs mt-1">{errors.name}</p>
@@ -209,16 +215,14 @@ const AddAdminModal = ({
 
           <div>
             <label className="text-slate-300 text-sm block mb-2">
-              Password *
+              {t('addModalPasswordLabel')}
             </label>
             <input
               type="password"
               value={formData.password}
-              onChange={(e) =>
-                setFormData({ ...formData, password: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600"
-              placeholder="Min 8 chars, uppercase, lowercase, number, special char"
+              placeholder={t('addModalPasswordPlaceholder')}
             />
             {errors.password && (
               <p className="text-red-400 text-xs mt-1">{errors.password}</p>
@@ -227,21 +231,17 @@ const AddAdminModal = ({
 
           <div>
             <label className="text-slate-300 text-sm block mb-2">
-              Confirm Password *
+              {t('addModalConfirmPasswordLabel')}
             </label>
             <input
               type="password"
               value={formData.confirmPassword}
-              onChange={(e) =>
-                setFormData({ ...formData, confirmPassword: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
               className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600"
-              placeholder="Re-enter password"
+              placeholder={t('addModalConfirmPasswordPlaceholder')}
             />
             {errors.confirmPassword && (
-              <p className="text-red-400 text-xs mt-1">
-                {errors.confirmPassword}
-              </p>
+              <p className="text-red-400 text-xs mt-1">{errors.confirmPassword}</p>
             )}
           </div>
 
@@ -251,7 +251,7 @@ const AddAdminModal = ({
               disabled={isLoading}
               className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded p-3 font-medium disabled:opacity-50"
             >
-              {isLoading ? 'Creating...' : 'Create Admin'}
+              {isLoading ? t('addModalBtnCreating') : t('addModalBtnCreate')}
             </button>
             <button
               type="button"
@@ -259,21 +259,21 @@ const AddAdminModal = ({
               disabled={isLoading}
               className="flex-1 bg-slate-700 hover:bg-slate-600 text-white rounded p-3 font-medium disabled:opacity-50"
             >
-              Cancel
+              {t('addModalBtnCancel')}
             </button>
           </div>
         </form>
 
         <div className="mt-4 p-3 bg-slate-700 rounded">
           <p className="text-slate-300 text-xs">
-            <strong>Password Requirements:</strong>
+            <strong>{t('passwordReqTitle')}</strong>
           </p>
           <ul className="text-slate-400 text-xs mt-1 ml-4 list-disc">
-            <li>At least 8 characters long</li>
-            <li>Contains uppercase letter (A-Z)</li>
-            <li>Contains lowercase letter (a-z)</li>
-            <li>Contains number (0-9)</li>
-            <li>Contains special character (@$!%*?&)</li>
+            <li>{t('passwordReq1')}</li>
+            <li>{t('passwordReq2')}</li>
+            <li>{t('passwordReq3')}</li>
+            <li>{t('passwordReq4')}</li>
+            <li>{t('passwordReq5')}</li>
           </ul>
         </div>
       </div>
@@ -282,52 +282,45 @@ const AddAdminModal = ({
 };
 
 const TeamManagementPage = () => {
+  const t = useTranslations('Management');
   const [addModalOpen, setAddModalOpen] = useState(false);
-  const [deleteModal, setDeleteModal] = useState<{ open: boolean; adminId: string; adminName: string }>({
-    open: false,
-    adminId: '',
-    adminName: '',
-  });
+  const [deleteModal, setDeleteModal] = useState<{
+    open: boolean;
+    adminId: string;
+    adminName: string;
+  }>({ open: false, adminId: '', adminName: '' });
 
-  // API hooks
   const { data: admins, isLoading, error } = useAdmins();
   const createAdminMutation = useCreateAdmin();
   const deleteAdminMutation = useDeleteAdmin();
 
-  // Handle create admin
   const handleCreateAdmin = (data: {
     email: string;
     name: string;
     password: string;
   }) => {
     createAdminMutation.mutate(data, {
-      onSuccess: () => {
-        setAddModalOpen(false);
-      },
+      onSuccess: () => setAddModalOpen(false),
     });
   };
 
-  // Handle delete admin — open password-confirmation modal
   const handleDeleteAdmin = (adminId: string, adminName: string) => {
     setDeleteModal({ open: true, adminId, adminName });
   };
 
-  // Confirm deletion with password
   const handleConfirmDelete = (confirmPassword: string) => {
     deleteAdminMutation.mutate(
       { adminId: deleteModal.adminId, confirmPassword },
       {
-        onSuccess: () => {
-          setDeleteModal({ open: false, adminId: '', adminName: '' });
-        },
+        onSuccess: () =>
+          setDeleteModal({ open: false, adminId: '', adminName: '' }),
       }
     );
   };
 
-  // Table columns
   const columns: ColumnDef<AdminResponse>[] = [
     {
-      header: 'Name',
+      header: t('colName'),
       accessorKey: 'name',
       cell: ({ row }) => (
         <div>
@@ -337,61 +330,54 @@ const TeamManagementPage = () => {
       ),
     },
     {
-      header: 'Email Verified',
+      header: t('colEmailVerified'),
       accessorKey: 'isEmailVerified',
       cell: ({ getValue }) => (
         <span className={getValue() ? 'text-green-400' : 'text-yellow-400'}>
-          {getValue() ? 'Yes' : 'No'}
+          {getValue() ? t('emailVerifiedYes') : t('emailVerifiedNo')}
         </span>
       ),
     },
     {
-      header: 'Created',
+      header: t('colCreated'),
       accessorKey: 'createdAt',
       cell: ({ getValue }) => {
         const date = new Date(getValue() as string);
         return (
           <div>
             <div className="text-white">{date.toLocaleDateString()}</div>
-            <div className="text-slate-400 text-xs">
-              {date.toLocaleTimeString()}
-            </div>
+            <div className="text-slate-400 text-xs">{date.toLocaleTimeString()}</div>
           </div>
         );
       },
     },
     {
-      header: 'Last Updated',
+      header: t('colLastUpdated'),
       accessorKey: 'updatedAt',
       cell: ({ getValue }) => {
         const date = new Date(getValue() as string);
         return (
           <div>
             <div className="text-white">{date.toLocaleDateString()}</div>
-            <div className="text-slate-400 text-xs">
-              {date.toLocaleTimeString()}
-            </div>
+            <div className="text-slate-400 text-xs">{date.toLocaleTimeString()}</div>
           </div>
         );
       },
     },
     {
-      header: 'Actions',
+      header: t('colActions'),
       cell: ({ row }) => {
         const admin = row.original;
         const isLastAdmin = admins?.length === 1;
-
         return (
           <div className="flex gap-2">
             <button
               onClick={() => handleDeleteAdmin(admin.id, admin.name)}
               disabled={deleteAdminMutation.isPending || isLastAdmin}
               className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              title={
-                isLastAdmin ? 'Cannot delete the last admin' : 'Delete admin'
-              }
+              title={isLastAdmin ? t('tooltipCannotDelete') : t('tooltipDelete')}
             >
-              Delete
+              {t('actionDelete')}
             </button>
           </div>
         );
@@ -409,35 +395,33 @@ const TeamManagementPage = () => {
     <div className="p-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-white text-3xl font-semibold">Team Management</h1>
-          <p className="text-slate-400 mt-1">
-            Manage admin team members and access control
-          </p>
+          <h1 className="text-white text-3xl font-semibold">{t('pageTitle')}</h1>
+          <p className="text-slate-400 mt-1">{t('pageSubtitle')}</p>
         </div>
         <button
           onClick={() => setAddModalOpen(true)}
           className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded font-medium"
         >
-          + Add New Admin
+          {t('addAdmin')}
         </button>
       </div>
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="bg-slate-800 rounded-lg p-6">
-          <div className="text-slate-400 text-sm mb-2">Total Admins</div>
+          <div className="text-slate-400 text-sm mb-2">{t('statTotalAdmins')}</div>
           <div className="text-white text-3xl font-semibold">
             {admins?.length || 0}
           </div>
         </div>
         <div className="bg-slate-800 rounded-lg p-6">
-          <div className="text-slate-400 text-sm mb-2">Verified Admins</div>
+          <div className="text-slate-400 text-sm mb-2">{t('statVerifiedAdmins')}</div>
           <div className="text-white text-3xl font-semibold">
             {admins?.filter((a) => a.isEmailVerified).length || 0}
           </div>
         </div>
         <div className="bg-slate-800 rounded-lg p-6">
-          <div className="text-slate-400 text-sm mb-2">Active Sessions</div>
+          <div className="text-slate-400 text-sm mb-2">{t('statActiveSessions')}</div>
           <div className="text-white text-3xl font-semibold">
             {admins?.length || 0}
           </div>
@@ -446,20 +430,20 @@ const TeamManagementPage = () => {
 
       {/* Admin Table */}
       {isLoading ? (
-        <div className="text-white text-center py-8">Loading admins...</div>
+        <div className="text-white text-center py-8">{t('loading')}</div>
       ) : error ? (
         <div className="text-red-400 text-center py-8">
-          Error loading admins: {error.message}
+          {t('errorLoading', { message: error.message })}
         </div>
       ) : (
         <div className="bg-slate-800 rounded-lg p-6">
           <h2 className="text-white text-xl font-semibold mb-4">
-            Admin Team Members
+            {t('sectionTitle')}
           </h2>
 
           {admins && admins.length === 0 ? (
             <div className="text-slate-400 text-center py-8">
-              No admin users found. Add your first admin to get started.
+              {t('emptyState')}
             </div>
           ) : (
             <div className="rounded-lg shadow-xl overflow-hidden border border-slate-700">
@@ -499,20 +483,18 @@ const TeamManagementPage = () => {
             </div>
           )}
 
-          {/* Warning Message */}
           {admins && admins.length > 0 && (
             <div className="mt-4 p-4 bg-yellow-900/20 border border-yellow-700 rounded">
               <p className="text-yellow-400 text-sm">
-                <strong>Important:</strong> You cannot delete the last admin
-                user. At least one admin must exist at all times for security
-                reasons.
+                {t.rich('warningText', {
+                  bold: (chunks) => <strong>{chunks}</strong>,
+                })}
               </p>
             </div>
           )}
         </div>
       )}
 
-      {/* Add Admin Modal */}
       <AddAdminModal
         isOpen={addModalOpen}
         onClose={() => setAddModalOpen(false)}
@@ -520,7 +502,6 @@ const TeamManagementPage = () => {
         isLoading={createAdminMutation.isPending}
       />
 
-      {/* Delete Admin Confirmation Modal */}
       <DeleteAdminModal
         isOpen={deleteModal.open}
         adminName={deleteModal.adminName}

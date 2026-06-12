@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
 import StarRating from '../ui/star-rating';
 import { useProductReviews } from '../../hooks/use-ratings';
 import type { Rating } from '../../lib/api/products';
@@ -24,6 +25,8 @@ function RatingSummary({
   ratingCount: number;
   ratingDistribution: Record<string, number>;
 }) {
+  const t = useTranslations('ProductView');
+
   return (
     <div className="flex flex-col sm:flex-row gap-6 pb-6 border-b border-gray-200">
       {/* Average rating */}
@@ -33,7 +36,7 @@ function RatingSummary({
         </span>
         <StarRating value={averageRating} readonly size="md" />
         <span className="text-sm text-gray-500 mt-1">
-          {ratingCount} {ratingCount === 1 ? 'review' : 'reviews'}
+          {t('reviews', { count: ratingCount })}
         </span>
       </div>
 
@@ -69,6 +72,8 @@ function RatingSummary({
 // ============================================
 
 function ReviewCard({ review }: { review: Rating }) {
+  const t = useTranslations('ProductView');
+  const locale = useLocale();
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
 
   const initials = (review.reviewerName || 'U')
@@ -78,7 +83,7 @@ function ReviewCard({ review }: { review: Rating }) {
     .toUpperCase()
     .slice(0, 2);
 
-  const reviewDate = new Date(review.createdAt).toLocaleDateString('en-US', {
+  const reviewDate = new Date(review.createdAt).toLocaleDateString(locale, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -91,7 +96,7 @@ function ReviewCard({ review }: { review: Rating }) {
         {review.reviewerAvatar ? (
           <Image
             src={review.reviewerAvatar}
-            alt={review.reviewerName || 'Reviewer'}
+            alt={review.reviewerName || t('listAnonymous')}
             width={36}
             height={36}
             className="rounded-full object-cover"
@@ -103,7 +108,7 @@ function ReviewCard({ review }: { review: Rating }) {
         )}
         <div>
           <p className="text-sm font-medium text-gray-900">
-            {review.reviewerName || 'Anonymous'}
+            {review.reviewerName || t('listAnonymous')}
           </p>
           <p className="text-xs text-gray-400">{reviewDate}</p>
         </div>
@@ -136,7 +141,7 @@ function ReviewCard({ review }: { review: Rating }) {
             >
               <Image
                 src={img}
-                alt={`Review image ${idx + 1}`}
+                alt={t('reviewImageAlt', { index: idx + 1 })}
                 fill
                 className="object-cover"
               />
@@ -156,7 +161,7 @@ function ReviewCard({ review }: { review: Rating }) {
           <div className="relative max-w-2xl max-h-[80vh]">
             <Image
               src={expandedImage}
-              alt="Review image"
+              alt={t('listReviewImageExpanded')}
               width={800}
               height={600}
               className="object-contain rounded-lg max-h-[80vh] w-auto"
@@ -169,12 +174,12 @@ function ReviewCard({ review }: { review: Rating }) {
       {review.sellerResponse && (
         <div className="mt-3 ml-4 pl-4 border-l-2 border-blue-200 bg-blue-50/50 py-2 pr-3 rounded-r-md">
           <p className="text-xs font-semibold text-blue-700 mb-1">
-            Seller response
+            {t('listSellerResponse')}
           </p>
           <p className="text-sm text-gray-700">{review.sellerResponse}</p>
           {review.sellerResponseAt && (
             <p className="text-xs text-gray-400 mt-1">
-              {new Date(review.sellerResponseAt).toLocaleDateString('en-US', {
+              {new Date(review.sellerResponseAt).toLocaleDateString(locale, {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
@@ -192,6 +197,7 @@ function ReviewCard({ review }: { review: Rating }) {
 // ============================================
 
 const ReviewList: React.FC<ReviewListProps> = ({ productId }) => {
+  const t = useTranslations('ProductView');
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<'newest' | 'highest' | 'lowest'>('newest');
   const { data, isLoading, isError } = useProductReviews(
@@ -212,7 +218,7 @@ const ReviewList: React.FC<ReviewListProps> = ({ productId }) => {
   if (isError || !data) {
     return (
       <p className="text-center text-gray-500 py-10">
-        Failed to load reviews.
+        {t('listFailedToLoad')}
       </p>
     );
   }
@@ -236,7 +242,7 @@ const ReviewList: React.FC<ReviewListProps> = ({ productId }) => {
       {reviews.length > 0 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-600">
-            Showing {reviews.length} of {total} reviews
+            {t('listShowing', { count: reviews.length, total })}
           </p>
           <select
             value={sort}
@@ -246,9 +252,9 @@ const ReviewList: React.FC<ReviewListProps> = ({ productId }) => {
             }}
             className="text-sm border border-gray-300 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="newest">Most Recent</option>
-            <option value="highest">Highest Rated</option>
-            <option value="lowest">Lowest Rated</option>
+            <option value="newest">{t('listSortNewest')}</option>
+            <option value="highest">{t('listSortHighest')}</option>
+            <option value="lowest">{t('listSortLowest')}</option>
           </select>
         </div>
       )}
@@ -262,7 +268,7 @@ const ReviewList: React.FC<ReviewListProps> = ({ productId }) => {
         </div>
       ) : (
         <p className="text-center text-gray-500 py-10">
-          No reviews yet. Be the first to share your experience!
+          {t('listEmpty')}
         </p>
       )}
 
@@ -274,7 +280,7 @@ const ReviewList: React.FC<ReviewListProps> = ({ productId }) => {
             onClick={() => setPage((p) => p + 1)}
             className="px-6 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 transition-colors"
           >
-            Show more reviews
+            {t('listLoadMore')}
           </button>
         </div>
       )}

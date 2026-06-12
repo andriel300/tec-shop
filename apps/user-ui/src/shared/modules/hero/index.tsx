@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { MoveRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from '../../../i18n/navigation';
 import { cn } from '../../../lib/utils';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface SlideData {
   id: string;
@@ -20,6 +21,8 @@ interface SlideData {
 
 const Hero = () => {
   const { layout } = useLayout();
+  const tCommon = useTranslations('Common');
+  const locale = useLocale();
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [
     Autoplay({ delay: 5000, stopOnInteraction: false, stopOnMouseEnter: true }),
   ]);
@@ -63,7 +66,13 @@ const Hero = () => {
     <section className="relative w-full group">
       <div className="overflow-hidden" ref={emblaRef}>
         <div className="flex">
-          {slides.map((slide, index) => (
+          {slides.map((slide, index) => {
+            // Pick locale-specific translations, fall back to the default (English) fields
+            const trans = (slide as SlideData & { translations?: Record<string, { title?: string; subtitle?: string; actionLabel?: string }> }).translations?.[locale];
+            const slideTitle = trans?.title || slide.title;
+            const slideSubtitle = trans?.subtitle ?? slide.subtitle;
+            const slideActionLabel = trans?.actionLabel ?? slide.actionLabel;
+            return (
             <div
               key={slide.id}
               className="flex-[0_0_100%] min-w-0 relative h-[580px] lg:h-[800px]"
@@ -79,7 +88,7 @@ const Hero = () => {
                 >
                   <Image
                     src={slide.imageUrl}
-                    alt={slide.title}
+                    alt={slideTitle}
                     fill
                     className="object-cover object-center"
                     priority
@@ -98,7 +107,7 @@ const Hero = () => {
               <div className="relative z-10 h-full w-[90%] lg:w-[80%] mx-auto flex items-center">
                 <div className="max-w-lg space-y-5 py-16" key={`content-${selectedIndex}-${animationKey}`}>
                   {/* Subtitle with accent bar - animated entrance */}
-                  {slide.subtitle && (
+                  {slideSubtitle && (
                     <div
                       className={cn(
                         "flex items-center gap-3",
@@ -107,7 +116,7 @@ const Hero = () => {
                     >
                       <span className="w-8 h-[2px] bg-orange-400 flex-shrink-0" />
                       <p className="text-orange-400 font-semibold text-sm tracking-widest uppercase">
-                        {slide.subtitle}
+                        {slideSubtitle}
                       </p>
                     </div>
                   )}
@@ -119,7 +128,7 @@ const Hero = () => {
                       index === selectedIndex && "motion-safe:animate-slide-up motion-safe:[animation-delay:200ms] motion-safe:opacity-0 motion-safe:[animation-fill-mode:forwards]"
                     )}
                   >
-                    {slide.title}
+                    {slideTitle}
                   </h2>
 
                   {/* CTA - animated entrance */}
@@ -134,7 +143,7 @@ const Hero = () => {
                         href={slide.actionUrl}
                         className="group/btn inline-flex items-center gap-2.5 px-8 py-4 bg-blue-600 text-white font-semibold rounded hover:bg-blue-500 active:scale-95 transition-all duration-200 text-base shadow-lg shadow-blue-900/40"
                       >
-                        {slide.actionLabel || 'Shop Now'}
+                        {slideActionLabel || tCommon('shopNow')}
                         <MoveRight className="w-5 h-5 transition-transform duration-200 group-hover/btn:translate-x-1" />
                       </Link>
                     </div>
@@ -142,7 +151,8 @@ const Hero = () => {
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

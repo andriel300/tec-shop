@@ -23,6 +23,8 @@ import { useAuth } from '../hooks/use-auth';
 import { createPortal } from 'react-dom';
 import type { NotificationEntry } from '../lib/api/notifications-v2';
 import { Link, useRouter } from '../i18n/navigation';
+import { useTranslations } from 'next-intl';
+import { useNotificationContent } from '../hooks/use-notification-content';
 
 const typeColors: Record<string, string> = {
   INFO: 'bg-blue-500',
@@ -50,18 +52,6 @@ const typeBorders: Record<string, string> = {
   DELIVERY: 'border-l-teal-500',
 };
 
-function timeAgo(dateStr: string): string {
-  const now = Date.now();
-  const diff = now - new Date(dateStr).getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return 'Just now';
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
-
 function getNotificationLink(notification: NotificationEntry): string | null {
   if (notification.templateId === 'chat.new_message') {
     const conversationId = notification.metadata?.conversationId as string | undefined;
@@ -78,16 +68,6 @@ function getNotificationLink(notification: NotificationEntry): string | null {
   return null;
 }
 
-function getNotificationLinkLabel(templateId: string): string {
-  if (templateId === 'chat.new_message') return 'Open conversation';
-  if (
-    templateId === 'order.delivered_seller' ||
-    templateId === 'order.placed_seller' ||
-    templateId === 'order.cancelled_seller'
-  ) return 'View order';
-  return 'View details';
-}
-
 function NotificationToast({
   notification,
   link,
@@ -99,7 +79,10 @@ function NotificationToast({
   linkLabel: string;
   onClose: () => void;
 }) {
+  const t = useTranslations('NotificationBell');
+  const { getContent } = useNotificationContent();
   const router = useRouter();
+  const { title, message } = getContent(notification);
   const borderColor = typeBorders[notification.type] || 'border-l-gray-400';
 
   const handleBodyClick = () => {
@@ -134,10 +117,10 @@ function NotificationToast({
         onClick={handleBodyClick}
       >
         <p className="text-sm font-semibold text-gray-900 leading-tight">
-          {notification.title}
+          {title}
         </p>
         <p className="text-xs text-gray-400 mt-0.5 line-clamp-2 leading-relaxed">
-          {notification.message}
+          {message}
         </p>
         {link && (
           <p className="text-xs text-blue-400 mt-1.5 font-medium flex items-center gap-1">
@@ -150,7 +133,7 @@ function NotificationToast({
       <button
         onClick={onClose}
         className="flex-shrink-0 p-1 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded transition-colors mt-0.5"
-        aria-label="Close"
+        aria-label={t('close')}
       >
         <X size={13} />
       </button>
@@ -159,6 +142,8 @@ function NotificationToast({
 }
 
 export function NotificationBellV2() {
+  const t = useTranslations('NotificationBell');
+  const { getContent } = useNotificationContent();
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -171,11 +156,33 @@ export function NotificationBellV2() {
   const markAllRead = useMarkAllAsReadV2();
   const deleteNotification = useDeleteNotificationV2();
 
+  const formatTimeAgo = useCallback((dateStr: string): string => {
+    const now = Date.now();
+    const diff = now - new Date(dateStr).getTime();
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return t('timeJustNow');
+    if (minutes < 60) return t('timeMinutesAgo', { minutes });
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return t('timeHoursAgo', { hours });
+    const days = Math.floor(hours / 24);
+    return t('timeDaysAgo', { days });
+  }, [t]);
+
+  const getLinkLabel = useCallback((templateId: string): string => {
+    if (templateId === 'chat.new_message') return t('openConversation');
+    if (
+      templateId === 'order.delivered_seller' ||
+      templateId === 'order.placed_seller' ||
+      templateId === 'order.cancelled_seller'
+    ) return t('viewOrder');
+    return t('viewDetails');
+  }, [t]);
+
   const { unreadCount, setUnreadCount } = useNotificationSocket({
     enabled: !!isAuthenticated,
     onNotification: (notification) => {
       const link = getNotificationLink(notification);
-      const linkLabel = getNotificationLinkLabel(notification.templateId);
+      const linkLabel = getLinkLabel(notification.templateId);
       toast.custom(
         (toastId) => (
           <NotificationToast
@@ -272,7 +279,7 @@ export function NotificationBellV2() {
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700">
               <h3 className="text-gray-900 font-semibold text-sm">
-                Notifications
+                {t('title')}
               </h3>
               {displayCount > 0 && (
                 <button
@@ -280,7 +287,7 @@ export function NotificationBellV2() {
                   className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
                 >
                   <CheckCheck size={14} />
-                  Mark all read
+                  {t('markAllRead')}
                 </button>
               )}
             </div>
@@ -288,11 +295,12 @@ export function NotificationBellV2() {
             <div className="overflow-y-auto flex-1">
               {!data?.notifications?.length ? (
                 <div className="px-4 py-8 text-center text-gray-500 text-sm">
-                  No notifications yet
+                  {t('noNotifications')}
                 </div>
               ) : (
                 data.notifications.map((notification) => {
                   const link = getNotificationLink(notification);
+                  const { title: nTitle, message: nMessage } = getContent(notification);
                   const rowContent = (
                     <div className="flex items-start gap-3">
                       <div
@@ -301,13 +309,13 @@ export function NotificationBellV2() {
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-gray-900 font-medium truncate">
-                          {notification.title}
+                          {nTitle}
                         </p>
                         <p className="text-xs text-gray-400 mt-0.5 line-clamp-2">
-                          {notification.message}
+                          {nMessage}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          {timeAgo(notification.createdAt)}
+                          {formatTimeAgo(notification.createdAt)}
                         </p>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
@@ -319,7 +327,7 @@ export function NotificationBellV2() {
                               handleMarkAsRead(notification.id);
                             }}
                             className="p-1 text-gray-500 hover:text-blue-400 transition-colors"
-                            title="Mark as read"
+                            title={t('markAsRead')}
                           >
                             <Check size={14} />
                           </button>
@@ -331,7 +339,7 @@ export function NotificationBellV2() {
                             deleteNotification.mutate(notification.id);
                           }}
                           className="p-1 text-gray-500 hover:text-red-400 transition-colors"
-                          title="Delete"
+                          title={t('delete')}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -367,7 +375,7 @@ export function NotificationBellV2() {
               onClick={() => setIsOpen(false)}
               className="block px-4 py-3 text-center text-sm text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 border-t border-slate-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors"
             >
-              View all notifications
+              {t('viewAll')}
             </Link>
           </div>,
           document.body

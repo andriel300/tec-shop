@@ -17,8 +17,10 @@ import StickyNavbar from './sticky-navbar';
 import useLayout from '../../hooks/use-layout';
 import Image from 'next/image';
 import SearchBar from '../components/SearchBar';
+import { useTranslations } from 'next-intl';
 
 const Navbar = () => {
+  const t = useTranslations('Navbar');
   const { isAuthenticated, user, userProfile, logout } = useAuth();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -144,7 +146,7 @@ const Navbar = () => {
                         className="flex items-center gap-3 px-4 py-2.5 hover:bg-ui-muted transition-colors text-sm text-text-primary"
                       >
                         <User size={15} className="text-text-secondary flex-shrink-0" />
-                        My Profile
+                        {t('myProfile')}
                       </Link>
                       <Link
                         href="/inbox"
@@ -152,7 +154,7 @@ const Navbar = () => {
                         className="flex items-center gap-3 px-4 py-2.5 hover:bg-ui-muted transition-colors text-sm text-text-primary"
                       >
                         <MessageCircle size={15} className="text-text-secondary flex-shrink-0" />
-                        Inbox
+                        {t('inbox')}
                       </Link>
                     </div>
 
@@ -163,7 +165,7 @@ const Navbar = () => {
                         className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-sm text-red-600"
                       >
                         <LogOut size={15} className="flex-shrink-0" />
-                        Sign Out
+                        {t('signOut')}
                       </button>
                     </div>
                   </div>

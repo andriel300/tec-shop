@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslations } from 'next-intl';
 import { Input } from '../core/Input';
 import {
   Package,
@@ -30,38 +31,6 @@ export interface DimensionsInputProps {
   className?: string;
 }
 
-const SHIPPING_CLASSES: {
-  value: ShippingDimensions['shippingClass'];
-  label: string;
-  description: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-}[] = [
-  {
-    value: 'standard',
-    label: 'Standard',
-    description: '3–7 business days',
-    icon: Truck,
-  },
-  {
-    value: 'express',
-    label: 'Express',
-    description: '1–2 business days',
-    icon: Zap,
-  },
-  {
-    value: 'fragile',
-    label: 'Fragile',
-    description: 'Handle with care',
-    icon: Shield,
-  },
-  {
-    value: 'heavy',
-    label: 'Heavy',
-    description: 'Over 20 kg',
-    icon: Weight,
-  },
-];
-
 /**
  * DimensionsInput Component
  * Input for product shipping dimensions, weight, and shipping class
@@ -71,6 +40,40 @@ const DimensionsInput: React.FC<DimensionsInputProps> = ({
   onChange,
   className = '',
 }) => {
+  const t = useTranslations('CreateProduct');
+
+  const SHIPPING_CLASSES: {
+    value: ShippingDimensions['shippingClass'];
+    label: string;
+    description: string;
+    icon: React.ComponentType<{ size?: number; className?: string }>;
+  }[] = [
+    {
+      value: 'standard',
+      label: t('shippingClassStandard'),
+      description: t('shippingClassStandardDesc'),
+      icon: Truck,
+    },
+    {
+      value: 'express',
+      label: t('shippingClassExpress'),
+      description: t('shippingClassExpressDesc'),
+      icon: Zap,
+    },
+    {
+      value: 'fragile',
+      label: t('shippingClassFragile'),
+      description: t('shippingClassFragileDesc'),
+      icon: Shield,
+    },
+    {
+      value: 'heavy',
+      label: t('shippingClassHeavy'),
+      description: t('shippingClassHeavyDesc'),
+      icon: Weight,
+    },
+  ];
+
   const updateField = (field: keyof ShippingDimensions, val: unknown) => {
     onChange({ ...value, [field]: val });
   };
@@ -92,18 +95,18 @@ const DimensionsInput: React.FC<DimensionsInputProps> = ({
         <div className="flex items-center gap-2 mb-0.5">
           <Package size={16} className="text-brand-primary" />
           <h3 className="text-base font-semibold text-gray-900">
-            Shipping Information
+            {t('shippingTitle')}
           </h3>
         </div>
         <p className="text-sm text-gray-500">
-          Set weight, dimensions, and shipping preferences for this product
+          {t('shippingSubtitle')}
         </p>
       </div>
 
       {/* Weight */}
       <div>
         <label className="block text-sm font-semibold text-gray-900 mb-2">
-          Weight (kg) <span className="text-feedback-error">*</span>
+          {t('shippingWeightLabel')} <span className="text-feedback-error">*</span>
         </label>
         <div className="relative">
           <Input
@@ -119,14 +122,14 @@ const DimensionsInput: React.FC<DimensionsInputProps> = ({
           />
         </div>
         <p className="mt-1.5 text-xs text-gray-500">
-          Product weight used for shipping cost calculation
+          {t('shippingWeightHint')}
         </p>
       </div>
 
       {/* Dimensions */}
       <div>
         <label className="block text-sm font-semibold text-gray-900 mb-2">
-          Dimensions (cm) <span className="text-feedback-error">*</span>
+          {t('shippingDimensionsLabel')} <span className="text-feedback-error">*</span>
         </label>
         <div className="grid grid-cols-3 gap-3">
           <div>
@@ -147,7 +150,7 @@ const DimensionsInput: React.FC<DimensionsInputProps> = ({
                 className="pl-8"
               />
             </div>
-            <span className="text-xs text-gray-500 mt-1.5 block">Length</span>
+            <span className="text-xs text-gray-500 mt-1.5 block">{t('shippingDimLength')}</span>
           </div>
           <div>
             <div className="relative">
@@ -167,7 +170,7 @@ const DimensionsInput: React.FC<DimensionsInputProps> = ({
                 className="pl-8"
               />
             </div>
-            <span className="text-xs text-gray-500 mt-1.5 block">Width</span>
+            <span className="text-xs text-gray-500 mt-1.5 block">{t('shippingDimWidth')}</span>
           </div>
           <div>
             <div className="relative">
@@ -187,18 +190,18 @@ const DimensionsInput: React.FC<DimensionsInputProps> = ({
                 className="pl-8"
               />
             </div>
-            <span className="text-xs text-gray-500 mt-1.5 block">Height</span>
+            <span className="text-xs text-gray-500 mt-1.5 block">{t('shippingDimHeight')}</span>
           </div>
         </div>
         <p className="mt-2 text-xs text-gray-500">
-          Package dimensions for accurate shipping cost calculation
+          {t('shippingDimensionsHint')}
         </p>
       </div>
 
       {/* Shipping Class */}
       <div>
         <label className="block text-sm font-semibold text-gray-900 mb-3">
-          Shipping Class
+          {t('shippingClassLabel')}
         </label>
         <div className="grid grid-cols-2 gap-2">
           {SHIPPING_CLASSES.map((cls) => {
@@ -248,10 +251,10 @@ const DimensionsInput: React.FC<DimensionsInputProps> = ({
       <div className="flex items-center justify-between p-4 bg-surface-container rounded-xl">
         <div>
           <p className="text-sm font-semibold text-gray-900">
-            Free Shipping
+            {t('shippingFreeLabel')}
           </p>
           <p className="text-xs text-gray-500 mt-0.5">
-            Offer free shipping to customers for this product
+            {t('shippingFreeDesc')}
           </p>
         </div>
         <button

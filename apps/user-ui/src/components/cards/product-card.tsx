@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import { useCurrency } from '../../hooks/use-currency';
 import type { Product } from '../../lib/api/products';
 import StarRating from '../ui/star-rating';
 import { Eye, Heart, ShoppingBag } from 'lucide-react';
@@ -22,6 +23,7 @@ interface ProductCardProps {
 
 const ProductCard = ({ product }: ProductCardProps) => {
   const tCommon = useTranslations('Common');
+  const { formatPrice } = useCurrency();
   const displayPrice = product.salePrice || product.price;
   const hasDiscount = product.salePrice && product.salePrice < product.price;
   const discountPercent = hasDiscount
@@ -248,19 +250,19 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
             <div className="flex items-center gap-2 mt-auto">
               <span className="text-lg font-bold text-brand-primary">
-                ${displayPrice.toFixed(2)}
+                {formatPrice(displayPrice)}
               </span>
               {hasDiscount && (
                 <span className="text-sm text-gray-400 line-through">
-                  ${product.price.toFixed(2)}
+                  {formatPrice(product.price)}
                 </span>
               )}
             </div>
 
             {product.stock > 0 ? (
-              <p className="text-xs text-green-600 mt-1">In Stock</p>
+              <p className="text-xs text-green-600 mt-1">{tCommon('inStock')}</p>
             ) : (
-              <p className="text-xs text-red-600 mt-1">Out of Stock</p>
+              <p className="text-xs text-red-600 mt-1">{tCommon('outOfStock')}</p>
             )}
 
             <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">

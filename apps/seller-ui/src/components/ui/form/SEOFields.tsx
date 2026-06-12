@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { Input } from '../core/Input';
 import { Textarea } from '../core/Textarea';
 import { Search, Tag, X, ExternalLink } from 'lucide-react';
@@ -31,6 +32,8 @@ const SEOFields: React.FC<SEOFieldsProps> = ({
   autoGenerateSlug = true,
   className = '',
 }) => {
+  const t = useTranslations('CreateProduct');
+
   // Auto-generate slug from product name
   useEffect(() => {
     if (autoGenerateSlug && productName && !value.slug) {
@@ -70,8 +73,8 @@ const SEOFields: React.FC<SEOFieldsProps> = ({
   const titleOver = value.title.length > 60;
   const descOver = value.description.length > 160;
 
-  const previewTitle = value.title || (productName ? `${productName} | Your Store` : 'Product Title');
-  const previewDesc = value.description || 'Your product description will appear here in search engine results.';
+  const previewTitle = value.title || (productName ? `${productName} | ${t('seoPreviewTitleSuffix')}` : t('seoPreviewTitleFallback'));
+  const previewDesc = value.description || t('seoPreviewDescFallback');
   const previewSlug = value.slug || 'product-slug';
 
   return (
@@ -81,18 +84,18 @@ const SEOFields: React.FC<SEOFieldsProps> = ({
         <div className="flex items-center gap-2 mb-0.5">
           <Search size={16} className="text-brand-primary" />
           <h3 className="text-base font-semibold text-gray-900">
-            SEO Optimization
+            {t('seoTitle')}
           </h3>
         </div>
         <p className="text-sm text-gray-500">
-          Help customers find your product on search engines
+          {t('seoSubtitle')}
         </p>
       </div>
 
       {/* Google Search Preview */}
       <div className="p-4 bg-surface-container rounded-xl space-y-1">
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-          Search Preview
+          {t('seoPreviewLabel')}
         </p>
         <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1">
           <ExternalLink size={11} />
@@ -110,7 +113,7 @@ const SEOFields: React.FC<SEOFieldsProps> = ({
       <div>
         <div className="flex justify-between items-center mb-2">
           <label className="block text-sm font-semibold text-gray-900">
-            Meta Title
+            {t('seoMetaTitleLabel')}
           </label>
           <span
             className={`text-xs font-medium ${
@@ -124,7 +127,7 @@ const SEOFields: React.FC<SEOFieldsProps> = ({
           variant="dark"
           value={value.title}
           onChange={(e) => updateField('title', e.target.value)}
-          placeholder="Premium Cotton T-Shirt | Your Store"
+          placeholder={t('seoMetaTitlePlaceholder')}
           maxLength={70}
         />
         {/* Progress bar */}
@@ -137,7 +140,7 @@ const SEOFields: React.FC<SEOFieldsProps> = ({
           />
         </div>
         <p className="mt-1.5 text-xs text-gray-500">
-          Appears in search engine results. Keep it under 60 characters.
+          {t('seoMetaTitleHint')}
         </p>
       </div>
 
@@ -145,7 +148,7 @@ const SEOFields: React.FC<SEOFieldsProps> = ({
       <div>
         <div className="flex justify-between items-center mb-2">
           <label className="block text-sm font-semibold text-gray-900">
-            Meta Description
+            {t('seoMetaDescLabel')}
           </label>
           <span
             className={`text-xs font-medium ${
@@ -159,7 +162,7 @@ const SEOFields: React.FC<SEOFieldsProps> = ({
           variant="dark"
           value={value.description}
           onChange={(e) => updateField('description', e.target.value)}
-          placeholder="High-quality cotton t-shirt, perfect for casual wear. Available in multiple sizes and colors."
+          placeholder={t('seoMetaDescPlaceholder')}
           rows={3}
           maxLength={180}
         />
@@ -173,14 +176,14 @@ const SEOFields: React.FC<SEOFieldsProps> = ({
           />
         </div>
         <p className="mt-1.5 text-xs text-gray-500">
-          Brief description for search results. Aim for 150–160 characters.
+          {t('seoMetaDescHint')}
         </p>
       </div>
 
       {/* URL Slug */}
       <div>
         <label className="block text-sm font-semibold text-gray-900 mb-2">
-          URL Slug
+          {t('seoSlugLabel')}
         </label>
         <div className="flex items-center gap-0 rounded-lg overflow-hidden border border-surface-container-highest">
           <span className="px-3 py-2.5 bg-surface-container text-gray-500 text-sm whitespace-nowrap flex-shrink-0 border-r border-surface-container-highest">
@@ -201,7 +204,7 @@ const SEOFields: React.FC<SEOFieldsProps> = ({
           />
         </div>
         <p className="mt-1.5 text-xs text-gray-500">
-          SEO-friendly URL. Use lowercase letters, numbers, and hyphens only.
+          {t('seoSlugHint')}
         </p>
       </div>
 
@@ -211,7 +214,7 @@ const SEOFields: React.FC<SEOFieldsProps> = ({
           <div className="flex items-center gap-2">
             <Tag size={14} className="text-brand-primary" />
             <label className="block text-sm font-semibold text-gray-900">
-              Keywords
+              {t('seoKeywordsLabel')}
             </label>
           </div>
           <span className="text-xs text-gray-500">
@@ -232,7 +235,7 @@ const SEOFields: React.FC<SEOFieldsProps> = ({
                   type="button"
                   onClick={() => removeKeyword(index)}
                   className="ml-0.5 flex-shrink-0 hover:opacity-70 transition-opacity cursor-pointer"
-                  aria-label={`Remove ${keyword}`}
+                  aria-label={t('seoRemoveKeyword', { keyword })}
                 >
                   <X size={11} />
                 </button>
@@ -255,7 +258,7 @@ const SEOFields: React.FC<SEOFieldsProps> = ({
                   setKeywordInput('');
                 }
               }}
-              placeholder="Add keyword (e.g., cotton, t-shirt, casual)"
+              placeholder={t('seoKeywordsPlaceholder')}
             />
             <button
               type="button"
@@ -265,19 +268,19 @@ const SEOFields: React.FC<SEOFieldsProps> = ({
               }}
               className="px-4 py-2 bg-brand-primary text-white rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap text-sm font-medium cursor-pointer"
             >
-              Add
+              {t('seoKeywordsAdd')}
             </button>
           </div>
         )}
 
         {value.keywords.length >= 10 && (
           <p className="text-xs text-feedback-warning">
-            Maximum of 10 keywords reached.
+            {t('seoKeywordsMax')}
           </p>
         )}
 
         <p className="mt-2 text-xs text-gray-500">
-          Keywords help customers find your product. Add up to 10 relevant keywords.
+          {t('seoKeywordsHint')}
         </p>
       </div>
     </div>

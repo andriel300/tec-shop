@@ -6,12 +6,21 @@ import {
   IsInt,
   Min,
   IsArray,
+  IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export interface UpdateLayoutDto {
   logo?: string;
 }
+
+export interface HeroSlideLocaleTranslation {
+  title?: string;
+  subtitle?: string;
+  actionLabel?: string;
+}
+
+export type HeroSlideTranslations = Record<string, HeroSlideLocaleTranslation>;
 
 export interface HeroSlideResponseDto {
   id: string;
@@ -22,6 +31,7 @@ export interface HeroSlideResponseDto {
   actionLabel: string | null;
   order: number;
   isActive: boolean;
+  translations: HeroSlideTranslations | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -63,6 +73,10 @@ export class CreateHeroSlideDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsObject()
+  translations?: HeroSlideTranslations;
 }
 
 export class UpdateHeroSlideDto {
@@ -95,6 +109,10 @@ export class UpdateHeroSlideDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsObject()
+  translations?: HeroSlideTranslations;
 }
 
 export class ReorderHeroSlidesDto {

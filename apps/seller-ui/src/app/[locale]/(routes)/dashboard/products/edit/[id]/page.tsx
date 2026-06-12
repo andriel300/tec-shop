@@ -3,6 +3,7 @@
 import { createLogger } from '@tec-shop/next-logger';
 import { useForm } from '@tanstack/react-form';
 import React, { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 
 const logger = createLogger('seller-ui:edit-product');
 import { useParams } from 'next/navigation';
@@ -37,24 +38,13 @@ import { Breadcrumb } from '../../../../../../../components/navigation/Breadcrum
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { useRouter } from 'apps/seller-ui/src/i18n/navigation';
 
-const PRODUCT_TYPES = [
-  { value: 'simple', label: 'Simple Product' },
-  { value: 'variable', label: 'Variable Product (with variants)' },
-  { value: 'digital', label: 'Digital Product' },
-];
-
-const PRODUCT_STATUS = [
-  { value: 'draft', label: 'Draft' },
-  { value: 'published', label: 'Published' },
-  { value: 'scheduled', label: 'Scheduled' },
-];
-
 const Page = () => {
+  const t = useTranslations('EditProduct');
+  const tCreate = useTranslations('CreateProduct');
   const router = useRouter();
   const params = useParams();
   const productId = params.id as string;
 
-  // Fetch product data
   const { data: product, isLoading, error: fetchError } = useProduct(productId);
   const { mutate: updateProductMutation, isPending: isUpdating } =
     useUpdateProduct(productId);
@@ -76,6 +66,18 @@ const Page = () => {
   const [activeTab, setActiveTab] = useState<
     'basic' | 'variants' | 'shipping' | 'seo'
   >('basic');
+
+  const PRODUCT_TYPES = [
+    { value: 'simple', label: tCreate('productTypeSimple') },
+    { value: 'variable', label: tCreate('productTypeVariable') },
+    { value: 'digital', label: tCreate('productTypeDigital') },
+  ];
+
+  const PRODUCT_STATUS = [
+    { value: 'draft', label: tCreate('statusDraft') },
+    { value: 'published', label: tCreate('statusPublished') },
+    { value: 'scheduled', label: tCreate('statusScheduled') },
+  ];
 
   const form = useForm({
     defaultValues: {
@@ -119,19 +121,15 @@ const Page = () => {
         setSubmitError(null);
         setSubmitSuccess(false);
 
-        // Collect all image URLs (existing + newly uploaded via eager upload)
-        // Since we use eager upload, all images are already ImageKit URLs
         const allImageUrls = uploadedImageUrls.filter(Boolean);
 
-        // Product data for update
         const productData = {
           ...value,
           imageUrls: allImageUrls.length > 0 ? allImageUrls : undefined,
-          newImages: undefined, // No files since we use eager upload
+          newImages: undefined,
           attributes: { ...dynamicAttributes, ...value.attributes },
         };
 
-        // Remove 'images' field from productData as we're using imageUrls
         delete (productData as Record<string, unknown>).images;
 
         updateProductMutation(productData, {
@@ -156,10 +154,8 @@ const Page = () => {
     },
   });
 
-  // Initialize form with product data when loaded
   useEffect(() => {
     if (product) {
-      // Convert API types to form types (UPPERCASE → lowercase)
       form.setFieldValue('name', product.name);
       form.setFieldValue('description', product.description);
       form.setFieldValue('categoryId', product.categoryId);
@@ -212,27 +208,21 @@ const Page = () => {
       form.setFieldValue('warranty', product.warranty || '');
       form.setFieldValue('youtubeUrl', product.youtubeUrl || '');
       form.setFieldValue('tags', product.tags || []);
-      form.setFieldValue('discountCodeId', undefined); // Discount codes handled separately
+      form.setFieldValue('discountCodeId', undefined);
       form.setFieldValue(
         'status',
         product.status.toLowerCase() as 'draft' | 'published' | 'scheduled'
       );
       form.setFieldValue('isFeatured', product.isFeatured);
 
-      // Set dynamic attributes
       setDynamicAttributes(product.attributes || {});
-
-      // Initialize image URLs
       setUploadedImageUrls(product.images || []);
     }
   }, [product]);
 
-  // Handle image uploads from ImagePlaceHolder
   const handleImageUploaded = (url: string, index: number) => {
     setUploadedImageUrls((prev) => {
-      // Maintain a fixed-length array of 4 slots to match UI indices
       const updated = [...prev];
-      // Ensure array has at least 4 slots
       while (updated.length < 4) {
         updated.push('');
       }
@@ -240,8 +230,6 @@ const Page = () => {
       return updated;
     });
 
-    // CRITICAL: Clear File state so getDefaultImage uses ImageKit URL instead of blob
-    // This ensures magic wand appears immediately after upload
     setProductImages((prev) => {
       const updated = [...prev];
       updated[index] = null;
@@ -249,78 +237,81 @@ const Page = () => {
     });
   };
 
-  // Handle image removal
   const handleImageRemove = (index: number) => {
     setUploadedImageUrls((prev) => {
       const updated = [...prev];
-      // Ensure array has at least 4 slots
       while (updated.length < 4) {
         updated.push('');
       }
-      updated[index] = ''; // Clear the URL at this index
+      updated[index] = '';
       return updated;
     });
   };
 
-  // Loading state
   if (isLoading) {
     return (
       <div className="w-full mx-auto p-8 text-gray-900">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4" />
-            <p className="text-gray-400">Loading product...</p>
+            <p className="text-gray-400">{t('loading')}</p>
           </div>
         </div>
       </div>
     );
   }
 
-  // Error state
   if (fetchError || !product) {
     return (
       <div className="w-full mx-auto p-8 text-gray-900">
         <Alert
           variant="error"
-          title="Product Not Found"
-          description="The product you are trying to edit could not be found."
+          title={t('notFoundTitle')}
+          description={t('notFoundDesc')}
         />
         <button
           onClick={() => router.push('/dashboard/all-products')}
           className="mt-4 px-4 py-2 bg-slate-200 dark:bg-slate-700 text-gray-900 dark:text-slate-200 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600"
         >
-          Back to Products
+          {t('backToProducts')}
         </button>
       </div>
     );
   }
 
+  const tabs = [
+    { id: 'basic' as const, label: tCreate('tabBasicInfo'), icon: Package },
+    { id: 'variants' as const, label: tCreate('tabVariants'), icon: Boxes },
+    { id: 'shipping' as const, label: tCreate('tabShipping'), icon: Package },
+    { id: 'seo' as const, label: tCreate('tabSeo'), icon: Tag },
+  ];
+
   return (
     <div className="w-full mx-auto p-8 text-gray-900">
       <h2 className="text-2xl py-2 font-semibold font-heading text-gray-900">
-        Edit Product
+        {t('pageTitle')}
       </h2>
 
       <Breadcrumb
         items={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Products', href: '/dashboard/all-products' },
-          { label: 'Edit Product' },
+          { label: tCreate('breadcrumbDashboard'), href: '/dashboard' },
+          { label: t('breadcrumbProducts'), href: '/dashboard/all-products' },
+          { label: t('breadcrumbEdit') },
         ]}
       />
 
       {submitSuccess && (
         <Alert
           variant="success"
-          title="Product Updated Successfully!"
-          description="Redirecting to products list..."
+          title={t('successTitle')}
+          description={t('successDesc')}
         />
       )}
 
       {submitError && (
         <Alert
           variant="error"
-          title="Error Updating Product"
+          title={t('errorTitle')}
           description={submitError}
         />
       )}
@@ -334,7 +325,6 @@ const Page = () => {
         className="space-y-8"
       >
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Sidebar - Images & Quick Info */}
           <div className="lg:col-span-1 space-y-6">
             <ProductImageUploader
               images={productImages}
@@ -344,16 +334,15 @@ const Page = () => {
               initialUrls={uploadedImageUrls}
             />
 
-            {/* Product Status */}
             <div className="bg-gray-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4 space-y-4">
               <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                 <Tag size={20} className="text-green-400" />
-                Product Status
+                {tCreate('statusTitle')}
               </h3>
 
               <form.Field name="status">
                 {(field) => (
-                  <FormField field={field} label="Status">
+                  <FormField field={field} label={tCreate('statusFieldLabel')}>
                     <Select
                       value={field.state.value}
                       onChange={(value) =>
@@ -382,7 +371,7 @@ const Page = () => {
                       htmlFor="isFeatured"
                       className="text-sm text-gray-600 dark:text-gray-300"
                     >
-                      Mark as featured product
+                      {tCreate('markAsFeatured')}
                     </label>
                   </div>
                 )}
@@ -390,20 +379,13 @@ const Page = () => {
             </div>
           </div>
 
-          {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Tab Navigation */}
             <div className="flex gap-2 border-b border-slate-200 dark:border-slate-700">
-              {[
-                { id: 'basic', label: 'Basic Info', icon: Package },
-                { id: 'variants', label: 'Variants', icon: Boxes },
-                { id: 'shipping', label: 'Shipping', icon: Package },
-                { id: 'seo', label: 'SEO', icon: Tag },
-              ].map((tab) => (
+              {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                  onClick={() => setActiveTab(tab.id)}
                   className={`px-4 py-3 flex items-center gap-2 border-b-2 transition-colors ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-400'
@@ -416,38 +398,35 @@ const Page = () => {
               ))}
             </div>
 
-            {/* Tab Content */}
             <div className="space-y-6">
               {activeTab === 'basic' && (
                 <div className="space-y-6">
-                  {/* Product Name */}
                   <form.Field
                     name="name"
                     validators={{
                       onChange: ({ value }) =>
                         !value
-                          ? 'Product name is required'
+                          ? tCreate('validationNameRequired')
                           : value.length < 3
-                          ? 'Product name must be at least 3 characters'
+                          ? tCreate('validationNameMinLength')
                           : undefined,
                     }}
                   >
                     {(field) => (
-                      <FormField field={field} label="Product Name" required>
+                      <FormField field={field} label={tCreate('fieldProductName')} required>
                         <Input
                           id={field.name}
                           name={field.name}
                           value={field.state.value}
                           onBlur={field.handleBlur}
                           onChange={(e) => field.handleChange(e.target.value)}
-                          placeholder="e.g., Premium Cotton T-Shirt"
+                          placeholder={tCreate('placeholderProductName')}
                           variant="dark"
                         />
                       </FormField>
                     )}
                   </form.Field>
 
-                  {/* Product Description */}
                   <form.Field
                     name="description"
                     validators={{
@@ -456,9 +435,9 @@ const Page = () => {
                           .split(/\s+/)
                           .filter(Boolean).length;
                         return wordCount < 50
-                          ? 'Description must be at least 50 words (150-200 recommended)'
+                          ? tCreate('validationDescMinWords')
                           : wordCount > 200
-                          ? 'Description should not exceed 200 words'
+                          ? tCreate('validationDescMaxWords')
                           : undefined;
                       },
                     }}
@@ -466,14 +445,14 @@ const Page = () => {
                     {(field) => (
                       <FormField
                         field={field}
-                        label="Product Description"
+                        label={tCreate('fieldProductDesc')}
                         required
                       >
                         <RichTextEditor
                           value={field.state.value}
                           onChange={(value) => field.handleChange(value)}
                           onBlur={field.handleBlur}
-                          placeholder="Describe your product in detail..."
+                          placeholder={tCreate('placeholderProductDesc')}
                           minWords={50}
                           maxWords={200}
                         />
@@ -481,16 +460,15 @@ const Page = () => {
                     )}
                   </form.Field>
 
-                  {/* Category Selector */}
                   <form.Field
                     name="categoryId"
                     validators={{
                       onChange: ({ value }) =>
-                        !value ? 'Category is required' : undefined,
+                        !value ? tCreate('validationCategoryRequired') : undefined,
                     }}
                   >
                     {(field) => (
-                      <FormField field={field} label="Category" required>
+                      <FormField field={field} label={tCreate('fieldCategory')} required>
                         <CategorySelector
                           value={field.state.value}
                           onChange={(categoryId, category) => {
@@ -503,7 +481,6 @@ const Page = () => {
                     )}
                   </form.Field>
 
-                  {/* Brand Selector */}
                   <form.Field name="brandId">
                     {(field) => (
                       <BrandSelector
@@ -516,10 +493,9 @@ const Page = () => {
                     )}
                   </form.Field>
 
-                  {/* Product Type */}
                   <form.Field name="productType">
                     {(field) => (
-                      <FormField field={field} label="Product Type" required>
+                      <FormField field={field} label={tCreate('fieldProductType')} required>
                         <Select
                           value={field.state.value}
                           onChange={(value) => {
@@ -538,11 +514,10 @@ const Page = () => {
                     )}
                   </form.Field>
 
-                  {/* Pricing */}
                   <div className="bg-gray-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4 space-y-4">
                     <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                       <DollarSign size={20} className="text-green-400" />
-                      Pricing
+                      {tCreate('pricingTitle')}
                     </h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -551,14 +526,14 @@ const Page = () => {
                         validators={{
                           onChange: ({ value }) =>
                             value <= 0
-                              ? 'Price must be greater than 0'
+                              ? tCreate('validationPricePositive')
                               : undefined,
                         }}
                       >
                         {(field) => (
                           <FormField
                             field={field}
-                            label="Regular Price ($)"
+                            label={tCreate('fieldRegularPrice')}
                             required
                           >
                             <Input
@@ -593,7 +568,7 @@ const Page = () => {
                               : 0;
 
                           return (
-                            <FormField field={field} label="Sale Price ($)">
+                            <FormField field={field} label={tCreate('fieldSalePrice')}>
                               <div className="space-y-2">
                                 <Input
                                   type="number"
@@ -607,26 +582,25 @@ const Page = () => {
                                         : undefined
                                     )
                                   }
-                                  placeholder="Leave empty for regular price"
+                                  placeholder={tCreate('placeholderSalePrice')}
                                   variant="dark"
                                 />
                                 {discount > 0 && (
                                   <div className="flex items-center gap-2 text-sm">
                                     <span className="px-2 py-1 bg-green-100 text-green-700 rounded font-medium">
-                                      {discount}% OFF
+                                      {tCreate('salePriceOff', { discount })}
                                     </span>
                                     <span className="text-gray-500">
-                                      Save $
-                                      {(regularPrice - salePrice).toFixed(2)}
+                                      {tCreate('salePriceSave', { amount: `$${(regularPrice - salePrice).toFixed(2)}` })}
                                     </span>
                                   </div>
                                 )}
                                 <p className="text-xs text-gray-500">
-                                  Products with a sale price will appear in the{' '}
-                                  <span className="font-medium text-red-600">
-                                    Special Offers
-                                  </span>{' '}
-                                  section on the customer store
+                                  {tCreate.rich('salePriceNote', {
+                                    offers: (chunks) => (
+                                      <span className="font-medium text-red-600">{chunks}</span>
+                                    ),
+                                  })}
                                 </p>
                               </div>
                             </FormField>
@@ -639,13 +613,13 @@ const Page = () => {
                       name="stock"
                       validators={{
                         onChange: ({ value }) =>
-                          value < 0 ? 'Stock cannot be negative' : undefined,
+                          value < 0 ? tCreate('validationStockNonNegative') : undefined,
                       }}
                     >
                       {(field) => (
                         <FormField
                           field={field}
-                          label="Stock Quantity"
+                          label={tCreate('fieldStockQty')}
                           required
                         >
                           <Input
@@ -665,7 +639,6 @@ const Page = () => {
                     </form.Field>
                   </div>
 
-                  {/* Discount Code Selector */}
                   <form.Field name="discountCodeId">
                     {(field) => (
                       <DiscountSelector
@@ -677,28 +650,26 @@ const Page = () => {
                     )}
                   </form.Field>
 
-                  {/* Warranty */}
                   <form.Field name="warranty">
                     {(field) => (
-                      <FormField field={field} label="Warranty">
+                      <FormField field={field} label={tCreate('fieldWarranty')}>
                         <Input
                           value={field.state.value}
                           onChange={(e) => field.handleChange(e.target.value)}
-                          placeholder="e.g., 1 year manufacturer warranty"
+                          placeholder={tCreate('placeholderWarranty')}
                           variant="dark"
                         />
                       </FormField>
                     )}
                   </form.Field>
 
-                  {/* Product Tags */}
                   <form.Field name="tags">
                     {(field) => (
                       <TagInput
                         value={field.state.value}
                         onChange={(tags) => field.handleChange(tags)}
                         maxTags={20}
-                        placeholder="Add tag (e.g., summer, sale, trending)"
+                        placeholder={tCreate('placeholderTag')}
                       />
                     )}
                   </form.Field>
@@ -711,16 +682,16 @@ const Page = () => {
                         !/^https?:\/\/(?:www\.)?youtube\.com\/embed\/[A-Za-z0-9_-]+$/.test(
                           value
                         )
-                          ? 'Please enter a valid YouTube URL.'
+                          ? tCreate('validationYoutubeUrl')
                           : undefined,
                     }}
                   >
                     {(field) => (
-                      <FormField field={field} label="YouTube URL (Optional)">
+                      <FormField field={field} label={tCreate('fieldYoutubeUrl')}>
                         <Input
                           value={field.state.value}
                           onChange={(e) => field.handleChange(e.target.value)}
-                          placeholder="e.g., https://www.youtube.com/embed/xyz123"
+                          placeholder={tCreate('placeholderYoutubeUrl')}
                           variant="dark"
                         />
                       </FormField>
@@ -737,7 +708,6 @@ const Page = () => {
                         variants={field.state.value}
                         onChange={(variants) => {
                           field.handleChange(variants);
-                          // Automatically set hasVariants based on variants array
                           form.setFieldValue(
                             'hasVariants',
                             variants.length > 0
@@ -780,7 +750,6 @@ const Page = () => {
               )}
             </div>
 
-            {/* Submit Buttons */}
             <form.Subscribe
               selector={(state) => [state.canSubmit, state.isSubmitting]}
             >
@@ -813,10 +782,10 @@ const Page = () => {
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                           />
                         </svg>
-                        Updating Product...
+                        {t('submitUpdating')}
                       </>
                     ) : (
-                      'Update Product'
+                      t('submitUpdate')
                     )}
                   </button>
                   <button
@@ -824,7 +793,7 @@ const Page = () => {
                     onClick={() => router.push('/dashboard/all-products')}
                     className="px-8 py-3 border border-slate-300 dark:border-slate-600 text-gray-600 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
                   >
-                    Cancel
+                    {t('cancel')}
                   </button>
                 </div>
               )}

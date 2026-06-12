@@ -18,6 +18,7 @@ import { useRouter } from '../../../../i18n/navigation';
 import { useSearchParams } from 'next/navigation';
 import React, { Suspense, useEffect, useRef, useState, useCallback } from 'react';
 import { toast } from 'sonner';
+import { useTranslations, useLocale } from 'next-intl';
 import { ArrowLeft, Loader2, MessageCircle, ChevronRight, Home } from 'lucide-react';
 import { Link } from '../../../../i18n/navigation';
 import ChatInput from '../../../../components/chats/chat-input';
@@ -26,6 +27,8 @@ const DEFAULT_AVATAR =
   'https://ik.imagekit.io/andrieltecshop/products/avatar.jpg?updatedAt=1763005913773';
 
 const InboxPage = () => {
+  const t = useTranslations('Inbox');
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const { user, isLoading: userLoading } = useAuth();
   const router = useRouter();
@@ -211,20 +214,20 @@ const InboxPage = () => {
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 
     if (diffInHours < 24) {
-      return date.toLocaleTimeString('en-US', {
+      return date.toLocaleTimeString(locale, {
         hour: 'numeric',
         minute: '2-digit',
         hour12: true,
       });
     } else if (diffInHours < 168) {
       // 7 days
-      return date.toLocaleDateString('en-US', {
+      return date.toLocaleDateString(locale, {
         weekday: 'short',
         hour: 'numeric',
         minute: '2-digit',
       });
     } else {
-      return date.toLocaleDateString('en-US', {
+      return date.toLocaleDateString(locale, {
         month: 'short',
         day: 'numeric',
       });
@@ -245,12 +248,12 @@ const InboxPage = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[80vh] gap-4">
         <MessageCircle size={48} className="text-gray-400" />
-        <p className="text-gray-600">Please log in to view your messages</p>
+        <p className="text-gray-600">{t('loginRequired')}</p>
         <button
           onClick={() => router.push('/login')}
           className="bg-brand-primary text-white px-6 py-2 rounded-lg hover:bg-brand-primary-dark transition"
         >
-          Log In
+          {t('loginButton')}
         </button>
       </div>
     );
@@ -266,10 +269,10 @@ const InboxPage = () => {
           </Link>
           <ChevronRight size={14} className="text-gray-400" />
           <Link href="/profile" className="hover:text-brand-primary transition-colors">
-            Profile
+            {t('breadcrumbProfile')}
           </Link>
           <ChevronRight size={14} className="text-gray-400" />
-          <span className="text-gray-800 font-medium">Inbox</span>
+          <span className="text-gray-800 font-medium">{t('breadcrumbInbox')}</span>
         </nav>
 
         <div className="flex h-[80vh] shadow-lg rounded-lg overflow-hidden border border-gray-200">
@@ -282,17 +285,17 @@ const InboxPage = () => {
             <div className="p-4 border-b border-gray-200 bg-white">
               <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                 <MessageCircle size={20} className="text-brand-primary" />
-                Messages
+                {t('messagesHeader')}
               </h2>
               {isConnected ? (
                 <span className="text-xs text-green-600 flex items-center gap-1 mt-1">
                   <span className="w-2 h-2 bg-green-500 rounded-full" />
-                  Connected
+                  {t('connected')}
                 </span>
               ) : isConnecting ? (
                 <span className="text-xs text-yellow-600 flex items-center gap-1 mt-1">
                   <span className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
-                  Connecting...
+                  {t('connecting')}
                 </span>
               ) : connectionError ? (
                 <button
@@ -300,7 +303,7 @@ const InboxPage = () => {
                   className="text-xs text-red-600 flex items-center gap-1 mt-1 hover:underline"
                 >
                   <span className="w-2 h-2 bg-red-500 rounded-full" />
-                  {connectionError} - Click to retry
+                  {connectionError} - {t('clickToRetry')}
                 </button>
               ) : null}
             </div>
@@ -312,7 +315,7 @@ const InboxPage = () => {
                 </div>
               ) : conversationsError ? (
                 <div className="p-4 text-sm text-red-500 text-center">
-                  Failed to load conversations
+                  {t('failedToLoad')}
                 </div>
               ) : !conversationsData?.conversations?.length ? (
                 <div className="p-8 text-center">
@@ -320,9 +323,9 @@ const InboxPage = () => {
                     size={40}
                     className="text-gray-300 mx-auto mb-3"
                   />
-                  <p className="text-sm text-gray-500">No conversations yet</p>
+                  <p className="text-sm text-gray-500">{t('noConversations')}</p>
                   <p className="text-xs text-gray-400 mt-1">
-                    Start chatting with a seller from a product page
+                    {t('noConversationsDesc')}
                   </p>
                 </div>
               ) : (
@@ -381,7 +384,7 @@ const InboxPage = () => {
                             }`}
                           >
                             {conversation.lastMessage?.content ||
-                              'No messages yet'}
+                              t('noMessages')}
                           </p>
                         </div>
                       </div>
@@ -434,10 +437,10 @@ const InboxPage = () => {
                       {isOtherParticipantOnline ? (
                         <>
                           <span className="w-2 h-2 bg-green-500 rounded-full" />
-                          <span className="text-green-600">Online</span>
+                          <span className="text-green-600">{t('online')}</span>
                         </>
                       ) : (
-                        'Offline'
+                        t('offline')
                       )}
                     </p>
                   </div>
@@ -455,10 +458,8 @@ const InboxPage = () => {
                   ) : localMessages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-gray-400">
                       <MessageCircle size={40} className="mb-2" />
-                      <p>No messages yet</p>
-                      <p className="text-sm">
-                        Send a message to start the conversation
-                      </p>
+                      <p>{t('noMessages')}</p>
+                      <p className="text-sm">{t('startConversation')}</p>
                     </div>
                   ) : (
                     localMessages.map((message) => {
@@ -490,7 +491,7 @@ const InboxPage = () => {
                                     >
                                       <Image
                                         src={att.url}
-                                        alt={`Attachment ${idx + 1}`}
+                                        alt={t('attachmentAlt', { index: idx + 1 })}
                                         width={200}
                                         height={200}
                                         className="rounded-lg max-w-[200px] max-h-[200px] object-cover cursor-pointer hover:opacity-90 transition"
@@ -522,7 +523,7 @@ const InboxPage = () => {
                     <div className="flex justify-end">
                       <div className="bg-brand-primary/50 rounded-2xl px-4 py-2 rounded-br-sm flex items-center gap-2 text-white text-sm">
                         <Loader2 size={14} className="animate-spin" />
-                        Uploading image...
+                        {t('uploadingImage')}
                       </div>
                     </div>
                   )}
@@ -573,9 +574,7 @@ const InboxPage = () => {
                           type: 'image',
                         }));
                       } catch (_err) {
-                        toast.error(
-                          'Failed to upload image. Please try again.'
-                        );
+                        toast.error(t('failedUploadImage'));
                         setIsSendingImage(false);
                         return;
                       }
@@ -602,10 +601,8 @@ const InboxPage = () => {
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
                 <MessageCircle size={60} className="mb-4" />
-                <p className="text-lg font-medium">Select a conversation</p>
-                <p className="text-sm">
-                  Choose from your existing conversations
-                </p>
+                <p className="text-lg font-medium">{t('selectConversation')}</p>
+                <p className="text-sm">{t('selectConversationDesc')}</p>
               </div>
             )}
           </div>

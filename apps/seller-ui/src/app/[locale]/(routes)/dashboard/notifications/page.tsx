@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Bell,
   Check,
@@ -23,6 +24,7 @@ import type {
   NotificationEntry,
 } from '../../../../../lib/api/notifications-v2';
 import { Link } from '../../../../../i18n/navigation';
+import { useNotificationContent } from '../../../../../hooks/use-notification-content';
 
 const USER_UI_URL = process.env.NEXT_PUBLIC_USER_UI_URL;
 
@@ -43,15 +45,6 @@ function getNotificationLink(notification: NotificationEntry): string | null {
   if (productSlug) return `${USER_UI_URL}/product/${productSlug}`;
 
   return null;
-}
-
-function getNotificationLinkLabel(templateId: string): string {
-  if (
-    templateId === 'order.delivered_seller' ||
-    templateId === 'order.placed_seller' ||
-    templateId === 'order.cancelled_seller'
-  ) return 'View order';
-  return 'View details';
 }
 
 const NOTIFICATION_TYPES: NotificationType[] = [
@@ -80,21 +73,11 @@ const typeColors: Record<string, string> = {
   DELIVERY: 'bg-teal-500/20 text-teal-400 border-teal-500/30',
 };
 
-function timeAgo(dateStr: string): string {
-  const now = Date.now();
-  const diff = now - new Date(dateStr).getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return 'Just now';
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
-
 const ITEMS_PER_PAGE = 20;
 
 const NotificationsPage = () => {
+  const t = useTranslations('Notifications');
+  const { getContent, formatTimeAgo } = useNotificationContent();
   const [page, setPage] = useState(1);
   const [filterType, setFilterType] = useState<NotificationType | ''>('');
   const [filterRead, setFilterRead] = useState<string>('');
@@ -116,10 +99,10 @@ const NotificationsPage = () => {
     <div className="w-full min-h-screen p-8">
       <div className="mb-6">
         <h2 className="text-2xl text-gray-900 font-semibold mb-1">
-          Notifications
+          {t('pageTitle')}
         </h2>
         <p className="text-slate-400 text-sm">
-          Stay updated with orders, reviews, and shop activity
+          {t('pageSubtitle')}
         </p>
       </div>
 
@@ -132,7 +115,7 @@ const NotificationsPage = () => {
             setPage(1);
           }}
         >
-          <option value="">All Types</option>
+          <option value="">{t('filterAllTypes')}</option>
           {NOTIFICATION_TYPES.map((type) => (
             <option key={type} value={type}>
               {type}
@@ -148,9 +131,9 @@ const NotificationsPage = () => {
             setPage(1);
           }}
         >
-          <option value="">All</option>
-          <option value="false">Unread</option>
-          <option value="true">Read</option>
+          <option value="">{t('filterAll')}</option>
+          <option value="false">{t('filterUnread')}</option>
+          <option value="true">{t('filterRead')}</option>
         </select>
 
         {data && data.unreadCount > 0 && (
@@ -160,7 +143,7 @@ const NotificationsPage = () => {
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg transition-colors flex items-center gap-2"
           >
             <CheckCheck size={16} />
-            Mark all as read ({data.unreadCount})
+            {t('markAllRead', { count: data.unreadCount })}
           </button>
         )}
       </div>
@@ -173,103 +156,110 @@ const NotificationsPage = () => {
         ) : !data?.notifications?.length ? (
           <div className="flex flex-col items-center justify-center py-16 text-slate-400">
             <Bell size={48} className="mb-4 opacity-50" />
-            <p className="text-lg font-medium">No notifications</p>
+            <p className="text-lg font-medium">{t('emptyTitle')}</p>
             <p className="text-sm mt-1">
               {filterType || filterRead
-                ? 'Try adjusting your filters'
-                : 'You will see notifications here when events occur'}
+                ? t('emptyFilterHint')
+                : t('emptyHint')}
             </p>
           </div>
         ) : (
           <div className="divide-y divide-gray-100 dark:divide-slate-800">
-            {data.notifications.map((notification) => (
-              <div
-                key={notification.id}
-                className={`px-6 py-4 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors flex items-start gap-4 ${
-                  !notification.isRead ? 'bg-blue-50/50 dark:bg-slate-800/20' : ''
-                }`}
-              >
-                <div className="flex-shrink-0 mt-1">
-                  <span
-                    className={`inline-flex px-2 py-1 rounded text-xs font-medium border ${
-                      typeColors[notification.type] || typeColors.INFO
-                    }`}
-                  >
-                    {notification.type}
-                  </span>
-                </div>
+            {data.notifications.map((notification) => {
+              const link = getNotificationLink(notification);
+              const isOrder =
+                notification.templateId === 'order.delivered_seller' ||
+                notification.templateId === 'order.placed_seller' ||
+                notification.templateId === 'order.cancelled_seller';
+              const linkLabel = isOrder ? t('linkViewOrder') : t('linkViewDetails');
+              const isInternal = link?.startsWith('/');
+              const { title: nTitle, message: nMessage } = getContent(notification);
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-gray-900 font-medium text-sm">
-                      {notification.title}
-                    </p>
-                    {!notification.isRead && (
-                      <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
-                    )}
-                  </div>
-                  <p className="text-slate-400 text-sm mt-1">
-                    {notification.message}
-                  </p>
-                  <div className="flex items-center gap-3 mt-2">
-                    <p className="text-slate-500 text-xs">
-                      {timeAgo(notification.createdAt)}
-                    </p>
-                    {(() => {
-                      const link = getNotificationLink(notification);
-                      const label = getNotificationLinkLabel(notification.templateId);
-                      const isInternal = link?.startsWith('/');
-                      if (!link) return null;
-                      return isInternal ? (
-                        <Link
-                          href={link}
-                          className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
-                        >
-                          {label}
-                          <ExternalLink size={12} />
-                        </Link>
-                      ) : (
-                        <a
-                          href={link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
-                        >
-                          {label}
-                          <ExternalLink size={12} />
-                        </a>
-                      );
-                    })()}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {!notification.isRead && (
-                    <button
-                      onClick={() => markAsRead.mutate(notification.id)}
-                      className="p-2 text-slate-500 hover:text-blue-400 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
-                      title="Mark as read"
+              return (
+                <div
+                  key={notification.id}
+                  className={`px-6 py-4 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors flex items-start gap-4 ${
+                    !notification.isRead ? 'bg-blue-50/50 dark:bg-slate-800/20' : ''
+                  }`}
+                >
+                  <div className="flex-shrink-0 mt-1">
+                    <span
+                      className={`inline-flex px-2 py-1 rounded text-xs font-medium border ${
+                        typeColors[notification.type] || typeColors.INFO
+                      }`}
                     >
-                      <Check size={16} />
+                      {notification.type}
+                    </span>
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-gray-900 font-medium text-sm">
+                        {nTitle}
+                      </p>
+                      {!notification.isRead && (
+                        <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+                      )}
+                    </div>
+                    <p className="text-slate-400 text-sm mt-1">
+                      {nMessage}
+                    </p>
+                    <div className="flex items-center gap-3 mt-2">
+                      <p className="text-slate-500 text-xs">
+                        {formatTimeAgo(notification.createdAt)}
+                      </p>
+                      {link && (
+                        isInternal ? (
+                          <Link
+                            href={link}
+                            className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
+                          >
+                            {linkLabel}
+                            <ExternalLink size={12} />
+                          </Link>
+                        ) : (
+                          <a
+                            href={link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
+                          >
+                            {linkLabel}
+                            <ExternalLink size={12} />
+                          </a>
+                        )
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {!notification.isRead && (
+                      <button
+                        onClick={() => markAsRead.mutate(notification.id)}
+                        className="p-2 text-slate-500 hover:text-blue-400 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+                        title={t('markAsRead')}
+                      >
+                        <Check size={16} />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => deleteNotification.mutate(notification.id)}
+                      className="p-2 text-slate-500 hover:text-red-400 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+                      title={t('delete')}
+                    >
+                      <Trash2 size={16} />
                     </button>
-                  )}
-                  <button
-                    onClick={() => deleteNotification.mutate(notification.id)}
-                    className="p-2 text-slate-500 hover:text-red-400 transition-colors rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
-                    title="Delete"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
         {totalPages > 1 && (
           <div className="bg-gray-50 dark:bg-slate-800 px-6 py-4 flex items-center justify-between border-t border-slate-200 dark:border-slate-700">
             <span className="text-sm text-slate-400">
-              Page {page} of {totalPages} ({data?.total} total)
+              {t('pagination', { page, totalPages, total: data?.total ?? 0 })}
             </span>
             <div className="flex gap-2">
               <button
@@ -278,14 +268,14 @@ const NotificationsPage = () => {
                 className="px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-gray-400 dark:disabled:text-slate-600 text-gray-900 dark:text-slate-300 rounded-lg transition-colors flex items-center gap-1"
               >
                 <ChevronLeft size={16} />
-                Previous
+                {t('prevPage')}
               </button>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
                 className="px-3 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-gray-400 dark:disabled:text-slate-600 text-gray-900 dark:text-slate-300 rounded-lg transition-colors flex items-center gap-1"
               >
-                Next
+                {t('nextPage')}
                 <ChevronRight size={16} />
               </button>
             </div>

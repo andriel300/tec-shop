@@ -4,7 +4,7 @@ import { AlignLeft, ChevronDown, ChevronRight, User, MessageCircle, LogOut } fro
 
 const logger = createLogger('user-ui:sticky-navbar');
 import { Link, usePathname, useRouter } from '../../i18n/navigation';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useMessages } from 'next-intl';
 import React, { useEffect, useRef, useState } from 'react';
 import { navItems } from '../../configs/constants';
 import ProfileIcon from '../../assets/svgs/profile-icon';
@@ -19,6 +19,15 @@ import LanguageSwitcher from '../components/language-switcher';
 
 const StickyNavbar = () => {
   const t = useTranslations('Navbar');
+  const tCat = useTranslations('Categories');
+  const messages = useMessages();
+  const catMessages = (messages.Categories ?? {}) as Record<string, string>;
+
+  const translateCategory = (slug: string, name: string): string => {
+    return catMessages[slug]
+      ? tCat(slug as Parameters<typeof tCat>[0])
+      : name;
+  };
   const { isAuthenticated, user, userProfile, logout } = useAuth();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -172,7 +181,7 @@ const StickyNavbar = () => {
                               onClick={() => setShow(false)}
                             >
                               <span className="font-heading font-medium text-sm text-text-primary">
-                                {category.name}
+                                {translateCategory(category.slug, category.name)}
                               </span>
                               {category.children &&
                                 category.children.length > 0 && (
@@ -225,7 +234,7 @@ const StickyNavbar = () => {
                               onClick={() => setShow(false)}
                             >
                               <span className="font-heading text-sm text-text-primary">
-                                {subcategory.name}
+                                {translateCategory(subcategory.slug, subcategory.name)}
                               </span>
                               {subcategory.description && (
                                 <p className="text-xs text-text-secondary mt-1 line-clamp-1">
@@ -331,7 +340,7 @@ const StickyNavbar = () => {
                             className="flex items-center gap-3 px-4 py-2.5 hover:bg-ui-muted transition-colors text-sm text-text-primary"
                           >
                             <User size={15} className="text-text-secondary flex-shrink-0" />
-                            My Profile
+                            {t('myProfile')}
                           </Link>
                           <Link
                             href="/inbox"
@@ -339,7 +348,7 @@ const StickyNavbar = () => {
                             className="flex items-center gap-3 px-4 py-2.5 hover:bg-ui-muted transition-colors text-sm text-text-primary"
                           >
                             <MessageCircle size={15} className="text-text-secondary flex-shrink-0" />
-                            Inbox
+                            {t('inbox')}
                           </Link>
                         </div>
                         <div className="border-t border-ui-divider py-1">
@@ -348,7 +357,7 @@ const StickyNavbar = () => {
                             className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition-colors text-sm text-red-600"
                           >
                             <LogOut size={15} className="flex-shrink-0" />
-                            Sign Out
+                            {t('signOut')}
                           </button>
                         </div>
                       </div>

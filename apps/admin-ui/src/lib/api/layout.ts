@@ -1,5 +1,13 @@
 import { apiClient } from './client';
 
+export interface HeroSlideLocaleTranslation {
+  title?: string;
+  subtitle?: string;
+  actionLabel?: string;
+}
+
+export type HeroSlideTranslations = Record<string, HeroSlideLocaleTranslation>;
+
 export interface HeroSlide {
   id: string;
   title: string;
@@ -9,6 +17,7 @@ export interface HeroSlide {
   actionLabel: string | null;
   order: number;
   isActive: boolean;
+  translations: HeroSlideTranslations | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -33,6 +42,7 @@ export interface CreateHeroSlideData {
   actionLabel?: string;
   order?: number;
   isActive?: boolean;
+  translations?: HeroSlideTranslations;
 }
 
 export interface UpdateHeroSlideData {
@@ -43,6 +53,7 @@ export interface UpdateHeroSlideData {
   actionLabel?: string;
   order?: number;
   isActive?: boolean;
+  translations?: HeroSlideTranslations;
 }
 
 export const getLayout = async (): Promise<{ layout: LayoutResponse }> => {

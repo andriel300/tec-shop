@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { DollarSign, Shield, Youtube } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Input } from '../../../../../../components/ui/core/Input';
 import { Select } from '../../../../../../components/ui/core/Select';
 import { FormField } from '../../../../../../components/ui/form/FormField';
@@ -17,12 +18,6 @@ import {
 import { TagInput } from '../../../../../../components/ui/form/TagInput';
 import { DiscountSelector } from '../../../../../../components/ui/form/DiscountSelector';
 
-const PRODUCT_TYPES = [
-  { value: 'simple', label: 'Simple Product' },
-  { value: 'variable', label: 'Variable Product (with variants)' },
-  { value: 'digital', label: 'Digital Product' },
-];
-
 interface BasicInfoTabProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   form: any;
@@ -37,6 +32,14 @@ export function BasicInfoTab({
   setSelectedBrand,
   setDynamicAttributes,
 }: BasicInfoTabProps) {
+  const t = useTranslations('CreateProduct');
+
+  const PRODUCT_TYPES = [
+    { value: 'simple', label: t('productTypeSimple') },
+    { value: 'variable', label: t('productTypeVariable') },
+    { value: 'digital', label: t('productTypeDigital') },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Product Name */}
@@ -45,14 +48,14 @@ export function BasicInfoTab({
         validators={{
           onChange: ({ value }: { value: string }) =>
             !value
-              ? 'Product name is required'
+              ? t('validationNameRequired')
               : value.length < 3
-              ? 'Product name must be at least 3 characters'
+              ? t('validationNameMinLength')
               : undefined,
         }}
       >
         {(field: any) => ( // eslint-disable-line @typescript-eslint/no-explicit-any
-          <FormField field={field} label="Product Name" required>
+          <FormField field={field} label={t('fieldProductName')} required>
             <Input
               id={field.name}
               name={field.name}
@@ -61,7 +64,7 @@ export function BasicInfoTab({
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 field.handleChange(e.target.value)
               }
-              placeholder="e.g., Premium Cotton T-Shirt"
+              placeholder={t('placeholderProductName')}
               variant="dark"
             />
           </FormField>
@@ -75,20 +78,20 @@ export function BasicInfoTab({
           onChange: ({ value }: { value: string }) => {
             const wordCount = value.split(/\s+/).filter(Boolean).length;
             return wordCount < 50
-              ? 'Description must be at least 50 words (150-200 recommended)'
+              ? t('validationDescMinWords')
               : wordCount > 200
-              ? 'Description should not exceed 200 words'
+              ? t('validationDescMaxWords')
               : undefined;
           },
         }}
       >
         {(field: any) => ( // eslint-disable-line @typescript-eslint/no-explicit-any
-          <FormField field={field} label="Product Description" required>
+          <FormField field={field} label={t('fieldProductDesc')} required>
             <RichTextEditor
               value={field.state.value}
               onChange={(value: string) => field.handleChange(value)}
               onBlur={field.handleBlur}
-              placeholder="Describe your product in detail..."
+              placeholder={t('placeholderProductDesc')}
               minWords={50}
               maxWords={200}
             />
@@ -101,11 +104,11 @@ export function BasicInfoTab({
         name="categoryId"
         validators={{
           onChange: ({ value }: { value: string }) =>
-            !value ? 'Category is required' : undefined,
+            !value ? t('validationCategoryRequired') : undefined,
         }}
       >
         {(field: any) => ( // eslint-disable-line @typescript-eslint/no-explicit-any
-          <FormField field={field} label="Category" required>
+          <FormField field={field} label={t('fieldCategory')} required>
             <CategorySelector
               value={field.state.value}
               onChange={(categoryId: string, category?: Category) => {
@@ -134,7 +137,7 @@ export function BasicInfoTab({
       {/* Product Type */}
       <form.Field name="productType">
         {(field: any) => ( // eslint-disable-line @typescript-eslint/no-explicit-any
-          <FormField field={field} label="Product Type" required>
+          <FormField field={field} label={t('fieldProductType')} required>
             <Select
               value={field.state.value}
               onChange={(value: string) => {
@@ -153,10 +156,10 @@ export function BasicInfoTab({
         <div>
           <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
             <DollarSign size={16} className="text-feedback-success" />
-            Pricing
+            {t('pricingTitle')}
           </h3>
           <p className="text-sm text-gray-500 mt-0.5">
-            Set your product price and optional sale price
+            {t('pricingSub')}
           </p>
         </div>
 
@@ -166,11 +169,11 @@ export function BasicInfoTab({
             name="price"
             validators={{
               onChange: ({ value }: { value: number }) =>
-                value <= 0 ? 'Price must be greater than 0' : undefined,
+                value <= 0 ? t('validationPricePositive') : undefined,
             }}
           >
             {(field: any) => ( // eslint-disable-line @typescript-eslint/no-explicit-any
-              <FormField field={field} label="Regular Price ($)" required>
+              <FormField field={field} label={t('fieldRegularPrice')} required>
                 <Input
                   type="number"
                   step="0.01"
@@ -199,7 +202,7 @@ export function BasicInfoTab({
                   : 0;
 
               return (
-                <FormField field={field} label="Sale Price ($)">
+                <FormField field={field} label={t('fieldSalePrice')}>
                   <div className="space-y-2">
                     <Input
                       type="number"
@@ -213,25 +216,27 @@ export function BasicInfoTab({
                             : undefined
                         )
                       }
-                      placeholder="Leave empty for regular price"
+                      placeholder={t('placeholderSalePrice')}
                       variant="dark"
                     />
                     {discount > 0 && (
                       <div className="flex items-center gap-2 text-sm">
                         <span className="px-2 py-0.5 bg-feedback-success/10 text-feedback-success rounded-md font-semibold text-xs">
-                          {discount}% OFF
+                          {t('salePriceOff', { discount })}
                         </span>
                         <span className="text-gray-500 text-xs">
-                          Save ${(regularPrice - salePrice).toFixed(2)}
+                          {t('salePriceSave', { amount: `$${(regularPrice - salePrice).toFixed(2)}` })}
                         </span>
                       </div>
                     )}
                     <p className="text-xs text-gray-500">
-                      Products with a sale price will appear in the{' '}
-                      <span className="font-semibold text-feedback-error">
-                        Special Offers
-                      </span>{' '}
-                      section on the customer store
+                      {t.rich('salePriceNote', {
+                        offers: (chunks) => (
+                          <span className="font-semibold text-feedback-error">
+                            {chunks}
+                          </span>
+                        ),
+                      })}
                     </p>
                   </div>
                 </FormField>
@@ -245,11 +250,11 @@ export function BasicInfoTab({
           name="stock"
           validators={{
             onChange: ({ value }: { value: number }) =>
-              value < 0 ? 'Stock cannot be negative' : undefined,
+              value < 0 ? t('validationStockNonNegative') : undefined,
           }}
         >
           {(field: any) => ( // eslint-disable-line @typescript-eslint/no-explicit-any
-            <FormField field={field} label="Stock Quantity" required>
+            <FormField field={field} label={t('fieldStockQty')} required>
               <Input
                 type="number"
                 min="0"
@@ -285,7 +290,7 @@ export function BasicInfoTab({
               value={field.state.value}
               onChange={(tags: string[]) => field.handleChange(tags)}
               maxTags={20}
-              placeholder="Add tag (e.g., summer, sale, trending)"
+              placeholder={t('placeholderTag')}
             />
           </div>
         )}
@@ -296,23 +301,23 @@ export function BasicInfoTab({
         <div>
           <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
             <Shield size={16} className="text-brand-primary" />
-            Additional Details
+            {t('additionalDetailsTitle')}
           </h3>
           <p className="text-sm text-gray-500 mt-0.5">
-            Optional information to enrich your product listing
+            {t('additionalDetailsSub')}
           </p>
         </div>
 
         {/* Warranty */}
         <form.Field name="warranty">
           {(field: any) => ( // eslint-disable-line @typescript-eslint/no-explicit-any
-            <FormField field={field} label="Warranty">
+            <FormField field={field} label={t('fieldWarranty')}>
               <Input
                 value={field.state.value}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   field.handleChange(e.target.value)
                 }
-                placeholder="e.g., 1 year manufacturer warranty"
+                placeholder={t('placeholderWarranty')}
                 variant="dark"
               />
             </FormField>
@@ -328,12 +333,12 @@ export function BasicInfoTab({
               !/^https?:\/\/(?:www\.)?youtube\.com\/embed\/[A-Za-z0-9_-]+$/.test(
                 value
               )
-                ? 'Please enter a valid YouTube embed URL.'
+                ? t('validationYoutubeUrl')
                 : undefined,
           }}
         >
           {(field: any) => ( // eslint-disable-line @typescript-eslint/no-explicit-any
-            <FormField field={field} label="YouTube URL (Optional)">
+            <FormField field={field} label={t('fieldYoutubeUrl')}>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">
                   <Youtube size={15} />
@@ -343,7 +348,7 @@ export function BasicInfoTab({
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     field.handleChange(e.target.value)
                   }
-                  placeholder="e.g., https://www.youtube.com/embed/xyz123"
+                  placeholder={t('placeholderYoutubeUrl')}
                   variant="dark"
                   className="pl-9"
                 />

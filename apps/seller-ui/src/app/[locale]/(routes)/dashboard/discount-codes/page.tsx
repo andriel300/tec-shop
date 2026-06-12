@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Breadcrumb } from '../../../../../components/navigation/Breadcrumb';
 import { Button } from '../../../../../components/ui/core/Button';
 import { Modal } from '../../../../../components/ui/core/Modal';
@@ -19,20 +20,18 @@ import type {
 import { toast } from 'sonner';
 
 const Page = () => {
+  const t = useTranslations('DiscountCodes');
   const [showModal, setShowModal] = useState(false);
   const [editingDiscount, setEditingDiscount] =
     useState<DiscountResponse | null>(null);
 
-  // Fetch discount codes using TanStack Query
   const { data: discounts, isLoading, error } = useDiscounts();
   const deleteMutation = useDeleteDiscount();
   const createMutation = useCreateDiscount();
   const updateMutation = useUpdateDiscount(editingDiscount?.id || '');
 
-  // Handle form submission (create or update)
   const handleSubmitDiscount = (data: CreateDiscountData) => {
     if (editingDiscount) {
-      // Update existing discount
       updateMutation.mutate(data, {
         onSuccess: () => {
           setShowModal(false);
@@ -40,7 +39,6 @@ const Page = () => {
         },
       });
     } else {
-      // Create new discount
       createMutation.mutate(data, {
         onSuccess: () => {
           setShowModal(false);
@@ -49,35 +47,28 @@ const Page = () => {
     }
   };
 
-  // Open modal for creating new discount
   const handleCreateClick = () => {
     setEditingDiscount(null);
     setShowModal(true);
   };
 
-  // Open modal for editing existing discount
   const handleEditClick = (discount: DiscountResponse) => {
     setEditingDiscount(discount);
     setShowModal(true);
   };
 
-  // Close modal and reset editing state
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingDiscount(null);
   };
 
-  // Copy discount code to clipboard
   const copyToClipboard = (code: string) => {
     navigator.clipboard.writeText(code);
-    toast.success('Code copied to clipboard!', {
-      description: code,
-    });
+    toast.success(t('copiedSuccess'), { description: code });
   };
 
-  // Format date for display
   const formatDate = (dateString?: string | null) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return t('validUntilNa');
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -85,7 +76,6 @@ const Page = () => {
     });
   };
 
-  // Format discount value based on type
   const formatDiscountValue = (discount: DiscountResponse) => {
     switch (discount.discountType) {
       case 'PERCENTAGE':
@@ -93,7 +83,7 @@ const Page = () => {
       case 'FIXED_AMOUNT':
         return `$${discount.discountValue}`;
       case 'FREE_SHIPPING':
-        return 'Free Shipping';
+        return t('freeShipping');
       default:
         return discount.discountValue;
     }
@@ -102,45 +92,42 @@ const Page = () => {
   return (
     <div className="w-full min-h-screen p-8">
       <div className="flex justify-between items-center mb-1">
-        <h2 className="text-2xl text-gray-900 font-semibold">Discount Codes</h2>
+        <h2 className="text-2xl text-gray-900 font-semibold">{t('pageTitle')}</h2>
         <Button
           className="px-4 py-2 gap-2 items-center"
           onClick={handleCreateClick}
         >
-          <Plus size={18} /> Create Discount
+          <Plus size={18} /> {t('createBtn')}
         </Button>
       </div>
       <div className="flex items-center text-gray-900">
         <Breadcrumb
           items={[
-            { label: 'Dashboard', href: '/dashboard' },
-            { label: 'Discount Codes' },
+            { label: t('breadcrumbDashboard'), href: '/dashboard' },
+            { label: t('breadcrumbDiscountCodes') },
           ]}
         />
       </div>
 
       <div className="mt-8 bg-[#ffffff] dark:bg-slate-900 p-6 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Your Discount Codes
+          {t('sectionTitle')}
         </h3>
 
-        {/* Loading State */}
         {isLoading && (
           <div className="text-center py-12">
             <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
-            <p className="mt-4 text-gray-400">Loading discount codes...</p>
+            <p className="mt-4 text-gray-400">{t('loading')}</p>
           </div>
         )}
 
-        {/* Error State */}
         {error && (
           <div className="bg-red-900/20 border border-red-500 rounded-lg p-4">
-            <p className="text-red-400">Failed to load discount codes</p>
+            <p className="text-red-400">{t('loadFailed')}</p>
             <p className="text-sm text-gray-400 mt-1">{error.message}</p>
           </div>
         )}
 
-        {/* Empty State */}
         {!isLoading && !error && discounts?.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-500 mb-4">
@@ -159,47 +146,43 @@ const Page = () => {
               </svg>
             </div>
             <h3 className="text-lg font-medium text-gray-400 mb-2">
-              No discount codes yet
+              {t('emptyTitle')}
             </h3>
-            <p className="text-gray-500 mb-4">
-              Create your first discount code to start offering deals to
-              customers
-            </p>
+            <p className="text-gray-500 mb-4">{t('emptyDesc')}</p>
             <Button onClick={handleCreateClick}>
-              <Plus size={18} className="mr-2" /> Create Your First Discount
+              <Plus size={18} className="mr-2" /> {t('emptyCreateBtn')}
             </Button>
           </div>
         )}
 
-        {/* Discount Codes Table */}
         {!isLoading && !error && discounts && discounts.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-800">
                   <th className="text-left py-3 px-4 text-gray-400 font-medium">
-                    Code
+                    {t('colCode')}
                   </th>
                   <th className="text-left py-3 px-4 text-gray-400 font-medium">
-                    Name
+                    {t('colName')}
                   </th>
                   <th className="text-left py-3 px-4 text-gray-400 font-medium">
-                    Type
+                    {t('colType')}
                   </th>
                   <th className="text-left py-3 px-4 text-gray-400 font-medium">
-                    Value
+                    {t('colValue')}
                   </th>
                   <th className="text-left py-3 px-4 text-gray-400 font-medium">
-                    Usage
+                    {t('colUsage')}
                   </th>
                   <th className="text-left py-3 px-4 text-gray-400 font-medium">
-                    Valid Until
+                    {t('colValidUntil')}
                   </th>
                   <th className="text-left py-3 px-4 text-gray-400 font-medium">
-                    Status
+                    {t('colStatus')}
                   </th>
                   <th className="text-right py-3 px-4 text-gray-400 font-medium">
-                    Actions
+                    {t('colActions')}
                   </th>
                 </tr>
               </thead>
@@ -217,7 +200,7 @@ const Page = () => {
                         <button
                           onClick={() => copyToClipboard(discount.code)}
                           className="text-gray-400 hover:text-white transition-colors"
-                          title="Copy code"
+                          title={t('copyTitle')}
                         >
                           <Copy size={16} />
                         </button>
@@ -257,7 +240,7 @@ const Page = () => {
                               : 'text-gray-500'
                           }
                         >
-                          {discount.isActive ? 'Active' : 'Inactive'}
+                          {discount.isActive ? t('statusActive') : t('statusInactive')}
                         </span>
                       </div>
                     </td>
@@ -266,23 +249,19 @@ const Page = () => {
                         <button
                           onClick={() => handleEditClick(discount)}
                           className="p-2 text-gray-400 hover:text-blue-400 hover:bg-blue-900/20 rounded transition-colors"
-                          title="Edit discount"
+                          title={t('editTitle')}
                         >
                           <Pencil size={16} />
                         </button>
                         <button
                           onClick={() => {
-                            if (
-                              confirm(
-                                'Are you sure you want to delete this discount code?'
-                              )
-                            ) {
+                            if (confirm(t('deleteConfirm'))) {
                               deleteMutation.mutate(discount.id);
                             }
                           }}
                           disabled={deleteMutation.isPending}
                           className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-900/20 rounded transition-colors disabled:opacity-50"
-                          title="Delete discount"
+                          title={t('deleteTitle')}
                         >
                           <Trash2 size={16} />
                         </button>
@@ -296,11 +275,10 @@ const Page = () => {
         )}
       </div>
 
-      {/* Create/Edit Discount Modal */}
       <Modal
         isOpen={showModal}
         onClose={handleCloseModal}
-        title={editingDiscount ? 'Edit Discount Code' : 'Create Discount Code'}
+        title={editingDiscount ? t('modalEditTitle') : t('modalCreateTitle')}
         size="lg"
       >
         <DiscountForm

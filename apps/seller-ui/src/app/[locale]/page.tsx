@@ -24,30 +24,8 @@ import { Link } from '../../i18n/navigation';
 const MARKETPLACE_URL =
   process.env.NEXT_PUBLIC_MARKETPLACE_URL ?? 'http://localhost:3000';
 
-const stats = [
-  { icon: Users, value: '12,400+', label: 'Active Sellers' },
-  { icon: DollarSign, value: '$2.4M+', label: 'Monthly Revenue' },
-  { icon: Star, value: '4.9/5', label: 'Seller Rating' },
-  { icon: Zap, value: '5 min', label: 'Setup Time' },
-];
-
-const steps = [
-  {
-    step: '01',
-    title: 'Create Account',
-    desc: "Register as a customer on the TecShop marketplace — it's free and takes 30 seconds.",
-  },
-  {
-    step: '02',
-    title: 'Upgrade to Seller',
-    desc: 'From your profile, apply to become a seller. Fill in your shop details and business info.',
-  },
-  {
-    step: '03',
-    title: 'Start Earning',
-    desc: 'List your products, accept orders, and get paid directly to your bank account.',
-  },
-];
+const statIcons = [Users, DollarSign, Star, Zap];
+const statValues = ['12,400+', '$2.4M+', '4.9/5', '5 min'];
 
 // Full class names so Tailwind JIT picks them up at build time
 const featureColors = [
@@ -94,6 +72,19 @@ const useLandingPageSetup = () => {
 const LandingPage: React.FC = () => {
   const t = useTranslations('LandingPage');
   useLandingPageSetup();
+
+  const stats = [
+    { icon: statIcons[0], value: statValues[0], label: t('stat1Label') },
+    { icon: statIcons[1], value: statValues[1], label: t('stat2Label') },
+    { icon: statIcons[2], value: statValues[2], label: t('stat3Label') },
+    { icon: statIcons[3], value: statValues[3], label: t('stat4Label') },
+  ];
+
+  const steps = [
+    { step: '01', title: t('step1Title'), desc: t('step1Desc') },
+    { step: '02', title: t('step2Title'), desc: t('step2Desc') },
+    { step: '03', title: t('step3Title'), desc: t('step3Desc') },
+  ];
 
   const features = [
     {
@@ -185,7 +176,7 @@ const LandingPage: React.FC = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-1.5 sm:gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-pill px-3 sm:px-4 py-1.5 sm:py-2 text-white/90 text-xs sm:text-sm font-medium mb-6 sm:mb-8">
             <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-secondary-400 shrink-0" />
-            Start selling in minutes — no hidden fees
+            {t('heroBadge')}
           </div>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold font-display text-white leading-tight mb-5 md:mb-6">
@@ -212,12 +203,12 @@ const LandingPage: React.FC = () => {
           </div>
 
           <p className="text-blue-200 text-xs sm:text-sm">
-            Don&apos;t have an account?{' '}
+            {t('noAccount')}{' '}
             <a
               href={`${MARKETPLACE_URL}/signup`}
               className="text-white font-medium underline underline-offset-2 hover:no-underline cursor-pointer"
             >
-              Register on the marketplace first
+              {t('registerFirst')}
             </a>
           </p>
         </div>
@@ -244,8 +235,7 @@ const LandingPage: React.FC = () => {
             {t('featuresTitle')}
           </h2>
           <p className="text-gray-500 text-base md:text-lg max-w-xl mx-auto leading-relaxed">
-            Everything you need to run a successful online shop, all in one
-            place.
+            {t('featuresDesc')}
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
@@ -275,10 +265,10 @@ const LandingPage: React.FC = () => {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10 md:mb-16">
             <h2 className="text-3xl md:text-4xl font-bold font-display text-ui-surface-dark mb-3 md:mb-4">
-              How It Works
+              {t('howItWorksTitle')}
             </h2>
             <p className="text-slate-900/60 text-base md:text-lg">
-              Three simple steps to launch your shop
+              {t('howItWorksDesc')}
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
@@ -378,7 +368,7 @@ const AuthenticatedHomePage: React.FC = () => {
               href="/dashboard"
               className="text-brand-primary hover:text-brand-primary-700 font-medium text-sm transition-colors duration-200 cursor-pointer flex items-center gap-1"
             >
-              Go to Dashboard
+              {t('goToDashboard')}
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

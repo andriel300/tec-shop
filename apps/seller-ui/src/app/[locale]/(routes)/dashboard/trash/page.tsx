@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   useDeletedProducts,
   useRestoreProduct,
@@ -19,6 +20,7 @@ import type { ProductResponse } from '../../../../../lib/api/products';
 import { Breadcrumb } from '../../../../../components/navigation/Breadcrumb';
 
 const TrashPage = () => {
+  const t = useTranslations('Trash');
   const [searchQuery, setSearchQuery] = useState('');
   const {
     data: deletedProducts,
@@ -42,7 +44,7 @@ const TrashPage = () => {
     const now = new Date();
     const remainingMs = expiryDate.getTime() - now.getTime();
 
-    if (remainingMs <= 0) return { label: 'Expiring soon', urgent: true };
+    if (remainingMs <= 0) return { label: t('expiringSoon'), urgent: true };
 
     const hours = Math.floor(remainingMs / (1000 * 60 * 60));
     const minutes = Math.floor(
@@ -51,24 +53,23 @@ const TrashPage = () => {
 
     if (hours > 0) {
       return {
-        label: `${hours}h ${minutes}m remaining`,
+        label: t('timeRemaining', { hours, minutes }),
         urgent: hours < 3,
       };
     }
-    return { label: `${minutes}m remaining`, urgent: true };
+    return { label: t('minutesRemaining', { minutes }), urgent: true };
   };
 
   const productCount = deletedProducts?.length ?? 0;
 
   return (
     <div className="w-full p-8 space-y-6">
-      {/* Page Header */}
       <div>
         <div className="flex items-center gap-3 mb-1">
           <div className="p-2 bg-feedback-error/10 rounded-lg">
             <Trash2 size={20} className="text-feedback-error" />
           </div>
-          <h1 className="text-2xl font-semibold text-gray-900">Trash</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">{t('pageTitle')}</h1>
           {productCount > 0 && (
             <span className="px-2.5 py-0.5 bg-feedback-error/10 text-feedback-error text-xs font-semibold rounded-full">
               {productCount}
@@ -77,13 +78,12 @@ const TrashPage = () => {
         </div>
         <Breadcrumb
           items={[
-            { label: 'Dashboard', href: '/dashboard' },
-            { label: 'Trash' },
+            { label: t('breadcrumbDashboard'), href: '/dashboard' },
+            { label: t('breadcrumbTrash') },
           ]}
         />
       </div>
 
-      {/* Recovery Warning Banner */}
       <div className="flex items-start gap-3 p-4 bg-feedback-warning/10 border border-feedback-warning/30 rounded-xl">
         <AlertTriangle
           size={18}
@@ -91,16 +91,14 @@ const TrashPage = () => {
         />
         <div>
           <p className="text-sm font-semibold text-gray-900">
-            Recovery Window Active
+            {t('warningTitle')}
           </p>
           <p className="text-sm text-gray-500 mt-0.5">
-            Deleted products can be restored within 24 hours. After that, they
-            are permanently removed and cannot be recovered.
+            {t('warningDesc')}
           </p>
         </div>
       </div>
 
-      {/* Search Bar */}
       <div className="relative">
         <Search
           size={16}
@@ -108,38 +106,34 @@ const TrashPage = () => {
         />
         <input
           type="text"
-          placeholder="Search deleted products..."
+          placeholder={t('searchPlaceholder')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full pl-10 pr-4 py-2.5 bg-surface-container-lowest border border-surface-container-highest rounded-xl text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary/50 transition-colors text-sm"
         />
       </div>
 
-      {/* Loading State */}
       {isLoading && (
         <div className="bg-surface-container-lowest rounded-xl p-16 flex flex-col items-center gap-4">
           <div className="w-8 h-8 border-[3px] border-surface-container-highest border-t-brand-primary rounded-full animate-spin" />
-          <p className="text-sm text-gray-500">Loading deleted products...</p>
+          <p className="text-sm text-gray-500">{t('loading')}</p>
         </div>
       )}
 
-      {/* Error State */}
       {isError && (
         <div className="bg-surface-container-lowest rounded-xl p-12 flex flex-col items-center gap-3 text-center">
           <div className="p-4 bg-feedback-error/10 rounded-full">
             <AlertCircle size={28} className="text-feedback-error" />
           </div>
           <h3 className="text-base font-semibold text-gray-900">
-            Failed to Load Trash
+            {t('errorTitle')}
           </h3>
           <p className="text-sm text-gray-500 max-w-sm">
-            We couldn&apos;t load your deleted products. Please refresh the page
-            and try again.
+            {t('errorDesc')}
           </p>
         </div>
       )}
 
-      {/* Empty State */}
       {!isLoading && !isError && productCount === 0 && (
         <div className="bg-surface-container-lowest rounded-xl p-16 flex flex-col items-center gap-3 text-center">
           <div className="p-5 bg-surface-container rounded-full">
@@ -147,29 +141,24 @@ const TrashPage = () => {
           </div>
           <div>
             <h3 className="text-base font-semibold text-gray-900">
-              Trash is Empty
+              {t('emptyTitle')}
             </h3>
             <p className="text-sm text-gray-500 mt-1">
-              {searchQuery
-                ? 'No deleted products match your search query.'
-                : 'No deleted products. Items you delete will appear here for 24 hours.'}
+              {searchQuery ? t('emptySearchDesc') : t('emptyDesc')}
             </p>
           </div>
         </div>
       )}
 
-      {/* Products Table */}
       {!isLoading && !isError && productCount > 0 && (
         <div className="bg-surface-container-lowest rounded-xl overflow-hidden">
-          {/* Table Header info */}
           <div className="px-5 py-4 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold text-gray-900">
-                Deleted Products
+                {t('sectionTitle')}
               </h3>
               <p className="text-xs text-gray-500 mt-0.5">
-                {productCount} item{productCount !== 1 ? 's' : ''} &middot;
-                Restore before expiry
+                {t('sectionSubtitle', { count: productCount })}
               </p>
             </div>
           </div>
@@ -179,22 +168,22 @@ const TrashPage = () => {
               <thead className="bg-surface-container">
                 <tr>
                   <th className="px-5 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Product
+                    {t('colProduct')}
                   </th>
                   <th className="px-5 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Category
+                    {t('colCategory')}
                   </th>
                   <th className="px-5 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Price
+                    {t('colPrice')}
                   </th>
                   <th className="px-5 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Deleted
+                    {t('colDeleted')}
                   </th>
                   <th className="px-5 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Expires In
+                    {t('colExpiresIn')}
                   </th>
                   <th className="px-5 py-2.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Actions
+                    {t('colActions')}
                   </th>
                 </tr>
               </thead>
@@ -207,7 +196,6 @@ const TrashPage = () => {
                       key={product.id}
                       className="hover:bg-surface-container transition-colors"
                     >
-                      {/* Product Info */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           <div className="relative w-12 h-12 bg-surface-container rounded-lg overflow-hidden flex-shrink-0">
@@ -226,7 +214,6 @@ const TrashPage = () => {
                                 />
                               </div>
                             )}
-                            {/* Deleted overlay indicator */}
                             <div className="absolute inset-0 bg-feedback-error/10" />
                           </div>
                           <div className="min-w-0">
@@ -243,14 +230,12 @@ const TrashPage = () => {
                         </div>
                       </td>
 
-                      {/* Category */}
                       <td className="px-5 py-4">
                         <span className="inline-flex px-2 py-0.5 text-xs font-medium rounded-md bg-surface-container text-gray-900">
-                          {product.category?.name || 'Uncategorized'}
+                          {product.category?.name || t('uncategorized')}
                         </span>
                       </td>
 
-                      {/* Price */}
                       <td className="px-5 py-4">
                         <p className="text-sm font-semibold text-gray-900">
                           ${product.price.toFixed(2)}
@@ -262,7 +247,6 @@ const TrashPage = () => {
                         )}
                       </td>
 
-                      {/* Deleted At */}
                       <td className="px-5 py-4">
                         <p className="text-sm text-gray-900">
                           {new Date(product.deletedAt!).toLocaleDateString()}
@@ -275,7 +259,6 @@ const TrashPage = () => {
                         </p>
                       </td>
 
-                      {/* Time Remaining */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-1.5">
                           <Clock
@@ -298,7 +281,6 @@ const TrashPage = () => {
                         </div>
                       </td>
 
-                      {/* Actions */}
                       <td className="px-5 py-4 text-right">
                         <button
                           onClick={() => handleRestore(product.id)}
@@ -309,7 +291,7 @@ const TrashPage = () => {
                             size={13}
                             className={isRestoring ? 'animate-spin' : ''}
                           />
-                          Restore
+                          {t('restore')}
                         </button>
                       </td>
                     </tr>
@@ -319,12 +301,9 @@ const TrashPage = () => {
             </table>
           </div>
 
-          {/* Footer */}
           <div className="px-5 py-3 border-t border-surface-container-highest">
             <p className="text-xs text-gray-500">
-              Showing {productCount} deleted{' '}
-              {productCount === 1 ? 'product' : 'products'} &middot; Items
-              expire 24 hours after deletion
+              {t('footerDesc', { count: productCount })}
             </p>
           </div>
         </div>

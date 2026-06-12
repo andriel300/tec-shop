@@ -2,8 +2,11 @@
 
 import React from 'react';
 import { Search } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 const SearchBar = () => {
+  const t = useTranslations('Navbar');
+
   return (
     <div className="relative hidden sm:flex items-center">
       <Search
@@ -12,7 +15,7 @@ const SearchBar = () => {
       />
       <input
         type="text"
-        placeholder="Search..."
+        placeholder={t('searchPlaceholder')}
         className="
           w-44 lg:w-60 pl-9 pr-3 h-9
           bg-gray-100 dark:bg-slate-800/60 border border-gray-300 dark:border-slate-700/60 rounded-sm

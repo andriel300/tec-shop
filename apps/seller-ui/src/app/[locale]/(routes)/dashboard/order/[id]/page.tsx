@@ -22,6 +22,7 @@ import { toast } from 'sonner';
 import { apiClient } from 'apps/seller-ui/src/lib/api/client';
 import { Link } from 'apps/seller-ui/src/i18n/navigation';
 import { exportInvoice } from 'apps/seller-ui/src/lib/utils/export-invoice';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface OrderItem {
   id: string;
@@ -79,7 +80,6 @@ const updateOrderStatus = async (data: {
 };
 
 const CARRIERS = [
-  { value: '', label: 'Select carrier…' },
   { value: 'fedex', label: 'FedEx' },
   { value: 'ups', label: 'UPS' },
   { value: 'usps', label: 'USPS' },
@@ -87,21 +87,6 @@ const CARRIERS = [
   { value: 'aramex', label: 'Aramex' },
   { value: 'sfexpress', label: 'SF Express' },
   { value: 'other', label: 'Other' },
-];
-
-const CANCEL_REASONS = [
-  'Customer requested cancellation',
-  'Item out of stock',
-  'Pricing error',
-  'Unable to fulfill',
-  'Suspected fraudulent order',
-  'Other',
-];
-
-const DELIVERY_STEPS = [
-  { key: 'PAID', label: 'Order Confirmed', Icon: CheckCircle },
-  { key: 'SHIPPED', label: 'In Transit', Icon: Truck },
-  { key: 'DELIVERED', label: 'Delivered', Icon: CheckCircle },
 ];
 
 const STATUS_BADGE: Record<string, string> = {
@@ -120,12 +105,20 @@ const FULFILLMENT_DOT: Record<string, string> = {
   CANCELLED: 'bg-red-400',
 };
 
+const DELIVERY_STEP_KEYS = [
+  { key: 'PAID', Icon: CheckCircle },
+  { key: 'SHIPPED', Icon: Truck },
+  { key: 'DELIVERED', Icon: CheckCircle },
+] as const;
+
 const OrderDetailsPage = ({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) => {
   const { id: orderId } = use(params);
+  const t = useTranslations('SellerOrderDetail');
+  const locale = useLocale();
   const queryClient = useQueryClient();
 
   const [trackingInput, setTrackingInput] = useState('');
@@ -133,6 +126,36 @@ const OrderDetailsPage = ({
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [isTxExpanded, setIsTxExpanded] = useState(false);
+
+  const deliverySteps = [
+    { key: 'PAID',      label: t('stepOrderConfirmed'), Icon: CheckCircle },
+    { key: 'SHIPPED',   label: t('stepInTransit'),      Icon: Truck        },
+    { key: 'DELIVERED', label: t('stepDelivered'),      Icon: CheckCircle  },
+  ];
+
+  const cancelReasons = [
+    t('cancelReasonCustomer'),
+    t('cancelReasonOutOfStock'),
+    t('cancelReasonPricingError'),
+    t('cancelReasonUnableToFulfill'),
+    t('cancelReasonFraud'),
+    t('cancelReasonOther'),
+  ];
+
+  const statusLabels: Record<string, string> = {
+    PENDING:   t('statusPending'),
+    PAID:      t('statusPaid'),
+    SHIPPED:   t('statusShipped'),
+    DELIVERED: t('statusDelivered'),
+    CANCELLED: t('statusCancelled'),
+  };
+
+  const paymentLabels: Record<string, string> = {
+    PENDING:   t('paymentPending'),
+    COMPLETED: t('paymentCompleted'),
+    FAILED:    t('paymentFailed'),
+    REFUNDED:  t('paymentRefunded'),
+  };
 
   const { data: order, isLoading } = useQuery<Order>({
     queryKey: ['order-details', orderId],
@@ -144,13 +167,13 @@ const OrderDetailsPage = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order-details', orderId] });
       queryClient.invalidateQueries({ queryKey: ['seller-orders'] });
-      toast.success('Order status updated');
+      toast.success(t('statusUpdated'));
       setTrackingInput('');
       setSelectedCarrier('');
       setShowCancelConfirm(false);
       setCancelReason('');
     },
-    onError: () => toast.error('Failed to update order status'),
+    onError: () => toast.error(t('statusUpdateFailed')),
   });
 
   const handleStatusUpdate = (status: string) => {
@@ -163,7 +186,7 @@ const OrderDetailsPage = ({
 
   const handleCancel = () => {
     if (!cancelReason) {
-      toast.error('Select a cancellation reason');
+      toast.error(t('selectCancellationReason'));
       return;
     }
     updateStatusMutation.mutate({ orderId, status: 'CANCELLED' });
@@ -212,7 +235,7 @@ const OrderDetailsPage = ({
   if (!order) {
     return (
       <div className="w-full min-h-screen bg-surface-dark p-8">
-        <p className="text-gray-500 text-center">Order not found</p>
+        <p className="text-gray-500 text-center">{t('orderNotFound')}</p>
       </div>
     );
   }
@@ -231,7 +254,7 @@ const OrderDetailsPage = ({
                    mb-6 transition-colors"
       >
         <ChevronLeft size={15} />
-        Back to Orders
+        {t('backToOrders')}
       </Link>
 
       {/* Order header */}
@@ -246,17 +269,17 @@ const OrderDetailsPage = ({
                 STATUS_BADGE[order.status] ?? 'text-gray-500 bg-surface-container'
               }`}
             >
-              {order.status}
+              {statusLabels[order.status] ?? order.status}
             </span>
           </div>
 
           <div className="flex flex-wrap items-start gap-8">
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
-                Order Date
+                {t('orderDate')}
               </p>
               <p className="text-sm text-gray-900">
-                {new Date(order.createdAt).toLocaleDateString('en-US', {
+                {new Date(order.createdAt).toLocaleDateString(locale, {
                   month: 'long',
                   day: 'numeric',
                   year: 'numeric',
@@ -269,7 +292,7 @@ const OrderDetailsPage = ({
             {order.trackingNumber && (
               <div>
                 <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
-                  Tracking Number
+                  {t('trackingNumber')}
                 </p>
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-mono text-gray-900">
@@ -278,7 +301,7 @@ const OrderDetailsPage = ({
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(order.trackingNumber!);
-                      toast.success('Copied!');
+                      toast.success(t('copiedToClipboard'));
                     }}
                   >
                     <Copy
@@ -292,7 +315,7 @@ const OrderDetailsPage = ({
 
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">
-                Payment Status
+                {t('paymentStatus')}
               </p>
               <p
                 className={`text-sm font-semibold ${
@@ -303,7 +326,7 @@ const OrderDetailsPage = ({
                     : 'text-feedback-warning'
                 }`}
               >
-                {order.paymentStatus}
+                {paymentLabels[order.paymentStatus] ?? order.paymentStatus}
               </p>
             </div>
           </div>
@@ -331,7 +354,7 @@ const OrderDetailsPage = ({
                        transition-colors"
           >
             <Download size={15} />
-            Download Invoice
+            {t('downloadInvoice')}
           </button>
 
           <button
@@ -339,8 +362,8 @@ const OrderDetailsPage = ({
             disabled={!order.trackingNumber}
             title={
               !order.trackingNumber
-                ? 'Add a tracking number first'
-                : `Track ${order.trackingNumber} on 17track`
+                ? t('addTrackingFirst')
+                : t('trackOn17track', { number: order.trackingNumber })
             }
             className="flex items-center gap-2 px-5 py-2.5 rounded-lg
                        bg-brand-primary-600 text-white text-sm font-semibold
@@ -348,7 +371,7 @@ const OrderDetailsPage = ({
                        disabled:cursor-not-allowed transition-colors"
           >
             <Truck size={15} />
-            Track Package
+            {t('trackPackage')}
             {order.trackingNumber && <ExternalLink size={12} />}
           </button>
         </div>
@@ -366,23 +389,24 @@ const OrderDetailsPage = ({
                   <X size={18} className="text-red-500" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-red-600">Order Cancelled</p>
+                  <p className="text-sm font-semibold text-red-600">{t('orderCancelled')}</p>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    This order was cancelled on{' '}
-                    {new Date(order.updatedAt).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
+                    {t('cancelledOn', {
+                      date: new Date(order.updatedAt).toLocaleDateString(locale, {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      }),
                     })}
                   </p>
                 </div>
               </div>
             ) : (
               <div className="flex items-start w-full">
-                {DELIVERY_STEPS.map((step, index) => {
+                {deliverySteps.map((step, index) => {
                   const state = getStepState(step.key);
                   const { Icon } = step;
-                  const isLast = index === DELIVERY_STEPS.length - 1;
+                  const isLast = index === deliverySteps.length - 1;
 
                   return (
                     <div
@@ -441,7 +465,7 @@ const OrderDetailsPage = ({
           <div className="bg-surface-container-lowest rounded-lg shadow-ambient overflow-hidden">
             <div className="px-6 pt-6 pb-3">
               <h3 className="font-display text-lg font-semibold text-gray-900">
-                Ordered Items ({order.items.length})
+                {t('orderedItems', { count: order.items.length })}
               </h3>
             </div>
 
@@ -449,13 +473,13 @@ const OrderDetailsPage = ({
               <thead>
                 <tr className="bg-surface-container-low">
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                    Product Details
+                    {t('colProductDetails')}
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                    Qty
+                    {t('colQty')}
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                    Your Share
+                    {t('colYourShare')}
                   </th>
                 </tr>
               </thead>
@@ -486,7 +510,7 @@ const OrderDetailsPage = ({
                           </p>
                           {item.sku && (
                             <p className="text-xs text-gray-500 mt-0.5">
-                              SKU: {item.sku}
+                              {t('skuLabel', { sku: item.sku })}
                             </p>
                           )}
                         </div>
@@ -516,7 +540,7 @@ const OrderDetailsPage = ({
           <div className="bg-surface-container-lowest rounded-lg shadow-ambient overflow-hidden">
             <div className="px-6 pt-5 pb-4 flex items-center justify-between border-b border-surface-container-low">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
-                Fulfillment
+                {t('fulfillment')}
               </p>
               <div
                 className={`w-2 h-2 rounded-full ${
@@ -531,13 +555,15 @@ const OrderDetailsPage = ({
                 <div className="flex items-center gap-2.5 mb-3">
                   <Clock size={16} className="text-amber-500 shrink-0" />
                   <p className="text-sm font-semibold text-gray-900">
-                    Awaiting Payment
+                    {t('awaitingPayment')}
                   </p>
                 </div>
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  The customer hasn&apos;t completed payment yet. The order will move
-                  to <span className="font-medium text-gray-700">Paid</span> automatically
-                  once payment is confirmed.
+                  {t.rich('awaitingPaymentDesc', {
+                    paid: (chunks) => (
+                      <span className="font-medium text-gray-900">{chunks}</span>
+                    ),
+                  })}
                 </p>
               </div>
             )}
@@ -548,11 +574,11 @@ const OrderDetailsPage = ({
                 <div className="flex items-center gap-2.5">
                   <div className="w-2 h-2 rounded-full bg-brand-primary-600 animate-pulse" />
                   <p className="text-sm font-semibold text-gray-900">
-                    Ready to Ship
+                    {t('readyToShip')}
                   </p>
                 </div>
                 <p className="text-xs text-gray-500">
-                  Pack and ship the item, then update the status below.
+                  {t('readyToShipDesc')}
                 </p>
 
                 <select
@@ -561,6 +587,7 @@ const OrderDetailsPage = ({
                   className="w-full bg-surface-container text-gray-900 text-sm
                              px-4 py-2.5 rounded-lg outline-none cursor-pointer"
                 >
+                  <option value="">{t('selectCarrier')}</option>
                   {CARRIERS.map((c) => (
                     <option key={c.value} value={c.value}>
                       {c.label}
@@ -570,7 +597,7 @@ const OrderDetailsPage = ({
 
                 <input
                   type="text"
-                  placeholder="Tracking number (optional)"
+                  placeholder={t('trackingNumberPlaceholder')}
                   value={trackingInput}
                   onChange={(e) => setTrackingInput(e.target.value)}
                   className="w-full px-4 py-2.5 bg-surface-container text-gray-900
@@ -587,7 +614,7 @@ const OrderDetailsPage = ({
                              disabled:cursor-not-allowed transition-colors"
                 >
                   <Truck size={15} />
-                  Mark as Shipped
+                  {t('markAsShipped')}
                 </button>
               </div>
             )}
@@ -598,13 +625,13 @@ const OrderDetailsPage = ({
                 <div className="flex items-center gap-2.5">
                   <Truck size={16} className="text-blue-500 shrink-0" />
                   <p className="text-sm font-semibold text-gray-900">
-                    Package in Transit
+                    {t('packageInTransit')}
                   </p>
                 </div>
 
                 {order.trackingNumber && (
                   <div className="flex items-center justify-between bg-surface-container rounded-lg px-4 py-2.5">
-                    <span className="text-xs font-mono text-gray-700">
+                    <span className="text-xs font-mono text-gray-900">
                       {order.trackingNumber}
                     </span>
                     <button onClick={handleTrackPackage}>
@@ -616,10 +643,14 @@ const OrderDetailsPage = ({
                   </div>
                 )}
 
-                <div className="flex items-start gap-2.5 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
-                  <Clock size={14} className="text-blue-500 mt-0.5 shrink-0" />
-                  <p className="text-xs text-blue-700 leading-relaxed">
-                    Waiting for the customer to confirm receipt. The order will be marked as <span className="font-semibold">Delivered</span> once they confirm.
+                <div className="flex items-start gap-2.5 bg-blue-500/10 border border-blue-500/20 rounded-lg px-4 py-3">
+                  <Clock size={14} className="text-blue-400 mt-0.5 shrink-0" />
+                  <p className="text-xs text-blue-400 leading-relaxed">
+                    {t.rich('waitingForConfirmation', {
+                      delivered: (chunks) => (
+                        <span className="font-semibold text-blue-300">{chunks}</span>
+                      ),
+                    })}
                   </p>
                 </div>
               </div>
@@ -631,17 +662,17 @@ const OrderDetailsPage = ({
                 <div className="flex items-center gap-2.5">
                   <CheckCircle size={16} className="text-emerald-500 shrink-0" />
                   <p className="text-sm font-semibold text-emerald-600">
-                    Order Fulfilled
+                    {t('orderFulfilled')}
                   </p>
                 </div>
                 <p className="text-xs text-gray-500 mt-2 leading-relaxed">
-                  Delivered on{' '}
-                  {new Date(order.updatedAt).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
+                  {t('deliveredOn', {
+                    date: new Date(order.updatedAt).toLocaleDateString(locale, {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    }),
                   })}
-                  . Payout will be processed shortly.
                 </p>
               </div>
             )}
@@ -652,7 +683,7 @@ const OrderDetailsPage = ({
                 <div className="flex items-center gap-2.5">
                   <X size={16} className="text-red-500 shrink-0" />
                   <p className="text-sm font-semibold text-red-600">
-                    Order Cancelled
+                    {t('orderCancelled')}
                   </p>
                 </div>
               </div>
@@ -667,7 +698,7 @@ const OrderDetailsPage = ({
                              text-xs font-semibold text-red-500
                              hover:bg-red-500/5 transition-colors"
                 >
-                  <span>Cancel Order</span>
+                  <span>{t('cancelOrder')}</span>
                   <ChevronDown
                     size={14}
                     className={`transition-transform duration-200 ${
@@ -684,8 +715,8 @@ const OrderDetailsPage = ({
                       className="w-full bg-surface-container text-gray-900 text-sm
                                  px-4 py-2.5 rounded-lg outline-none cursor-pointer"
                     >
-                      <option value="">Select a reason…</option>
-                      {CANCEL_REASONS.map((r) => (
+                      <option value="">{t('selectReason')}</option>
+                      {cancelReasons.map((r) => (
                         <option key={r} value={r}>
                           {r}
                         </option>
@@ -700,7 +731,7 @@ const OrderDetailsPage = ({
                                  disabled:opacity-40 disabled:cursor-not-allowed
                                  transition-colors"
                     >
-                      Confirm Cancellation
+                      {t('confirmCancellation')}
                     </button>
                   </div>
                 )}
@@ -712,7 +743,7 @@ const OrderDetailsPage = ({
           <div className="bg-surface-container-lowest rounded-lg p-6 shadow-ambient">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
-                Your Earnings
+                {t('yourEarnings')}
               </p>
               <div className="bg-brand-primary-600/10 p-1.5 rounded-md">
                 <DollarSign size={14} className="text-brand-primary-600" />
@@ -723,24 +754,24 @@ const OrderDetailsPage = ({
               ${(totalEarnings / 100).toFixed(2)}
             </p>
             <p className="text-xs text-gray-500 mb-5">
-              Net payout after platform fees
+              {t('netPayoutAfterFees')}
             </p>
 
             <div className="space-y-2.5 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-500">Subtotal</span>
+                <span className="text-gray-500">{t('subtotal')}</span>
                 <span className="text-gray-900">
                   ${(order.subtotalAmount / 100).toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Platform Fee (10%)</span>
+                <span className="text-gray-500">{t('platformFee')}</span>
                 <span className="text-feedback-error">
                   -${(order.platformFee / 100).toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between font-semibold pt-2.5 border-t border-surface-container-low">
-                <span className="text-gray-900">Net Payout</span>
+                <span className="text-gray-900">{t('netPayout')}</span>
                 <span className="text-gray-900">
                   ${(totalEarnings / 100).toFixed(2)}
                 </span>
@@ -754,7 +785,7 @@ const OrderDetailsPage = ({
               <div className="flex items-center gap-2">
                 <MapPin size={13} className="text-brand-primary-600" />
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
-                  Shipping Address
+                  {t('shippingAddress')}
                 </p>
               </div>
               <button
@@ -764,7 +795,7 @@ const OrderDetailsPage = ({
                            transition-colors"
               >
                 <ExternalLink size={11} />
-                Open in Maps
+                {t('openInMaps')}
               </button>
             </div>
 
@@ -787,7 +818,6 @@ const OrderDetailsPage = ({
               </p>
             )}
 
-            {/* Map link tile — replaces SVG placeholder */}
             <button
               onClick={handleOpenMaps}
               className="mt-4 w-full h-20 bg-surface-container rounded-lg
@@ -802,7 +832,7 @@ const OrderDetailsPage = ({
                 className="text-xs font-medium text-gray-400
                            group-hover:text-brand-primary-600 transition-colors"
               >
-                View on Google Maps
+                {t('viewOnGoogleMaps')}
               </span>
               <ExternalLink
                 size={11}
@@ -815,39 +845,39 @@ const OrderDetailsPage = ({
           <div className="bg-surface-container-lowest rounded-lg shadow-ambient overflow-hidden">
             <div className="p-6">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4">
-                Order Summary
+                {t('orderSummary')}
               </p>
 
               <div className="space-y-2.5 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Items Subtotal</span>
+                  <span className="text-gray-500">{t('itemsSubtotal')}</span>
                   <span className="text-gray-900">
                     ${(order.subtotalAmount / 100).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Shipping &amp; Handling</span>
+                  <span className="text-gray-500">{t('shippingHandling')}</span>
                   <span className="text-gray-900">
                     ${(order.shippingCost / 100).toFixed(2)}
                   </span>
                 </div>
                 {order.discountAmount > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">Discount</span>
+                    <span className="text-gray-500">{t('discount')}</span>
                     <span className="text-feedback-success">
                       -${(order.discountAmount / 100).toFixed(2)}
                     </span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Tax</span>
+                  <span className="text-gray-500">{t('tax')}</span>
                   <span className="text-gray-900">$0.00</span>
                 </div>
               </div>
 
               <div className="mt-4 pt-4 border-t border-surface-container-low flex items-baseline justify-between">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest">
-                  Total Order
+                  {t('totalOrder')}
                 </p>
                 <p className="font-display text-2xl font-bold text-brand-primary-600">
                   ${(order.finalAmount / 100).toFixed(2)}
@@ -863,7 +893,7 @@ const OrderDetailsPage = ({
                            hover:bg-surface-container-low/50 transition-colors"
               >
                 <span className="text-xs font-semibold text-gray-900 uppercase tracking-widest">
-                  Review Transaction
+                  {t('reviewTransaction')}
                 </span>
                 <ChevronDown
                   size={14}
@@ -878,17 +908,17 @@ const OrderDetailsPage = ({
                   {/* Status timeline */}
                   <div>
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
-                      Status Timeline
+                      {t('statusTimeline')}
                     </p>
                     <div className="space-y-3.5">
                       <div className="flex items-start gap-3">
                         <div className="mt-1.5 w-2 h-2 rounded-full bg-brand-primary-600 shrink-0" />
                         <div>
                           <p className="text-xs font-semibold text-gray-900">
-                            Order Placed
+                            {t('timelineOrderPlaced')}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {new Date(order.createdAt).toLocaleString('en-US', {
+                            {new Date(order.createdAt).toLocaleString(locale, {
                               month: 'short',
                               day: 'numeric',
                               year: 'numeric',
@@ -904,10 +934,10 @@ const OrderDetailsPage = ({
                           <div className="mt-1.5 w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                           <div>
                             <p className="text-xs font-semibold text-gray-900">
-                              Payment Received
+                              {t('timelinePaymentReceived')}
                             </p>
                             <p className="text-xs text-gray-500">
-                              {order.paymentStatus}
+                              {paymentLabels[order.paymentStatus] ?? order.paymentStatus}
                             </p>
                           </div>
                         </div>
@@ -919,12 +949,12 @@ const OrderDetailsPage = ({
                           <div className="mt-1.5 w-2 h-2 rounded-full bg-blue-500 shrink-0" />
                           <div>
                             <p className="text-xs font-semibold text-gray-900">
-                              Shipped
+                              {t('timelineShipped')}
                             </p>
                             <p className="text-xs text-gray-500">
                               {order.trackingNumber
-                                ? `Tracking: ${order.trackingNumber}`
-                                : 'No tracking number'}
+                                ? t('timelineTracking', { number: order.trackingNumber })
+                                : t('timelineNoTracking')}
                             </p>
                           </div>
                         </div>
@@ -935,19 +965,16 @@ const OrderDetailsPage = ({
                           <div className="mt-1.5 w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                           <div>
                             <p className="text-xs font-semibold text-gray-900">
-                              Delivered
+                              {t('timelineDelivered')}
                             </p>
                             <p className="text-xs text-gray-500">
-                              {new Date(order.updatedAt).toLocaleString(
-                                'en-US',
-                                {
-                                  month: 'short',
-                                  day: 'numeric',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                }
-                              )}
+                              {new Date(order.updatedAt).toLocaleString(locale, {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
                             </p>
                           </div>
                         </div>
@@ -958,19 +985,16 @@ const OrderDetailsPage = ({
                           <div className="mt-1.5 w-2 h-2 rounded-full bg-red-500 shrink-0" />
                           <div>
                             <p className="text-xs font-semibold text-red-600">
-                              Cancelled
+                              {t('timelineCancelled')}
                             </p>
                             <p className="text-xs text-gray-500">
-                              {new Date(order.updatedAt).toLocaleString(
-                                'en-US',
-                                {
-                                  month: 'short',
-                                  day: 'numeric',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                }
-                              )}
+                              {new Date(order.updatedAt).toLocaleString(locale, {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
                             </p>
                           </div>
                         </div>
@@ -981,14 +1005,14 @@ const OrderDetailsPage = ({
                   {/* Fee breakdown */}
                   <div className="pt-4 border-t border-surface-container-low space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-xs text-gray-500">Gross Sale</span>
+                      <span className="text-xs text-gray-500">{t('grossSale')}</span>
                       <span className="text-xs text-gray-900">
                         ${(order.subtotalAmount / 100).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-xs text-gray-500">
-                        Platform Fee (10%)
+                        {t('platformFee')}
                       </span>
                       <span className="text-xs text-feedback-error">
                         -${(order.platformFee / 100).toFixed(2)}
@@ -996,7 +1020,7 @@ const OrderDetailsPage = ({
                     </div>
                     <div className="flex justify-between pt-2 border-t border-surface-container-low">
                       <span className="text-xs font-semibold text-gray-900">
-                        Net Payout
+                        {t('netPayout')}
                       </span>
                       <span className="text-xs font-semibold text-emerald-600">
                         ${(totalEarnings / 100).toFixed(2)}
@@ -1012,7 +1036,7 @@ const OrderDetailsPage = ({
                                  hover:text-brand-primary-600 transition-colors"
                     >
                       <AlertCircle size={12} />
-                      Report an issue with this transaction
+                      {t('reportIssue')}
                     </a>
                   )}
                 </div>

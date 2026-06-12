@@ -7,6 +7,7 @@ import {
   flexRender,
   type ColumnDef,
 } from '@tanstack/react-table';
+import { useTranslations } from 'next-intl';
 import {
   useSellers,
   useUpdateSellerVerification,
@@ -33,6 +34,7 @@ const VerificationModal = ({
   currentStatus: boolean;
   isPending: boolean;
 }) => {
+  const t = useTranslations('Sellers');
   const [note, setNote] = useState('');
 
   if (!isOpen) return null;
@@ -43,16 +45,20 @@ const VerificationModal = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full">
         <h3 className="text-white text-xl font-semibold mb-4">
-          {newStatus ? 'Verify' : 'Unverify'} Seller
+          {newStatus ? t('modalTitleVerify') : t('modalTitleUnverify')}
         </h3>
         <p className="text-slate-300 mb-4">
-          Are you sure you want to {newStatus ? 'verify' : 'unverify'}{' '}
-          <span className="font-semibold text-white">{sellerName}</span>?
+          {t.rich(newStatus ? 'modalConfirmVerify' : 'modalConfirmUnverify', {
+            name: sellerName,
+            bold: (chunks) => (
+              <span className="font-semibold text-white">{chunks}</span>
+            ),
+          })}
         </p>
 
         <div className="mb-4">
           <label className="text-slate-300 text-sm block mb-2">
-            Note (optional)
+            {t('modalNoteLabel')}
           </label>
           <textarea
             value={note}
@@ -61,8 +67,8 @@ const VerificationModal = ({
             rows={3}
             placeholder={
               newStatus
-                ? 'Add verification approval note...'
-                : 'Add reason for unverifying...'
+                ? t('modalNotePlaceholderVerify')
+                : t('modalNotePlaceholderUnverify')
             }
           />
         </div>
@@ -81,17 +87,17 @@ const VerificationModal = ({
             } text-white rounded p-3 font-medium disabled:opacity-50`}
           >
             {isPending
-              ? 'Processing...'
+              ? t('modalProcessing')
               : newStatus
-              ? 'Verify Seller'
-              : 'Unverify Seller'}
+              ? t('modalBtnVerify')
+              : t('modalBtnUnverify')}
           </button>
           <button
             onClick={onClose}
             disabled={isPending}
             className="flex-1 bg-slate-700 hover:bg-slate-600 text-white rounded p-3 font-medium disabled:opacity-50"
           >
-            Cancel
+            {t('modalCancel')}
           </button>
         </div>
       </div>
@@ -126,6 +132,7 @@ const SellerAvatar = ({ name, image }: { name: string; image?: string }) => {
 };
 
 const SellersPage = () => {
+  const t = useTranslations('Sellers');
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [search, setSearch] = useState('');
@@ -136,28 +143,22 @@ const SellersPage = () => {
   const [selectedSeller, setSelectedSeller] =
     useState<SellerWithShopResponse | null>(null);
 
-  // Build API params
   const apiParams = useMemo(() => {
     const params: {
       page: number;
       limit: number;
       search?: string;
       isVerified?: boolean;
-    } = {
-      page,
-      limit,
-    };
+    } = { page, limit };
     if (search) params.search = search;
     if (verificationFilter === 'verified') params.isVerified = true;
     if (verificationFilter === 'unverified') params.isVerified = false;
     return params;
   }, [page, limit, search, verificationFilter]);
 
-  // API hooks
   const { data, isLoading, error } = useSellers(apiParams);
   const updateVerificationMutation = useUpdateSellerVerification();
 
-  // Handle verification toggle
   const openVerificationModal = (seller: SellerWithShopResponse) => {
     setSelectedSeller(seller);
     setModalOpen(true);
@@ -165,7 +166,6 @@ const SellersPage = () => {
 
   const confirmVerification = (note?: string) => {
     if (!selectedSeller) return;
-
     updateVerificationMutation.mutate(
       {
         sellerId: selectedSeller.id,
@@ -180,7 +180,6 @@ const SellersPage = () => {
     );
   };
 
-  // CSV Export
   const handleExport = () => {
     if (!data?.data?.length) return;
     exportToCSV(
@@ -190,10 +189,9 @@ const SellersPage = () => {
     );
   };
 
-  // Table columns
   const columns: ColumnDef<SellerWithShopResponse>[] = [
     {
-      header: 'Seller',
+      header: t('colSeller'),
       accessorKey: 'name',
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
@@ -206,32 +204,32 @@ const SellersPage = () => {
       ),
     },
     {
-      header: 'Shop',
+      header: t('colShop'),
       accessorKey: 'shop',
       cell: ({ row }) => {
         const shop = row.original.shop;
         if (!shop) {
-          return <span className="text-slate-500 italic">No shop</span>;
+          return <span className="text-slate-500 italic">{t('noShop')}</span>;
         }
         return (
           <div>
             <div className="text-white font-medium">{shop.businessName}</div>
             <div className="text-slate-400 text-xs">
-              {shop.category || 'No category'}
+              {shop.category || t('noCategory')}
             </div>
           </div>
         );
       },
     },
     {
-      header: 'Country',
+      header: t('colCountry'),
       accessorKey: 'country',
       cell: ({ getValue }) => (
         <span className="text-slate-300">{(getValue() as string) || '-'}</span>
       ),
     },
     {
-      header: 'Verification',
+      header: t('colVerification'),
       accessorKey: 'isVerified',
       cell: ({ row }) => {
         const isVerified = row.original.isVerified;
@@ -243,13 +241,13 @@ const SellersPage = () => {
                 : 'bg-yellow-600/20 text-yellow-400 border border-yellow-600/30'
             }`}
           >
-            {isVerified ? 'Verified' : 'Pending'}
+            {isVerified ? t('badgeVerified') : t('badgePending')}
           </span>
         );
       },
     },
     {
-      header: 'Shop Status',
+      header: t('colShopStatus'),
       cell: ({ row }) => {
         const shop = row.original.shop;
         if (!shop) return <span className="text-slate-500">-</span>;
@@ -261,19 +259,19 @@ const SellersPage = () => {
                 : 'bg-slate-600/20 text-slate-400 border border-slate-600/30'
             }`}
           >
-            {shop.isActive ? 'Active' : 'Inactive'}
+            {shop.isActive ? t('badgeActive') : t('badgeInactive')}
           </span>
         );
       },
     },
     {
-      header: 'Joined',
+      header: t('colJoined'),
       accessorKey: 'createdAt',
       cell: ({ getValue }) =>
         new Date(getValue() as string).toLocaleDateString(),
     },
     {
-      header: 'Actions',
+      header: t('colActions'),
       cell: ({ row }) => {
         const seller = row.original;
         return (
@@ -286,7 +284,7 @@ const SellersPage = () => {
                 : 'bg-green-600 hover:bg-green-700 text-white'
             }`}
           >
-            {seller.isVerified ? 'Unverify' : 'Verify'}
+            {seller.isVerified ? t('actionUnverify') : t('actionVerify')}
           </button>
         );
       },
@@ -299,7 +297,6 @@ const SellersPage = () => {
     getCoreRowModel: getCoreRowModel(),
   });
 
-  // Stats from data
   const stats = useMemo(() => {
     const sellers = data?.data || [];
     return {
@@ -315,11 +312,9 @@ const SellersPage = () => {
       <div className="mb-6 flex justify-between items-start">
         <div>
           <h1 className="text-white text-3xl font-semibold">
-            Seller Management
+            {t('pageTitle')}
           </h1>
-          <p className="text-slate-400 mt-1">
-            Manage sellers, verify accounts, and view shop information
-          </p>
+          <p className="text-slate-400 mt-1">{t('pageSubtitle')}</p>
         </div>
         <button
           onClick={handleExport}
@@ -339,32 +334,32 @@ const SellersPage = () => {
               d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
             />
           </svg>
-          Export CSV
+          {t('exportCsv')}
         </button>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-          <div className="text-slate-400 text-sm">Total Sellers</div>
+          <div className="text-slate-400 text-sm">{t('statTotalSellers')}</div>
           <div className="text-white text-2xl font-semibold mt-1">
             {stats.total}
           </div>
         </div>
         <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-          <div className="text-slate-400 text-sm">Verified</div>
+          <div className="text-slate-400 text-sm">{t('statVerified')}</div>
           <div className="text-green-400 text-2xl font-semibold mt-1">
             {stats.verified}
           </div>
         </div>
         <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-          <div className="text-slate-400 text-sm">Pending Verification</div>
+          <div className="text-slate-400 text-sm">{t('statPendingVerification')}</div>
           <div className="text-yellow-400 text-2xl font-semibold mt-1">
             {stats.pending}
           </div>
         </div>
         <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
-          <div className="text-slate-400 text-sm">With Active Shop</div>
+          <div className="text-slate-400 text-sm">{t('statWithActiveShop')}</div>
           <div className="text-blue-400 text-2xl font-semibold mt-1">
             {stats.withShop}
           </div>
@@ -376,7 +371,7 @@ const SellersPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <input
             type="text"
-            placeholder="Search by name or email..."
+            placeholder={t('searchPlaceholder')}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -395,9 +390,9 @@ const SellersPage = () => {
             }}
             className="bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
           >
-            <option value="all">All Statuses</option>
-            <option value="verified">Verified Only</option>
-            <option value="unverified">Pending Verification</option>
+            <option value="all">{t('filterAllStatuses')}</option>
+            <option value="verified">{t('filterVerifiedOnly')}</option>
+            <option value="unverified">{t('filterPendingVerification')}</option>
           </select>
 
           <button
@@ -408,7 +403,7 @@ const SellersPage = () => {
             }}
             className="bg-slate-700 hover:bg-slate-600 text-white rounded p-3 transition-colors"
           >
-            Clear Filters
+            {t('clearFilters')}
           </button>
         </div>
       </div>
@@ -417,15 +412,15 @@ const SellersPage = () => {
       {isLoading ? (
         <div className="bg-slate-800 rounded-lg p-8 text-center border border-slate-700">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4" />
-          <p className="text-slate-400">Loading sellers...</p>
+          <p className="text-slate-400">{t('loading')}</p>
         </div>
       ) : error ? (
         <div className="bg-slate-800 rounded-lg p-8 text-center border border-red-700">
-          <p className="text-red-400">Error loading sellers: {error.message}</p>
+          <p className="text-red-400">{t('errorLoading', { message: error.message })}</p>
         </div>
       ) : !data?.data?.length ? (
         <div className="bg-slate-800 rounded-lg p-8 text-center border border-slate-700">
-          <p className="text-slate-400">No sellers found</p>
+          <p className="text-slate-400">{t('noSellers')}</p>
         </div>
       ) : (
         <>
@@ -469,7 +464,10 @@ const SellersPage = () => {
           {data?.pagination && (
             <div className="flex items-center justify-between mt-6">
               <div className="text-slate-400">
-                Showing {data.data.length} of {data.pagination.total} sellers
+                {t('paginationShowing', {
+                  count: data.data.length,
+                  total: data.pagination.total,
+                })}
               </div>
               <div className="flex gap-2">
                 <button
@@ -477,10 +475,13 @@ const SellersPage = () => {
                   disabled={page === 1}
                   className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded disabled:opacity-50 transition-colors"
                 >
-                  Previous
+                  {t('prevPage')}
                 </button>
                 <span className="text-white px-4 py-2">
-                  Page {page} of {data.pagination.totalPages}
+                  {t('paginationPage', {
+                    page,
+                    totalPages: data.pagination.totalPages,
+                  })}
                 </span>
                 <button
                   onClick={() =>
@@ -489,7 +490,7 @@ const SellersPage = () => {
                   disabled={page === data.pagination.totalPages}
                   className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded disabled:opacity-50 transition-colors"
                 >
-                  Next
+                  {t('nextPage')}
                 </button>
               </div>
             </div>

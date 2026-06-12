@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import {
   UserCircle,
@@ -34,19 +35,6 @@ import type {
 // eslint-disable-next-line @nx/enforce-module-boundaries
 import { useRouter } from 'apps/seller-ui/src/i18n/navigation';
 
-// Tab definitions
-
-const TABS = [
-  { id: 'account', label: 'Account Info', icon: UserCircle },
-  { id: 'security', label: 'Password & Security', icon: Lock },
-  { id: 'visibility', label: 'Shop Visibility', icon: Eye },
-  { id: 'social', label: 'Social Links', icon: Share2 },
-  { id: 'policies', label: 'Shop Policies', icon: FileText },
-  { id: 'notifications', label: 'Notifications', icon: BellRing },
-] as const;
-
-type TabId = (typeof TABS)[number]['id'];
-
 const SOCIAL_PLATFORMS = [
   'Instagram',
   'Facebook',
@@ -57,19 +45,27 @@ const SOCIAL_PLATFORMS = [
   'Pinterest',
 ];
 
-// Main Settings Page
+type TabId = 'account' | 'security' | 'visibility' | 'social' | 'policies' | 'notifications';
 
 export default function SettingsPage() {
+  const t = useTranslations('Settings');
   const [activeTab, setActiveTab] = useState<TabId>('account');
+
+  const TABS = [
+    { id: 'account' as const, label: t('tabAccount'), icon: UserCircle },
+    { id: 'security' as const, label: t('tabSecurity'), icon: Lock },
+    { id: 'visibility' as const, label: t('tabVisibility'), icon: Eye },
+    { id: 'social' as const, label: t('tabSocial'), icon: Share2 },
+    { id: 'policies' as const, label: t('tabPolicies'), icon: FileText },
+    { id: 'notifications' as const, label: t('tabNotifications'), icon: BellRing },
+  ];
 
   return (
     <div className="min-h-screen p-4 md:p-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Settings</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">{t('pageTitle')}</h1>
 
       <div className="flex flex-col md:flex-row gap-6">
-        {/* Tab Navigation */}
         <div className="md:w-56 shrink-0">
-          {/* Mobile: horizontal scrollable */}
           <div className="flex md:hidden gap-2 overflow-x-auto pb-2 scrollbar-none">
             {TABS.map((tab) => {
               const Icon = tab.icon;
@@ -90,7 +86,6 @@ export default function SettingsPage() {
             })}
           </div>
 
-          {/* Desktop: vertical tabs */}
           <nav className="hidden md:flex flex-col gap-1">
             {TABS.map((tab) => {
               const Icon = tab.icon;
@@ -112,7 +107,6 @@ export default function SettingsPage() {
           </nav>
         </div>
 
-        {/* Tab Content */}
         <div className="flex-1 min-w-0">
           <div className="bg-[#ffffff] dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6">
             {activeTab === 'account' && <AccountInfoTab />}
@@ -128,9 +122,8 @@ export default function SettingsPage() {
   );
 }
 
-// Tab 1: Account Info
-
 function AccountInfoTab() {
+  const t = useTranslations('Settings');
   const { seller, isLoading: sellerLoading } = useSeller();
   const queryClient = useQueryClient();
 
@@ -156,10 +149,10 @@ function AccountInfoTab() {
     mutationFn: updateSellerProfile,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seller-profile'] });
-      toast.success('Profile updated successfully');
+      toast.success(t('profileUpdated'));
     },
     onError: (error: Error) => {
-      toast.error('Failed to update profile', { description: error.message });
+      toast.error(t('profileUpdateFailed'), { description: error.message });
     },
   });
 
@@ -179,56 +172,52 @@ function AccountInfoTab() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <TabHeader
-        title="Account Information"
-        description="Update your personal details."
+        title={t('accountTitle')}
+        description={t('accountDesc')}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField
-          label="Full Name"
+          label={t('fieldFullName')}
           value={formData.name}
           onChange={(v) => setFormData((p) => ({ ...p, name: v }))}
-          placeholder="Your name"
+          placeholder={t('placeholderName')}
         />
         <FormField
-          label="Email"
+          label={t('fieldEmail')}
           value={formData.email}
           disabled
-          hint="Email cannot be changed."
+          hint={t('fieldEmailHint')}
         />
         <FormField
-          label="Phone Number"
+          label={t('fieldPhone')}
           value={formData.phoneNumber}
           onChange={(v) => setFormData((p) => ({ ...p, phoneNumber: v }))}
-          placeholder="+1 234 567 8900"
+          placeholder={t('placeholderPhone')}
         />
         <FormField
-          label="Country"
+          label={t('fieldCountry')}
           value={formData.country}
           onChange={(v) => setFormData((p) => ({ ...p, country: v }))}
-          placeholder="United States"
+          placeholder={t('placeholderCountry')}
         />
       </div>
 
-      <SaveButton loading={mutation.isPending} />
+      <SaveButton loading={mutation.isPending} label={t('saveChanges')} />
     </form>
   );
 }
 
-// Tab 2: Password & Security
-
-const PASSWORD_RULES = [
-  { label: 'At least 8 characters', test: (p: string) => p.length >= 8 },
-  { label: 'One uppercase letter', test: (p: string) => /[A-Z]/.test(p) },
-  { label: 'One lowercase letter', test: (p: string) => /[a-z]/.test(p) },
-  { label: 'One digit', test: (p: string) => /\d/.test(p) },
-  {
-    label: 'One special character',
-    test: (p: string) => /[!@#$%^&*(),.?":{}|<>]/.test(p),
-  },
-];
+const PASSWORD_RULES_KEYS = [
+  { key: 'passwordRuleLength', test: (p: string) => p.length >= 8 },
+  { key: 'passwordRuleUppercase', test: (p: string) => /[A-Z]/.test(p) },
+  { key: 'passwordRuleLowercase', test: (p: string) => /[a-z]/.test(p) },
+  { key: 'passwordRuleDigit', test: (p: string) => /\d/.test(p) },
+  { key: 'passwordRuleSpecial', test: (p: string) => /[!@#$%^&*(),.?":{}|<>]/.test(p) },
+] as const;
 
 function SecurityTab() {
+  const t = useTranslations('Settings');
   const { logout } = useAuth();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -242,7 +231,7 @@ function SecurityTab() {
   const mutation = useMutation({
     mutationFn: changePassword,
     onSuccess: () => {
-      toast.success('Password changed successfully. You will be logged out.');
+      toast.success(t('passwordChanged'));
       setTimeout(async () => {
         await logout();
         queryClient.clear();
@@ -250,14 +239,14 @@ function SecurityTab() {
       }, 2000);
     },
     onError: (error: Error) => {
-      toast.error('Failed to change password', { description: error.message });
+      toast.error(t('passwordChangeFailed'), { description: error.message });
     },
   });
 
   const passwordsMatch =
     formData.newPassword.length > 0 &&
     formData.newPassword === formData.confirmPassword;
-  const allRulesPass = PASSWORD_RULES.every((rule) =>
+  const allRulesPass = PASSWORD_RULES_KEYS.every((rule) =>
     rule.test(formData.newPassword)
   );
   const canSubmit =
@@ -272,48 +261,48 @@ function SecurityTab() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <TabHeader
-        title="Password & Security"
-        description="Change your password. You will be logged out after a successful change."
+        title={t('securityTitle')}
+        description={t('securityDesc')}
       />
 
       <FormField
-        label="Current Password"
+        label={t('fieldCurrentPassword')}
         type="password"
         value={formData.currentPassword}
         onChange={(v) => setFormData((p) => ({ ...p, currentPassword: v }))}
-        placeholder="Enter current password"
+        placeholder={t('placeholderCurrentPassword')}
       />
       <FormField
-        label="New Password"
+        label={t('fieldNewPassword')}
         type="password"
         value={formData.newPassword}
         onChange={(v) => setFormData((p) => ({ ...p, newPassword: v }))}
-        placeholder="Enter new password"
+        placeholder={t('placeholderNewPassword')}
       />
       <FormField
-        label="Confirm New Password"
+        label={t('fieldConfirmPassword')}
         type="password"
         value={formData.confirmPassword}
         onChange={(v) => setFormData((p) => ({ ...p, confirmPassword: v }))}
-        placeholder="Confirm new password"
+        placeholder={t('placeholderConfirmPassword')}
       />
 
       {formData.newPassword.length > 0 && (
         <div className="space-y-2 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
           <p className="text-sm font-medium text-slate-300 mb-2">
-            Password requirements:
+            {t('passwordRequirements')}
           </p>
-          {PASSWORD_RULES.map((rule) => {
+          {PASSWORD_RULES_KEYS.map((rule) => {
             const passes = rule.test(formData.newPassword);
             return (
-              <div key={rule.label} className="flex items-center gap-2 text-sm">
+              <div key={rule.key} className="flex items-center gap-2 text-sm">
                 {passes ? (
                   <Check size={14} className="text-green-400" />
                 ) : (
                   <X size={14} className="text-slate-500" />
                 )}
                 <span className={passes ? 'text-green-400' : 'text-slate-500'}>
-                  {rule.label}
+                  {t(rule.key)}
                 </span>
               </div>
             );
@@ -328,7 +317,7 @@ function SecurityTab() {
               <span
                 className={passwordsMatch ? 'text-green-400' : 'text-red-400'}
               >
-                Passwords match
+                {t('passwordsMatch')}
               </span>
             </div>
           )}
@@ -338,15 +327,14 @@ function SecurityTab() {
       <SaveButton
         loading={mutation.isPending}
         disabled={!canSubmit}
-        label="Change Password"
+        label={t('changePassword')}
       />
     </form>
   );
 }
 
-// Tab 3: Shop Visibility
-
 function VisibilityTab() {
+  const t = useTranslations('Settings');
   const { seller, isLoading: sellerLoading } = useSeller();
   const queryClient = useQueryClient();
 
@@ -364,15 +352,12 @@ function VisibilityTab() {
       queryClient.invalidateQueries({ queryKey: ['seller-profile'] });
       toast.success(
         isActive
-          ? 'Shop is now visible to customers'
-          : 'Shop has been deactivated'
+          ? t('shopVisibilityUpdatedVisible')
+          : t('shopVisibilityUpdatedHidden')
       );
     },
     onError: (error: Error) => {
-      toast.error('Failed to update shop visibility', {
-        description: error.message,
-      });
-      // Revert on error
+      toast.error(t('shopVisibilityFailed'), { description: error.message });
       if (seller?.shop) {
         setIsActive(seller.shop.isActive);
       }
@@ -396,17 +381,15 @@ function VisibilityTab() {
   return (
     <div className="space-y-5">
       <TabHeader
-        title="Shop Visibility"
-        description="Control whether your shop is visible to customers."
+        title={t('visibilityTitle')}
+        description={t('visibilityDesc')}
       />
 
       <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
         <div>
-          <p className="text-gray-900 font-medium">Shop Status</p>
+          <p className="text-gray-900 font-medium">{t('shopStatus')}</p>
           <p className="text-sm text-slate-400 mt-1">
-            {isActive
-              ? 'Your shop is currently visible to customers.'
-              : 'Your shop is hidden from customers.'}
+            {isActive ? t('shopVisible') : t('shopHidden')}
           </p>
         </div>
         <button
@@ -430,11 +413,10 @@ function VisibilityTab() {
           <AlertTriangle size={20} className="text-amber-400 shrink-0 mt-0.5" />
           <div>
             <p className="text-amber-300 font-medium text-sm">
-              Shop Deactivated
+              {t('shopDeactivatedTitle')}
             </p>
             <p className="text-amber-400/80 text-sm mt-1">
-              Your shop and all its products are hidden from customers. Existing
-              orders will still be processed. You can reactivate at any time.
+              {t('shopDeactivatedDesc')}
             </p>
           </div>
         </div>
@@ -443,9 +425,8 @@ function VisibilityTab() {
   );
 }
 
-// Tab 4: Social Media Links
-
 function SocialLinksTab() {
+  const t = useTranslations('Settings');
   const { seller, isLoading: sellerLoading } = useSeller();
   const queryClient = useQueryClient();
 
@@ -466,12 +447,10 @@ function SocialLinksTab() {
     mutationFn: (socialLinks: SocialLink[]) => updateShop({ socialLinks }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seller-profile'] });
-      toast.success('Social links updated');
+      toast.success(t('socialUpdated'));
     },
     onError: (error: Error) => {
-      toast.error('Failed to update social links', {
-        description: error.message,
-      });
+      toast.error(t('socialUpdateFailed'), { description: error.message });
     },
   });
 
@@ -496,7 +475,6 @@ function SocialLinksTab() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Filter out links with empty URLs
     const validLinks = links.filter((l) => l.url.trim().length > 0);
     mutation.mutate(validLinks);
   };
@@ -512,8 +490,8 @@ function SocialLinksTab() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <TabHeader
-        title="Social Media Links"
-        description="Add your social media profiles so customers can follow you."
+        title={t('socialTitle')}
+        description={t('socialDesc')}
       />
 
       <div className="space-y-3">
@@ -558,18 +536,17 @@ function SocialLinksTab() {
           className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors"
         >
           <Plus size={16} />
-          Add Link
+          {t('addLink')}
         </button>
       )}
 
-      <SaveButton loading={mutation.isPending} />
+      <SaveButton loading={mutation.isPending} label={t('saveChanges')} />
     </form>
   );
 }
 
-// Tab 5: Shop Policies
-
 function PoliciesTab() {
+  const t = useTranslations('Settings');
   const { seller, isLoading: sellerLoading } = useSeller();
   const queryClient = useQueryClient();
 
@@ -588,12 +565,10 @@ function PoliciesTab() {
       updateShop(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seller-profile'] });
-      toast.success('Policies updated successfully');
+      toast.success(t('policiesUpdated'));
     },
     onError: (error: Error) => {
-      toast.error('Failed to update policies', {
-        description: error.message,
-      });
+      toast.error(t('policiesUpdateFailed'), { description: error.message });
     },
   });
 
@@ -613,14 +588,14 @@ function PoliciesTab() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <TabHeader
-        title="Shop Policies"
-        description="Define your return and shipping policies for customers."
+        title={t('policiesTitle')}
+        description={t('policiesDesc')}
       />
 
       <div>
         <div className="flex items-center justify-between mb-1.5">
           <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
-            Return Policy
+            {t('returnPolicyLabel')}
           </label>
           <span className="text-xs text-slate-500">
             {returnPolicy.length}/5000
@@ -631,7 +606,7 @@ function PoliciesTab() {
           onChange={(e) => setReturnPolicy(e.target.value)}
           maxLength={5000}
           rows={6}
-          placeholder="Describe your return policy..."
+          placeholder={t('returnPolicyPlaceholder')}
           className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 text-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
         />
       </div>
@@ -639,7 +614,7 @@ function PoliciesTab() {
       <div>
         <div className="flex items-center justify-between mb-1.5">
           <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
-            Shipping Information
+            {t('shippingInfoLabel')}
           </label>
           <span className="text-xs text-slate-500">
             {shippingPolicy.length}/5000
@@ -650,47 +625,37 @@ function PoliciesTab() {
           onChange={(e) => setShippingPolicy(e.target.value)}
           maxLength={5000}
           rows={6}
-          placeholder="Describe your shipping options and timelines..."
+          placeholder={t('shippingInfoPlaceholder')}
           className="w-full bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3 text-sm placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
         />
       </div>
 
-      <SaveButton loading={mutation.isPending} />
+      <SaveButton loading={mutation.isPending} label={t('saveChanges')} />
     </form>
   );
 }
 
-// Tab 6: Notification Preferences
-
-const NOTIFICATION_GROUPS = [
-  {
-    title: 'Orders & Delivery',
-    keys: ['ORDER', 'DELIVERY'] as const,
-  },
-  {
-    title: 'Products & Shop',
-    keys: ['PRODUCT', 'SHOP'] as const,
-  },
-  {
-    title: 'Account & System',
-    keys: ['AUTH', 'SYSTEM', 'INFO', 'SUCCESS', 'WARNING', 'ERROR'] as const,
-  },
+const NOTIFICATION_GROUPS: { titleKey: 'notifGroupOrders' | 'notifGroupProducts' | 'notifGroupAccount'; keys: (keyof NotificationPreferences)[] }[] = [
+  { titleKey: 'notifGroupOrders', keys: ['ORDER', 'DELIVERY'] },
+  { titleKey: 'notifGroupProducts', keys: ['PRODUCT', 'SHOP'] },
+  { titleKey: 'notifGroupAccount', keys: ['AUTH', 'SYSTEM', 'INFO', 'SUCCESS', 'WARNING', 'ERROR'] },
 ];
 
-const NOTIFICATION_LABELS: Record<string, string> = {
-  ORDER: 'Order updates',
-  DELIVERY: 'Delivery notifications',
-  PRODUCT: 'Product alerts',
-  SHOP: 'Shop activity',
-  AUTH: 'Account & security',
-  SYSTEM: 'System messages',
-  INFO: 'General information',
-  SUCCESS: 'Success confirmations',
-  WARNING: 'Warning alerts',
-  ERROR: 'Error notifications',
+const NOTIFICATION_LABEL_KEYS: Record<string, 'notifOrderUpdates' | 'notifDelivery' | 'notifProduct' | 'notifShop' | 'notifAuth' | 'notifSystem' | 'notifInfo' | 'notifSuccess' | 'notifWarning' | 'notifError'> = {
+  ORDER: 'notifOrderUpdates',
+  DELIVERY: 'notifDelivery',
+  PRODUCT: 'notifProduct',
+  SHOP: 'notifShop',
+  AUTH: 'notifAuth',
+  SYSTEM: 'notifSystem',
+  INFO: 'notifInfo',
+  SUCCESS: 'notifSuccess',
+  WARNING: 'notifWarning',
+  ERROR: 'notifError',
 };
 
 function NotificationsTab() {
+  const t = useTranslations('Settings');
   const queryClient = useQueryClient();
 
   const { data: savedPrefs, isLoading } = useQuery({
@@ -703,7 +668,6 @@ function NotificationsTab() {
 
   useEffect(() => {
     if (savedPrefs) {
-      // Default all to true if not set
       const defaults: NotificationPreferences = {
         ORDER: true,
         PRODUCT: true,
@@ -724,12 +688,10 @@ function NotificationsTab() {
     mutationFn: updateNotificationPreferences,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notification-preferences'] });
-      toast.success('Notification preferences saved');
+      toast.success(t('notifSaved'));
     },
     onError: (error: Error) => {
-      toast.error('Failed to save preferences', {
-        description: error.message,
-      });
+      toast.error(t('notifSaveFailed'), { description: error.message });
     },
   });
 
@@ -752,13 +714,13 @@ function NotificationsTab() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <TabHeader
-        title="Notification Preferences"
-        description="Choose which notifications you want to receive."
+        title={t('notificationsTitle')}
+        description={t('notificationsDesc')}
       />
 
       {NOTIFICATION_GROUPS.map((group) => (
-        <div key={group.title} className="space-y-2">
-          <h3 className="text-sm font-medium text-slate-300">{group.title}</h3>
+        <div key={group.titleKey} className="space-y-2">
+          <h3 className="text-sm font-medium text-slate-300">{t(group.titleKey)}</h3>
           <div className="bg-gray-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 divide-y divide-gray-100 dark:divide-slate-700">
             {group.keys.map((key) => (
               <div
@@ -766,20 +728,20 @@ function NotificationsTab() {
                 className="flex items-center justify-between px-4 py-3"
               >
                 <span className="text-sm text-gray-700 dark:text-slate-200">
-                  {NOTIFICATION_LABELS[key]}
+                  {t(NOTIFICATION_LABEL_KEYS[key as string])}
                 </span>
                 <button
                   type="button"
-                  onClick={() => togglePref(key)}
+                  onClick={() => togglePref(key as string)}
                   className={`relative inline-flex h-6 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    prefs[key as keyof NotificationPreferences]
+                    prefs[key]
                       ? 'bg-blue-600'
                       : 'bg-slate-600'
                   }`}
                 >
                   <span
                     className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                      prefs[key as keyof NotificationPreferences]
+                      prefs[key]
                         ? 'translate-x-4'
                         : 'translate-x-0'
                     }`}
@@ -791,12 +753,10 @@ function NotificationsTab() {
         </div>
       ))}
 
-      <SaveButton loading={mutation.isPending} />
+      <SaveButton loading={mutation.isPending} label={t('saveChanges')} />
     </form>
   );
 }
-
-// Shared Components
 
 function TabHeader({
   title,
@@ -853,11 +813,11 @@ function FormField({
 function SaveButton({
   loading = false,
   disabled = false,
-  label = 'Save Changes',
+  label,
 }: {
   loading?: boolean;
   disabled?: boolean;
-  label?: string;
+  label: string;
 }) {
   return (
     <div className="pt-2">
@@ -882,10 +842,11 @@ function TabLoader() {
 }
 
 function NoShopMessage() {
+  const t = useTranslations('Settings');
   return (
     <div className="text-center py-12">
       <p className="text-slate-400">
-        You need to set up your shop first before managing these settings.
+        {t('noShopMessage')}
       </p>
     </div>
   );

@@ -6,6 +6,7 @@ import ShippingAddressSection from '../../../../components/shippingAddress';
 import OrdersSection from '../../../../components/orders';
 import ChangePassword from '../../../../components/changePassword';
 import { useAuth } from '../../../../hooks/use-auth';
+import { useCurrency } from '../../../../hooks/use-currency';
 import { useOrders } from '../../../../hooks/use-orders';
 import useStore from '../../../../store';
 import { updateUserProfile, uploadUserAvatar } from '../../../../lib/api/user';
@@ -29,28 +30,21 @@ import {
   Tag,
   Truck,
   User as UserIcon,
-  X,
 } from 'lucide-react';
 import Image from 'next/image';
-import Cropper from 'react-easy-crop';
-import { useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { useRouter } from '../../../../i18n/navigation';
 import { Link } from '../../../../i18n/navigation';
-import React, {
-  Suspense,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
-//  helpers
+// Lazy-loaded with ssr:false — react-easy-crop → normalize-wheel (CJS) causes
+// Turbopack SSR compilation loops when included in the server module graph
+const CropModal = dynamic(() => import('./crop-modal'), { ssr: false });
+import { useTranslations, useLocale } from 'next-intl';
 
-const STATUS_STEPS: Array<{ key: Order['status']; label: string }> = [
-  { key: 'PAID', label: 'Paid' },
-  { key: 'SHIPPED', label: 'Shipped' },
-  { key: 'DELIVERED', label: 'Delivered' },
-];
+// helpers
+
+type TabKey = 'Profile' | 'My Orders' | 'Shipping Address' | 'Change Password';
 
 function getStatusStep(status: Order['status']): number {
   if (status === 'PAID') return 0;
@@ -68,141 +62,11 @@ function getStatusPill(status: Order['status']): string {
   return 'bg-gray-100 text-gray-600';
 }
 
-interface CroppedArea {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-async function getCroppedBlob(
-  imageSrc: string,
-  croppedArea: CroppedArea
-): Promise<Blob> {
-  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const img = new window.Image();
-    img.addEventListener('load', () => resolve(img));
-    img.addEventListener('error', reject);
-    img.src = imageSrc;
-  });
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Could not get canvas context');
-  canvas.width = croppedArea.width;
-  canvas.height = croppedArea.height;
-  ctx.drawImage(
-    image,
-    croppedArea.x,
-    croppedArea.y,
-    croppedArea.width,
-    croppedArea.height,
-    0,
-    0,
-    croppedArea.width,
-    croppedArea.height
-  );
-  return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (blob) resolve(blob);
-        else reject(new Error('Canvas toBlob failed'));
-      },
-      'image/jpeg',
-      0.9
-    );
-  });
-}
-
-// crop modal
-
-interface CropModalProps {
-  imageSrc: string;
-  onClose: () => void;
-  onConfirm: (blob: Blob) => void;
-}
-
-const CropModal = ({ imageSrc, onClose, onConfirm }: CropModalProps) => {
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] =
-    useState<CroppedArea | null>(null);
-
-  const onCropComplete = useCallback((_: unknown, pixels: CroppedArea) => {
-    setCroppedAreaPixels(pixels);
-  }, []);
-
-  const handleConfirm = async () => {
-    if (!croppedAreaPixels) return;
-    const blob = await getCroppedBlob(imageSrc, croppedAreaPixels);
-    onConfirm(blob);
-  };
-
-  return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/70 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-800">Crop photo</h3>
-          <button
-            onClick={onClose}
-            className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <X size={16} className="text-gray-500" />
-          </button>
-        </div>
-
-        <div
-          className="relative w-full"
-          style={{ height: 300, background: '#111' }}
-        >
-          <Cropper
-            image={imageSrc}
-            crop={crop}
-            zoom={zoom}
-            aspect={1}
-            cropShape="round"
-            showGrid={false}
-            onCropChange={setCrop}
-            onZoomChange={setZoom}
-            onCropComplete={onCropComplete}
-          />
-        </div>
-
-        <div className="px-5 py-3 border-t border-gray-100">
-          <label className="text-xs text-gray-500 mb-1 block">Zoom</label>
-          <input
-            type="range"
-            min={1}
-            max={3}
-            step={0.05}
-            value={zoom}
-            onChange={(e) => setZoom(Number(e.target.value))}
-            className="w-full accent-brand-primary"
-          />
-        </div>
-
-        <div className="flex gap-2 px-5 pb-5">
-          <button
-            onClick={onClose}
-            className="flex-1 py-2 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleConfirm}
-            className="flex-1 py-2 rounded-xl bg-brand-primary text-white text-sm font-semibold hover:bg-brand-primary-800 transition-colors"
-          >
-            Apply
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 // page
 
 const Page = () => {
-  const searchParams = useSearchParams();
+  const t = useTranslations('Profile');
+  const locale = useLocale();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -215,13 +79,19 @@ const Page = () => {
     updateAuthState,
   } = useAuth();
   const { data: orders = [] } = useOrders();
+  const { formatPrice } = useCurrency();
   const wishlist = useStore((state) => state.wishlist);
 
-  const queryTab =
-    searchParams.get('active') || searchParams.get('tab') || 'Profile';
-  const [activeTab, setActiveTab] = useState(queryTab);
+  const [activeTab, setActiveTab] = useState<TabKey>('Profile');
   const [imageError, setImageError] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+
+  // Read initial tab from URL on mount (avoids useSearchParams and its compile loop)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = (params.get('active') || params.get('tab') || 'Profile') as TabKey;
+    if (tab !== 'Profile') setActiveTab(tab);
+  }, []);
 
   // Crop modal state
   const [cropSrc, setCropSrc] = useState<string | null>(null);
@@ -231,11 +101,13 @@ const Page = () => {
     setImageError(false);
   }, [userProfile?.picture, userProfile?.avatar]);
 
+  // Sync active tab to URL
   useEffect(() => {
-    if (activeTab !== queryTab) {
-      const newParams = new URLSearchParams(searchParams);
-      newParams.set('active', activeTab);
-      router.replace(`/profile?${newParams.toString()}`);
+    const params = new URLSearchParams(window.location.search);
+    const currentTab = params.get('active') || params.get('tab') || 'Profile';
+    if (activeTab !== currentTab) {
+      params.set('active', activeTab);
+      window.history.replaceState(null, '', `?${params.toString()}`);
     }
   }, [activeTab]);
 
@@ -245,21 +117,19 @@ const Page = () => {
     router.push('/login');
   };
 
-  // Update profile mutation
   const updateMutation = useMutation({
     mutationFn: updateUserProfile,
     onSuccess: (updated) => {
       setUserProfile(updated);
       queryClient.invalidateQueries({ queryKey: ['user'] });
       setIsEditing(false);
-      toast.success('Profile updated');
+      toast.success(t('profileUpdated'));
     },
     onError: () => {
-      toast.error('Failed to update profile');
+      toast.error(t('failedToUpdateProfile'));
     },
   });
 
-  // Upload avatar mutation
   const uploadMutation = useMutation({
     mutationFn: async (blob: Blob) => {
       const file = new File([blob], 'avatar.jpg', { type: 'image/jpeg' });
@@ -270,10 +140,10 @@ const Page = () => {
       setUserProfile(updated);
       queryClient.invalidateQueries({ queryKey: ['user'] });
       setCropSrc(null);
-      toast.success('Photo updated');
+      toast.success(t('photoUpdated'));
     },
     onError: () => {
-      toast.error('Failed to upload photo');
+      toast.error(t('failedToUploadPhoto'));
     },
   });
 
@@ -320,7 +190,7 @@ const Page = () => {
   const hasAvatar = !isLoading && !!avatarSrc && !imageError;
 
   const memberSince = user?.createdAt
-    ? new Date(user.createdAt).toLocaleDateString('en-US', {
+    ? new Date(user.createdAt).toLocaleDateString(locale, {
         month: 'long',
         year: 'numeric',
       })
@@ -328,7 +198,7 @@ const Page = () => {
 
   const isUploading = uploadMutation.isPending;
 
-  // Spending overview (computed from orders)
+  // Spending overview
   const totalSpent = orders
     .filter((o) => o.status === 'DELIVERED')
     .reduce((sum, o) => sum + o.finalAmount, 0);
@@ -336,6 +206,21 @@ const Page = () => {
   const uniqueVendors = new Set(
     orders.flatMap((o) => o.items.map((item) => item.shopId))
   ).size;
+
+  // Status steps with translations
+  const STATUS_STEPS: Array<{ key: Order['status']; label: string }> = [
+    { key: 'PAID', label: t('statusPaid') },
+    { key: 'SHIPPED', label: t('statusShipped') },
+    { key: 'DELIVERED', label: t('statusDelivered') },
+  ];
+
+  // Tab label map — keeps internal keys as English, only translates display
+  const tabLabels: Record<TabKey, string> = {
+    'Profile': t('tabProfile'),
+    'My Orders': t('tabMyOrders'),
+    'Shipping Address': t('tabShippingAddress'),
+    'Change Password': t('tabChangePassword'),
+  };
 
   return (
     <div className="bg-[#f5f5f5] min-h-screen pb-16">
@@ -358,9 +243,9 @@ const Page = () => {
       )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
-        {/*  Hero card */}
+        {/* Hero card */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-6">
-          {/* Cover strip — TecShop signature gradient */}
+          {/* Cover strip */}
           <div className="h-28 bg-gradient-to-r from-brand-primary to-blue-400 relative">
             <div
               className="absolute inset-0 opacity-10"
@@ -372,14 +257,14 @@ const Page = () => {
           </div>
 
           <div className="px-6 pb-5">
-            {/* Avatar — only this is pulled up to straddle the cover strip */}
+            {/* Avatar */}
             <div className="-mt-10 mb-3">
               <div className="relative inline-block">
                 <button
                   className="group w-20 h-20 rounded-full border-4 border-white shadow-md overflow-hidden bg-gray-100 flex items-center justify-center focus:outline-none"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
-                  title="Change photo"
+                  title={t('changePhoto')}
                 >
                   {isUploading ? (
                     <Loader2 className="animate-spin w-6 h-6 text-brand-primary" />
@@ -404,7 +289,6 @@ const Page = () => {
                     </>
                   ) : (
                     <>
-                      {/* <ProfileIcon className="w-10 h-10 text-gray-400 group-hover:opacity-60 transition-opacity" /> */}
                       <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                         <Camera
                           size={18}
@@ -420,7 +304,7 @@ const Page = () => {
               </div>
             </div>
 
-            {/* Name / email + Edit button - fully in the white area, no overlap */}
+            {/* Name / email + Edit button */}
             <div className="flex items-start justify-between gap-4">
               <div>
                 {isLoading ? (
@@ -435,7 +319,7 @@ const Page = () => {
                     </p>
                     {memberSince && (
                       <p className="text-xs text-gray-400 mt-0.5">
-                        Member since {memberSince}
+                        {t('memberSince', { date: memberSince })}
                       </p>
                     )}
                   </>
@@ -447,7 +331,7 @@ const Page = () => {
                 className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-brand-primary border border-brand-primary rounded-full hover:bg-blue-50 transition-colors"
               >
                 <Camera size={13} />
-                Edit Profile
+                {t('editProfile')}
               </button>
             </div>
 
@@ -456,28 +340,28 @@ const Page = () => {
               {(
                 [
                   {
-                    label: 'Total Orders',
+                    labelKey: 'totalOrders' as const,
                     value: totalOrders,
                     Icon: Clock,
                     color: 'text-blue-500',
                     action: () => setActiveTab('My Orders'),
                   },
                   {
-                    label: 'Processing',
+                    labelKey: 'processing' as const,
                     value: processingOrders,
                     Icon: Truck,
                     color: 'text-amber-500',
                     action: () => setActiveTab('My Orders'),
                   },
                   {
-                    label: 'Completed',
+                    labelKey: 'completed' as const,
                     value: completedOrders,
                     Icon: CheckCircle,
                     color: 'text-green-500',
                     action: () => setActiveTab('My Orders'),
                   },
                   {
-                    label: 'Wishlist',
+                    labelKey: 'wishlist' as const,
                     value: wishlistCount,
                     Icon: Heart,
                     color: 'text-red-400',
@@ -486,12 +370,12 @@ const Page = () => {
                 ] as const
               ).map((stat) => (
                 <button
-                  key={stat.label}
+                  key={stat.labelKey}
                   onClick={stat.action}
                   className="bg-white px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
                 >
                   <div>
-                    <p className="text-xs text-gray-400">{stat.label}</p>
+                    <p className="text-xs text-gray-400">{t(stat.labelKey)}</p>
                     <p className="text-xl font-bold text-gray-900 mt-0.5">
                       {stat.value}
                     </p>
@@ -547,37 +431,37 @@ const Page = () => {
 
               <nav className="p-2 space-y-0.5">
                 <NavItem
-                  label="Profile"
+                  label={t('tabProfile')}
                   Icon={UserIcon}
                   active={activeTab === 'Profile'}
                   onClick={() => setActiveTab('Profile')}
                 />
                 <NavItem
-                  label="My Orders"
+                  label={t('tabMyOrders')}
                   Icon={ShoppingBag}
                   active={activeTab === 'My Orders'}
                   onClick={() => setActiveTab('My Orders')}
                 />
                 <NavItem
-                  label="Inbox"
+                  label={t('tabInbox')}
                   Icon={Inbox}
                   onClick={() => router.push('/inbox')}
                 />
                 <NavItem
-                  label="Shipping Address"
+                  label={t('tabShippingAddress')}
                   Icon={MapPin}
                   active={activeTab === 'Shipping Address'}
                   onClick={() => setActiveTab('Shipping Address')}
                 />
                 <NavItem
-                  label="Change Password"
+                  label={t('tabChangePassword')}
                   Icon={Lock}
                   active={activeTab === 'Change Password'}
                   onClick={() => setActiveTab('Change Password')}
                 />
                 <div className="pt-1 mt-1 border-t border-gray-100">
                   <NavItem
-                    label="Logout"
+                    label={t('logout')}
                     Icon={LogOut}
                     danger
                     onClick={logOutHandler}
@@ -592,14 +476,14 @@ const Page = () => {
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
               <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h2 className="text-base font-semibold text-gray-800">
-                  {activeTab}
+                  {tabLabels[activeTab] ?? activeTab}
                 </h2>
                 {activeTab === 'Profile' && !isEditing && (
                   <button
                     onClick={() => setIsEditing(true)}
                     className="text-xs font-medium text-brand-primary hover:underline"
                   >
-                    Edit
+                    {t('edit')}
                   </button>
                 )}
               </div>
@@ -633,7 +517,7 @@ const Page = () => {
                   <ChangePassword />
                 ) : (
                   <p className="text-gray-500 text-sm">
-                    Content for {activeTab} coming soon...
+                    {tabLabels[activeTab as TabKey] ?? activeTab}
                   </p>
                 )}
               </div>
@@ -646,14 +530,14 @@ const Page = () => {
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-gray-800">
-                    Recent Order
+                    {t('recentOrder')}
                   </h3>
                   <Link
                     href="/profile?active=My Orders"
                     className="text-xs text-brand-primary hover:underline flex items-center gap-0.5"
                     onClick={() => setActiveTab('My Orders')}
                   >
-                    View all <ChevronRight size={12} />
+                    {t('viewAll')} <ChevronRight size={12} />
                   </Link>
                 </div>
 
@@ -719,21 +603,21 @@ const Page = () => {
 
                 <p className="text-xs text-gray-400 mt-3">
                   {new Date(recentActiveOrder.createdAt).toLocaleDateString(
-                    'en-US',
+                    locale,
                     {
                       month: 'short',
                       day: 'numeric',
                       year: 'numeric',
                     }
                   )}
-                  {' · '}${recentActiveOrder.finalAmount.toFixed(2)}
+                  {' · '}{formatPrice(recentActiveOrder.finalAmount)}
                 </p>
               </div>
             )}
 
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
               <h3 className="text-sm font-semibold text-gray-800 mb-3">
-                Spending Overview
+                {t('spendingOverview')}
               </h3>
               <div className="space-y-3">
                 <div className="flex items-center gap-3 p-3 bg-brand-primary/5 rounded-xl">
@@ -741,9 +625,9 @@ const Page = () => {
                     <ShoppingBag size={15} className="text-brand-primary" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[11px] text-gray-500">Lifetime Spent</p>
+                    <p className="text-[11px] text-gray-500">{t('lifetimeSpent')}</p>
                     <p className="text-sm font-bold text-gray-900">
-                      ${totalSpent.toFixed(2)}
+                      {formatPrice(totalSpent)}
                     </p>
                   </div>
                 </div>
@@ -753,9 +637,9 @@ const Page = () => {
                     <Tag size={15} className="text-green-600" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[11px] text-gray-500">Total Saved</p>
+                    <p className="text-[11px] text-gray-500">{t('totalSaved')}</p>
                     <p className="text-sm font-bold text-gray-900">
-                      ${totalSaved.toFixed(2)}
+                      {formatPrice(totalSaved)}
                     </p>
                   </div>
                 </div>
@@ -765,7 +649,7 @@ const Page = () => {
                     <Store size={15} className="text-gray-500" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[11px] text-gray-500">Vendors Shopped</p>
+                    <p className="text-[11px] text-gray-500">{t('vendorsShopped')}</p>
                     <p className="text-sm font-bold text-gray-900">
                       {uniqueVendors}
                     </p>
@@ -780,7 +664,7 @@ const Page = () => {
   );
 };
 
-//  Profile tab content
+// Profile tab content
 
 interface ProfileTabContentProps {
   user: User;
@@ -810,11 +694,12 @@ const ProfileTabContent = ({
   onCancelEdit,
   onChangePhoto,
 }: ProfileTabContentProps) => {
+  const t = useTranslations('Profile');
+  const locale = useLocale();
   const hasAvatar = !!avatarSrc && !imageError;
   const [nameValue, setNameValue] = useState(user.name || '');
   const [bioValue, setBioValue] = useState(userProfile?.bio || '');
 
-  // Sync fields when user data changes (e.g. after save)
   useEffect(() => {
     setNameValue(user.name || '');
   }, [user.name]);
@@ -836,7 +721,7 @@ const ProfileTabContent = ({
         <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-medium text-blue-800">
-              Complete your profile
+              {t('completeYourProfile')}
             </p>
             <span className="text-sm font-bold text-brand-primary">
               {completeness}%
@@ -850,8 +735,8 @@ const ProfileTabContent = ({
           </div>
           <p className="text-xs text-blue-600 mt-2">
             {completeness < 50
-              ? 'Add a profile photo and shipping address to get started.'
-              : 'Almost there — add a bio to reach 100%.'}
+              ? t('profileTipStart')
+              : t('profileTipAlmost')}
           </p>
         </div>
       )}
@@ -878,13 +763,13 @@ const ProfileTabContent = ({
         </div>
         <div>
           <p className="text-sm font-semibold text-gray-800">
-            {user.name || userProfile?.name || 'No name set'}
+            {user.name || userProfile?.name || t('noNameSet')}
           </p>
           <button
             onClick={onChangePhoto}
             className="flex items-center gap-1 text-xs text-brand-primary mt-0.5 hover:underline"
           >
-            <Camera size={10} /> Change photo
+            <Camera size={10} /> {t('changePhoto')}
           </button>
         </div>
       </div>
@@ -893,25 +778,25 @@ const ProfileTabContent = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1.5">
-            Full Name
+            {t('fullName')}
           </label>
           {isEditing ? (
             <input
               value={nameValue}
               onChange={(e) => setNameValue(e.target.value)}
               className="w-full px-3 py-2.5 bg-white border border-brand-primary rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-primary/20"
-              placeholder="Your full name"
+              placeholder={t('fullName')}
             />
           ) : (
             <div className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800">
-              {user.name || <span className="text-gray-400">Not set</span>}
+              {user.name || <span className="text-gray-400">{t('notSet')}</span>}
             </div>
           )}
         </div>
 
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1.5">
-            Email Address
+            {t('emailAddress')}
           </label>
           <div className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800">
             {user.email}
@@ -920,7 +805,7 @@ const ProfileTabContent = ({
 
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1.5">
-            Bio
+            {t('bio')}
           </label>
           {isEditing ? (
             <textarea
@@ -928,12 +813,12 @@ const ProfileTabContent = ({
               onChange={(e) => setBioValue(e.target.value)}
               rows={3}
               className="w-full px-3 py-2.5 bg-white border border-brand-primary rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 resize-none"
-              placeholder="Tell us a bit about yourself..."
+              placeholder={t('bio')}
             />
           ) : (
             <div className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm min-h-[40px]">
               {userProfile?.bio || (
-                <span className="text-gray-400">Not set</span>
+                <span className="text-gray-400">{t('notSet')}</span>
               )}
             </div>
           )}
@@ -941,17 +826,17 @@ const ProfileTabContent = ({
 
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1.5">
-            Member Since
+            {t('memberSinceLabel')}
           </label>
           <div className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800">
             {user.createdAt ? (
-              new Date(user.createdAt).toLocaleDateString('en-US', {
+              new Date(user.createdAt).toLocaleDateString(locale, {
                 month: 'long',
                 day: 'numeric',
                 year: 'numeric',
               })
             ) : (
-              <span className="text-gray-400">Not available</span>
+              <span className="text-gray-400">{t('notAvailable')}</span>
             )}
           </div>
         </div>
@@ -966,14 +851,14 @@ const ProfileTabContent = ({
             className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-white text-sm font-semibold rounded-full hover:bg-brand-primary-800 disabled:opacity-50 transition-colors"
           >
             {isSaving && <Loader2 size={14} className="animate-spin" />}
-            Save changes
+            {t('saveChanges')}
           </button>
           <button
             onClick={onCancelEdit}
             disabled={isSaving}
             className="px-5 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-full hover:bg-gray-50 transition-colors"
           >
-            Cancel
+            {t('cancel')}
           </button>
         </div>
       )}
@@ -1016,18 +901,4 @@ const NavItem = ({ label, Icon, active, danger, onClick }: NavItemProps) => (
   </button>
 );
 
-// Wrapper
-
-export default function ProfilePageWrapper() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="animate-spin w-6 h-6 text-brand-primary" />
-        </div>
-      }
-    >
-      <Page />
-    </Suspense>
-  );
-}
+export default Page;

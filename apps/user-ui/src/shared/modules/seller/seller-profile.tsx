@@ -11,6 +11,7 @@ import ShopProductsTab from './shop-products-tab';
 import ShopOffersTab from './shop-offers-tab';
 import ShopReviewsTab from './shop-reviews-tab';
 import type { Shop } from '../../../lib/api/shops';
+import { useTranslations } from 'next-intl';
 
 interface SellerProfileProps {
   shop: Shop;
@@ -21,6 +22,7 @@ const SellerProfile: React.FC<SellerProfileProps> = ({
   shop,
   followersCount = 0,
 }) => {
+  const t = useTranslations('ShopProfile');
   const { user } = useAuth();
   const location = useLocationTracking();
   const deviceInfo = useDeviceTracking();
@@ -51,9 +53,9 @@ const SellerProfile: React.FC<SellerProfileProps> = ({
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Shop Not Found</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('shopNotFound')}</h1>
           <p className="text-gray-600 mt-2">
-            The shop you are looking for does not exist or has been removed.
+            {t('shopNotFoundDesc')}
           </p>
         </div>
       </div>

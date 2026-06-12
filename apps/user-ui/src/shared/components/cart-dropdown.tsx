@@ -6,8 +6,12 @@ import Image from 'next/image';
 import { Link } from '../../i18n/navigation';
 import useStore from '../../store';
 import CartIcon from '../../assets/svgs/cart-icon';
+import { useTranslations } from 'next-intl';
+import { useCurrency } from '../../hooks/use-currency';
 
 export function CartDropdown() {
+  const t = useTranslations('Navbar');
+  const { formatPrice } = useCurrency();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -34,7 +38,7 @@ export function CartDropdown() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 hover:bg-ui-muted rounded-full transition-colors"
-        title="Cart"
+        title={t('cart')}
       >
         <CartIcon className="w-7 h-7 text-text-primary" />
         {cart.length > 0 && (
@@ -51,9 +55,9 @@ export function CartDropdown() {
           {/* Header */}
           <div className="flex items-center gap-2 px-4 py-3 border-b border-ui-divider">
             <ShoppingCart size={14} className="text-text-secondary" />
-            <h3 className="text-text-primary font-semibold text-sm">Cart</h3>
+            <h3 className="text-text-primary font-semibold text-sm">{t('cart')}</h3>
             <span className="ml-auto text-xs text-text-muted">
-              {cart.length} {cart.length === 1 ? 'item' : 'items'}
+              {t('itemCount', { count: cart.length })}
             </span>
           </div>
 
@@ -61,7 +65,7 @@ export function CartDropdown() {
           <div className="overflow-y-auto flex-1">
             {cart.length === 0 ? (
               <div className="px-4 py-8 text-center text-text-secondary text-sm">
-                Your cart is empty
+                {t('cartEmpty')}
               </div>
             ) : (
               cart.map((item) => (
@@ -91,17 +95,17 @@ export function CartDropdown() {
                       {item.title}
                     </Link>
                     <p className="text-xs text-text-secondary mt-0.5">
-                      ${(item.salePrice || item.price).toFixed(2)} &times; {item.quantity}
+                      {formatPrice(item.salePrice || item.price)} &times; {item.quantity}
                     </p>
                   </div>
                   <div className="flex-shrink-0 text-right">
                     <p className="text-sm font-semibold text-brand-secondary">
-                      ${((item.salePrice || item.price) * item.quantity).toFixed(2)}
+                      {formatPrice((item.salePrice || item.price) * item.quantity)}
                     </p>
                     <button
                       onClick={() => removeFromCart(item.id)}
                       className="mt-1 p-0.5 text-text-muted hover:text-red-500 transition-colors rounded"
-                      title="Remove"
+                      title={t('remove')}
                     >
                       <X size={13} />
                     </button>
@@ -114,9 +118,9 @@ export function CartDropdown() {
           {/* Total + CTA */}
           {cart.length > 0 && (
             <div className="border-t border-ui-divider px-4 py-3 flex items-center justify-between">
-              <span className="text-sm text-text-secondary font-medium">Total</span>
+              <span className="text-sm text-text-secondary font-medium">{t('total')}</span>
               <span className="text-base font-bold text-text-primary">
-                ${total.toFixed(2)}
+                {formatPrice(total)}
               </span>
             </div>
           )}
@@ -125,7 +129,7 @@ export function CartDropdown() {
             onClick={() => setIsOpen(false)}
             className="block px-4 py-3 text-center text-sm font-semibold text-white bg-brand-primary hover:bg-brand-primary-800 transition-colors"
           >
-            View Cart
+            {t('viewCart')}
           </Link>
         </div>
       )}

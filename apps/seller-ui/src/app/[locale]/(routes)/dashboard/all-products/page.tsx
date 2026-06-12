@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Image as IKImage } from '@imagekit/next';
 import {
   Package,
@@ -77,6 +78,7 @@ const SkeletonRow = () => (
 // --- Page ---
 
 const ProductsPage = () => {
+  const t = useTranslations('AllProducts');
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [hoveredImage, setHoveredImage] = useState<string | null>(null);
@@ -100,9 +102,7 @@ const ProductsPage = () => {
   const { mutate: deleteProductMutation, isPending: isDeleting } =
     useDeleteProduct();
 
-  const error = fetchError
-    ? 'Failed to load products. Please try again.'
-    : null;
+  const error = fetchError ? t('loadFailed') : null;
 
   const handleMouseMove = (e: React.MouseEvent) => {
     setMousePosition({ x: e.clientX, y: e.clientY });
@@ -135,14 +135,20 @@ const ProductsPage = () => {
   const publishedCount = products.filter((p) => p.status === 'PUBLISHED').length;
   const draftCount = products.filter((p) => p.status === 'DRAFT').length;
 
-  const TABLE_HEADERS = [
-    'Product',
-    'Price',
-    'Stock',
-    'Status',
-    'Category',
-    'Actions',
+  const tableHeaders = [
+    { id: 'product', label: t('colProduct') },
+    { id: 'price', label: t('colPrice') },
+    { id: 'stock', label: t('colStock') },
+    { id: 'status', label: t('colStatus') },
+    { id: 'category', label: t('colCategory') },
+    { id: 'actions', label: t('colActions') },
   ];
+
+  const getStatusLabel = (status: string) => {
+    if (status === 'PUBLISHED') return t('statusPublished');
+    if (status === 'DRAFT') return t('statusDraft');
+    return status;
+  };
 
   return (
     <div className="w-full mx-auto p-8">
@@ -150,10 +156,10 @@ const ProductsPage = () => {
       <div className="flex justify-between items-start mb-4">
         <div>
           <h2 className="text-2xl font-semibold font-heading text-on-surface">
-            Products
+            {t('pageTitle')}
           </h2>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            Manage your product catalog
+            {t('pageSubtitle')}
           </p>
         </div>
         <Link
@@ -161,20 +167,20 @@ const ProductsPage = () => {
           className="px-4 py-2 bg-brand-primary-600 text-white rounded-lg text-sm font-medium hover:bg-brand-primary-700 transition-colors flex items-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-primary-600/50"
         >
           <Plus size={16} />
-          Add New Product
+          {t('addNew')}
         </Link>
       </div>
 
       <Breadcrumb
         items={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'Products' },
+          { label: t('breadcrumbDashboard'), href: '/dashboard' },
+          { label: t('breadcrumbProducts') },
         ]}
       />
 
       {error && (
         <div className="mt-4">
-          <Alert variant="error" title="Error" description={error} />
+          <Alert variant="error" title={t('errorTitle')} description={error} />
         </div>
       )}
 
@@ -187,7 +193,7 @@ const ProductsPage = () => {
             </div>
             <div>
               <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">
-                Total
+                {t('statTotal')}
               </p>
               <p className="text-xl font-semibold text-on-surface font-heading">
                 {products.length}
@@ -200,7 +206,7 @@ const ProductsPage = () => {
             </div>
             <div>
               <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">
-                Published
+                {t('statPublished')}
               </p>
               <p className="text-xl font-semibold text-on-surface font-heading">
                 {publishedCount}
@@ -213,7 +219,7 @@ const ProductsPage = () => {
             </div>
             <div>
               <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">
-                Drafts
+                {t('statDrafts')}
               </p>
               <p className="text-xl font-semibold text-on-surface font-heading">
                 {draftCount}
@@ -232,7 +238,7 @@ const ProductsPage = () => {
           />
           <input
             type="text"
-            placeholder="Search products..."
+            placeholder={t('searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-surface-container text-sm rounded-md text-on-surface placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary-600/40 border border-transparent focus:border-brand-primary-600/30 transition-shadow"
@@ -246,14 +252,14 @@ const ProductsPage = () => {
           <table className="w-full">
             <thead className="bg-surface-container-low border-b border-surface-container-highest">
               <tr>
-                {TABLE_HEADERS.map((h) => (
+                {tableHeaders.map((h) => (
                   <th
-                    key={h}
+                    key={h.id}
                     className={`px-6 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider ${
-                      h === 'Actions' ? 'text-right' : 'text-left'
+                      h.id === 'actions' ? 'text-right' : 'text-left'
                     }`}
                   >
-                    {h}
+                    {h.label}
                   </th>
                 ))}
               </tr>
@@ -271,12 +277,12 @@ const ProductsPage = () => {
             <Package size={28} className="text-gray-400" />
           </div>
           <h3 className="text-base font-semibold text-on-surface mb-1">
-            {searchTerm ? 'No results found' : 'No products yet'}
+            {searchTerm ? t('emptySearchTitle') : t('emptyTitle')}
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-xs mx-auto">
             {searchTerm
-              ? `No products match "${searchTerm}". Try a different search term.`
-              : 'Get started by adding your first product to the catalog.'}
+              ? t('emptySearchDesc', { term: searchTerm })
+              : t('emptyDesc')}
           </p>
           {!searchTerm && (
             <Link
@@ -284,7 +290,7 @@ const ProductsPage = () => {
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-primary-600 text-white rounded-lg text-sm font-medium hover:bg-brand-primary-700 transition-colors cursor-pointer"
             >
               <Plus size={16} />
-              Add First Product
+              {t('addFirst')}
             </Link>
           )}
         </div>
@@ -294,14 +300,14 @@ const ProductsPage = () => {
             <table className="w-full">
               <thead className="bg-surface-container-low border-b border-surface-container-highest">
                 <tr>
-                  {TABLE_HEADERS.map((h) => (
+                  {tableHeaders.map((h) => (
                     <th
-                      key={h}
+                      key={h.id}
                       className={`px-6 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider ${
-                        h === 'Actions' ? 'text-right' : 'text-left'
+                        h.id === 'actions' ? 'text-right' : 'text-left'
                       }`}
                     >
-                      {h}
+                      {h.label}
                     </th>
                   ))}
                 </tr>
@@ -383,7 +389,7 @@ const ProductsPage = () => {
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ${stockBadgeClass(product.stock)}`}
                       >
-                        {product.stock} units
+                        {t('stockUnits', { count: product.stock })}
                       </span>
                     </td>
 
@@ -392,14 +398,14 @@ const ProductsPage = () => {
                       <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium ${statusBadgeClass(product.status)}`}
                       >
-                        {product.status}
+                        {getStatusLabel(product.status)}
                       </span>
                     </td>
 
                     {/* Category */}
                     <td className="px-6 py-4">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-brand-secondary/10 text-brand-secondary border border-brand-secondary/20">
-                        {product.category?.name || 'Uncategorized'}
+                        {product.category?.name || t('uncategorized')}
                       </span>
                     </td>
 
@@ -412,7 +418,7 @@ const ProductsPage = () => {
                               `/dashboard/products/edit/${product.id}`
                             )
                           }
-                          aria-label={`Edit ${product.name}`}
+                          aria-label={t('editProduct', { name: product.name })}
                           className="p-2 text-gray-400 hover:text-brand-primary hover:bg-brand-primary/10 rounded-md transition-colors cursor-pointer"
                         >
                           <Edit size={16} />
@@ -421,7 +427,7 @@ const ProductsPage = () => {
                           onClick={() =>
                             openDeleteModal(product.id, product.name)
                           }
-                          aria-label={`Delete ${product.name}`}
+                          aria-label={t('deleteProduct', { name: product.name })}
                           className="p-2 text-gray-400 hover:text-feedback-error hover:bg-feedback-error/10 rounded-md transition-colors cursor-pointer"
                         >
                           <Trash2 size={16} />
@@ -437,15 +443,10 @@ const ProductsPage = () => {
           {/* Table Footer */}
           <div className="px-6 py-3 bg-surface-container-low border-t border-surface-container-highest flex items-center justify-between">
             <p className="text-xs text-gray-400">
-              Showing{' '}
-              <span className="font-medium text-on-surface">
-                {filteredProducts.length}
-              </span>{' '}
-              of{' '}
-              <span className="font-medium text-on-surface">
-                {products.length}
-              </span>{' '}
-              products
+              {t('showingProducts', {
+                shown: filteredProducts.length,
+                total: products.length,
+              })}
             </p>
           </div>
         </div>

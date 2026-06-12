@@ -6,8 +6,12 @@ import Image from 'next/image';
 import { Link } from '../../i18n/navigation';
 import useStore from '../../store';
 import HeartIcon from '../../assets/svgs/heart-icon';
+import { useTranslations } from 'next-intl';
+import { useCurrency } from '../../hooks/use-currency';
 
 export function WishlistDropdown() {
+  const t = useTranslations('Navbar');
+  const { formatPrice } = useCurrency();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -29,7 +33,7 @@ export function WishlistDropdown() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 hover:bg-ui-muted rounded-full transition-colors"
-        title="Wishlist"
+        title={t('wishlist')}
       >
         <HeartIcon className="w-7 h-7 text-text-primary" />
         {wishlist.length > 0 && (
@@ -46,9 +50,9 @@ export function WishlistDropdown() {
           {/* Header */}
           <div className="flex items-center gap-2 px-4 py-3 border-b border-ui-divider">
             <Heart size={14} className="text-text-secondary" />
-            <h3 className="text-text-primary font-semibold text-sm">Wishlist</h3>
+            <h3 className="text-text-primary font-semibold text-sm">{t('wishlist')}</h3>
             <span className="ml-auto text-xs text-text-muted">
-              {wishlist.length} {wishlist.length === 1 ? 'item' : 'items'}
+              {t('itemCount', { count: wishlist.length })}
             </span>
           </div>
 
@@ -56,7 +60,7 @@ export function WishlistDropdown() {
           <div className="overflow-y-auto flex-1">
             {wishlist.length === 0 ? (
               <div className="px-4 py-8 text-center text-text-secondary text-sm">
-                Your wishlist is empty
+                {t('wishlistEmpty')}
               </div>
             ) : (
               wishlist.map((item) => (
@@ -86,13 +90,13 @@ export function WishlistDropdown() {
                       {item.title}
                     </Link>
                     <p className="text-sm text-brand-secondary font-semibold mt-0.5">
-                      ${(item.salePrice || item.price).toFixed(2)}
+                      {formatPrice(item.salePrice || item.price)}
                     </p>
                   </div>
                   <button
                     onClick={() => removeFromWishList(item.id)}
                     className="flex-shrink-0 p-1 text-text-muted hover:text-red-500 transition-colors rounded"
-                    title="Remove"
+                    title={t('remove')}
                   >
                     <X size={14} />
                   </button>
@@ -107,7 +111,7 @@ export function WishlistDropdown() {
             onClick={() => setIsOpen(false)}
             className="block px-4 py-3 text-center text-sm font-semibold text-white bg-brand-primary hover:bg-brand-primary-800 transition-colors"
           >
-            View Wishlist
+            {t('viewWishlist')}
           </Link>
         </div>
       )}

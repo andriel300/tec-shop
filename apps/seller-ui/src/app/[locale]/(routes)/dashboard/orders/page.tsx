@@ -23,6 +23,7 @@ import {
 import { apiClient } from 'apps/seller-ui/src/lib/api/client';
 import { Link } from 'apps/seller-ui/src/i18n/navigation';
 import { exportCSV, type CsvColumn } from 'apps/seller-ui/src/lib/utils/export-csv';
+import { useTranslations } from 'next-intl';
 
 interface OrderItem {
   id: string;
@@ -97,35 +98,12 @@ const getPageNumbers = (
   return pages;
 };
 
-const STATUS_CONFIG: Record<
-  string,
-  { dot: string; text: string; label: string }
-> = {
-  PENDING: {
-    dot: 'bg-amber-400',
-    text: 'text-amber-500',
-    label: 'PENDING',
-  },
-  PAID: {
-    dot: 'bg-emerald-400',
-    text: 'text-emerald-500',
-    label: 'PAID',
-  },
-  SHIPPED: {
-    dot: 'bg-blue-400',
-    text: 'text-blue-500',
-    label: 'SHIPPED',
-  },
-  DELIVERED: {
-    dot: 'bg-emerald-400',
-    text: 'text-emerald-500',
-    label: 'DELIVERED',
-  },
-  CANCELLED: {
-    dot: 'bg-red-400',
-    text: 'text-red-500',
-    label: 'CANCELLED',
-  },
+const STATUS_STYLE_CONFIG: Record<string, { dot: string; text: string }> = {
+  PENDING:   { dot: 'bg-amber-400',   text: 'text-amber-500'   },
+  PAID:      { dot: 'bg-emerald-400', text: 'text-emerald-500' },
+  SHIPPED:   { dot: 'bg-blue-400',    text: 'text-blue-500'    },
+  DELIVERED: { dot: 'bg-emerald-400', text: 'text-emerald-500' },
+  CANCELLED: { dot: 'bg-red-400',     text: 'text-red-500'     },
 };
 
 const ORDER_CSV_COLUMNS: CsvColumn<Order>[] = [
@@ -140,6 +118,7 @@ const ORDER_CSV_COLUMNS: CsvColumn<Order>[] = [
 ];
 
 const OrdersPage = () => {
+  const t = useTranslations('SellerOrders');
   const [globalFilter, setGlobalFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
 
@@ -160,11 +139,19 @@ const OrdersPage = () => {
   );
   const pendingCount = orders.filter((o) => o.status === 'PENDING').length;
 
+  const statusLabels: Record<string, string> = {
+    PENDING: t('labelPending'),
+    PAID: t('labelPaid'),
+    SHIPPED: t('labelShipped'),
+    DELIVERED: t('labelDelivered'),
+    CANCELLED: t('labelCancelled'),
+  };
+
   const columns = useMemo(
     () => [
       {
         accessorKey: 'orderNumber',
-        header: 'Order ID',
+        header: t('colOrderId'),
         cell: ({ row }: { row: { original: Order } }) => (
           <span className="font-mono text-sm font-semibold text-gray-900">
             #{row.original.orderNumber}
@@ -173,7 +160,7 @@ const OrdersPage = () => {
       },
       {
         accessorKey: 'customerName',
-        header: 'Customer',
+        header: t('colCustomer'),
         cell: ({ row }: { row: { original: Order } }) => {
           const name = row.original.customerName;
           const email = row.original.customerEmail;
@@ -190,7 +177,7 @@ const OrdersPage = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-900 leading-tight">
-                  {name || `User ${row.original.userId.slice(0, 8)}`}
+                  {name || t('unknownUser', { id: row.original.userId.slice(0, 8) })}
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">{email || '—'}</p>
               </div>
@@ -200,7 +187,7 @@ const OrdersPage = () => {
       },
       {
         accessorKey: 'items',
-        header: 'Product(s)',
+        header: t('colProducts'),
         cell: ({ row }: { row: { original: Order } }) => {
           const items = row.original.items.slice(0, 2);
           const overflow = row.original.items.length - 2;
@@ -231,7 +218,7 @@ const OrdersPage = () => {
       },
       {
         accessorKey: 'finalAmount',
-        header: 'Total',
+        header: t('colTotal'),
         cell: ({ row }: { row: { original: Order } }) => {
           const payout = row.original.items.reduce(
             (s, item) => s + item.sellerPayout,
@@ -250,41 +237,37 @@ const OrdersPage = () => {
       },
       {
         accessorKey: 'status',
-        header: 'Status',
+        header: t('colStatus'),
         cell: ({ row }: { row: { original: Order } }) => {
-          const cfg = STATUS_CONFIG[row.original.status] ?? {
+          const cfg = STATUS_STYLE_CONFIG[row.original.status] ?? {
             dot: 'bg-gray-400',
             text: 'text-gray-500',
-            label: row.original.status,
           };
+          const label = statusLabels[row.original.status] ?? row.original.status;
           return (
             <div className="flex items-center gap-2">
-              <span
-                className={`w-2 h-2 rounded-full ${cfg.dot} shrink-0`}
-              />
-              <span
-                className={`text-xs font-semibold tracking-wide ${cfg.text}`}
-              >
-                {cfg.label}
+              <span className={`w-2 h-2 rounded-full ${cfg.dot} shrink-0`} />
+              <span className={`text-xs font-semibold tracking-wide ${cfg.text}`}>
+                {label}
               </span>
             </div>
           );
         },
       },
       {
-        header: 'Actions',
+        header: t('colActions'),
         cell: ({ row }: { row: { original: Order } }) => (
           <Link
             href={`/dashboard/order/${row.original.id}`}
             className="text-sm font-medium text-brand-primary-600
                        hover:text-brand-primary-700 transition-colors whitespace-nowrap"
           >
-            View Details
+            {t('viewDetails')}
           </Link>
         ),
       },
     ],
-    []
+    [t]
   );
 
   const table = useReactTable({
@@ -313,12 +296,12 @@ const OrdersPage = () => {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
-          <span>Dashboard</span>
+          <span>{t('breadcrumbDashboard')}</span>
           <span>/</span>
-          <span className="text-gray-900 font-medium">Orders</span>
+          <span className="text-gray-900 font-medium">{t('breadcrumbOrders')}</span>
         </div>
         <h1 className="font-display text-4xl font-bold text-gray-900">
-          Orders Management
+          {t('pageTitle')}
         </h1>
       </div>
 
@@ -335,7 +318,7 @@ const OrdersPage = () => {
                 +12.5%
               </span>
             </div>
-            <p className="text-gray-500 text-sm mb-1">Total Orders</p>
+            <p className="text-gray-500 text-sm mb-1">{t('statTotalOrders')}</p>
             <p className="font-display text-3xl font-bold text-gray-900">
               {totalOrders.toLocaleString()}
             </p>
@@ -358,7 +341,7 @@ const OrdersPage = () => {
                 +8.2%
               </span>
             </div>
-            <p className="text-gray-500 text-sm mb-1">Total Revenue</p>
+            <p className="text-gray-500 text-sm mb-1">{t('statTotalRevenue')}</p>
             <p className="font-display text-3xl font-bold text-gray-900">
               $
               {(totalRevenue / 100).toLocaleString(undefined, {
@@ -383,11 +366,11 @@ const OrdersPage = () => {
               </div>
               {pendingCount > 0 && (
                 <span className="text-xs font-semibold text-red-600 bg-red-500/10 px-2.5 py-0.5 rounded-pill">
-                  High Priority
+                  {t('statHighPriority')}
                 </span>
               )}
             </div>
-            <p className="text-gray-500 text-sm mb-1">Pending Fulfillment</p>
+            <p className="text-gray-500 text-sm mb-1">{t('statPendingFulfillment')}</p>
             <p className="font-display text-3xl font-bold text-gray-900">
               {pendingCount}
             </p>
@@ -408,7 +391,7 @@ const OrdersPage = () => {
             <Search size={16} className="text-gray-400 shrink-0" />
             <input
               type="text"
-              placeholder="Filter by customer, ID or SKU..."
+              placeholder={t('filterPlaceholder')}
               className="w-full bg-transparent text-gray-900 outline-none placeholder:text-gray-400 text-sm"
               value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
@@ -422,12 +405,12 @@ const OrdersPage = () => {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option value="">Status: All Orders</option>
-              <option value="PENDING">Status: Pending</option>
-              <option value="PAID">Status: Paid</option>
-              <option value="SHIPPED">Status: Shipped</option>
-              <option value="DELIVERED">Status: Delivered</option>
-              <option value="CANCELLED">Status: Cancelled</option>
+              <option value="">{t('statusAll')}</option>
+              <option value="PENDING">{t('statusPending')}</option>
+              <option value="PAID">{t('statusPaid')}</option>
+              <option value="SHIPPED">{t('statusShipped')}</option>
+              <option value="DELIVERED">{t('statusDelivered')}</option>
+              <option value="CANCELLED">{t('statusCancelled')}</option>
             </select>
 
             <button
@@ -435,7 +418,7 @@ const OrdersPage = () => {
                          text-sm px-4 py-2.5 rounded-lg whitespace-nowrap"
             >
               <Calendar size={15} className="text-gray-500" />
-              Last 30 Days
+              {t('last30Days')}
             </button>
 
             <button
@@ -449,7 +432,7 @@ const OrdersPage = () => {
                          hover:bg-brand-primary-700 transition-colors"
             >
               <Download size={15} />
-              Export CSV
+              {t('exportCsv')}
             </button>
           </div>
         </div>
@@ -495,10 +478,10 @@ const OrdersPage = () => {
                         <div className="flex flex-col items-center text-gray-500">
                           <Package size={40} className="mb-3 opacity-30" />
                           <p className="font-display font-medium text-gray-900">
-                            No orders found
+                            {t('noOrdersFound')}
                           </p>
                           <p className="text-sm mt-1">
-                            Orders from your customers will appear here
+                            {t('noOrdersDesc')}
                           </p>
                         </div>
                       </td>
@@ -533,15 +516,11 @@ const OrdersPage = () => {
                            bg-surface-container-low"
               >
                 <span className="text-sm text-gray-500">
-                  Showing{' '}
-                  <span className="font-medium text-gray-900">
-                    {pageStart} - {pageEnd}
-                  </span>{' '}
-                  of{' '}
-                  <span className="font-medium text-gray-900">
-                    {filteredTotal.toLocaleString()}
-                  </span>{' '}
-                  orders
+                  {t('showing', {
+                    start: pageStart,
+                    end: pageEnd,
+                    total: filteredTotal.toLocaleString(),
+                  })}
                 </span>
 
                 <div className="flex items-center gap-1">

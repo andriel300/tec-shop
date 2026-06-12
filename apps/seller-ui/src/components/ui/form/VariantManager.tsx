@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Plus,
   X,
@@ -113,6 +114,54 @@ const VariantManager: React.FC<VariantManagerProps> = ({
   productName = 'Product',
   className = '',
 }) => {
+  const t = useTranslations('CreateProduct');
+
+  const attrNameMap = useMemo<Record<string, string>>(() => ({
+    Size: t('attrNameSize'),
+    Color: t('attrNameColor'),
+    Material: t('attrNameMaterial'),
+    Fit: t('attrNameFit'),
+    Pattern: t('attrNamePattern'),
+    Style: t('attrNameStyle'),
+    Fabric: t('attrNameFabric'),
+    Cut: t('attrNameCut'),
+    Storage: t('attrNameStorage'),
+    Memory: t('attrNameMemory'),
+    Capacity: t('attrNameCapacity'),
+    Power: t('attrNamePower'),
+    Voltage: t('attrNameVoltage'),
+    Weight: t('attrNameWeight'),
+    Length: t('attrNameLength'),
+    Width: t('attrNameWidth'),
+    Height: t('attrNameHeight'),
+    Diameter: t('attrNameDiameter'),
+    Scent: t('attrNameScent'),
+    Flavor: t('attrNameFlavor'),
+    Fragrance: t('attrNameFragrance'),
+    Edition: t('attrNameEdition'),
+    Version: t('attrNameVersion'),
+    Level: t('attrNameLevel'),
+    Age: t('attrNameAge'),
+    Difficulty: t('attrNameDifficulty'),
+    Finish: t('attrNameFinish'),
+    Texture: t('attrNameTexture'),
+    Speed: t('attrNameSpeed'),
+    Performance: t('attrNamePerformance'),
+  }), [t]);
+
+  const categoryMap = useMemo<Record<string, string>>(() => ({
+    Common: t('attrCatCommon'),
+    Fashion: t('attrCatFashion'),
+    Electronics: t('attrCatElectronics'),
+    Physical: t('attrCatPhysical'),
+    Beauty: t('attrCatBeauty'),
+    'Food & Beauty': t('attrCatFoodBeauty'),
+    Version: t('attrCatVersion'),
+    Grade: t('attrCatGrade'),
+    Surface: t('attrCatSurface'),
+    Performance: t('attrCatPerformance'),
+  }), [t]);
+
   const [attributes, setAttributes] = useState<VariantAttribute[]>([
     { name: 'Size', values: [] },
   ]);
@@ -233,11 +282,10 @@ const VariantManager: React.FC<VariantManagerProps> = ({
         {/* Header */}
         <div>
           <h3 className="text-base font-semibold text-gray-900">
-            Product Options
+            {t('variantOptionsTitle')}
           </h3>
           <p className="text-sm text-gray-500 mt-0.5">
-            Configure the options customers can choose from (size, color,
-            material, etc.)
+            {t('variantOptionsSubtitle')}
           </p>
         </div>
 
@@ -256,12 +304,11 @@ const VariantManager: React.FC<VariantManagerProps> = ({
                     );
                   })()}
                   <span className="text-sm font-semibold text-gray-900">
-                    {attribute.name}
+                    {attrNameMap[attribute.name] ?? attribute.name}
                   </span>
                   {attribute.values.length > 0 && (
                     <span className="text-xs text-gray-500">
-                      &middot; {attribute.values.length}{' '}
-                      {attribute.values.length === 1 ? 'option' : 'options'}
+                      {t('variantOptionCount', { count: attribute.values.length })}
                     </span>
                   )}
                 </div>
@@ -270,7 +317,7 @@ const VariantManager: React.FC<VariantManagerProps> = ({
                     type="button"
                     onClick={() => removeAttribute(attrIndex)}
                     className="p-1 rounded-md text-feedback-error hover:bg-feedback-error/10 transition-colors cursor-pointer"
-                    title={`Remove ${attribute.name}`}
+                    title={t('variantRemoveOption', { name: attribute.name })}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -309,7 +356,7 @@ const VariantManager: React.FC<VariantManagerProps> = ({
                             removeAttributeValue(attrIndex, valueIndex)
                           }
                           className="ml-0.5 flex-shrink-0 hover:opacity-70 transition-opacity cursor-pointer"
-                          aria-label={`Remove ${value}`}
+                          aria-label={t('variantRemoveValue', { value })}
                         >
                           <X size={11} />
                         </button>
@@ -346,13 +393,13 @@ const VariantManager: React.FC<VariantManagerProps> = ({
         {/* Add New Option */}
         <div className="pt-4 border-t border-surface-container-highest space-y-2">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-            Add option
+            {t('variantAddOption')}
           </p>
           <div className="flex gap-2 relative">
             <div className="flex-1 relative">
               <Input
                 variant="dark"
-                placeholder="e.g., Color, Material, Finish..."
+                placeholder={t('variantAddOptionPlaceholderGeneric')}
                 value={newAttributeName}
                 onChange={(e) => setNewAttributeName(e.target.value)}
                 onFocus={() => setShowAttributeSuggestions(true)}
@@ -380,7 +427,7 @@ const VariantManager: React.FC<VariantManagerProps> = ({
                       return (
                         <div key={category}>
                           <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">
-                            {category}
+                            {categoryMap[category] ?? category}
                           </div>
                           {categoryItems.map((suggestion, index) => {
                             const IconComp =
@@ -398,7 +445,7 @@ const VariantManager: React.FC<VariantManagerProps> = ({
                                   <IconComp size={14} />
                                 </span>
                                 <span className="text-sm font-medium text-gray-900">
-                                  {suggestion.name}
+                                  {attrNameMap[suggestion.name] ?? suggestion.name}
                                 </span>
                               </button>
                             );
@@ -410,11 +457,12 @@ const VariantManager: React.FC<VariantManagerProps> = ({
 
                   {newAttributeName && filteredSuggestions.length === 0 && (
                     <div className="p-3 text-sm text-gray-500 border-t border-surface-container-highest">
-                      Press Enter to add &quot;
-                      <span className="text-brand-primary font-medium">
-                        {newAttributeName}
-                      </span>
-                      &quot;
+                      {t.rich('variantPressEnterToAdd', {
+                        name: newAttributeName,
+                        highlight: (chunks) => (
+                          <span className="text-brand-primary font-medium">{chunks}</span>
+                        ),
+                      })}
                     </div>
                   )}
                 </div>
@@ -427,13 +475,13 @@ const VariantManager: React.FC<VariantManagerProps> = ({
               className="px-4 py-2 bg-surface-container text-gray-900 rounded-lg hover:bg-surface-container-highest transition-colors whitespace-nowrap flex items-center gap-1.5 text-sm font-medium cursor-pointer"
             >
               <Plus size={15} />
-              Add
+              {t('variantAddBtn')}
             </button>
           </div>
 
           <p className="text-xs text-gray-500 flex items-center gap-1.5">
             <Info size={12} className="flex-shrink-0" />
-            Click the input to browse common options or type your own
+            {t('variantAddHint')}
           </p>
         </div>
 
@@ -446,8 +494,8 @@ const VariantManager: React.FC<VariantManagerProps> = ({
         >
           <RefreshCw size={16} />
           {combinationCount > 0
-            ? `Generate ${combinationCount} Variant${combinationCount !== 1 ? 's' : ''}`
-            : 'Generate Variants'}
+            ? t('variantGenerateCount', { count: combinationCount })
+            : t('variantGenerateEmpty')}
         </button>
       </div>
 

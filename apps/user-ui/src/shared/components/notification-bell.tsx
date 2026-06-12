@@ -29,6 +29,7 @@ import { useNotificationSocket } from '../../hooks/use-notification-socket';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAuth } from '../../hooks/use-auth';
+import { useTranslations } from 'next-intl';
 import type { NotificationEntry } from '../../lib/api/notifications';
 
 const typeColors: Record<string, string> = {
@@ -57,16 +58,18 @@ const typeBorders: Record<string, string> = {
   DELIVERY: 'border-l-teal-500',
 };
 
-function timeAgo(dateStr: string): string {
+type TFunc = ReturnType<typeof useTranslations<'Navbar'>>;
+
+function timeAgo(dateStr: string, t: TFunc): string {
   const now = Date.now();
   const diff = now - new Date(dateStr).getTime();
   const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return 'Just now';
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1) return t('justNow');
+  if (minutes < 60) return t('minutesAgo', { count: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return t('hoursAgo', { count: hours });
   const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  return t('daysAgo', { count: days });
 }
 
 function getNotificationLink(notification: NotificationEntry): string | null {
@@ -85,10 +88,58 @@ function getNotificationLink(notification: NotificationEntry): string | null {
   return null;
 }
 
-function getNotificationActionText(templateId: string | undefined): string | null {
+function getTranslatedContent(
+  notification: NotificationEntry,
+  t: TFunc
+): { title: string; message: string } {
+  const { templateId, title, message, metadata } = notification;
+  const meta = (metadata ?? {}) as Record<string, string>;
+
+  switch (templateId) {
+    case 'order.paid':
+      return {
+        title: t('notifOrderPaidTitle'),
+        message: meta.orderNumber
+          ? t('notifOrderPaidMessage', { orderNumber: meta.orderNumber })
+          : message,
+      };
+    case 'order.shipped':
+      return {
+        title: t('notifOrderShippedTitle'),
+        message: meta.orderNumber
+          ? t('notifOrderShippedMessage', {
+              orderNumber: meta.orderNumber,
+              trackingNumber: (meta.trackingNumber as string | undefined) ?? 'N/A',
+            })
+          : message,
+      };
+    case 'order.delivered':
+      return {
+        title: t('notifOrderDeliveredTitle'),
+        message: meta.orderNumber
+          ? t('notifOrderDeliveredMessage', { orderNumber: meta.orderNumber })
+          : message,
+      };
+    case 'order.delivered_review':
+      return { title: t('notifOrderDeliveredReviewTitle'), message };
+    case 'order.cancelled':
+      return {
+        title: t('notifOrderCancelledTitle'),
+        message: meta.orderNumber
+          ? t('notifOrderCancelledMessage', { orderNumber: meta.orderNumber })
+          : message,
+      };
+    case 'chat.new_message':
+      return { title: t('notifChatNewMessageTitle'), message };
+    default:
+      return { title, message };
+  }
+}
+
+function getNotificationActionText(templateId: string | undefined, t: TFunc): string | null {
   if (!templateId) return null;
-  if (templateId === 'chat.new_message') return 'Open conversation';
-  if (templateId.startsWith('order.')) return 'View order';
+  if (templateId === 'chat.new_message') return t('openConversation');
+  if (templateId.startsWith('order.')) return t('viewOrder');
   return null;
 }
 
@@ -124,15 +175,18 @@ function NotificationToast({
   notification,
   link,
   onClose,
+  t,
 }: {
   notification: NotificationEntry;
   link: string | null;
   onClose: () => void;
+  t: TFunc;
 }) {
   const router = useRouter();
   const borderColor = typeBorders[notification.type] || 'border-l-gray-500';
   const iconConfig = getTemplateIconConfig(notification.templateId);
-  const actionText = getNotificationActionText(notification.templateId);
+  const actionText = getNotificationActionText(notification.templateId, t);
+  const { title: notifTitle, message: notifMessage } = getTranslatedContent(notification, t);
 
   const handleBodyClick = () => {
     if (link) {
@@ -164,10 +218,10 @@ function NotificationToast({
         onClick={handleBodyClick}
       >
         <p className="text-sm font-semibold text-gray-900 leading-tight">
-          {notification.title}
+          {notifTitle}
         </p>
         <p className="text-xs text-gray-600 mt-0.5 line-clamp-2 leading-relaxed">
-          {notification.message}
+          {notifMessage}
         </p>
         {link && actionText && (
           <p className="text-xs text-blue-600 mt-1.5 font-medium flex items-center gap-1">
@@ -189,6 +243,7 @@ function NotificationToast({
 }
 
 export function NotificationBell() {
+  const t = useTranslations('Navbar');
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
@@ -209,6 +264,7 @@ export function NotificationBell() {
             notification={notification}
             link={link}
             onClose={() => toast.dismiss(toastId)}
+            t={t}
           />
         ),
         { duration: 6000 }
@@ -270,7 +326,7 @@ export function NotificationBell() {
         <div className="absolute right-0 top-full mt-2 w-96 bg-ui-surface border border-ui-divider rounded-lg shadow-elev-lg z-50 max-h-[480px] overflow-hidden flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-ui-divider">
             <h3 className="text-text-primary font-semibold text-sm">
-              Notifications
+              {t('notifications')}
             </h3>
             {displayCount > 0 && (
               <button
@@ -278,7 +334,7 @@ export function NotificationBell() {
                 className="text-xs text-brand-primary hover:text-brand-primary-800 flex items-center gap-1"
               >
                 <CheckCheck size={14} />
-                Mark all read
+                {t('markAllRead')}
               </button>
             )}
           </div>
@@ -286,12 +342,13 @@ export function NotificationBell() {
           <div className="overflow-y-auto flex-1">
             {!data?.notifications?.length ? (
               <div className="px-4 py-8 text-center text-text-secondary text-sm">
-                No notifications yet
+                {t('noNotificationsYet')}
               </div>
             ) : (
               data.notifications.map((notification) => {
                 const link = getNotificationLink(notification);
                 const iconConfig = getTemplateIconConfig(notification.templateId);
+                const { title: notifTitle, message: notifMessage } = getTranslatedContent(notification, t);
                 const rowContent = (
                   <div className="flex items-start gap-3">
                     <div
@@ -309,13 +366,13 @@ export function NotificationBell() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-text-primary font-medium truncate">
-                        {notification.title}
+                        {notifTitle}
                       </p>
                       <p className="text-xs text-text-secondary mt-0.5 line-clamp-2">
-                        {notification.message}
+                        {notifMessage}
                       </p>
                       <p className="text-xs text-text-muted mt-1">
-                        {timeAgo(notification.createdAt)}
+                        {timeAgo(notification.createdAt, t)}
                       </p>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
@@ -327,7 +384,7 @@ export function NotificationBell() {
                             handleMarkAsRead(notification.id);
                           }}
                           className="p-1 text-text-tertiary hover:text-brand-primary transition-colors"
-                          title="Mark as read"
+                          title={t('markAsRead')}
                         >
                           <Check size={14} />
                         </button>
@@ -339,7 +396,7 @@ export function NotificationBell() {
                           deleteNotification.mutate(notification.id);
                         }}
                         className="p-1 text-text-tertiary hover:text-red-500 transition-colors"
-                        title="Delete"
+                        title={t('delete')}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -377,7 +434,7 @@ export function NotificationBell() {
             onClick={() => setIsOpen(false)}
             className="block px-4 py-3 text-center text-sm text-brand-primary hover:text-brand-primary-800 border-t border-ui-divider hover:bg-ui-muted transition-colors"
           >
-            View all notifications
+            {t('viewAllNotifications')}
           </Link>
         </div>
       )}

@@ -9,22 +9,24 @@ import {
   OrderStatusChart,
   MonthlyOrdersChart,
 } from './_charts-kpi';
+import { useTranslations } from 'next-intl';
 
 const DashboardPage = () => {
+  const t = useTranslations('Dashboard');
   const { data: stats, isLoading: statsLoading } = useSellerStatistics();
   const { data: chartData, isLoading: chartLoading } = useSellerChartData();
 
   if (statsLoading || chartLoading) {
     return (
       <div className="p-8">
-        <div className="text-gray-900 text-center py-8">Loading statistics...</div>
+        <div className="text-gray-900 text-center py-8">{t('loadingStatistics')}</div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="font-display text-xl font-bold text-gray-900">Dashboard</h1>
+      <h1 className="font-display text-xl font-bold text-gray-900">{t('title')}</h1>
 
       {stats && <StatsCards stats={stats} />}
 

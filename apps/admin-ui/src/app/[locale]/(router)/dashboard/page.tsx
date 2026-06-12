@@ -17,106 +17,79 @@ import {
   Tooltip,
   Legend,
 } from 'recharts';
+import { useTranslations } from 'next-intl';
 import {
   usePlatformStatistics,
   useAllOrders,
 } from '../../../../hooks/useAdminData';
 
-// Dynamic imports for chart components to avoid SSR issues
-const SaleChart = nextDynamic(
-  () => import('../../../../shared/components/charts/sale-chart'),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="text-white text-center py-8">Loading chart...</div>
-    ),
-  }
-);
-
-const GeographicalMap = nextDynamic(
-  () => import('../../../../shared/components/charts/geographicalMap'),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="text-white text-center py-8">Loading map...</div>
-    ),
-  }
-);
-
-// Device data — hardcoded until user-agent analytics are tracked server-side
-const deviceData = [
-  { name: 'Phone', value: 55 },
-  { name: 'Tablet', value: 20 },
-  { name: 'Computer', value: 25 },
-];
-
 const COLORS = ['#4ade80', '#facc15', '#60a5fa'];
 
-// Orders table columns
-const columns = [
-  {
-    header: 'Order ID',
-    accessorKey: 'id',
-    cell: ({ getValue }: { getValue: () => string }) => {
-      const id = getValue();
-      return <span className="font-mono text-xs">{id.slice(0, 8)}...</span>;
-    },
-  },
-  {
-    header: 'Items',
-    accessorKey: 'items',
-    cell: ({ getValue }: { getValue: () => Array<{ quantity: number }> }) => {
-      const items = getValue();
-      const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-      return <span>{totalItems} items</span>;
-    },
-  },
-  {
-    header: 'Amount',
-    accessorKey: 'finalAmount',
-    cell: ({ getValue }: { getValue: () => number }) => {
-      const amount = getValue();
-      return <span>${(amount / 100).toFixed(2)}</span>;
-    },
-  },
-  {
-    header: 'Payment',
-    accessorKey: 'paymentStatus',
-    cell: ({ getValue }: { getValue: () => string }) => {
-      const value = getValue();
-      const color =
-        value === 'COMPLETED'
-          ? 'text-green-400'
-          : value === 'PENDING'
-          ? 'text-yellow-400'
-          : value === 'FAILED'
-          ? 'text-red-400'
-          : 'text-purple-400';
-      return <span className={`font-medium ${color}`}>{value}</span>;
-    },
-  },
-  {
-    header: 'Status',
-    accessorKey: 'status',
-    cell: ({ getValue }: { getValue: () => string }) => {
-      const value = getValue();
-      const color =
-        value === 'DELIVERED'
-          ? 'text-green-400'
-          : value === 'SHIPPED'
-          ? 'text-blue-400'
-          : value === 'PAID'
-          ? 'text-cyan-400'
-          : value === 'PENDING'
-          ? 'text-yellow-400'
-          : 'text-red-400';
-      return <span className={`font-medium ${color}`}>{value}</span>;
-    },
-  },
-];
-
 const OrdersTable = () => {
+  const t = useTranslations('Dashboard');
   const { data: ordersData, isLoading } = useAllOrders({ limit: 8 });
+
+  const columns = [
+    {
+      header: t('colOrderId'),
+      accessorKey: 'id',
+      cell: ({ getValue }: { getValue: () => string }) => {
+        const id = getValue();
+        return <span className="font-mono text-xs">{id.slice(0, 8)}...</span>;
+      },
+    },
+    {
+      header: t('colItems'),
+      accessorKey: 'items',
+      cell: ({ getValue }: { getValue: () => Array<{ quantity: number }> }) => {
+        const items = getValue();
+        const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+        return <span>{t('itemCount', { count: totalItems })}</span>;
+      },
+    },
+    {
+      header: t('colAmount'),
+      accessorKey: 'finalAmount',
+      cell: ({ getValue }: { getValue: () => number }) => {
+        const amount = getValue();
+        return <span>${(amount / 100).toFixed(2)}</span>;
+      },
+    },
+    {
+      header: t('colPayment'),
+      accessorKey: 'paymentStatus',
+      cell: ({ getValue }: { getValue: () => string }) => {
+        const value = getValue();
+        const color =
+          value === 'COMPLETED'
+            ? 'text-green-400'
+            : value === 'PENDING'
+            ? 'text-yellow-400'
+            : value === 'FAILED'
+            ? 'text-red-400'
+            : 'text-purple-400';
+        return <span className={`font-medium ${color}`}>{value}</span>;
+      },
+    },
+    {
+      header: t('colStatus'),
+      accessorKey: 'status',
+      cell: ({ getValue }: { getValue: () => string }) => {
+        const value = getValue();
+        const color =
+          value === 'DELIVERED'
+            ? 'text-green-400'
+            : value === 'SHIPPED'
+            ? 'text-blue-400'
+            : value === 'PAID'
+            ? 'text-cyan-400'
+            : value === 'PENDING'
+            ? 'text-yellow-400'
+            : 'text-red-400';
+        return <span className={`font-medium ${color}`}>{value}</span>;
+      },
+    },
+  ];
 
   const table = useReactTable({
     data: ordersData?.data || [],
@@ -128,12 +101,12 @@ const OrdersTable = () => {
     return (
       <div className="mt-6">
         <h2 className="text-white text-xl font-semibold mb-4">
-          Recent Orders
+          {t('recentOrdersTitle')}
           <span className="block text-sm text-slate-400 font-normal">
-            A quick snapshot of your latest transactions.
+            {t('recentOrdersSubtitle')}
           </span>
         </h2>
-        <div className="text-white text-center py-8">Loading orders...</div>
+        <div className="text-white text-center py-8">{t('loadingOrders')}</div>
       </div>
     );
   }
@@ -141,9 +114,9 @@ const OrdersTable = () => {
   return (
     <div className="mt-6">
       <h2 className="text-white text-xl font-semibold mb-4">
-        Recent Orders
+        {t('recentOrdersTitle')}
         <span className="block text-sm text-slate-400 font-normal">
-          A quick snapshot of your latest transactions.
+          {t('recentOrdersSubtitle')}
         </span>
       </h2>
       <div className="rounded-xl overflow-hidden border border-[#1f1f1f]">
@@ -166,7 +139,7 @@ const OrdersTable = () => {
             {table.getRowModel().rows.length === 0 ? (
               <tr>
                 <td colSpan={5} className="p-8 text-center text-slate-400">
-                  No orders found
+                  {t('noOrders')}
                 </td>
               </tr>
             ) : (
@@ -193,51 +166,83 @@ const OrdersTable = () => {
   );
 };
 
+// Dynamic imports for chart components to avoid SSR issues
+const SaleChart = nextDynamic(
+  () => import('../../../../shared/components/charts/sale-chart'),
+  { ssr: false }
+);
+
+const GeographicalMap = nextDynamic(
+  () => import('../../../../shared/components/charts/geographicalMap'),
+  { ssr: false }
+);
+
 // Dashboard Layout
 const DashboardPage = () => {
+  const t = useTranslations('Dashboard');
   const { data: stats, isLoading: statsLoading } = usePlatformStatistics();
+
+  const deviceData = [
+    { name: t('devicePhone'), value: 55 },
+    { name: t('deviceTablet'), value: 20 },
+    { name: t('deviceComputer'), value: 25 },
+  ];
 
   return (
     <div className="p-8">
       {/* Statistics Cards */}
       {statsLoading ? (
         <div className="text-white text-center py-8 mb-6">
-          Loading statistics...
+          {t('loadingStats')}
         </div>
       ) : stats ? (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-xl p-5">
-            <div className="text-slate-500 text-xs font-medium mb-3 uppercase tracking-wide">Total Users</div>
+            <div className="text-slate-500 text-xs font-medium mb-3 uppercase tracking-wide">
+              {t('statTotalUsers')}
+            </div>
             <div className="text-blue-400 text-3xl font-bold mb-1.5 tabular-nums">
               {stats.users.total.toLocaleString()}
             </div>
             <div className="text-slate-600 text-xs">
-              {stats.users.customers} customers · {stats.users.sellers} sellers
+              {t('statTotalUsersDesc', {
+                customers: stats.users.customers,
+                sellers: stats.users.sellers,
+              })}
             </div>
           </div>
 
           <div className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-xl p-5">
-            <div className="text-slate-500 text-xs font-medium mb-3 uppercase tracking-wide">Active Shops</div>
+            <div className="text-slate-500 text-xs font-medium mb-3 uppercase tracking-wide">
+              {t('statActiveShops')}
+            </div>
             <div className="text-violet-400 text-3xl font-bold mb-1.5 tabular-nums">
               {stats.sellers.activeShops.toLocaleString()}
             </div>
             <div className="text-slate-600 text-xs">
-              {stats.sellers.verified} verified sellers
+              {t('statActiveShopsDesc', { verified: stats.sellers.verified })}
             </div>
           </div>
 
           <div className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-xl p-5">
-            <div className="text-slate-500 text-xs font-medium mb-3 uppercase tracking-wide">Total Orders</div>
+            <div className="text-slate-500 text-xs font-medium mb-3 uppercase tracking-wide">
+              {t('statTotalOrders')}
+            </div>
             <div className="text-emerald-400 text-3xl font-bold mb-1.5 tabular-nums">
               {stats.orders.total.toLocaleString()}
             </div>
             <div className="text-slate-600 text-xs">
-              {stats.orders.completed} completed · {stats.orders.pending} pending
+              {t('statTotalOrdersDesc', {
+                completed: stats.orders.completed,
+                pending: stats.orders.pending,
+              })}
             </div>
           </div>
 
           <div className="bg-[#0d0d0d] border border-[#1f1f1f] rounded-xl p-5">
-            <div className="text-slate-500 text-xs font-medium mb-3 uppercase tracking-wide">Platform Revenue</div>
+            <div className="text-slate-500 text-xs font-medium mb-3 uppercase tracking-wide">
+              {t('statRevenue')}
+            </div>
             <div className="text-amber-400 text-3xl font-bold mb-1.5 tabular-nums">
               $
               {(stats.revenue.total / 100).toLocaleString(undefined, {
@@ -246,26 +251,26 @@ const DashboardPage = () => {
               })}
             </div>
             <div className="text-slate-600 text-xs">
-              $
-              {(stats.revenue.platformFee / 100).toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}{' '}
-              in fees
+              {t('statRevenueDesc', {
+                fee: `$${(stats.revenue.platformFee / 100).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}`,
+              })}
             </div>
           </div>
         </div>
       ) : null}
 
-      {/*Top Charts */}
+      {/* Top Charts */}
       <div className="w-full flex gap-8">
-        {/*Revenue Chart*/}
+        {/* Revenue Chart */}
         <div className="w-[65%]">
           <div className="rounded-2xl shadow-xl">
             <h2 className="text-white text-xl font-semibold">
-              Revenue
+              {t('revenueTitle')}
               <span className="block text-sm text-slate-400 font-normal">
-                Last 6 months performance
+                {t('revenueSubtitle')}
               </span>
             </h2>
             <SaleChart
@@ -280,9 +285,9 @@ const DashboardPage = () => {
         {/* Device Usage */}
         <div className="w-[35%] rounded-2xl shadow-xl">
           <h2 className="text-white text-xl font-semibold mb-2">
-            Device Usage
+            {t('deviceUsageTitle')}
             <span className="block text-sm text-slate-400 font-normal">
-              How users access your platform
+              {t('deviceUsageSubtitle')}
             </span>
           </h2>
           <div className="mt-14">
@@ -338,7 +343,6 @@ const DashboardPage = () => {
                   itemStyle={{ color: '#fff' }}
                 />
 
-                {/* External Legend */}
                 <Legend
                   layout="horizontal"
                   verticalAlign="bottom"
@@ -354,14 +358,14 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* Geo Map  + Orders */}
+      {/* Geo Map + Orders */}
       <div className="w-full flex gap-8">
         {/* Map */}
         <div className="w-[60%]">
           <h2 className="text-white text-xl font-semibold mt-6">
-            User & Seller Distribution
+            {t('mapTitle')}
             <span className="block text-sm text-slate-400 font-normal">
-              Visual breakdown of global user & seller activity.
+              {t('mapSubtitle')}
             </span>
           </h2>
           <GeographicalMap

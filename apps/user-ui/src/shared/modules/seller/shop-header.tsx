@@ -22,6 +22,7 @@ import {
   useUnfollowShop,
 } from '../../../hooks/use-shops';
 import type { Shop } from '../../../lib/api/shops';
+import { useTranslations } from 'next-intl';
 
 interface ShopHeaderProps {
   shop: Shop;
@@ -37,6 +38,7 @@ const ShopHeader: React.FC<ShopHeaderProps> = ({
   shop,
   initialFollowersCount = 0,
 }) => {
+  const t = useTranslations('ShopProfile');
   const { user, isAuthenticated } = useAuth();
 
   // Fetch followers count
@@ -142,10 +144,10 @@ const ShopHeader: React.FC<ShopHeaderProps> = ({
               <span className="flex items-center gap-1.5">
                 <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
                 <span className="font-semibold text-gray-700">
-                  {shop.rating?.toFixed(1) ?? 'N/A'}
+                  {shop.rating?.toFixed(1) ?? t('noRating')}
                 </span>
                 {shop.totalRatings !== undefined && (
-                  <span className="text-gray-400">({shop.totalRatings} reviews)</span>
+                  <span className="text-gray-400">({shop.totalRatings} {t('reviews')})</span>
                 )}
               </span>
             </div>
@@ -155,14 +157,14 @@ const ShopHeader: React.FC<ShopHeaderProps> = ({
               <div className="flex items-center gap-1.5 text-gray-700">
                 <Users className="w-4 h-4 text-gray-400" />
                 <span className="font-semibold">{followersCount.toLocaleString()}</span>
-                <span className="text-gray-500">followers</span>
+                <span className="text-gray-500">{t('followers')}</span>
               </div>
 
               {shop.totalOrders !== undefined && (
                 <div className="flex items-center gap-1.5 text-gray-700">
                   <ShoppingBag className="w-4 h-4 text-gray-400" />
                   <span className="font-semibold">{shop.totalOrders.toLocaleString()}</span>
-                  <span className="text-gray-500">orders</span>
+                  <span className="text-gray-500">{t('orders')}</span>
                 </div>
               )}
             </div>
@@ -187,7 +189,7 @@ const ShopHeader: React.FC<ShopHeaderProps> = ({
               ) : (
                 <Heart className="w-4 h-4" />
               )}
-              {isFollowing ? 'Unfollow' : 'Follow'}
+              {isFollowing ? t('unfollow') : t('follow')}
             </button>
 
             {/* Contact Button */}
@@ -197,7 +199,7 @@ const ShopHeader: React.FC<ShopHeaderProps> = ({
                 className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300 transition-all"
               >
                 <MessageCircle className="w-4 h-4" />
-                Contact
+                {t('contact')}
               </Link>
             )}
           </div>

@@ -2,11 +2,13 @@
 
 export const dynamic = 'force-dynamic';
 
+import { useTranslations } from 'next-intl';
 import { createLogger } from '@tec-shop/next-logger';
 import { Input } from '../../../../components/ui/core/Input';
 
 const logger = createLogger('user-ui:cart');
 import { useAuth } from '../../../../hooks/use-auth';
+import { useCurrency } from '../../../../hooks/use-currency';
 import useDeviceTracking from '../../../../hooks/use-device-tracking';
 import useLocationTracking from '../../../../hooks/use-location-tracking';
 import useStore from '../../../../store';
@@ -52,7 +54,9 @@ function getImageUrl(item: { images?: string | string[]; image?: string | unknow
 }
 
 const CartPage = () => {
+  const t = useTranslations('Cart');
   const { isAuthenticated } = useAuth();
+  const { formatPrice } = useCurrency();
   useLocationTracking();
   useDeviceTracking();
   const cart = useStore((state) => state.cart);
@@ -71,7 +75,7 @@ const CartPage = () => {
   const couponCodeChangeHandler = async () => {
     setError('');
     if (!couponCode.trim()) {
-      setError('Coupon code is required');
+      setError(t('couponRequired'));
       return;
     }
     try {
@@ -105,11 +109,11 @@ const CartPage = () => {
 
   const createPaymentSession = async () => {
     if (cart.length === 0) {
-      toast.error('Your cart is empty');
+      toast.error(t('cartEmpty'));
       return;
     }
     if (!selectedAddressId) {
-      toast.error('Please select a shipping address');
+      toast.error(t('selectShippingAddress'));
       return;
     }
     setLoading(true);
@@ -140,7 +144,7 @@ const CartPage = () => {
         throw new Error('No checkout session URL returned');
       }
     } catch (err) {
-      toast.error('Something went wrong. Please try again.');
+      toast.error(t('checkoutError'));
       logger.error('Error creating checkout session:', { err });
     } finally {
       setLoading(false);
@@ -188,7 +192,7 @@ const CartPage = () => {
         return !isMatch;
       }),
     }));
-    toast.success('Removed from cart', { description: name });
+    toast.success(t('removedFromCart'), { description: name });
   };
 
   const subtotal = cart.reduce((total, item) => total + item.price * item.quantity, 0);
@@ -214,17 +218,17 @@ const CartPage = () => {
             <Home size={14} />
           </Link>
           <ChevronRight size={14} className="text-gray-400 flex-shrink-0" />
-          <span className="text-gray-800 font-medium">Shopping Cart</span>
+          <span className="text-gray-800 font-medium">{t('breadcrumbCart')}</span>
         </nav>
 
         {/* Page header */}
         <div className="flex items-center gap-3 mb-6">
           <ShoppingCart size={24} className="text-brand-primary" />
           <h1 className="text-2xl font-bold text-gray-900 font-heading">
-            Shopping Cart
+            {t('pageTitle')}
             {cart.length > 0 && (
               <span className="ml-2 text-base font-normal text-gray-400">
-                ({cart.length} {cart.length === 1 ? 'item' : 'items'})
+                ({t('itemCount', { count: cart.length })})
               </span>
             )}
           </h1>
@@ -236,15 +240,15 @@ const CartPage = () => {
             <div className="w-20 h-20 rounded-full bg-brand-primary/10 flex items-center justify-center mb-5">
               <ShoppingCart size={36} className="text-brand-primary/50" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">{t('emptyTitle')}</h2>
             <p className="text-gray-500 text-sm max-w-xs mb-6">
-              Looks like you haven&apos;t added anything yet. Start browsing and find something you love!
+              {t('emptyDesc')}
             </p>
             <Link
               href="/all-products"
               className="flex items-center gap-2 bg-brand-primary text-white text-sm font-semibold px-6 py-3 rounded-full hover:bg-brand-primary-800 transition-colors"
             >
-              Browse Products
+              {t('browseProducts')}
               <ArrowRight size={16} />
             </Link>
           </div>
@@ -262,10 +266,10 @@ const CartPage = () => {
                   <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 bg-gray-50/70">
                     <Store size={15} className="text-brand-primary flex-shrink-0" />
                     <span className="text-xs font-semibold text-gray-700">
-                      {shopName ?? 'Vendor'}
+                      {shopName ?? t('vendorFallback')}
                     </span>
                     <span className="text-xs text-gray-400">
-                      · {items.length} {items.length === 1 ? 'item' : 'items'}
+                      · {t('vendorItemCount', { count: items.length })}
                     </span>
                   </div>
 
@@ -295,7 +299,7 @@ const CartPage = () => {
                                 />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                                  No image
+                                  {t('noImage')}
                                 </div>
                               )}
                             </div>
@@ -325,18 +329,18 @@ const CartPage = () => {
                             )}
 
                             {item.sku && (
-                              <p className="text-[11px] text-gray-400 mt-1">SKU: {item.sku}</p>
+                              <p className="text-[11px] text-gray-400 mt-1">{t('sku', { sku: item.sku })}</p>
                             )}
 
                             <div className="flex items-center gap-2 mt-2 flex-wrap">
                               <span className="text-base font-bold text-brand-primary">
-                                ${item.price.toFixed(2)}
+                                {formatPrice(item.price)}
                               </span>
                               {item.quantity > 1 && (
                                 <span className="text-xs text-gray-400">
                                   × {item.quantity} ={' '}
                                   <span className="font-semibold text-gray-600">
-                                    ${lineTotal.toFixed(2)}
+                                    {formatPrice(lineTotal)}
                                   </span>
                                 </span>
                               )}
@@ -350,7 +354,7 @@ const CartPage = () => {
                                   onClick={() => decreaseQuantity(item.id, item.variantId)}
                                   disabled={item.quantity <= 1}
                                   className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                                  aria-label="Decrease quantity"
+                                  aria-label={t('decreaseQty')}
                                 >
                                   <Minus size={13} />
                                 </button>
@@ -360,7 +364,7 @@ const CartPage = () => {
                                 <button
                                   onClick={() => increaseQuantity(item.id, item.variantId)}
                                   className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors"
-                                  aria-label="Increase quantity"
+                                  aria-label={t('increaseQty')}
                                 >
                                   <Plus size={13} />
                                 </button>
@@ -370,10 +374,10 @@ const CartPage = () => {
                               <button
                                 onClick={() => removeItem(item.id, item.title, item.variantId)}
                                 className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition-colors ml-auto"
-                                aria-label={`Remove ${item.title} from cart`}
+                                aria-label={t('removeAriaLabel', { title: item.title })}
                               >
                                 <Trash2 size={14} />
-                                Remove
+                                {t('remove')}
                               </button>
                             </div>
                           </div>
@@ -391,7 +395,7 @@ const CartPage = () => {
                 className="flex items-center justify-center gap-2 text-sm text-brand-primary font-medium hover:underline mt-1 py-2"
               >
                 <ArrowRight size={15} />
-                Continue Shopping
+                {t('continueShopping')}
               </Link>
             </div>
 
@@ -402,7 +406,7 @@ const CartPage = () => {
               <div className="bg-white rounded-2xl shadow-sm p-5">
                 <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
                   <Tag size={15} className="text-brand-primary" />
-                  Promo Code
+                  {t('promoCode')}
                 </h3>
 
                 {storedCouponCode && discountAmount > 0 ? (
@@ -410,10 +414,12 @@ const CartPage = () => {
                     <CheckCircle2 size={15} className="text-green-600 flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-green-800">
-                        &ldquo;{storedCouponCode}&rdquo; applied
+                        {t('couponApplied', { code: storedCouponCode })}
                       </p>
                       <p className="text-xs text-green-700 mt-0.5">
-                        You save ${discountAmount.toFixed(2)}{discountPercentage > 0 && ` (${discountPercentage}% off)`}
+                        {discountPercentage > 0
+                          ? t('youSavePercent', { amount: formatPrice(discountAmount), percent: discountPercentage })
+                          : t('youSave', { amount: formatPrice(discountAmount) })}
                       </p>
                     </div>
                     <button
@@ -424,7 +430,7 @@ const CartPage = () => {
                         setDiscountedProductId('');
                       }}
                       className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
-                      aria-label="Remove coupon"
+                      aria-label={t('removeCoupon')}
                     >
                       <X size={14} />
                     </button>
@@ -438,7 +444,7 @@ const CartPage = () => {
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') couponCodeChangeHandler();
                       }}
-                      placeholder="Enter promo code"
+                      placeholder={t('enterPromoCode')}
                       className="flex-1 rounded-lg text-sm"
                     />
                     <button
@@ -446,7 +452,7 @@ const CartPage = () => {
                       onClick={couponCodeChangeHandler}
                       disabled={!couponCode.trim()}
                     >
-                      Apply
+                      {t('apply')}
                     </button>
                   </div>
                 )}
@@ -461,40 +467,45 @@ const CartPage = () => {
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2">
                     <MapPin size={15} className="text-brand-primary" />
-                    Shipping Address
+                    {t('shippingAddress')}
                   </h3>
                   {isAuthenticated && (
                     <Link
                       href="/profile?tab=shipping-address"
                       className="text-xs text-brand-primary hover:underline font-medium"
                     >
-                      Manage
+                      {t('manage')}
                     </Link>
                   )}
                 </div>
 
                 {!isAuthenticated ? (
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
-                    Please{' '}
-                    <Link href="/login" className="font-semibold underline">
-                      log in
-                    </Link>{' '}
-                    to select a shipping address.
+                    {t.rich('loginForShipping', {
+                      loginLink: (chunks) => (
+                        <Link href="/login" className="font-semibold underline">
+                          {chunks}
+                        </Link>
+                      ),
+                    })}
                   </div>
                 ) : addressesLoading ? (
                   <div className="flex items-center justify-center p-3 border border-gray-100 rounded-xl">
                     <Loader2 className="w-4 h-4 animate-spin mr-2 text-brand-primary" />
-                    <span className="text-xs text-gray-500">Loading addresses...</span>
+                    <span className="text-xs text-gray-500">{t('loadingAddresses')}</span>
                   </div>
                 ) : addresses.length === 0 ? (
                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800">
-                    No address found.{' '}
-                    <Link
-                      href="/profile?tab=shipping-address"
-                      className="font-semibold underline"
-                    >
-                      Add one now
-                    </Link>
+                    {t.rich('noAddressFound', {
+                      addLink: (chunks) => (
+                        <Link
+                          href="/profile?tab=shipping-address"
+                          className="font-semibold underline"
+                        >
+                          {chunks}
+                        </Link>
+                      ),
+                    })}
                   </div>
                 ) : (
                   <>
@@ -507,7 +518,7 @@ const CartPage = () => {
                         <option key={address.id} value={address.id}>
                           {address.label} — {address.city}
                           {address.state && `, ${address.state}`} — {address.country}
-                          {address.isDefault ? ' (Default)' : ''}
+                          {address.isDefault ? t('defaultAddressSuffix') : ''}
                         </option>
                       ))}
                     </select>
@@ -542,31 +553,31 @@ const CartPage = () => {
               <div className="bg-white rounded-2xl shadow-sm p-5">
                 <h3 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
                   <CreditCard size={15} className="text-brand-primary" />
-                  Payment Method
+                  {t('paymentMethod')}
                 </h3>
                 <select className="w-full p-2.5 border border-gray-200 rounded-xl text-sm text-gray-800 bg-gray-50 focus:outline-none focus:border-brand-primary transition-colors cursor-pointer">
-                  <option value="credit_card">Online Payment (Card)</option>
-                  <option value="cash_on_delivery">Cash on Delivery</option>
+                  <option value="credit_card">{t('onlinePayment')}</option>
+                  <option value="cash_on_delivery">{t('cashOnDelivery')}</option>
                 </select>
               </div>
 
               {/* Summary + CTA */}
               <div className="bg-white rounded-2xl shadow-sm p-5">
-                <h2 className="text-base font-bold text-gray-900 mb-4">Order Summary</h2>
+                <h2 className="text-base font-bold text-gray-900 mb-4">{t('orderSummary')}</h2>
 
                 <div className="space-y-2.5 text-sm">
                   <div className="flex justify-between text-gray-600">
-                    <span>Items ({cart.length})</span>
-                    <span className="font-medium text-gray-900">${subtotal.toFixed(2)}</span>
+                    <span>{t('summaryItems', { count: cart.length })}</span>
+                    <span className="font-medium text-gray-900">{formatPrice(subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-gray-600">
-                    <span>Shipping</span>
-                    <span className="text-green-600 font-medium">Calculated at checkout</span>
+                    <span>{t('shipping')}</span>
+                    <span className="text-green-600 font-medium">{t('shippingCalcAtCheckout')}</span>
                   </div>
                   {storedCouponCode && discountAmount > 0 && (
                     <div className="flex justify-between text-green-600">
-                      <span>Discount ({storedCouponCode})</span>
-                      <span className="font-semibold">-${discountAmount.toFixed(2)}</span>
+                      <span>{t('discount', { code: storedCouponCode })}</span>
+                      <span className="font-semibold">-{formatPrice(discountAmount)}</span>
                     </div>
                   )}
                 </div>
@@ -574,8 +585,8 @@ const CartPage = () => {
                 <div className="border-t border-gray-100 my-4" />
 
                 <div className="flex justify-between text-base font-bold text-gray-900 mb-5">
-                  <span>Estimated Total</span>
-                  <span className="text-brand-primary">${total.toFixed(2)}</span>
+                  <span>{t('estimatedTotal')}</span>
+                  <span className="text-brand-primary">{formatPrice(total)}</span>
                 </div>
 
                 <button
@@ -586,12 +597,12 @@ const CartPage = () => {
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Redirecting...
+                      {t('redirecting')}
                     </>
                   ) : (
                     <>
                       <CreditCard size={16} />
-                      Proceed to Checkout
+                      {t('proceedToCheckout')}
                     </>
                   )}
                 </button>
@@ -600,7 +611,7 @@ const CartPage = () => {
                   href="/all-products"
                   className="block text-center text-sm text-gray-500 hover:text-brand-primary mt-3 transition-colors"
                 >
-                  Continue Shopping
+                  {t('continueShopping')}
                 </Link>
               </div>
             </div>

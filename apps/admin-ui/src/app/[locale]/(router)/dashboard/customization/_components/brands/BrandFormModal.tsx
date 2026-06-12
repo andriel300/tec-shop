@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type { Brand, CreateBrandData, UpdateBrandData } from '../../../../../../../hooks/useBrands';
 import ModalShell from '../ModalShell';
 
@@ -14,6 +15,7 @@ const BrandFormModal = (props: {
   isPending: boolean;
   initialData?: Brand | null;
 }) => {
+  const t = useTranslations('Customization');
   const [formData, setFormData] = useState({
     name: props.initialData?.name || '',
     slug: props.initialData?.slug || '',
@@ -44,7 +46,7 @@ const BrandFormModal = (props: {
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    if (!formData.name.trim()) newErrors.name = 'Name is required';
+    if (!formData.name.trim()) newErrors.name = t('nameRequired');
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -63,10 +65,10 @@ const BrandFormModal = (props: {
   };
 
   return (
-    <ModalShell isOpen={props.isOpen} onClose={props.onClose} title={isEditing ? 'Edit Brand' : 'Add New Brand'}>
+    <ModalShell isOpen={props.isOpen} onClose={props.onClose} title={isEditing ? t('editBrand') : t('addNewBrand')}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="text-slate-300 text-sm block mb-2">Name *</label>
+          <label className="text-slate-300 text-sm block mb-2">{t('fieldName')}</label>
           <input
             type="text"
             value={formData.name}
@@ -75,52 +77,52 @@ const BrandFormModal = (props: {
               setFormData({ ...formData, name, slug: formData.slug || generateSlug(name) });
             }}
             className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
-            placeholder="e.g. Apple"
+            placeholder={t('brandNamePlaceholder')}
           />
           {errors.name && <p className="text-red-400 text-xs mt-1">{errors.name}</p>}
         </div>
 
         <div>
-          <label className="text-slate-300 text-sm block mb-2">Slug</label>
+          <label className="text-slate-300 text-sm block mb-2">{t('fieldSlug')}</label>
           <input
             type="text"
             value={formData.slug}
             onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
             className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
-            placeholder="Auto-generated from name"
+            placeholder={t('slugPlaceholder')}
           />
         </div>
 
         <div>
-          <label className="text-slate-300 text-sm block mb-2">Description</label>
+          <label className="text-slate-300 text-sm block mb-2">{t('fieldDescription')}</label>
           <textarea
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
             rows={3}
-            placeholder="Brief description of this brand..."
+            placeholder={t('brandDescriptionPlaceholder')}
           />
         </div>
 
         <div>
-          <label className="text-slate-300 text-sm block mb-2">Logo URL</label>
+          <label className="text-slate-300 text-sm block mb-2">{t('fieldLogoUrl')}</label>
           <input
             type="text"
             value={formData.logo}
             onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
             className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
-            placeholder="https://example.com/logo.png"
+            placeholder={t('logoUrlPlaceholder')}
           />
         </div>
 
         <div>
-          <label className="text-slate-300 text-sm block mb-2">Website</label>
+          <label className="text-slate-300 text-sm block mb-2">{t('fieldWebsite')}</label>
           <input
             type="text"
             value={formData.website}
             onChange={(e) => setFormData({ ...formData, website: e.target.value })}
             className="w-full bg-slate-700 text-white rounded p-3 border border-slate-600 focus:border-blue-500 focus:outline-none"
-            placeholder="https://example.com"
+            placeholder={t('websitePlaceholder')}
           />
         </div>
 
@@ -134,7 +136,7 @@ const BrandFormModal = (props: {
             />
             <div className="w-11 h-6 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600" />
           </label>
-          <span className="text-slate-300 text-sm">Active</span>
+          <span className="text-slate-300 text-sm">{t('fieldActive')}</span>
         </div>
 
         <div className="flex gap-3 mt-6">
@@ -143,7 +145,7 @@ const BrandFormModal = (props: {
             disabled={props.isPending}
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded p-3 font-medium disabled:opacity-50"
           >
-            {props.isPending ? 'Saving...' : isEditing ? 'Update Brand' : 'Create Brand'}
+            {props.isPending ? t('saving') : isEditing ? t('updateBrand') : t('createBrand')}
           </button>
           <button
             type="button"
@@ -151,7 +153,7 @@ const BrandFormModal = (props: {
             disabled={props.isPending}
             className="flex-1 bg-slate-700 hover:bg-slate-600 text-white rounded p-3 font-medium disabled:opacity-50"
           >
-            Cancel
+            {t('cancel')}
           </button>
         </div>
       </form>

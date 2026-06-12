@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import ImagePlaceHolder from '../../image-placeholder';
 
 export interface ProductImageUploaderProps {
@@ -26,6 +27,7 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
   onImageRemoved,
   initialUrls = [],
 }) => {
+  const t = useTranslations('CreateProduct');
   const [_openImageModal, setOpenImageModal] = useState(false);
 
   const handleImageChange = (file: File | null, index: number) => {
@@ -56,13 +58,13 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
   return (
     <div className={`space-y-4 ${className}`}>
       <h3 className="text-lg font-semibold text-gray-900 mb-4">
-        Product Images
+        {t('imagesTitle')}
       </h3>
 
       {/* Main Image */}
       <div>
         <label className="block text-sm font-medium text-gray-900 mb-2">
-          Main Image *
+          {t('imagesMainLabel')}
         </label>
         <ImagePlaceHolder
           size="large"
@@ -75,14 +77,14 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
           defaultImage={getDefaultImage(0)}
         />
         <p className="mt-2 text-xs text-gray-500">
-          Upload the main product image (Required)
+          {t('imagesMainHint')}
         </p>
       </div>
 
       {/* Additional Images Grid */}
       <div>
         <label className="block text-sm font-medium text-gray-900 mb-2">
-          Additional Images (Optional)
+          {t('imagesAdditionalLabel')}
         </label>
         <div className="grid grid-cols-3 gap-2">
           {[1, 2, 3].map((idx) => (
@@ -100,20 +102,20 @@ const ProductImageUploader: React.FC<ProductImageUploaderProps> = ({
           ))}
         </div>
         <p className="mt-2 text-xs text-gray-500">
-          Upload up to 3 additional images
+          {t('imagesAdditionalHint')}
         </p>
       </div>
 
       {/* Image Upload Tips */}
       <div className="bg-surface-container-lowest border border-surface-container-highest shadow-ambient rounded-lg p-4 mt-4">
         <h4 className="text-sm font-semibold text-gray-900 mb-2">
-          Image Guidelines
+          {t('imagesGuidelinesTitle')}
         </h4>
         <ul className="text-xs text-gray-500 space-y-1">
-          <li>• Use high-quality images (min 800x800px)</li>
-          <li>• Supported formats: JPG, PNG, WebP</li>
-          <li>• Max file size: 3MB per image (compress large files)</li>
-          <li>• Use clear, well-lit photos with white/neutral background</li>
+          <li>• {t('imagesGuidelineQuality')}</li>
+          <li>• {t('imagesGuidelineFormats')}</li>
+          <li>• {t('imagesGuidelineSize')}</li>
+          <li>• {t('imagesGuidelineBackground')}</li>
         </ul>
       </div>
     </div>

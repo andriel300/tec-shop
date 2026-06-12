@@ -64,6 +64,7 @@ export class AdminLayoutService {
         actionLabel: dto.actionLabel,
         order: dto.order ?? 0,
         isActive: dto.isActive ?? true,
+        ...(dto.translations !== undefined && { translations: dto.translations }),
       },
     });
 
@@ -92,6 +93,7 @@ export class AdminLayoutService {
         ...(dto.actionLabel !== undefined && { actionLabel: dto.actionLabel }),
         ...(dto.order !== undefined && { order: dto.order }),
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
+        ...(dto.translations !== undefined && { translations: dto.translations }),
       },
     });
 

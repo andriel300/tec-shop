@@ -124,6 +124,8 @@ model HeroSlide {
   actionLabel  String?
   order        Int        @default(0)
   isActive     Boolean    @default(true)
+  /// Locale-keyed translations: { "pt-BR": { title, subtitle, actionLabel } }
+  translations Json?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 

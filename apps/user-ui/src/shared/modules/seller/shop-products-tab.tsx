@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowUpDown, Grid, List, Loader2 } from 'lucide-react';
 import ProductCard from '../../../components/cards/product-card';
 import { getPublicProducts, type GetProductsParams } from '../../../lib/api/products';
+import { useTranslations } from 'next-intl';
 
 interface ShopProductsTabProps {
   shopId: string;
@@ -14,23 +15,24 @@ interface ShopProductsTabProps {
 type SortOption = 'newest' | 'price-asc' | 'price-desc' | 'popular' | 'top-sales';
 type ViewMode = 'grid' | 'list';
 
-const sortOptions: { value: SortOption; label: string }[] = [
-  { value: 'newest', label: 'Newest' },
-  { value: 'popular', label: 'Most Popular' },
-  { value: 'top-sales', label: 'Best Selling' },
-  { value: 'price-asc', label: 'Price: Low to High' },
-  { value: 'price-desc', label: 'Price: High to Low' },
-];
-
 const PRODUCTS_PER_PAGE = 12;
 
 const ShopProductsTab: React.FC<ShopProductsTabProps> = ({
   shopId,
   onProductCountChange,
 }) => {
+  const t = useTranslations('ShopProfile');
   const [sort, setSort] = useState<SortOption>('newest');
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+
+  const sortOptions: { value: SortOption; label: string }[] = [
+    { value: 'newest', label: t('sortNewest') },
+    { value: 'popular', label: t('sortMostPopular') },
+    { value: 'top-sales', label: t('sortBestSelling') },
+    { value: 'price-asc', label: t('sortPriceLowHigh') },
+    { value: 'price-desc', label: t('sortPriceHighLow') },
+  ];
 
   const params: GetProductsParams = {
     shopId,
@@ -65,7 +67,7 @@ const ShopProductsTab: React.FC<ShopProductsTabProps> = ({
   if (isError) {
     return (
       <div className="text-center py-16">
-        <p className="text-gray-500">Failed to load products. Please try again later.</p>
+        <p className="text-gray-500">{t('failedToLoadProducts')}</p>
       </div>
     );
   }
@@ -73,7 +75,7 @@ const ShopProductsTab: React.FC<ShopProductsTabProps> = ({
   if (!data || data.products.length === 0) {
     return (
       <div className="text-center py-16">
-        <p className="text-gray-500">No products found in this shop.</p>
+        <p className="text-gray-500">{t('noProductsInShop')}</p>
       </div>
     );
   }
@@ -83,7 +85,7 @@ const ShopProductsTab: React.FC<ShopProductsTabProps> = ({
       {/* Filters and Sort Row */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <p className="text-sm text-gray-600">
-          Showing {data.products.length} of {data.total} products
+          {t('showingProducts', { count: data.products.length, total: data.total })}
         </p>
 
         <div className="flex items-center gap-3">
@@ -155,7 +157,7 @@ const ShopProductsTab: React.FC<ShopProductsTabProps> = ({
             disabled={page === 1}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Previous
+            {t('previous')}
           </button>
 
           <div className="flex items-center gap-1">
@@ -192,7 +194,7 @@ const ShopProductsTab: React.FC<ShopProductsTabProps> = ({
             disabled={page === totalPages}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Next
+            {t('next')}
           </button>
         </div>
       )}

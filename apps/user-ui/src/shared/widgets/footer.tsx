@@ -2,6 +2,7 @@
 
 import { Link } from '../../i18n/navigation';
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Facebook,
   Twitter,
@@ -18,6 +19,7 @@ import {
 } from 'lucide-react';
 
 const Footer = () => {
+  const t = useTranslations('Footer');
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
@@ -44,9 +46,9 @@ const Footer = () => {
               </div>
               <div>
                 <h4 className="font-semibold text-gray-900 text-sm">
-                  Free Shipping
+                  {t('freeShipping')}
                 </h4>
-                <p className="text-xs text-gray-500">On orders over $50</p>
+                <p className="text-xs text-gray-500">{t('freeShippingDesc')}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -55,9 +57,9 @@ const Footer = () => {
               </div>
               <div>
                 <h4 className="font-semibold text-gray-900 text-sm">
-                  Easy Returns
+                  {t('easyReturns')}
                 </h4>
-                <p className="text-xs text-gray-500">30-day return policy</p>
+                <p className="text-xs text-gray-500">{t('easyReturnsDesc')}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -66,9 +68,9 @@ const Footer = () => {
               </div>
               <div>
                 <h4 className="font-semibold text-gray-900 text-sm">
-                  Secure Payment
+                  {t('securePayment')}
                 </h4>
-                <p className="text-xs text-gray-500">100% secure checkout</p>
+                <p className="text-xs text-gray-500">{t('securePaymentDesc')}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -77,9 +79,9 @@ const Footer = () => {
               </div>
               <div>
                 <h4 className="font-semibold text-gray-900 text-sm">
-                  24/7 Support
+                  {t('support')}
                 </h4>
-                <p className="text-xs text-gray-500">Dedicated support</p>
+                <p className="text-xs text-gray-500">{t('supportDesc')}</p>
               </div>
             </div>
           </div>
@@ -97,9 +99,7 @@ const Footer = () => {
               </span>
             </Link>
             <p className="mt-4 text-sm text-gray-500 leading-relaxed">
-              Your premier destination for quality products at competitive
-              prices. We connect buyers with trusted sellers to create a
-              seamless shopping experience.
+              {t('description')}
             </p>
 
             {/* Contact Info */}
@@ -157,14 +157,14 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-gray-900 font-semibold mb-4">Quick Links</h3>
+            <h3 className="text-gray-900 font-semibold mb-4">{t('quickLinks')}</h3>
             <ul className="space-y-2.5">
               <li>
                 <Link
                   href="/"
                   className="text-sm hover:text-brand-primary transition-colors"
                 >
-                  Home
+                  {t('home')}
                 </Link>
               </li>
               <li>
@@ -172,7 +172,7 @@ const Footer = () => {
                   href="/all-products"
                   className="text-sm hover:text-brand-primary transition-colors"
                 >
-                  Products
+                  {t('products')}
                 </Link>
               </li>
               <li>
@@ -180,7 +180,7 @@ const Footer = () => {
                   href="/shops"
                   className="text-sm hover:text-brand-primary transition-colors"
                 >
-                  Shops
+                  {t('shops')}
                 </Link>
               </li>
               <li>
@@ -188,7 +188,7 @@ const Footer = () => {
                   href="/offers"
                   className="text-sm hover:text-brand-primary transition-colors"
                 >
-                  Offers
+                  {t('offers')}
                 </Link>
               </li>
               <li>
@@ -196,7 +196,7 @@ const Footer = () => {
                   href="/become-a-seller"
                   className="text-sm hover:text-brand-primary transition-colors"
                 >
-                  Become a Seller
+                  {t('becomeASeller')}
                 </Link>
               </li>
             </ul>
@@ -204,14 +204,14 @@ const Footer = () => {
 
           {/* Customer Service */}
           <div>
-            <h3 className="text-gray-900 font-semibold mb-4">Customer Service</h3>
+            <h3 className="text-gray-900 font-semibold mb-4">{t('customerService')}</h3>
             <ul className="space-y-2.5">
               <li>
                 <Link
                   href="/profile"
                   className="text-sm hover:text-brand-primary transition-colors"
                 >
-                  My Account
+                  {t('myAccount')}
                 </Link>
               </li>
               <li>
@@ -219,7 +219,7 @@ const Footer = () => {
                   href="/orders"
                   className="text-sm hover:text-brand-primary transition-colors"
                 >
-                  Order Tracking
+                  {t('orderTracking')}
                 </Link>
               </li>
               <li>
@@ -227,7 +227,7 @@ const Footer = () => {
                   href="/wishlist"
                   className="text-sm hover:text-brand-primary transition-colors"
                 >
-                  Wishlist
+                  {t('wishlist')}
                 </Link>
               </li>
               <li>
@@ -235,7 +235,7 @@ const Footer = () => {
                   href="/help"
                   className="text-sm hover:text-brand-primary transition-colors"
                 >
-                  Help Center
+                  {t('helpCenter')}
                 </Link>
               </li>
               <li>
@@ -243,7 +243,7 @@ const Footer = () => {
                   href="/returns"
                   className="text-sm hover:text-brand-primary transition-colors"
                 >
-                  Returns & Refunds
+                  {t('returnsRefunds')}
                 </Link>
               </li>
             </ul>
@@ -251,9 +251,9 @@ const Footer = () => {
 
           {/* Newsletter */}
           <div>
-            <h3 className="text-gray-900 font-semibold mb-4">Newsletter</h3>
+            <h3 className="text-gray-900 font-semibold mb-4">{t('newsletter')}</h3>
             <p className="text-sm text-gray-500 mb-4">
-              Subscribe to get special offers, free giveaways, and new arrivals.
+              {t('newsletterDesc')}
             </p>
             <form onSubmit={handleNewsletterSubmit} className="space-y-3">
               <div className="relative">
@@ -261,7 +261,7 @@ const Footer = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Your email address"
+                  placeholder={t('emailPlaceholder')}
                   className="w-full px-4 py-3 pr-12 bg-gray-100 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:border-brand-primary transition-colors"
                   required
                 />
@@ -274,21 +274,21 @@ const Footer = () => {
               </div>
               {subscribed && (
                 <p className="text-green-600 text-xs">
-                  Thanks for subscribing!
+                  {t('subscribedSuccess')}
                 </p>
               )}
             </form>
 
             {/* Legal Links */}
             <div className="mt-6">
-              <h4 className="text-gray-900 font-semibold mb-3 text-sm">Legal</h4>
+              <h4 className="text-gray-900 font-semibold mb-3 text-sm">{t('legal')}</h4>
               <ul className="space-y-2">
                 <li>
                   <Link
                     href="/terms-of-service"
                     className="text-xs hover:text-brand-primary transition-colors"
                   >
-                    Terms of Service
+                    {t('termsOfService')}
                   </Link>
                 </li>
                 <li>
@@ -296,7 +296,7 @@ const Footer = () => {
                     href="/privacy"
                     className="text-xs hover:text-brand-primary transition-colors"
                   >
-                    Privacy Policy
+                    {t('privacyPolicy')}
                   </Link>
                 </li>
                 <li>
@@ -304,7 +304,7 @@ const Footer = () => {
                     href="/cookies"
                     className="text-xs hover:text-brand-primary transition-colors"
                   >
-                    Cookie Policy
+                    {t('cookiePolicy')}
                   </Link>
                 </li>
               </ul>
@@ -319,12 +319,12 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             {/* Copyright */}
             <p className="text-sm text-gray-500">
-              {currentYear} TecShop. All rights reserved.
+              {t('copyright', { year: currentYear })}
             </p>
 
             {/* Payment Methods */}
             <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-400 mr-2">We accept:</span>
+              <span className="text-xs text-gray-400 mr-2">{t('weAccept')}</span>
               <div className="flex items-center gap-2">
                 <div className="px-2 py-1 bg-gray-100 rounded text-xs font-medium text-gray-700">
                   VISA

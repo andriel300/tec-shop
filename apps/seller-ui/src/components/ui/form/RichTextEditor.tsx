@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -46,6 +47,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   maxWords = 200,
   className = '',
 }) => {
+  const t = useTranslations('CreateProduct');
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -97,7 +100,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               ? 'bg-surface-container-highest text-brand-primary-600'
               : 'text-gray-500'
           }`}
-          title="Bold"
+          title={t('editorBold')}
         >
           <Bold size={18} />
         </button>
@@ -111,7 +114,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               ? 'bg-surface-container-highest text-brand-primary-600'
               : 'text-gray-500'
           }`}
-          title="Italic"
+          title={t('editorItalic')}
         >
           <Italic size={18} />
         </button>
@@ -126,7 +129,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               ? 'bg-surface-container-highest text-brand-primary-600'
               : 'text-gray-500'
           }`}
-          title="Heading"
+          title={t('editorHeading')}
         >
           <Heading2 size={18} />
         </button>
@@ -141,7 +144,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               ? 'bg-surface-container-highest text-brand-primary-600'
               : 'text-gray-500'
           }`}
-          title="Bullet List"
+          title={t('editorBulletList')}
         >
           <List size={18} />
         </button>
@@ -154,7 +157,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               ? 'bg-surface-container-highest text-brand-primary-600'
               : 'text-gray-500'
           }`}
-          title="Numbered List"
+          title={t('editorNumberedList')}
         >
           <ListOrdered size={18} />
         </button>
@@ -166,7 +169,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           onClick={() => editor?.chain().focus().undo().run()}
           disabled={!editor?.can().chain().focus().undo().run()}
           className="p-2 rounded hover:bg-surface-container-highest transition-colors text-gray-500 disabled:opacity-30"
-          title="Undo"
+          title={t('editorUndo')}
         >
           <Undo size={18} />
         </button>
@@ -176,7 +179,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           onClick={() => editor?.chain().focus().redo().run()}
           disabled={!editor?.can().chain().focus().redo().run()}
           className="p-2 rounded hover:bg-surface-container-highest transition-colors text-gray-500 disabled:opacity-30"
-          title="Redo"
+          title={t('editorRedo')}
         >
           <Redo size={18} />
         </button>
@@ -188,7 +191,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       {/* Word Count Footer */}
       <div className="flex items-center justify-between px-4 py-2 border-t border-surface-container-highest bg-surface-container-low text-xs">
         <span className="text-gray-500">
-          {minWords} - {maxWords} words recommended
+          {t('editorWordsRecommended', { min: minWords, max: maxWords })}
         </span>
         <span
           className={`font-medium ${
@@ -199,7 +202,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               : 'text-feedback-success'
           }`}
         >
-          {wordCount} words
+          {t('editorWordCount', { count: wordCount })}
         </span>
       </div>
     </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useCallback, useTransition } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   useReactTable,
   getCoreRowModel,
@@ -109,6 +110,7 @@ const CATEGORY_COLORS: Record<LogCategory, string> = {
 };
 
 const LoggersPage = () => {
+  const t = useTranslations('Loggers');
   const [, startTransition] = useTransition();
   const [mode, setMode] = useState<'realtime' | 'historical'>('realtime');
   const [filters, setFilters] = useState<LogQueryParams>({
@@ -129,9 +131,9 @@ const LoggersPage = () => {
     updateFilters: updateSocketFilters,
   } = useLoggerSocket({
     enabled: mode === 'realtime',
-    onConnect: () => toast.success('Connected to log stream'),
-    onDisconnect: () => toast.info('Disconnected from log stream'),
-    onError: (error) => toast.error(`WebSocket error: ${error}`),
+    onConnect: () => toast.success(t('toastConnected')),
+    onDisconnect: () => toast.info(t('toastDisconnected')),
+    onError: (error) => toast.error(t('toastWsError', { error })),
   });
 
   const {
@@ -211,17 +213,17 @@ const LoggersPage = () => {
         endDate: filters.endDate,
         limit: 1000,
       });
-      toast.success('Logs downloaded successfully');
+      toast.success(t('toastDownloadSuccess'));
     } catch {
-      toast.error('Failed to download logs');
+      toast.error(t('toastDownloadError'));
     }
-  }, [filters]);
+  }, [filters, t]);
 
   const columns = useMemo<ColumnDef<LogEntry>[]>(
     () => [
       {
         accessorKey: 'timestamp',
-        header: 'Time',
+        header: t('colTime'),
         size: 160,
         cell: ({ row }) => {
           const date = new Date(row.original.timestamp);
@@ -241,7 +243,7 @@ const LoggersPage = () => {
       },
       {
         accessorKey: 'level',
-        header: 'Level',
+        header: t('colLevel'),
         size: 90,
         cell: ({ row }) => {
           const level = row.original.level;
@@ -260,7 +262,7 @@ const LoggersPage = () => {
       },
       {
         accessorKey: 'service',
-        header: 'Service',
+        header: t('colService'),
         size: 130,
         cell: ({ row }) => (
           <span className="text-white text-sm font-medium font-mono">
@@ -270,7 +272,7 @@ const LoggersPage = () => {
       },
       {
         accessorKey: 'category',
-        header: 'Category',
+        header: t('colCategory'),
         size: 100,
         cell: ({ row }) => {
           const cat = row.original.category;
@@ -294,7 +296,7 @@ const LoggersPage = () => {
       },
       {
         accessorKey: 'message',
-        header: 'Message',
+        header: t('colMessage'),
         cell: ({ row }) => (
           <span className="text-gray-200 text-sm truncate max-w-lg block">
             {row.original.message}
@@ -303,7 +305,7 @@ const LoggersPage = () => {
       },
       {
         accessorKey: 'userId',
-        header: 'User ID',
+        header: t('colUserId'),
         size: 100,
         cell: ({ row }) =>
           row.original.userId ? (
@@ -315,7 +317,7 @@ const LoggersPage = () => {
           ),
       },
     ],
-    []
+    [t]
   );
 
   const table = useReactTable({
@@ -352,11 +354,11 @@ const LoggersPage = () => {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
-          <span>Dashboard</span>
+          <span>{t('breadcrumbDashboard')}</span>
           <span>/</span>
-          <span className="text-gray-300 font-medium">System Logs</span>
+          <span className="text-gray-300 font-medium">{t('breadcrumbSystemLogs')}</span>
         </div>
-        <h1 className="text-4xl font-bold text-white">System Logs</h1>
+        <h1 className="text-4xl font-bold text-white">{t('pageTitle')}</h1>
       </div>
 
       {/* Stat Cards */}
@@ -369,10 +371,10 @@ const LoggersPage = () => {
                 <FileText size={18} className="text-brand-primary-400" />
               </div>
               <span className="text-xs font-semibold text-gray-500 bg-gray-800 px-2.5 py-0.5 rounded-full">
-                All Time
+                {t('statAllTime')}
               </span>
             </div>
-            <p className="text-gray-400 text-sm mb-1">Total Logs</p>
+            <p className="text-gray-400 text-sm mb-1">{t('statTotalLogs')}</p>
             <p className="text-3xl font-bold text-white">
               {(statsData?.totalLogs ?? 0).toLocaleString()}
             </p>
@@ -393,15 +395,15 @@ const LoggersPage = () => {
               </div>
               {(statsData?.byLevel?.error ?? 0) > 0 ? (
                 <span className="text-xs font-semibold text-red-400 bg-red-500/10 px-2.5 py-0.5 rounded-full">
-                  Needs Attention
+                  {t('statNeedsAttention')}
                 </span>
               ) : (
                 <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">
-                  All Clear
+                  {t('statAllClear')}
                 </span>
               )}
             </div>
-            <p className="text-gray-400 text-sm mb-1">Errors</p>
+            <p className="text-gray-400 text-sm mb-1">{t('statErrors')}</p>
             <p className="text-3xl font-bold text-white">
               {(statsData?.byLevel?.error ?? 0).toLocaleString()}
             </p>
@@ -421,10 +423,10 @@ const LoggersPage = () => {
                 <AlertTriangle size={18} className="text-amber-400" />
               </div>
               <span className="text-xs font-semibold text-gray-500 bg-gray-800 px-2.5 py-0.5 rounded-full">
-                Warnings
+                {t('statWarnings')}
               </span>
             </div>
-            <p className="text-gray-400 text-sm mb-1">Warnings</p>
+            <p className="text-gray-400 text-sm mb-1">{t('statWarnings')}</p>
             <p className="text-3xl font-bold text-white">
               {(statsData?.byLevel?.warn ?? 0).toLocaleString()}
             </p>
@@ -464,17 +466,17 @@ const LoggersPage = () => {
                     isConnected ? 'text-emerald-400' : 'text-gray-500'
                   }`}
                 >
-                  {isConnected ? 'LIVE' : 'OFFLINE'}
+                  {isConnected ? t('statLive') : t('statOffline')}
                 </span>
               </div>
             </div>
-            <p className="text-gray-400 text-sm mb-1">Stream Status</p>
+            <p className="text-gray-400 text-sm mb-1">{t('statStreamStatus')}</p>
             <p
               className={`text-3xl font-bold ${
                 isConnected ? 'text-white' : 'text-gray-500'
               }`}
             >
-              {isConnected ? 'Connected' : 'Disconnected'}
+              {isConnected ? t('statConnected') : t('statDisconnected')}
             </p>
           </div>
           {isConnected ? (
@@ -509,7 +511,7 @@ const LoggersPage = () => {
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
-                Real-time
+                {t('modeRealtime')}
               </button>
               <button
                 onClick={() => startTransition(() => setMode('historical'))}
@@ -519,7 +521,7 @@ const LoggersPage = () => {
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
-                Historical
+                {t('modeHistorical')}
               </button>
             </div>
 
@@ -528,7 +530,7 @@ const LoggersPage = () => {
               <Search size={15} className="text-gray-500 shrink-0" />
               <input
                 type="text"
-                placeholder="Search logs..."
+                placeholder={t('searchPlaceholder')}
                 className="w-full bg-transparent text-white outline-none placeholder:text-gray-500 text-sm"
                 value={globalFilter}
                 onChange={(e) => handleSearchChange(e.target.value)}
@@ -554,7 +556,7 @@ const LoggersPage = () => {
                 }`}
               >
                 <Filter size={14} />
-                Exclude
+                {t('btnExclude')}
                 {excludePatterns.length > 0 && (
                   <span className="bg-orange-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
                     {excludePatterns.length}
@@ -573,7 +575,7 @@ const LoggersPage = () => {
                     }`}
                   >
                     {isPaused ? <Play size={14} /> : <Pause size={14} />}
-                    {isPaused ? 'Resume' : 'Pause'}
+                    {isPaused ? t('btnResume') : t('btnPause')}
                   </button>
                   <button
                     onClick={clearLogs}
@@ -582,7 +584,7 @@ const LoggersPage = () => {
                                text-sm font-medium transition-colors"
                   >
                     <Trash2 size={14} />
-                    Clear
+                    {t('btnClear')}
                   </button>
                 </>
               )}
@@ -595,7 +597,7 @@ const LoggersPage = () => {
                              text-sm font-medium transition-colors"
                 >
                   <RefreshCw size={14} />
-                  Refresh
+                  {t('btnRefresh')}
                 </button>
               )}
 
@@ -606,7 +608,7 @@ const LoggersPage = () => {
                            text-sm font-medium transition-colors"
               >
                 <Download size={14} />
-                Download
+                {t('btnDownload')}
               </button>
             </div>
           </div>
@@ -619,7 +621,7 @@ const LoggersPage = () => {
               value={filters.service || ''}
               onChange={(e) => handleFilterChange('service', e.target.value)}
             >
-              <option value="">All Services</option>
+              <option value="">{t('filterAllServices')}</option>
               {servicesData?.services?.map((service) => (
                 <option key={service} value={service}>
                   {service}
@@ -635,7 +637,7 @@ const LoggersPage = () => {
                 handleFilterChange('level', e.target.value as LogLevel)
               }
             >
-              <option value="">All Levels</option>
+              <option value="">{t('filterAllLevels')}</option>
               {LOG_LEVELS.map((level) => (
                 <option key={level} value={level}>
                   {level.toUpperCase()}
@@ -651,7 +653,7 @@ const LoggersPage = () => {
                 handleFilterChange('category', e.target.value as LogCategory)
               }
             >
-              <option value="">All Categories</option>
+              <option value="">{t('filterAllCategories')}</option>
               {LOG_CATEGORIES.map((category) => (
                 <option key={category} value={category}>
                   {category}
@@ -669,7 +671,7 @@ const LoggersPage = () => {
                 className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-white transition-colors"
               >
                 <X size={12} />
-                Clear filters
+                {t('clearFilters')}
               </button>
             )}
           </div>
@@ -681,7 +683,7 @@ const LoggersPage = () => {
             <div className="flex items-center gap-2 mb-3">
               <Filter size={14} className="text-orange-400" />
               <span className="text-white text-sm font-medium">
-                Exclude logs containing:
+                {t('excludePanelTitle')}
               </span>
             </div>
 
@@ -690,7 +692,7 @@ const LoggersPage = () => {
                               rounded-lg px-3 py-2 focus-within:border-gray-600 transition-colors">
                 <input
                   type="text"
-                  placeholder="e.g. health-check, token-refresh..."
+                  placeholder={t('excludePlaceholder')}
                   className="flex-1 bg-transparent text-white outline-none placeholder:text-gray-500 text-sm"
                   value={excludeInput}
                   onChange={(e) => setExcludeInput(e.target.value)}
@@ -706,7 +708,7 @@ const LoggersPage = () => {
                            disabled:text-gray-600 disabled:cursor-not-allowed text-white
                            rounded-lg transition-colors text-sm font-medium"
               >
-                Add
+                {t('excludeBtnAdd')}
               </button>
             </div>
 
@@ -731,12 +733,12 @@ const LoggersPage = () => {
                   onClick={() => setExcludePatterns([])}
                   className="text-gray-500 hover:text-white text-xs transition-colors"
                 >
-                  Clear all
+                  {t('excludeBtnClearAll')}
                 </button>
               </div>
             ) : (
               <p className="text-gray-600 text-xs">
-                No patterns active. Add patterns to hide matching log messages.
+                {t('excludeEmpty')}
               </p>
             )}
           </div>
@@ -781,12 +783,12 @@ const LoggersPage = () => {
                         <div className="flex flex-col items-center text-gray-500">
                           <FileText size={40} className="mb-3 opacity-30" />
                           <p className="font-medium text-gray-300">
-                            No logs found
+                            {t('noLogsTitle')}
                           </p>
                           <p className="text-sm mt-1 text-gray-500">
                             {mode === 'realtime'
-                              ? 'Waiting for incoming log entries...'
-                              : 'Try adjusting your search or filters'}
+                              ? t('noLogsRealtime')
+                              : t('noLogsHistorical')}
                           </p>
                         </div>
                       </td>
@@ -828,31 +830,19 @@ const LoggersPage = () => {
                 <div className="flex items-center gap-4 text-sm text-gray-500">
                   {mode === 'historical' && historicalData ? (
                     <span>
-                      Page{' '}
-                      <span className="font-medium text-gray-300">
-                        {currentHistoricalPage}
-                      </span>{' '}
-                      of{' '}
-                      <span className="font-medium text-gray-300">
-                        {totalPages}
-                      </span>{' '}
-                      &mdash;{' '}
-                      <span className="font-medium text-gray-300">
-                        {historicalData.total.toLocaleString()}
-                      </span>{' '}
-                      total
+                      {t('paginationHistorical', {
+                        current: currentHistoricalPage,
+                        total: totalPages,
+                        totalLogs: historicalData.total.toLocaleString(),
+                      })}
                     </span>
                   ) : (
                     <span>
-                      Showing{' '}
-                      <span className="font-medium text-gray-300">
-                        {pageStart} – {pageEnd}
-                      </span>{' '}
-                      of{' '}
-                      <span className="font-medium text-gray-300">
-                        {filteredTotal.toLocaleString()}
-                      </span>{' '}
-                      logs
+                      {t('paginationRealtime', {
+                        start: pageStart,
+                        end: pageEnd,
+                        total: filteredTotal.toLocaleString(),
+                      })}
                     </span>
                   )}
 
@@ -866,7 +856,7 @@ const LoggersPage = () => {
                         }`}
                       />
                       <span className="text-xs">
-                        {isPaused ? 'Paused' : 'Live'}
+                        {isPaused ? t('statusPaused') : t('statusLive')}
                       </span>
                     </div>
                   )}

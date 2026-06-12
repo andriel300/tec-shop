@@ -1,8 +1,16 @@
 'use client';
 
 import { createLogger } from '@tec-shop/next-logger';
-import DOMPurify from 'isomorphic-dompurify';
 import { toast } from 'sonner';
+import nextDynamic from 'next/dynamic';
+
+// isomorphic-dompurify pulls in jsdom on the server side — a massive dependency
+// that causes Turbopack to spend 12s+ compiling its module graph and then evicts
+// the entire cache due to memory pressure, breaking every subsequent navigation.
+// Loading it client-only with ssr:false keeps jsdom completely out of the server bundle.
+const ProductDescription = nextDynamic(() => import('./product-description'), {
+  ssr: false,
+});
 import CartIcon from '../../../assets/svgs/cart-icon';
 
 const logger = createLogger('user-ui:product-details');
@@ -16,6 +24,9 @@ import useDeviceTracking from '../../../hooks/use-device-tracking';
 import useLocationTracking from '../../../hooks/use-location-tracking';
 import useStore from '../../../store';
 import { useShop } from '../../../hooks/use-shops';
+import { getShopSlug } from '../../../lib/api/shops';
+import { useTranslations } from 'next-intl';
+import { useCurrency } from '../../../hooks/use-currency';
 import { useRouter } from '../../../i18n/navigation';
 import { useCreateConversation } from '../../../hooks/use-chat';
 import { useSimilarProducts } from '../../../hooks/use-recommendations';
@@ -76,6 +87,8 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
  * 6. Add to Cart button enabled when all attributes selected
  */
 const ProductDetails = ({ product }: { product: Product }) => {
+  const t = useTranslations('ProductView');
+  const { formatPrice } = useCurrency();
   const { user } = useAuth();
   const location = useLocationTracking();
   const deviceInfo = useDeviceTracking();
@@ -237,12 +250,12 @@ const ProductDetails = ({ product }: { product: Product }) => {
   const handleWishlistToggle = () => {
     if (isWishListed) {
       removeFromWishList(product.id, user ?? undefined, location ?? undefined, deviceInfo);
-      toast.success('Removed from wishlist', { description: product.name });
+      toast.success(t('removedFromWishlist'), { description: product.name });
     } else {
       const sellerId = shop?.seller?.authId || '';
       if (!sellerId) {
         logger.error('Cannot add to wishlist: sellerId not available from shop data');
-        toast.error('Could not add to wishlist', { description: 'Shop information is not yet loaded.' });
+        toast.error(t('couldNotAddToWishlist'), { description: t('shopInfoNotLoaded') });
         return;
       }
       addToWishList(
@@ -262,25 +275,25 @@ const ProductDetails = ({ product }: { product: Product }) => {
         location ?? undefined,
         deviceInfo
       );
-      toast.success('Added to wishlist', { description: product.name });
+      toast.success(t('addedToWishlist'), { description: product.name });
     }
   };
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
-    toast.success('Link copied!', { description: 'Share this product with anyone.' });
+    toast.success(t('linkCopied'), { description: t('shareDesc') });
   };
 
   const handleAddToCart = () => {
     if (isInCart) {
       removeFromCart(product.id, user ?? undefined, location ?? undefined, deviceInfo);
-      toast.success('Removed from cart', { description: product.name });
+      toast.success(t('removedFromCart'), { description: product.name });
       return;
     }
     const sellerId = shop?.seller?.authId || '';
     if (!sellerId) {
       logger.error('Cannot add to cart: sellerId not available from shop data');
-      toast.error('Could not add to cart', { description: 'Shop information is not yet loaded.' });
+      toast.error(t('couldNotAddToCart'), { description: t('shopInfoNotLoaded') });
       return;
     }
     addToCart(
@@ -303,7 +316,7 @@ const ProductDetails = ({ product }: { product: Product }) => {
       location ?? undefined,
       deviceInfo
     );
-    toast.success('Added to cart', { description: product.name });
+    toast.success(t('addedToCart'), { description: product.name });
   };
 
   const isCartDisabled =
@@ -313,10 +326,10 @@ const ProductDetails = ({ product }: { product: Product }) => {
 
   const cartButtonLabel =
     variantAttributes && variantAttributes.length > 0 && !selectedVariant && !isInCart
-      ? 'Select options'
+      ? t('selectOptions')
       : isInCart
-      ? 'Remove from cart'
-      : 'Add to cart';
+      ? t('removeFromCart')
+      : t('addToCart');
 
   return (
     <div className="w-full bg-[#f5f5f5] py-6">
@@ -327,7 +340,7 @@ const ProductDetails = ({ product }: { product: Product }) => {
         </Link>
         <ChevronRight size={14} className="text-gray-400 flex-shrink-0" />
         <Link href="/all-products" className="hover:text-brand-primary transition-colors">
-          All Products
+          {t('allProducts')}
         </Link>
         {product.category && (
           <>
@@ -370,7 +383,7 @@ const ProductDetails = ({ product }: { product: Product }) => {
               {/* Zoom toggle button */}
               <button
                 onClick={() => setIsZoomEnabled((v) => !v)}
-                title={isZoomEnabled ? 'Disable zoom' : 'Enable zoom'}
+                title={isZoomEnabled ? t('disableZoom') : t('enableZoom')}
                 className={`absolute top-3 right-3 z-10 w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-colors ${
                   isZoomEnabled
                     ? 'bg-brand-primary text-white'
@@ -435,7 +448,7 @@ const ProductDetails = ({ product }: { product: Product }) => {
               </h1>
               <button
                 onClick={handleShare}
-                title="Share product"
+                title={t('shareProduct')}
                 className="flex-shrink-0 mt-1 p-2 rounded-full border border-gray-200 text-gray-400 hover:text-brand-primary hover:border-brand-primary transition-colors"
               >
                 <Share2 size={16} />
@@ -449,19 +462,19 @@ const ProductDetails = ({ product }: { product: Product }) => {
                 href="#reviews"
                 className="text-sm text-gray-500 hover:text-brand-primary transition-colors"
               >
-                {product.ratingCount} {product.ratingCount === 1 ? 'review' : 'reviews'}
+                {t('reviews', { count: product.ratingCount })}
               </Link>
             </div>
 
             {/* Price */}
             <div className="mt-4 flex items-baseline gap-3 flex-wrap">
               <span className="text-3xl font-bold text-gray-900">
-                ${displayPrice.toFixed(2)}
+                {formatPrice(displayPrice)}
               </span>
               {displayPrice < originalPrice && (
                 <>
                   <span className="text-lg text-gray-400 line-through">
-                    ${originalPrice.toFixed(2)}
+                    {formatPrice(originalPrice)}
                   </span>
                   <span className="text-xs font-semibold bg-red-50 text-red-500 px-2.5 py-1 rounded-full">
                     {discountPercentage}% off
@@ -472,9 +485,9 @@ const ProductDetails = ({ product }: { product: Product }) => {
 
             {/* Brand */}
             <div className="mt-3 flex items-center gap-2">
-              <span className="text-sm text-gray-500">Brand:</span>
+              <span className="text-sm text-gray-500">{t('brand')}</span>
               <span className="text-sm font-medium text-brand-primary">
-                {product.brand?.name || 'No Brand'}
+                {product.brand?.name || t('noBrand')}
               </span>
             </div>
 
@@ -513,7 +526,7 @@ const ProductDetails = ({ product }: { product: Product }) => {
                                 }`}
                                 style={{ backgroundColor: value.toLowerCase() }}
                                 title={value}
-                                aria-label={`Select ${value}`}
+                                aria-label={t('selectOption', { attribute: value })}
                               >
                                 {isSelected && (
                                   <svg
@@ -549,7 +562,7 @@ const ProductDetails = ({ product }: { product: Product }) => {
                 })}
 
                 {selectedVariant?.sku && (
-                  <p className="text-xs text-gray-400">SKU: {selectedVariant.sku}</p>
+                  <p className="text-xs text-gray-400">{t('sku', { sku: selectedVariant.sku })}</p>
                 )}
               </div>
             )}
@@ -579,17 +592,17 @@ const ProductDetails = ({ product }: { product: Product }) => {
               {availableStock > 0 ? (
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-medium text-green-700 bg-green-50 px-3 py-1.5 rounded-full">
-                    In Stock &middot; {availableStock} left
+                    {t('inStock', { count: availableStock })}
                   </span>
                   {availableStock <= 10 && (
                     <span className="text-sm font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full animate-pulse">
-                      Only {availableStock} left!
+                      {t('lowStock', { count: availableStock })}
                     </span>
                   )}
                 </div>
               ) : (
                 <span className="text-sm font-medium text-red-500 bg-red-50 px-3 py-1.5 rounded-full">
-                  Out of Stock
+                  {t('outOfStock')}
                 </span>
               )}
             </div>
@@ -616,7 +629,7 @@ const ProductDetails = ({ product }: { product: Product }) => {
                     ? 'border-red-300 bg-red-50'
                     : 'border-gray-200 hover:border-red-300 hover:bg-red-50'
                 }`}
-                title={isWishListed ? 'Remove from wishlist' : 'Add to wishlist'}
+                title={isWishListed ? t('removeFromWishlist') : t('addToWishlist')}
               >
                 <Heart
                   size={20}
@@ -631,25 +644,25 @@ const ProductDetails = ({ product }: { product: Product }) => {
               <MapPin size={15} className="text-brand-primary flex-shrink-0" />
               <span>
                 {location?.city && location?.country
-                  ? `Deliver to ${location.city}, ${location.country}`
-                  : 'Location unavailable'}
+                  ? t('deliverTo', { city: location.city, country: location.country })
+                  : t('locationUnavailable')}
               </span>
-              <span className="ml-auto text-gray-400 text-xs">7 days returns</span>
+              <span className="ml-auto text-gray-400 text-xs">{t('returnPolicy')}</span>
             </div>
 
             {/* Trust badges */}
             <div className="mt-4 grid grid-cols-2 gap-2">
-              {[
-                { icon: Lock, label: 'Secure Payment', sub: 'SSL encrypted checkout' },
-                { icon: ShieldCheck, label: 'Buyer Protection', sub: 'Full refund if not received' },
-                { icon: RotateCcw, label: '7-Day Returns', sub: 'Hassle-free return policy' },
-                { icon: BadgeCheck, label: 'Authentic Products', sub: 'Verified sellers only' },
-              ].map(({ icon: Icon, label, sub }) => (
-                <div key={label} className="flex items-start gap-2.5 p-3 rounded-xl bg-gray-50 border border-gray-100">
+              {([
+                { icon: Lock, labelKey: 'badgeSecurePayment', subKey: 'badgeSecurePaymentDesc' },
+                { icon: ShieldCheck, labelKey: 'badgeBuyerProtection', subKey: 'badgeBuyerProtectionDesc' },
+                { icon: RotateCcw, labelKey: 'badgeEasyReturns', subKey: 'badgeEasyReturnsDesc' },
+                { icon: BadgeCheck, labelKey: 'badgeAuthentic', subKey: 'badgeAuthenticDesc' },
+              ] as const).map(({ icon: Icon, labelKey, subKey }) => (
+                <div key={labelKey} className="flex items-start gap-2.5 p-3 rounded-xl bg-gray-50 border border-gray-100">
                   <Icon size={16} className="text-brand-primary flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs font-semibold text-gray-800">{label}</p>
-                    <p className="text-[11px] text-gray-500 leading-tight mt-0.5">{sub}</p>
+                    <p className="text-xs font-semibold text-gray-800">{t(labelKey)}</p>
+                    <p className="text-[11px] text-gray-500 leading-tight mt-0.5">{t(subKey)}</p>
                   </div>
                 </div>
               ))}
@@ -658,7 +671,7 @@ const ProductDetails = ({ product }: { product: Product }) => {
             {/* Seller card */}
             <div className="mt-4 border border-gray-100 rounded-2xl p-4">
               <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                Sold by
+                {t('soldBy')}
               </p>
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-gray-900">
@@ -674,30 +687,30 @@ const ProductDetails = ({ product }: { product: Product }) => {
                   ) : (
                     <MessageSquareText size={14} />
                   )}
-                  {createConversation.isPending ? 'Opening...' : 'Chat now'}
+                  {createConversation.isPending ? t('opening') : t('chatNow')}
                 </button>
               </div>
 
               <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-gray-100 text-center">
                 <div>
-                  <p className="text-xs text-gray-400">Ratings</p>
+                  <p className="text-xs text-gray-400">{t('sellerRatings')}</p>
                   <p className="text-sm font-bold text-gray-900 mt-0.5">88%</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400">Ships on time</p>
+                  <p className="text-xs text-gray-400">{t('sellerShipsOnTime')}</p>
                   <p className="text-sm font-bold text-gray-900 mt-0.5">100%</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400">Response</p>
+                  <p className="text-xs text-gray-400">{t('sellerResponse')}</p>
                   <p className="text-sm font-bold text-gray-900 mt-0.5">100%</p>
                 </div>
               </div>
 
               <Link
-                href={`/shops/${product.shopId}`}
+                href={shop ? `/shops/${getShopSlug(shop)}` : `/shops/${product.shopId}`}
                 className="block text-center text-xs font-semibold text-brand-primary hover:underline mt-3 pt-3 border-t border-gray-100 uppercase tracking-wide"
               >
-                Go to Store
+                {t('goToStore')}
               </Link>
             </div>
           </div>
@@ -708,12 +721,9 @@ const ProductDetails = ({ product }: { product: Product }) => {
       <div className="w-[90%] lg:w-[80%] mx-auto mt-5">
         <div className="bg-white rounded-2xl p-6 lg:p-8 shadow-sm">
           <h2 className="text-base font-semibold text-gray-900 mb-4">
-            Product details
+            {t('productDetails')}
           </h2>
-          <div
-            className="prose prose-sm text-gray-500 max-w-none"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.description) }}
-          />
+          <ProductDescription html={product.description} />
         </div>
       </div>
 
@@ -721,7 +731,7 @@ const ProductDetails = ({ product }: { product: Product }) => {
       <div className="w-[90%] lg:w-[80%] mx-auto mt-5" id="reviews">
         <div className="bg-white rounded-2xl p-6 lg:p-8 shadow-sm">
           <h2 className="text-base font-semibold text-gray-900 mb-4">
-            Ratings &amp; Reviews
+            {t('ratingsAndReviews')}
           </h2>
           <ReviewForm productId={product.id} />
           <div className="mt-6">
@@ -735,7 +745,7 @@ const ProductDetails = ({ product }: { product: Product }) => {
         <div className="w-[90%] lg:w-[80%] mx-auto mt-5">
           <div className="bg-white rounded-2xl p-6 lg:p-8 shadow-sm">
             <h2 className="text-base font-semibold text-gray-900 mb-4">
-              You may also like
+              {t('youMayAlsoLike')}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
               {similarProducts.map((item) => (
@@ -766,7 +776,7 @@ const ProductDetails = ({ product }: { product: Product }) => {
             {/* Name + Price */}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-gray-900 truncate">{product.name}</p>
-              <p className="text-sm font-bold text-brand-primary">${displayPrice.toFixed(2)}</p>
+              <p className="text-sm font-bold text-brand-primary">{formatPrice(displayPrice)}</p>
             </div>
 
             {/* CTA */}

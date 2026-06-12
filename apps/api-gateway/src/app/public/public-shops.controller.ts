@@ -201,7 +201,11 @@ Retrieves all active shops for the marketplace frontend.
     description: 'Shop not found.',
   })
   async getShopById(@Param('shopId') shopId: string) {
-    const cacheKey = `cache:shops:detail:${shopId}`;
+    const isMongoId = /^[a-f\d]{24}$/i.test(shopId);
+    const cacheKey = isMongoId
+      ? `cache:shops:detail:${shopId}`
+      : `cache:shops:slug:${shopId}`;
+
     try {
       const cached = await this.redisService.getJson<unknown>(cacheKey);
       if (cached !== null) return cached;
@@ -210,8 +214,10 @@ Retrieves all active shops for the marketplace frontend.
     }
 
     try {
+      const message = isMongoId ? 'seller-get-shop-by-id' : 'seller-get-shop-by-slug';
+      const payload = isMongoId ? { shopId } : { slug: shopId };
       const shop = await firstValueFrom(
-        this.sellerService.send('seller-get-shop-by-id', { shopId })
+        this.sellerService.send(message, payload)
       );
       try {
         await this.redisService.setJson(cacheKey, shop, SHOP_DETAIL_TTL);

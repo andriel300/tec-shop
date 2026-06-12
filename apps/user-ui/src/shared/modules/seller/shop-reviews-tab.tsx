@@ -4,6 +4,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Star, Loader2, User } from 'lucide-react';
 import { getPublicProducts } from '../../../lib/api/products';
+import { useTranslations } from 'next-intl';
 
 interface ShopReviewsTabProps {
   shopId: string;
@@ -16,6 +17,7 @@ interface ReviewSummary {
 }
 
 const ShopReviewsTab: React.FC<ShopReviewsTabProps> = ({ shopId }) => {
+  const t = useTranslations('ShopProfile');
   // Fetch all products to calculate aggregate ratings
   const { data: productsData, isLoading } = useQuery({
     queryKey: ['shop-products-for-reviews', shopId],
@@ -68,9 +70,9 @@ const ShopReviewsTab: React.FC<ShopReviewsTabProps> = ({ shopId }) => {
         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
           <Star className="w-8 h-8 text-gray-400" />
         </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No reviews yet</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">{t('noReviewsYet')}</h3>
         <p className="text-gray-500 max-w-md mx-auto">
-          This shop hasn&apos;t received any reviews yet. Be the first to share your experience!
+          {t('noReviewsDesc')}
         </p>
       </div>
     );
@@ -101,7 +103,7 @@ const ShopReviewsTab: React.FC<ShopReviewsTabProps> = ({ shopId }) => {
               ))}
             </div>
             <p className="text-gray-500 text-sm mt-1">
-              Based on {reviewSummary.totalReviews.toLocaleString()} reviews
+              {t('basedOnReviews', { count: reviewSummary.totalReviews.toLocaleString() })}
             </p>
           </div>
 
@@ -136,7 +138,7 @@ const ShopReviewsTab: React.FC<ShopReviewsTabProps> = ({ shopId }) => {
       {/* Products with Ratings */}
       <div>
         <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Product Ratings
+          {t('productRatings')}
         </h3>
         <div className="space-y-4">
           {productsData?.products
@@ -182,7 +184,7 @@ const ShopReviewsTab: React.FC<ShopReviewsTabProps> = ({ shopId }) => {
                       ))}
                     </div>
                     <span className="text-sm text-gray-600">
-                      {product.averageRating.toFixed(1)} ({product.ratingCount} reviews)
+                      {product.averageRating.toFixed(1)} ({t('reviewCount', { count: product.ratingCount })})
                     </span>
                   </div>
                 </div>

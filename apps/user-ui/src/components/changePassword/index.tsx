@@ -2,9 +2,11 @@
 
 import React, { useState } from 'react';
 import { useForm } from '@tanstack/react-form';
+import { useTranslations } from 'next-intl';
 import apiClient from '../../lib/api/client';
 
 const ChangePassword = () => {
+  const t = useTranslations('ChangePassword');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
@@ -25,11 +27,11 @@ const ChangePassword = () => {
           confirmPassword: value.confirmPassword,
         });
 
-        setMessage('Password changed successfully');
+        setMessage(t('successMessage'));
         form.reset();
       } catch (err: unknown) {
         const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-        setError(message ?? 'Something went wrong');
+        setError(message ?? t('genericError'));
       }
     },
   });
@@ -48,13 +50,13 @@ const ChangePassword = () => {
           name="currentPassword"
           validators={{
             onChange: ({ value }) =>
-              !value ? 'Current password is required' : undefined,
+              !value ? t('currentPasswordRequired') : undefined,
           }}
         >
           {(field) => (
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700">
-                Current Password
+                {t('currentPassword')}
               </label>
               <input
                 type="password"
@@ -77,14 +79,14 @@ const ChangePassword = () => {
           validators={{
             onChange: ({ value }) =>
               value.length < 6
-                ? 'New password must be at least 6 characters'
+                ? t('newPasswordMinLength')
                 : undefined,
           }}
         >
           {(field) => (
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700">
-                New Password
+                {t('newPassword')}
               </label>
               <input
                 type="password"
@@ -107,14 +109,14 @@ const ChangePassword = () => {
           validators={{
             onChange: ({ value, fieldApi }) =>
               value !== fieldApi.form.getFieldValue('newPassword')
-                ? 'Passwords do not match'
+                ? t('passwordsMismatch')
                 : undefined,
           }}
         >
           {(field) => (
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-700">
-                Confirm New Password
+                {t('confirmPassword')}
               </label>
               <input
                 type="password"
@@ -137,7 +139,7 @@ const ChangePassword = () => {
           disabled={form.state.isSubmitting}
           className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
         >
-          {form.state.isSubmitting ? 'Updating...' : 'Apply'}
+          {form.state.isSubmitting ? t('updating') : t('apply')}
         </button>
       </form>
 

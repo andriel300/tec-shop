@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
+import { useCurrency } from '../../hooks/use-currency';
 import { useOrders } from '../../hooks/use-orders';
 import { Loader2, Package, Truck, CheckCircle, Clock, XCircle, X } from 'lucide-react';
 import Image from 'next/image';
@@ -14,7 +16,9 @@ const ReviewItemsModal = ({
 }: {
   order: Order;
   onClose: () => void;
-}) => (
+}) => {
+  const t = useTranslations('Orders');
+  return (
   <div
     className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4"
     onClick={onClose}
@@ -25,8 +29,8 @@ const ReviewItemsModal = ({
     >
       <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Review Items</h2>
-          <p className="text-xs text-gray-500 mt-0.5">Order #{order.orderNumber}</p>
+          <h2 className="text-lg font-semibold text-gray-900">{t('reviewItemsTitle')}</h2>
+          <p className="text-xs text-gray-500 mt-0.5">{t('orderNumber', { number: order.orderNumber })}</p>
         </div>
         <button
           onClick={onClose}
@@ -61,7 +65,7 @@ const ReviewItemsModal = ({
                 >
                   {item.productName}
                 </Link>
-                <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
+                <p className="text-xs text-gray-500">{t('qty', { count: item.quantity })}</p>
               </div>
             </div>
             <div className="px-4 py-3">
@@ -72,10 +76,14 @@ const ReviewItemsModal = ({
       </div>
     </div>
   </div>
-);
+  );
+};
 
 const OrdersSection = () => {
+  const t = useTranslations('Orders');
+  const locale = useLocale();
   const { data: orders = [], isLoading, error } = useOrders();
+  const { formatPrice } = useCurrency();
   const [reviewOrderId, setReviewOrderId] = useState<string | null>(null);
 
   const reviewOrder = reviewOrderId
@@ -86,7 +94,7 @@ const OrdersSection = () => {
     return (
       <div className="flex items-center justify-center py-8">
         <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-        <span className="ml-2 text-gray-600">Loading your orders...</span>
+        <span className="ml-2 text-gray-600">{t('loading')}</span>
       </div>
     );
   }
@@ -95,8 +103,8 @@ const OrdersSection = () => {
     return (
       <div className="text-center py-8">
         <XCircle className="w-12 h-12 text-red-500 mx-auto mb-2" />
-        <p className="text-red-600">Failed to load orders</p>
-        <p className="text-sm text-gray-500 mt-1">Please try again later</p>
+        <p className="text-red-600">{t('failedToLoad')}</p>
+        <p className="text-sm text-gray-500 mt-1">{t('tryAgainLater')}</p>
       </div>
     );
   }
@@ -105,15 +113,15 @@ const OrdersSection = () => {
     return (
       <div className="text-center py-12">
         <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-gray-700 mb-2">No Orders Yet</h3>
+        <h3 className="text-lg font-semibold text-gray-700 mb-2">{t('noOrdersTitle')}</h3>
         <p className="text-sm text-gray-500 mb-6">
-          Start shopping and your orders will appear here.
+          {t('noOrdersDesc')}
         </p>
         <Link
           href="/all-products"
           className="inline-block bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition"
         >
-          Browse Products
+          {t('browseProducts')}
         </Link>
       </div>
     );
@@ -133,7 +141,7 @@ const OrdersSection = () => {
                 Order #{order.orderNumber}
               </p>
               <p className="text-xs text-gray-500">
-                {new Date(order.createdAt).toLocaleDateString('en-US', {
+                {new Date(order.createdAt).toLocaleDateString(locale, {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
@@ -143,7 +151,7 @@ const OrdersSection = () => {
             <div className="text-right">
               <StatusBadge status={order.status} />
               <p className="text-sm font-semibold text-gray-800 mt-1">
-                ${(order.finalAmount / 100).toFixed(2)}
+                {formatPrice(order.finalAmount / 100)}
               </p>
             </div>
           </div>
@@ -173,21 +181,21 @@ const OrdersSection = () => {
                     {item.productName}
                   </Link>
                   <p className="text-xs text-gray-500">
-                    Quantity: {item.quantity} × ${(item.unitPrice / 100).toFixed(2)}
+                    {t('quantity', { count: item.quantity, price: formatPrice(item.unitPrice / 100) })}
                   </p>
                 </div>
               </div>
             ))}
             {order.items.length > 2 && (
               <p className="text-xs text-gray-500 mt-2">
-                +{order.items.length - 2} more item(s)
+                {t('moreItems', { count: order.items.length - 2 })}
               </p>
             )}
           </div>
 
           {/* Shipping Address */}
           <div className="text-xs text-gray-600 mb-3 p-2 bg-gray-50 rounded">
-            <p className="font-semibold mb-1">Shipping to:</p>
+            <p className="font-semibold mb-1">{t('shippingTo')}</p>
             <p>
               {order.shippingAddress.name}
               <br />
@@ -205,7 +213,7 @@ const OrdersSection = () => {
           {order.trackingNumber && (
             <div className="flex items-center gap-2 text-sm text-blue-600 mb-2">
               <Truck className="w-4 h-4" />
-              <span>Tracking: {order.trackingNumber}</span>
+              <span>{t('tracking', { number: order.trackingNumber })}</span>
             </div>
           )}
 
@@ -215,14 +223,14 @@ const OrdersSection = () => {
               href={`/orders/${order.id}`}
               className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded transition"
             >
-              View Details
+              {t('viewDetails')}
             </Link>
             {order.status === 'DELIVERED' && (
               <button
                 onClick={() => setReviewOrderId(order.id)}
                 className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1.5 rounded transition"
               >
-                Review Items
+                {t('reviewItems')}
               </button>
             )}
           </div>
@@ -243,19 +251,24 @@ export default OrdersSection;
 
 // Helper component for status badges
 const StatusBadge = ({ status }: { status: string }) => {
-  const config = {
-    PENDING: { icon: Clock, color: 'bg-yellow-100 text-yellow-700', label: 'Pending' },
-    PAID: { icon: CheckCircle, color: 'bg-blue-100 text-blue-700', label: 'Paid' },
-    SHIPPED: { icon: Truck, color: 'bg-purple-100 text-purple-700', label: 'Shipped' },
-    DELIVERED: {
-      icon: CheckCircle,
-      color: 'bg-green-100 text-green-700',
-      label: 'Delivered',
-    },
-    CANCELLED: { icon: XCircle, color: 'bg-red-100 text-red-700', label: 'Cancelled' },
+  const t = useTranslations('Orders');
+  const iconConfig = {
+    PENDING: { icon: Clock, color: 'bg-yellow-100 text-yellow-700' },
+    PAID: { icon: CheckCircle, color: 'bg-blue-100 text-blue-700' },
+    SHIPPED: { icon: Truck, color: 'bg-purple-100 text-purple-700' },
+    DELIVERED: { icon: CheckCircle, color: 'bg-green-100 text-green-700' },
+    CANCELLED: { icon: XCircle, color: 'bg-red-100 text-red-700' },
+  };
+  const labelKey: Record<string, 'statusPending' | 'statusPaid' | 'statusShipped' | 'statusDelivered' | 'statusCancelled'> = {
+    PENDING: 'statusPending',
+    PAID: 'statusPaid',
+    SHIPPED: 'statusShipped',
+    DELIVERED: 'statusDelivered',
+    CANCELLED: 'statusCancelled',
   };
 
-  const { icon: Icon, color, label } = config[status as keyof typeof config] || config.PENDING;
+  const { icon: Icon, color } = iconConfig[status as keyof typeof iconConfig] || iconConfig.PENDING;
+  const label = t(labelKey[status] ?? 'statusPending');
 
   return (
     <span

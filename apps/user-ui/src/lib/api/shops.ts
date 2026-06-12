@@ -1,5 +1,17 @@
 import { apiClient } from './client';
 
+// URL slug helpers
+export const getShopSlug = (shop: { id: string; businessName: string; slug?: string }): string => {
+  if (shop.slug) return shop.slug;
+  // Fallback: derive from businessName (for shops not yet assigned a slug)
+  return shop.businessName
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-') || shop.id;
+};
+
 // Shop interfaces
 export interface Seller {
   id: string;
@@ -11,6 +23,7 @@ export interface Seller {
 
 export interface Shop {
   id: string;
+  slug?: string;
   businessName: string;
   bio?: string;
   category?: string;
@@ -74,6 +87,11 @@ export const getTopShops = async (
 
 export const getShopById = async (shopId: string): Promise<Shop> => {
   const response = await apiClient.get(`/public/shops/${shopId}`);
+  return response.data;
+};
+
+export const getShopBySlug = async (slug: string): Promise<Shop> => {
+  const response = await apiClient.get(`/public/shops/${slug}`);
   return response.data;
 };
 

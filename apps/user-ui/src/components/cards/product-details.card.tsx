@@ -6,7 +6,8 @@ import Image from 'next/image';
 
 const logger = createLogger('user-ui:product-details-card');
 import React, { useState, useMemo, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
+import { useCurrency } from '../../hooks/use-currency';
 import StarRating from '../ui/star-rating';
 import type { Product, ProductVariant } from '../../lib/api/products';
 import {
@@ -38,6 +39,9 @@ interface ProductDetailsCardProps {
 
 const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
   const tCommon = useTranslations('Common');
+  const t = useTranslations('ProductCard');
+  const locale = useLocale();
+  const { formatPrice } = useCurrency();
   const [activeImage, setActiveImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [showFullDescription, setShowFullDescription] = useState(false);
@@ -185,14 +189,14 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
     maxDate.setDate(today.getDate() + maxDays);
 
     const formatDate = (date: Date) => {
-      return date.toLocaleDateString('en-US', {
+      return date.toLocaleDateString(locale, {
         month: 'short',
         day: 'numeric',
       });
     };
 
     return `${formatDate(minDate)} - ${formatDate(maxDate)}`;
-  }, []);
+  }, [locale]);
 
   const handleQuantityChange = (type: 'increment' | 'decrement') => {
     if (type === 'increment' && quantity < availableStock) {
@@ -215,7 +219,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
           return !(item.id === product.id && !item.variantId);
         }),
       }));
-      toast.success('Removed from cart', { description: product.name });
+      toast.success(t('removedFromCart'), { description: product.name });
     } else {
       // Get sellerId from shop data (required for order processing)
       // Use authId instead of MongoDB _id for cross-service consistency
@@ -249,7 +253,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
         location ?? undefined,
         deviceInfo ?? undefined
       );
-      toast.success('Added to cart', { description: product.name });
+      toast.success(t('addedToCart'), { description: product.name });
     }
   };
 
@@ -295,7 +299,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
           return !(item.id === product.id && !item.variantId);
         }),
       }));
-      toast.success('Removed from wishlist', { description: product.name });
+      toast.success(t('removedFromWishlist'), { description: product.name });
     } else {
       // Get sellerId from shop data (required for order processing)
       // Use authId instead of MongoDB _id for cross-service consistency
@@ -327,7 +331,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
         location ?? undefined,
         deviceInfo ?? undefined
       );
-      toast.success('Added to wishlist', { description: product.name });
+      toast.success(t('addedToWishlist'), { description: product.name });
     }
   };
 
@@ -353,7 +357,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
           <button
             className="bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition"
             onClick={() => setOpen(false)}
-            aria-label="Close modal"
+            aria-label={t('closeModal')}
           >
             <X size={20} className="text-gray-700 hover:text-gray-900" />
           </button>
@@ -374,7 +378,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-400">
-                  No Image
+                  {t('noImage')}
                 </div>
               )}
 
@@ -443,7 +447,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
             {/* Category */}
             {product.category && (
               <p className="text-xs text-gray-500 mb-2">
-                Category:{' '}
+                {t('category')}{' '}
                 <span className="text-gray-700">{product.category.name}</span>
               </p>
             )}
@@ -451,16 +455,16 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
             {/* Price */}
             <div className="flex items-center gap-2 mb-3">
               <span className="text-2xl font-bold text-brand-primary">
-                ${displayPrice.toFixed(2)}
+                {formatPrice(displayPrice)}
               </span>
               {hasDiscount && (
                 <span className="text-lg text-gray-400 line-through">
-                  ${originalPrice.toFixed(2)}
+                  {formatPrice(originalPrice)}
                 </span>
               )}
               {hasDiscount && (
                 <span className="bg-red-100 text-red-600 text-xs font-semibold px-2 py-0.5 rounded">
-                  Save ${(originalPrice - displayPrice).toFixed(2)}
+                  {t('save', { amount: formatPrice(originalPrice - displayPrice) })}
                 </span>
               )}
             </div>
@@ -499,7 +503,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                               }`}
                               style={{ backgroundColor: value.toLowerCase() }}
                               title={value}
-                              aria-label={`Select ${value} color`}
+                              aria-label={t('selectColor', { color: value })}
                             >
                               {isSelected && (
                                 <svg
@@ -541,7 +545,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                 ))}
                 {selectedVariant && selectedVariant.sku && (
                   <p className="text-xs text-gray-500">
-                    SKU: {selectedVariant.sku}
+                    {t('sku', { sku: selectedVariant.sku })}
                   </p>
                 )}
               </div>
@@ -550,7 +554,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
             {/* Description */}
             <div className="mb-3">
               <h3 className="text-sm font-semibold text-gray-800 mb-1">
-                Description
+                {t('description')}
               </h3>
               <div
                 className={`prose prose-sm prose-slate max-w-none ${
@@ -563,7 +567,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                   onClick={() => setShowFullDescription(!showFullDescription)}
                   className="text-brand-primary text-xs font-medium mt-1 hover:underline"
                 >
-                  {showFullDescription ? 'Show less' : 'Show more'}
+                  {showFullDescription ? t('showLess') : t('showMore')}
                 </button>
               )}
             </div>
@@ -572,7 +576,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
             {product.tags && product.tags.length > 0 && (
               <div className="mb-3">
                 <h3 className="text-xs font-semibold text-gray-700 mb-1">
-                  Tags:
+                  {t('tags')}
                 </h3>
                 <div className="flex flex-wrap gap-1.5">
                   {product.tags.map((tag, index) => (
@@ -591,10 +595,10 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
             <div className="mb-2">
               {availableStock > 0 ? (
                 <p className="text-green-600 text-sm font-medium">
-                  In Stock ({availableStock} available)
+                  {t('inStockCount', { count: availableStock })}
                 </p>
               ) : (
-                <p className="text-red-600 text-sm font-medium">Out of Stock</p>
+                <p className="text-red-600 text-sm font-medium">{tCommon('outOfStock')}</p>
               )}
             </div>
 
@@ -607,7 +611,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                 />
                 <div>
                   <p className="text-sm font-semibold text-gray-800">
-                    Estimated Delivery
+                    {t('estimatedDelivery')}
                   </p>
                   <p className="text-sm text-gray-600">{estimatedDelivery}</p>
                 </div>
@@ -623,7 +627,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                     onClick={() => handleQuantityChange('decrement')}
                     disabled={quantity <= 1}
                     className="p-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                    aria-label="Decrease quantity"
+                    aria-label={t('decreaseQuantity')}
                   >
                     <Minus size={16} />
                   </button>
@@ -634,7 +638,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                     onClick={() => handleQuantityChange('increment')}
                     disabled={quantity >= availableStock}
                     className="p-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                    aria-label="Increase quantity"
+                    aria-label={t('increaseQuantity')}
                   >
                     <Plus size={16} />
                   </button>
@@ -658,16 +662,16 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                   {variantAttributes &&
                   variantAttributes.length > 0 &&
                   !selectedVariant
-                    ? 'Select Options'
+                    ? t('selectOptions')
                     : isInCart
-                    ? 'Remove from Cart'
-                    : 'Add to Cart'}
+                    ? t('removeFromCart')
+                    : t('addToCart')}
                 </button>
                 <button
                   className="bg-white rounded-lg p-2.5 shadow-lg hover:bg-gray-100 transition"
                   onClick={handleFavoriteClick}
                   aria-label={
-                    isWishListed ? 'Remove from favorites' : 'Add to favorites'
+                    isWishListed ? t('removeFromFavorites') : t('addToFavorites')
                   }
                 >
                   <Heart
@@ -692,7 +696,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
             <div className="mt-3 pt-3 border-t border-gray-200">
               <h3 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-1.5">
                 <Store size={16} className="text-brand-primary" />
-                Seller Information
+                {t('sellerInformation')}
               </h3>
 
               {isShopLoading ? (
@@ -703,7 +707,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                 <div className="space-y-2">
                   {/* Shop Name */}
                   <div>
-                    <p className="text-xs text-gray-500">Shop Name</p>
+                    <p className="text-xs text-gray-500">{t('shopName')}</p>
                     <p className="text-sm font-semibold text-gray-800">
                       {shop.businessName}
                     </p>
@@ -711,11 +715,11 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
 
                   {/* Shop Rating */}
                   <div>
-                    <p className="text-xs text-gray-500">Shop Rating</p>
+                    <p className="text-xs text-gray-500">{t('shopRating')}</p>
                     <div className="flex items-center gap-1.5">
                       <StarRating value={shop.rating ?? 0} readonly size="sm" />
                       <span className="text-xs text-gray-600">
-                        ({shop.totalOrders} orders)
+                        {t('orders', { count: shop.totalOrders })}
                       </span>
                     </div>
                   </div>
@@ -727,7 +731,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                       className="text-gray-500 mt-0.5 flex-shrink-0"
                     />
                     <div>
-                      <p className="text-xs text-gray-500">Location</p>
+                      <p className="text-xs text-gray-500">{t('location')}</p>
                       <p className="text-xs text-gray-700">{shop.address}</p>
                     </div>
                   </div>
@@ -735,7 +739,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                   {/* Bio */}
                   {shop.bio && (
                     <div>
-                      <p className="text-xs text-gray-500">About Shop</p>
+                      <p className="text-xs text-gray-500">{t('aboutShop')}</p>
                       <p className="text-xs text-gray-700 line-clamp-2">
                         {shop.bio}
                       </p>
@@ -754,13 +758,13 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                       <MessageCircle size={16} />
                     )}
                     {createConversation.isPending
-                      ? 'Opening chat...'
-                      : 'Chat with Seller'}
+                      ? t('openingChat')
+                      : t('chatWithSeller')}
                   </button>
                 </div>
               ) : (
                 <p className="text-xs text-gray-500">
-                  Shop information not available
+                  {t('shopInfoUnavailable')}
                 </p>
               )}
             </div>

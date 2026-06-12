@@ -39,6 +39,7 @@ import { apiClient } from 'apps/seller-ui/src/lib/api/client';
 import { exportCSV, type CsvColumn } from 'apps/seller-ui/src/lib/utils/export-csv';
 import { exportReport } from 'apps/seller-ui/src/lib/utils/export-report';
 import { Breadcrumb } from 'apps/seller-ui/src/components/navigation/Breadcrumb';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface OrderItem {
   id: string;
@@ -146,7 +147,6 @@ const CustomBarShape = ({
   );
 };
 
-
 const fetchPaidOrders = async () => {
   const res = await apiClient.get('/orders/get-sellers-orders', {
     params: { paymentStatus: 'COMPLETED' },
@@ -154,12 +154,14 @@ const fetchPaidOrders = async () => {
   return res.data;
 };
 
+// Used by PayoutTooltip and CSV export — keep en-US for consistency
 const fmtUSD = (cents: number) =>
   `$${(cents / 100).toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
 
+// Used by CSV export only — keep en-US
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString('en-US', {
     month: 'short',
@@ -171,7 +173,6 @@ type StatusConfigEntry = {
   icon: typeof CheckCircle;
   color: string;
   bg: string;
-  label: string;
 };
 
 const PAYOUT_STATUS_CONFIG: Record<string, StatusConfigEntry> = {
@@ -179,25 +180,21 @@ const PAYOUT_STATUS_CONFIG: Record<string, StatusConfigEntry> = {
     icon: Clock,
     color: 'text-feedback-warning',
     bg: 'bg-yellow-500/10',
-    label: 'Pending',
   },
   PROCESSING: {
     icon: TrendingUp,
     color: 'text-brand-primary',
     bg: 'bg-blue-500/10',
-    label: 'Processing',
   },
   COMPLETED: {
     icon: CheckCircle,
     color: 'text-feedback-success',
     bg: 'bg-green-500/10',
-    label: 'Completed',
   },
   FAILED: {
     icon: XCircle,
     color: 'text-feedback-error',
     bg: 'bg-red-500/10',
-    label: 'Failed',
   },
 };
 
@@ -209,7 +206,7 @@ const ORDER_STATUS_CONFIG: Record<string, OrderStatusEntry> = {
   CANCELLED: { color: 'text-feedback-error', bg: 'bg-red-500/10' },
 };
 
-const PayoutBadge = ({ status }: { status: string }) => {
+const PayoutBadge = ({ status, label }: { status: string; label: string }) => {
   const cfg = PAYOUT_STATUS_CONFIG[status] ?? PAYOUT_STATUS_CONFIG.PENDING;
   const Icon = cfg.icon;
   return (
@@ -217,12 +214,12 @@ const PayoutBadge = ({ status }: { status: string }) => {
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill text-xs font-medium ${cfg.bg} ${cfg.color}`}
     >
       <Icon size={11} />
-      {cfg.label}
+      {label}
     </span>
   );
 };
 
-const OrderBadge = ({ status }: { status: string }) => {
+const OrderBadge = ({ status, label }: { status: string; label: string }) => {
   const cfg = ORDER_STATUS_CONFIG[status] ?? {
     color: 'text-gray-500',
     bg: 'bg-gray-500/10',
@@ -231,7 +228,7 @@ const OrderBadge = ({ status }: { status: string }) => {
     <span
       className={`inline-flex items-center px-2.5 py-1 rounded-pill text-xs font-medium ${cfg.bg} ${cfg.color}`}
     >
-      {status}
+      {label}
     </span>
   );
 };
@@ -285,6 +282,16 @@ const PAYMENT_CSV_COLUMNS: CsvColumn<PaymentRecord>[] = [
 ];
 
 const PaymentsPage = () => {
+  const t = useTranslations('SellerPayments');
+  const locale = useLocale();
+
+  const fmtDateLocale = (iso: string) =>
+    new Date(iso).toLocaleDateString(locale, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+
   const [globalFilter, setGlobalFilter] = useState('');
   const [payoutStatusFilter, setPayoutStatusFilter] = useState<string>('');
 
@@ -332,16 +339,19 @@ const PaymentsPage = () => {
   }, [orders, payoutStatusFilter]);
 
   const weeklyPayoutData = useMemo<PayoutBarEntry[]>(() => {
-    const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const DAYS = [
+      t('dayMon'), t('dayTue'), t('dayWed'), t('dayThu'),
+      t('dayFri'), t('daySat'), t('daySun'),
+    ];
     const now = new Date();
-    const jsDay = now.getDay(); // 0=Sun … 6=Sat
+    const jsDay = now.getDay();
     const mondayOffset = jsDay === 0 ? -6 : 1 - jsDay;
     const monday = new Date(
       now.getFullYear(),
       now.getMonth(),
       now.getDate() + mondayOffset
     );
-    const todayIdx = jsDay === 0 ? 6 : jsDay - 1; // 0=Mon … 6=Sun
+    const todayIdx = jsDay === 0 ? 6 : jsDay - 1;
 
     const dailyCents = new Array(7).fill(0);
     for (const order of orders) {
@@ -364,7 +374,7 @@ const PaymentsPage = () => {
       fill: i === todayIdx ? '#0058BB' : '#4B5563',
       fillOpacity: i === todayIdx ? 1 : 0.45,
     }));
-  }, [orders]);
+  }, [orders, t]);
 
   const totalEarnings = payments.reduce((sum, p) => sum + p.earnings, 0);
   const pendingEarnings = payments
@@ -378,9 +388,9 @@ const PaymentsPage = () => {
   const platformMetrics = useMemo(() => {
     if (!payments.length) {
       return [
-        { label: 'Payout Reliability', value: '—', pct: 0 },
-        { label: 'Order Fulfillment', value: '—', pct: 0 },
-        { label: 'Settlement Rate', value: '—', pct: 0 },
+        { label: t('metricPayoutReliability'), value: '—', pct: 0 },
+        { label: t('metricOrderFulfillment'), value: '—', pct: 0 },
+        { label: t('metricSettlementRate'), value: '—', pct: 0 },
       ];
     }
 
@@ -396,11 +406,11 @@ const PaymentsPage = () => {
     const settlementRate = totalEarnings > 0 ? (completedEarnings / totalEarnings) * 100 : 0;
 
     return [
-      { label: 'Payout Reliability', value: `${payoutReliability.toFixed(1)}%`, pct: payoutReliability },
-      { label: 'Order Fulfillment',  value: `${fulfillmentRate.toFixed(1)}%`,   pct: fulfillmentRate },
-      { label: 'Settlement Rate',    value: `${settlementRate.toFixed(1)}%`,     pct: settlementRate },
+      { label: t('metricPayoutReliability'), value: `${payoutReliability.toFixed(1)}%`, pct: payoutReliability },
+      { label: t('metricOrderFulfillment'),  value: `${fulfillmentRate.toFixed(1)}%`,   pct: fulfillmentRate },
+      { label: t('metricSettlementRate'),    value: `${settlementRate.toFixed(1)}%`,     pct: settlementRate },
     ];
-  }, [payments, totalEarnings, completedEarnings]);
+  }, [payments, totalEarnings, completedEarnings, t]);
 
   const lastSync = useMemo(() => {
     if (!payments.length) return null;
@@ -431,7 +441,7 @@ const PaymentsPage = () => {
             onClick={() => column.toggleSorting()}
             className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
           >
-            Order ID
+            {t('colOrderId')}
             <ArrowUpDown size={11} />
           </button>
         ),
@@ -452,13 +462,13 @@ const PaymentsPage = () => {
             onClick={() => column.toggleSorting()}
             className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
           >
-            Date
+            {t('colDate')}
             <ArrowUpDown size={11} />
           </button>
         ),
         cell: ({ row }: { row: { original: PaymentRecord } }) => (
           <span className="text-sm text-gray-500">
-            {fmtDate(row.original.orderDate)}
+            {fmtDateLocale(row.original.orderDate)}
           </span>
         ),
       },
@@ -466,7 +476,7 @@ const PaymentsPage = () => {
         accessorKey: 'itemCount',
         header: () => (
           <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-            Items
+            {t('colItems')}
           </span>
         ),
         cell: ({ row }: { row: { original: PaymentRecord } }) => (
@@ -487,7 +497,7 @@ const PaymentsPage = () => {
             onClick={() => column.toggleSorting()}
             className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
           >
-            Amount
+            {t('colAmount')}
             <ArrowUpDown size={11} />
           </button>
         ),
@@ -501,7 +511,7 @@ const PaymentsPage = () => {
         accessorKey: 'platformFees',
         header: () => (
           <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-            Platform Fee
+            {t('colPlatformFee')}
           </span>
         ),
         cell: ({ row }: { row: { original: PaymentRecord } }) => (
@@ -521,7 +531,7 @@ const PaymentsPage = () => {
             onClick={() => column.toggleSorting()}
             className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
           >
-            Net Earnings
+            {t('colNetEarnings')}
             <ArrowUpDown size={11} />
           </button>
         ),
@@ -535,26 +545,41 @@ const PaymentsPage = () => {
         accessorKey: 'payoutStatus',
         header: () => (
           <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-            Payout Status
+            {t('colPayoutStatus')}
           </span>
         ),
-        cell: ({ row }: { row: { original: PaymentRecord } }) => (
-          <PayoutBadge status={row.original.payoutStatus} />
-        ),
+        cell: ({ row }: { row: { original: PaymentRecord } }) => {
+          const status = row.original.payoutStatus;
+          const payoutLabels: Record<string, string> = {
+            PENDING: t('payoutPending'),
+            PROCESSING: t('payoutProcessing'),
+            COMPLETED: t('payoutCompleted'),
+            FAILED: t('payoutFailed'),
+          };
+          return <PayoutBadge status={status} label={payoutLabels[status] ?? status} />;
+        },
       },
       {
         accessorKey: 'orderStatus',
         header: () => (
           <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-            Order Status
+            {t('colOrderStatus')}
           </span>
         ),
-        cell: ({ row }: { row: { original: PaymentRecord } }) => (
-          <OrderBadge status={row.original.orderStatus} />
-        ),
+        cell: ({ row }: { row: { original: PaymentRecord } }) => {
+          const status = row.original.orderStatus;
+          const orderLabels: Record<string, string> = {
+            PENDING: t('orderStatusPending'),
+            PAID: t('orderStatusPaid'),
+            SHIPPED: t('orderStatusShipped'),
+            DELIVERED: t('orderStatusDelivered'),
+            CANCELLED: t('orderStatusCancelled'),
+          };
+          return <OrderBadge status={status} label={orderLabels[status] ?? status} />;
+        },
       },
     ],
-    []
+    [t, locale] // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   const table = useReactTable({
@@ -584,9 +609,9 @@ const PaymentsPage = () => {
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl font-bold text-gray-900 leading-tight">
-            Payments & Earnings
+            {t('pageTitle')}
           </h1>
-          <Breadcrumb title="Payments" items={[]} />
+          <Breadcrumb title={t('breadcrumb')} items={[]} />
         </div>
         <div className="flex items-center gap-2.5 shrink-0">
           <button
@@ -598,7 +623,7 @@ const PaymentsPage = () => {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-container-lowest text-sm font-medium text-gray-900 hover:bg-gray-100 transition-colors cursor-pointer"
           >
             <FileDown size={14} />
-            Export CSV
+            {t('exportCsv')}
           </button>
           <button
             onClick={() => {
@@ -611,7 +636,7 @@ const PaymentsPage = () => {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-primary text-white text-sm font-medium hover:bg-brand-primary-700 transition-colors cursor-pointer shadow-elev-low"
           >
             <Download size={14} />
-            Download Report
+            {t('downloadReport')}
           </button>
         </div>
       </div>
@@ -619,39 +644,39 @@ const PaymentsPage = () => {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <KpiCard
-          label="Total Earnings"
+          label={t('kpiTotalEarnings')}
           value={fmtUSD(totalEarnings)}
-          sub="Net revenue across all channels"
+          sub={t('kpiTotalEarningsSub')}
           icon={DollarSign}
           iconBg="bg-green-500/10"
           iconColor="text-feedback-success"
         />
         <KpiCard
-          label="Pending Payouts"
+          label={t('kpiPendingPayouts')}
           value={fmtUSD(pendingEarnings)}
-          sub="Processing for next settlement cycle"
+          sub={t('kpiPendingPayoutsSub')}
           icon={Clock}
           iconBg="bg-yellow-500/10"
           iconColor="text-feedback-warning"
           badge={
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-pill text-xs font-medium bg-yellow-500/10 text-feedback-warning">
               <Clock size={9} />
-              In Progress
+              {t('kpiInProgress')}
             </span>
           }
         />
         <KpiCard
-          label="Completed Payouts"
+          label={t('kpiCompletedPayouts')}
           value={fmtUSD(completedEarnings)}
-          sub="Total successfully transferred"
+          sub={t('kpiCompletedPayoutsSub')}
           icon={CheckCircle}
           iconBg="bg-blue-500/10"
           iconColor="text-brand-primary"
         />
         <KpiCard
-          label="Total Transactions"
+          label={t('kpiTotalTransactions')}
           value={totalTransactions.toLocaleString()}
-          sub="Verified orders processed"
+          sub={t('kpiTotalTransactionsSub')}
           icon={TrendingUp}
           iconBg="bg-purple-500/10"
           iconColor="text-purple-500"
@@ -664,14 +689,14 @@ const PaymentsPage = () => {
           <Search size={14} className="text-gray-500 shrink-0" />
           <input
             type="text"
-            placeholder="Search by order number..."
+            placeholder={t('searchPlaceholder')}
             className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-500 outline-none"
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
           />
         </div>
         <button className="inline-flex items-center gap-2 px-3 py-2.5 bg-surface-container-lowest rounded-lg text-sm text-gray-900 hover:bg-gray-100 transition-colors cursor-pointer whitespace-nowrap">
-          <span>Last 30 Days</span>
+          <span>{t('last30Days')}</span>
           <ChevronDown size={14} className="text-gray-500" />
         </button>
         <select
@@ -679,11 +704,11 @@ const PaymentsPage = () => {
           value={payoutStatusFilter}
           onChange={(e) => setPayoutStatusFilter(e.target.value)}
         >
-          <option value="">All Payout Status</option>
-          <option value="PENDING">Pending</option>
-          <option value="PROCESSING">Processing</option>
-          <option value="COMPLETED">Completed</option>
-          <option value="FAILED">Failed</option>
+          <option value="">{t('filterAllPayout')}</option>
+          <option value="PENDING">{t('filterPending')}</option>
+          <option value="PROCESSING">{t('filterProcessing')}</option>
+          <option value="COMPLETED">{t('filterCompleted')}</option>
+          <option value="FAILED">{t('filterFailed')}</option>
         </select>
       </div>
 
@@ -692,10 +717,10 @@ const PaymentsPage = () => {
         <div className="px-5 py-4 flex items-center justify-between">
           <div>
             <h2 className="text-sm font-semibold text-gray-900 font-display">
-              Recent Transactions Ledger
+              {t('ledgerTitle')}
             </h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              {totalFiltered.toLocaleString()} records found
+              {t('recordsFound', { count: totalFiltered.toLocaleString() })}
             </p>
           </div>
         </div>
@@ -737,10 +762,8 @@ const PaymentsPage = () => {
                       >
                         <div className="flex flex-col items-center gap-2 text-gray-500">
                           <DollarSign size={36} className="opacity-30" />
-                          <p className="text-sm font-medium">No payments found</p>
-                          <p className="text-xs">
-                            Your earnings from completed orders will appear here
-                          </p>
+                          <p className="text-sm font-medium">{t('noPaymentsFound')}</p>
+                          <p className="text-xs">{t('noPaymentsDesc')}</p>
                         </div>
                       </td>
                     </tr>
@@ -769,15 +792,11 @@ const PaymentsPage = () => {
             {totalFiltered > 0 && (
               <div className="px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 bg-gray-50">
                 <p className="text-xs text-gray-500">
-                  Showing{' '}
-                  <span className="font-semibold text-gray-900">{pageStart}</span>
-                  {' '}–{' '}
-                  <span className="font-semibold text-gray-900">{pageEnd}</span>
-                  {' '}of{' '}
-                  <span className="font-semibold text-gray-900">
-                    {totalFiltered.toLocaleString()}
-                  </span>{' '}
-                  results
+                  {t('showing', {
+                    start: pageStart,
+                    end: pageEnd,
+                    total: totalFiltered.toLocaleString(),
+                  })}
                 </p>
                 <div className="flex items-center gap-1.5">
                   <button
@@ -786,7 +805,7 @@ const PaymentsPage = () => {
                     className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm bg-surface-container-lowest text-gray-900 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     <ChevronLeft size={14} />
-                    Prev
+                    {t('prev')}
                   </button>
                   {Array.from({ length: Math.min(table.getPageCount(), 5) }, (_, i) => {
                     const total = table.getPageCount();
@@ -820,7 +839,7 @@ const PaymentsPage = () => {
                     disabled={!table.getCanNextPage()}
                     className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm bg-surface-container-lowest text-gray-900 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
-                    Next
+                    {t('next')}
                     <ChevronRight size={14} />
                   </button>
                 </div>
@@ -837,10 +856,10 @@ const PaymentsPage = () => {
           <div className="flex items-start justify-between mb-1">
             <div>
               <h3 className="text-sm font-semibold text-gray-900 font-display">
-                Payout Schedule
+                {t('payoutScheduleTitle')}
               </h3>
               <p className="text-xs text-gray-500 mt-0.5">
-                Automated weekly settlement forecast
+                {t('payoutScheduleSub')}
               </p>
             </div>
             <Activity size={16} className="text-gray-400 mt-0.5" />
@@ -873,10 +892,10 @@ const PaymentsPage = () => {
         {/* Platform Health */}
         <div className="xl:col-span-2 bg-surface-container-lowest rounded-lg shadow-elev-low p-5">
           <h3 className="text-sm font-semibold text-gray-900 font-display">
-            Platform Health
+            {t('platformHealthTitle')}
           </h3>
           <p className="text-xs text-gray-500 mt-0.5 mb-5">
-            System performance and uptime metrics
+            {t('platformHealthSub')}
           </p>
           <div className="space-y-5">
             {platformMetrics.map((metric) => {
@@ -909,8 +928,8 @@ const PaymentsPage = () => {
           <div className="mt-6 pt-4 flex items-center justify-between">
             <span className="text-xs text-gray-500">
               {lastSync
-                ? `Updated ${fmtDate(lastSync.toISOString())}`
-                : 'No data yet'}
+                ? t('updatedOn', { date: fmtDateLocale(lastSync.toISOString()) })
+                : t('noDataYet')}
             </span>
             <div className="flex items-center gap-1.5">
               <div
@@ -936,12 +955,12 @@ const PaymentsPage = () => {
                 }`}
               >
                 {healthStatus === 'operational'
-                  ? 'Operational'
+                  ? t('statusOperational')
                   : healthStatus === 'degraded'
-                  ? 'Degraded'
+                  ? t('statusDegraded')
                   : healthStatus === 'issues'
-                  ? 'Issues'
-                  : 'No Data'}
+                  ? t('statusIssues')
+                  : t('statusNoData')}
               </span>
             </div>
           </div>

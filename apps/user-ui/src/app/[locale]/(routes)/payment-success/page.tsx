@@ -11,6 +11,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import useStore from '../../../../store';
 import { apiClient } from '../../../../lib/api/client';
 import confetti from 'canvas-confetti';
+import { useTranslations } from 'next-intl';
 
 type Order = {
   orderNumber: string;
@@ -22,6 +23,7 @@ const PaymentSuccessPage = () => {
   const sessionId = searchParams.get('session_id');
   const router = useRouter();
   const queryClient = useQueryClient();
+  const t = useTranslations('PaymentSuccess');
 
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState<Order | null>(null);
@@ -30,7 +32,7 @@ const PaymentSuccessPage = () => {
   useEffect(() => {
     const processPayment = async () => {
       if (!sessionId) {
-        setError('No session ID provided');
+        setError(t('errorNoSession'));
         setLoading(false);
         return;
       }
@@ -52,21 +54,21 @@ const PaymentSuccessPage = () => {
         });
       } catch (err) {
         logger.error('Error processing payment:', { error: err });
-        setError('Failed to create order. Please contact support.');
+        setError(t('errorFailed'));
       } finally {
         setLoading(false);
       }
     };
 
     processPayment();
-  }, [sessionId]);
+  }, [sessionId, t]);
 
   if (loading) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center px-4">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin mx-auto text-blue-600 mb-4" />
-          <p className="text-gray-600">Processing your order...</p>
+          <p className="text-gray-600">{t('loading')}</p>
         </div>
       </div>
     );
@@ -80,14 +82,14 @@ const PaymentSuccessPage = () => {
             <XCircle className="w-16 h-16 mx-auto" />
           </div>
           <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-            Order Processing Failed
+            {t('errorTitle')}
           </h2>
           <p className="text-sm text-gray-600 mb-6">{error}</p>
           <button
             onClick={() => router.push('/cart')}
             className="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700"
           >
-            Back to Cart
+            {t('backToCart')}
           </button>
         </div>
       </div>
@@ -101,16 +103,16 @@ const PaymentSuccessPage = () => {
           <CheckCircle className="w-16 h-16 mx-auto" />
         </div>
         <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-          Payment Successful!
+          {t('successTitle')}
         </h2>
 
         <p className="text-sm text-gray-600 mb-6">
-          Thank you for your purchase! Your order has been placed successfully.
+          {t('successMessage')}
         </p>
 
         {order && order.orderNumber && (
           <div className="mb-6 p-4 bg-gray-50 rounded-md">
-            <p className="text-sm text-gray-600 mb-1">Order Number</p>
+            <p className="text-sm text-gray-600 mb-1">{t('orderNumber')}</p>
             <p className="text-lg font-semibold font-mono text-gray-800">
               {order.orderNumber as string}
             </p>
@@ -122,11 +124,11 @@ const PaymentSuccessPage = () => {
           className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition"
         >
           <Truck className="w-4 h-4" />
-          View My Orders
+          {t('viewMyOrders')}
         </button>
 
         <div className="mt-8 text-xs text-gray-400 break-all">
-          Session ID: <span className="font-mono">{sessionId}</span>
+          {t('sessionId')} <span className="font-mono">{sessionId}</span>
         </div>
       </div>
     </div>
@@ -134,8 +136,9 @@ const PaymentSuccessPage = () => {
 };
 
 export default function PaymentPageWrapper() {
+  const t = useTranslations('PaymentSuccess');
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div>{t('suspenseFallback')}</div>}>
       <PaymentSuccessPage />
     </Suspense>
   );

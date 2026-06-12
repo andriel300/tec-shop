@@ -13,6 +13,7 @@ import {
   UploadedFiles,
   Req,
   BadRequestException,
+  NotFoundException,
   Logger,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
@@ -549,12 +550,22 @@ export class ProductController {
       userType?: 'CUSTOMER' | 'SELLER' | 'ADMIN';
     };
 
-    return this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
+    const rating = await this.cb.fire('PRODUCT_SERVICE', () => firstValueFrom(
       this.productService.send('product-get-user-rating', {
         productId,
         userId: user.userId,
       })
     ));
+
+    // NestJS sends an empty HTTP body when a controller returns null,
+    // which causes "XML Parsing Error: no root element found" in Firefox.
+    // Returning a 404 with JSON body is semantically correct (user hasn't rated yet)
+    // and browsers parse it cleanly.
+    if (rating === null || rating === undefined) {
+      throw new NotFoundException('No rating found for this product');
+    }
+
+    return rating;
   }
 
   @Post('ratings/:ratingId/reply')
