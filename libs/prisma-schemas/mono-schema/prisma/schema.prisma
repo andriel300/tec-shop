@@ -1,0 +1,585 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../../node_modules/.prisma/mono-client"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// Auth Domain
+// ============================================================================
+
+enum UserType {
+  CUSTOMER
+  SELLER
+  ADMIN
+}
+
+model User {
+  id                  String               @id @default(auto()) @map("_id") @db.ObjectId
+  email               String               @unique
+  password            String?
+  isEmailVerified     Boolean              @default(false)
+  userType            UserType             @default(CUSTOMER)
+  googleId            String?
+  provider            String               @default("local")
+  refreshToken        String?
+  refreshTokenFamily  String?
+  isBanned            Boolean              @default(false)
+  banReason           String?
+  bannedUntil         DateTime?
+  totpSecret          String?
+  totpEnabled         Boolean              @default(false)
+  totpBackupCodes     String[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  passwordResetTokens PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  token     String   @unique
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// ============================================================================
+// User Domain
+// ============================================================================
+
+enum ImageType {
+  AVATAR
+  COVER
+  GALLERY
+}
+
+model UserProfile {
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId  String  @unique @db.ObjectId
+  name    String
+  bio     String?
+  picture String?
+  images  Image[]
+  followers Follow[] @relation("UserFollowers")
+  following Follow[] @relation("UserFollowing")
+  shippingAddresses ShippingAddress[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Image {
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  file_id       String
+  url           String
+  imageType     ImageType   @default(AVATAR)
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  userProfileId String      @db.ObjectId
+  createdAt     DateTime    @default(now())
+
+  @@index([userProfileId, imageType])
+}
+
+model Follow {
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  followerId  String      @db.ObjectId
+  followingId String      @db.ObjectId
+  follower    UserProfile @relation("UserFollowing", fields: [followerId], references: [id])
+  following   UserProfile @relation("UserFollowers", fields: [followingId], references: [id])
+  createdAt   DateTime    @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+model ShopFollower {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  shopId    String   @db.ObjectId
+  createdAt DateTime @default(now())
+
+  @@unique([userId, shopId])
+  @@index([shopId])
+  @@index([userId])
+}
+
+model ShippingAddress {
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String      @db.ObjectId
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  userProfileId String      @db.ObjectId
+  label         String
+  name          String
+  street        String
+  city          String
+  state         String?
+  zipCode       String
+  country       String
+  phoneNumber   String?
+  isDefault     Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([userProfileId])
+  @@index([userId, isDefault])
+}
+
+model SiteLayout {
+  id         String      @id @default(auto()) @map("_id") @db.ObjectId
+  logo       String?
+  banner     String?
+  heroSlides HeroSlide[]
+  updatedAt  DateTime    @updatedAt
+  createdAt  DateTime    @default(now())
+}
+
+model HeroSlide {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  siteLayout   SiteLayout @relation(fields: [siteLayoutId], references: [id], onDelete: Cascade)
+  siteLayoutId String     @db.ObjectId
+  title        String
+  subtitle     String?
+  imageUrl     String
+  actionUrl    String?
+  actionLabel  String?
+  order        Int        @default(0)
+  isActive     Boolean    @default(true)
+  translations Json?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([siteLayoutId])
+}
+
+// ============================================================================
+// Seller Domain
+// ============================================================================
+
+enum StripeStatus {
+  NOT_STARTED
+  PENDING
+  INCOMPLETE
+  COMPLETE
+  RESTRICTED
+  REJECTED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  FREE_SHIPPING
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  ORDER
+  PRODUCT
+  SHOP
+  SYSTEM
+}
+
+enum EventStatus {
+  DRAFT
+  SCHEDULED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model Seller {
+  id                       String           @id @default(auto()) @map("_id") @db.ObjectId
+  authId                   String           @unique @db.ObjectId
+  name                     String
+  email                    String           @unique
+  phoneNumber              String
+  country                  String
+  isVerified               Boolean          @default(false)
+  stripeAccountId          String?          @unique
+  stripeOnboardingStatus   StripeStatus     @default(NOT_STARTED)
+  stripeDetailsSubmitted   Boolean          @default(false)
+  stripePayoutsEnabled     Boolean          @default(false)
+  stripeChargesEnabled     Boolean          @default(false)
+  stripeOnboardingUrl      String?
+  stripeRequirements       Json?
+  stripeLastUpdated        DateTime?
+  shop                     Shop?
+  discountCodes            DiscountCode[]
+  notifications            Notification[]
+  notificationPreferences  Json?
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
+}
+
+model Shop {
+  id             String  @id @default(auto()) @map("_id") @db.ObjectId
+  sellerId       String  @unique @db.ObjectId
+  seller         Seller  @relation(fields: [sellerId], references: [id])
+  businessName   String
+  slug           String?
+  bio            String?
+  description    String?
+  category       String
+  address        String
+  openingHours   String
+  website        String?
+  socialLinks    Json[]
+  returnPolicy   String?
+  shippingPolicy String?
+  banner         String?
+  logo           String?
+  rating         Float   @default(0)
+  totalOrders    Int     @default(0)
+  isActive       Boolean @default(true)
+  events         Event[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model DiscountCode {
+  id                  String       @id @default(auto()) @map("_id") @db.ObjectId
+  sellerId            String       @db.ObjectId
+  seller              Seller       @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  publicName          String
+  code                String       @unique
+  description         String?
+  discountType        DiscountType
+  discountValue       Float
+  usageLimit          Int?
+  usageCount          Int          @default(0)
+  maxUsesPerCustomer  Int?
+  startDate           DateTime     @default(now())
+  endDate             DateTime?
+  minimumPurchase     Float?
+  isActive            Boolean      @default(true)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  @@index([sellerId])
+  @@index([isActive])
+  @@index([startDate])
+  @@index([endDate])
+}
+
+model Notification {
+  id        String           @id @default(auto()) @map("_id") @db.ObjectId
+  sellerId  String           @db.ObjectId
+  seller    Seller           @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      NotificationType @default(INFO)
+  isRead    Boolean          @default(false)
+  metadata  Json?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([sellerId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+model Event {
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  shopId      String      @db.ObjectId
+  shop        Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  bannerImage String?
+  startDate   DateTime
+  endDate     DateTime
+  status      EventStatus @default(DRAFT)
+  isActive    Boolean     @default(true)
+  metadata    Json?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([shopId])
+  @@index([status])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([isActive])
+}
+
+// ============================================================================
+// Product Domain
+// ============================================================================
+
+enum ProductType {
+  SIMPLE
+  VARIABLE
+  DIGITAL
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  SCHEDULED
+}
+
+enum ProductVisibility {
+  PUBLIC
+  PRIVATE
+  PASSWORD_PROTECTED
+}
+
+model Category {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  slug        String     @unique
+  description String?
+  parentId    String?    @db.ObjectId
+  parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children    Category[] @relation("CategoryTree")
+  attributes  Json?
+  image       String?
+  isActive    Boolean    @default(true)
+  position    Int        @default(0)
+  products    Product[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([parentId])
+  @@index([isActive])
+}
+
+model Brand {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  logo        String?
+  website     String?
+  isActive    Boolean   @default(true)
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([isActive])
+}
+
+model Product {
+  id              String            @id @default(auto()) @map("_id") @db.ObjectId
+  shopId          String            @db.ObjectId
+  name            String
+  description     String
+  categoryId      String            @db.ObjectId
+  category        Category          @relation(fields: [categoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  brandId         String?           @db.ObjectId
+  brand           Brand?            @relation(fields: [brandId], references: [id])
+  productType     ProductType       @default(SIMPLE)
+  price           Float
+  salePrice       Float?
+  stock           Int               @default(0)
+  images          String[]
+  hasVariants     Boolean           @default(false)
+  variants        ProductVariant[]
+  attributes      Json?
+  shipping        Json?
+  seo             Json?
+  slug            String?           @unique
+  inventory       Json?
+  warranty        String?
+  tags            String[]          @default([])
+  youtubeUrl      String?
+  discountCodeId  String?           @db.ObjectId
+  status          ProductStatus     @default(DRAFT)
+  visibility      ProductVisibility @default(PUBLIC)
+  publishDate     DateTime?
+  isActive        Boolean           @default(true)
+  isFeatured      Boolean           @default(false)
+  views           Int               @default(0)
+  sales           Int               @default(0)
+  averageRating   Float             @default(0)
+  ratingCount     Int               @default(0)
+  ratings         ProductRating[]
+  deletedAt       DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([shopId])
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([isActive])
+  @@index([status])
+  @@index([productType])
+  @@index([deletedAt])
+  @@index([averageRating])
+}
+
+model ProductVariant {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  productId  String   @db.ObjectId
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sku        String   @unique
+  attributes Json
+  price      Float
+  salePrice  Float?
+  stock      Int      @default(0)
+  image      String?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([productId])
+  @@index([isActive])
+}
+
+model ProductRating {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  productId         String   @db.ObjectId
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  userId            String   @db.ObjectId
+  rating            Int
+  title             String?
+  content           String?
+  images            String[] @default([])
+  reviewerName      String?
+  reviewerAvatar    String?
+  sellerResponse    String?
+  sellerResponseAt  DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([productId, userId])
+  @@index([productId])
+  @@index([userId])
+  @@index([rating])
+}
+
+// ============================================================================
+// Order Domain (converted from PostgreSQL to MongoDB)
+// ============================================================================
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Order {
+  id                String        @id @default(auto()) @map("_id") @db.ObjectId
+  orderNumber       String        @unique
+  userId            String        @db.ObjectId
+  shippingAddressId String
+  shippingAddress   Json
+  stripeSessionId   String?       @unique
+  stripePaymentId   String?       @unique
+  paymentMethod     String?
+  subtotalAmount    Int
+  discountAmount    Int           @default(0)
+  shippingCost      Int           @default(0)
+  platformFee       Int           @default(0)
+  finalAmount       Int
+  couponCode        String?
+  status            OrderStatus   @default(PENDING)
+  paymentStatus     PaymentStatus @default(PENDING)
+  items             OrderItem[]
+  payouts           SellerPayout[]
+  trackingNumber    String?
+  estimatedDelivery DateTime?
+  deliveredAt       DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId      String   @db.ObjectId
+  sellerId     String   @db.ObjectId
+  shopId       String   @db.ObjectId
+  shopName     String
+  productId    String   @db.ObjectId
+  productName  String
+  productSlug  String
+  productImage String?
+  variantId    String?
+  sku          String?
+  unitPrice    Int
+  quantity     Int
+  subtotal     Int
+  sellerPayout Int
+  platformFee  Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([sellerId])
+  @@index([productId])
+}
+
+model SellerPayout {
+  id               String       @id @default(auto()) @map("_id") @db.ObjectId
+  order            Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId          String       @db.ObjectId
+  sellerId         String       @db.ObjectId
+  shopId           String       @db.ObjectId
+  stripeAccountId  String
+  totalAmount      Int
+  platformFee      Int
+  payoutAmount     Int
+  stripeTransferId String?      @unique
+  status           PayoutStatus @default(PENDING)
+  errorMessage     String?
+  retryCount       Int          @default(0)
+  processedAt      DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([orderId])
+  @@index([sellerId])
+  @@index([status])
+  @@index([stripeAccountId])
+}
+
+model PaymentSession {
+  id                String        @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId         String        @unique
+  userId            String        @db.ObjectId
+  cartData          Json
+  shippingAddressId String
+  shippingAddress   Json
+  subtotalAmount    Int
+  discountAmount    Int           @default(0)
+  shippingCost      Int           @default(0)
+  platformFee       Int           @default(0)
+  finalAmount       Int
+  couponCode        String?
+  status            PaymentStatus @default(PENDING)
+  expiresAt         DateTime
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([expiresAt])
+}

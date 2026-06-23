@@ -1,0 +1,17 @@
+{
+  "name": "@tec-shop/mono-client",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/prisma-clients/mono-client/src",
+  "projectType": "library",
+  "targets": {
+    "generate-types": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma generate --schema=../../prisma-schemas/mono-schema/prisma/schema.prisma",
+        "cwd": "libs/prisma-clients/mono-client"
+      }
+    }
+  },
+  "tags": ["type:prisma-client", "scope:backend", "domain:mono"],
+  "implicitDependencies": ["@tec-shop/mono-schema"]
+}

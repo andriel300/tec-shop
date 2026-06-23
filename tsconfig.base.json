@@ -27,6 +27,9 @@
       ],
       "@tec-shop/api-gateway/*": ["apps/api-gateway/src/*"],
       "@tec-shop/auth-client": ["libs/prisma-clients/auth-client/src/index.ts"],
+      "@tec-shop/mono-client": ["libs/prisma-clients/mono-client/src/index.ts"],
+      "@tec-shop/mono-prisma-client": ["node_modules/.prisma/mono-client"],
+      "@tec-shop/mono-api/*": ["apps/mono-api/src/*"],
       "@tec-shop/auth-prisma-client": ["node_modules/.prisma/auth-client"],
       "@tec-shop/auth-service/*": ["apps/auth-service/src/*"],
       "@tec-shop/chatting-client": [

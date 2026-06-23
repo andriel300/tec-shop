@@ -152,6 +152,12 @@
     },
     {
       "path": "./libs/shared/sentry"
+    },
+    {
+      "path": "./apps/mono-api"
+    },
+    {
+      "path": "./libs/prisma-schemas/mono-schema"
     }
   ]
 }

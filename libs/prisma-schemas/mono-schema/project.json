@@ -1,0 +1,45 @@
+{
+  "name": "@tec-shop/mono-schema",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/prisma-schemas/mono-schema",
+  "projectType": "library",
+  "targets": {
+    "generate-types": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma generate --schema=prisma/schema.prisma",
+        "cwd": "libs/prisma-schemas/mono-schema"
+      },
+      "outputs": ["{workspaceRoot}/node_modules/.prisma/mono-client"]
+    },
+    "db-push": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma db push --schema=prisma/schema.prisma",
+        "cwd": "libs/prisma-schemas/mono-schema"
+      }
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma format --schema=prisma/schema.prisma",
+        "cwd": "libs/prisma-schemas/mono-schema"
+      }
+    },
+    "studio": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma studio --schema=prisma/schema.prisma",
+        "cwd": "libs/prisma-schemas/mono-schema"
+      }
+    },
+    "validate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prisma validate --schema=prisma/schema.prisma",
+        "cwd": "libs/prisma-schemas/mono-schema"
+      }
+    }
+  },
+  "tags": ["type:prisma-schema", "scope:backend", "domain:mono"]
+}
