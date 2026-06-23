@@ -90,26 +90,20 @@ const CARRIERS = [
 ];
 
 const STATUS_BADGE: Record<string, string> = {
-  PENDING:   'text-amber-500 bg-amber-500/10 border border-amber-500/20',
-  PAID:      'text-emerald-500 bg-emerald-500/10 border border-emerald-500/20',
-  SHIPPED:   'text-blue-500 bg-blue-500/10 border border-blue-500/20',
+  PENDING: 'text-amber-500 bg-amber-500/10 border border-amber-500/20',
+  PAID: 'text-emerald-500 bg-emerald-500/10 border border-emerald-500/20',
+  SHIPPED: 'text-blue-500 bg-blue-500/10 border border-blue-500/20',
   DELIVERED: 'text-emerald-500 bg-emerald-500/10 border border-emerald-500/20',
   CANCELLED: 'text-red-500 bg-red-500/10 border border-red-500/20',
 };
 
 const FULFILLMENT_DOT: Record<string, string> = {
-  PENDING:   'bg-amber-400 animate-pulse',
-  PAID:      'bg-brand-primary-600 animate-pulse',
-  SHIPPED:   'bg-blue-400',
+  PENDING: 'bg-amber-400 animate-pulse',
+  PAID: 'bg-brand-primary-600 animate-pulse',
+  SHIPPED: 'bg-blue-400',
   DELIVERED: 'bg-emerald-400',
   CANCELLED: 'bg-red-400',
 };
-
-const DELIVERY_STEP_KEYS = [
-  { key: 'PAID', Icon: CheckCircle },
-  { key: 'SHIPPED', Icon: Truck },
-  { key: 'DELIVERED', Icon: CheckCircle },
-] as const;
 
 const OrderDetailsPage = ({
   params,
@@ -128,9 +122,9 @@ const OrderDetailsPage = ({
   const [isTxExpanded, setIsTxExpanded] = useState(false);
 
   const deliverySteps = [
-    { key: 'PAID',      label: t('stepOrderConfirmed'), Icon: CheckCircle },
-    { key: 'SHIPPED',   label: t('stepInTransit'),      Icon: Truck        },
-    { key: 'DELIVERED', label: t('stepDelivered'),      Icon: CheckCircle  },
+    { key: 'PAID', label: t('stepOrderConfirmed'), Icon: CheckCircle },
+    { key: 'SHIPPED', label: t('stepInTransit'), Icon: Truck },
+    { key: 'DELIVERED', label: t('stepDelivered'), Icon: CheckCircle },
   ];
 
   const cancelReasons = [
@@ -143,18 +137,18 @@ const OrderDetailsPage = ({
   ];
 
   const statusLabels: Record<string, string> = {
-    PENDING:   t('statusPending'),
-    PAID:      t('statusPaid'),
-    SHIPPED:   t('statusShipped'),
+    PENDING: t('statusPending'),
+    PAID: t('statusPaid'),
+    SHIPPED: t('statusShipped'),
     DELIVERED: t('statusDelivered'),
     CANCELLED: t('statusCancelled'),
   };
 
   const paymentLabels: Record<string, string> = {
-    PENDING:   t('paymentPending'),
+    PENDING: t('paymentPending'),
     COMPLETED: t('paymentCompleted'),
-    FAILED:    t('paymentFailed'),
-    REFUNDED:  t('paymentRefunded'),
+    FAILED: t('paymentFailed'),
+    REFUNDED: t('paymentRefunded'),
   };
 
   const { data: order, isLoading } = useQuery<Order>({
@@ -265,9 +259,8 @@ const OrderDetailsPage = ({
               {order.orderNumber}
             </h1>
             <span
-              className={`px-3 py-0.5 text-xs font-semibold rounded-pill ${
-                STATUS_BADGE[order.status] ?? 'text-gray-500 bg-surface-container'
-              }`}
+              className={`px-3 py-0.5 text-xs font-semibold rounded-pill ${STATUS_BADGE[order.status] ?? 'text-gray-500 bg-surface-container'
+                }`}
             >
               {statusLabels[order.status] ?? order.status}
             </span>
@@ -318,13 +311,12 @@ const OrderDetailsPage = ({
                 {t('paymentStatus')}
               </p>
               <p
-                className={`text-sm font-semibold ${
-                  order.paymentStatus === 'COMPLETED'
+                className={`text-sm font-semibold ${order.paymentStatus === 'COMPLETED'
                     ? 'text-feedback-success'
                     : order.paymentStatus === 'FAILED'
-                    ? 'text-feedback-error'
-                    : 'text-feedback-warning'
-                }`}
+                      ? 'text-feedback-error'
+                      : 'text-feedback-warning'
+                  }`}
               >
                 {paymentLabels[order.paymentStatus] ?? order.paymentStatus}
               </p>
@@ -415,25 +407,23 @@ const OrderDetailsPage = ({
                     >
                       {index > 0 && (
                         <div
-                          className={`absolute top-6 right-1/2 w-full h-0.5 -translate-y-1/2 ${
-                            state === 'completed' || state === 'current'
+                          className={`absolute top-6 right-1/2 w-full h-0.5 -translate-y-1/2 ${state === 'completed' || state === 'current'
                               ? 'bg-brand-primary-600'
                               : 'bg-surface-container-highest'
-                          }`}
+                            }`}
                         />
                       )}
 
                       <div
                         className={`relative z-10 w-12 h-12 rounded-full flex items-center
-                                    justify-center transition-colors ${
-                          state === 'completed'
+                                    justify-center transition-colors ${state === 'completed'
                             ? 'bg-brand-primary-600'
                             : state === 'current'
-                            ? isLast
-                              ? 'bg-emerald-500'
-                              : 'bg-brand-primary-600'
-                            : 'bg-surface-container border-2 border-surface-container-highest'
-                        }`}
+                              ? isLast
+                                ? 'bg-emerald-500'
+                                : 'bg-brand-primary-600'
+                              : 'bg-surface-container border-2 border-surface-container-highest'
+                          }`}
                       >
                         <Icon
                           size={20}
@@ -444,13 +434,12 @@ const OrderDetailsPage = ({
                       </div>
 
                       <p
-                        className={`mt-3 text-xs font-semibold uppercase tracking-widest text-center ${
-                          state === 'current' && isLast
+                        className={`mt-3 text-xs font-semibold uppercase tracking-widest text-center ${state === 'current' && isLast
                             ? 'text-emerald-500'
                             : state === 'pending'
-                            ? 'text-gray-400'
-                            : 'text-gray-900'
-                        }`}
+                              ? 'text-gray-400'
+                              : 'text-gray-900'
+                          }`}
                       >
                         {step.label}
                       </p>
@@ -487,9 +476,8 @@ const OrderDetailsPage = ({
                 {order.items.map((item, i) => (
                   <tr
                     key={item.id}
-                    className={`border-b border-surface-container-low last:border-0 ${
-                      i % 2 === 1 ? 'bg-surface' : ''
-                    }`}
+                    className={`border-b border-surface-container-low last:border-0 ${i % 2 === 1 ? 'bg-surface' : ''
+                      }`}
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -543,9 +531,8 @@ const OrderDetailsPage = ({
                 {t('fulfillment')}
               </p>
               <div
-                className={`w-2 h-2 rounded-full ${
-                  FULFILLMENT_DOT[order.status] ?? 'bg-gray-300'
-                }`}
+                className={`w-2 h-2 rounded-full ${FULFILLMENT_DOT[order.status] ?? 'bg-gray-300'
+                  }`}
               />
             </div>
 
@@ -701,9 +688,8 @@ const OrderDetailsPage = ({
                   <span>{t('cancelOrder')}</span>
                   <ChevronDown
                     size={14}
-                    className={`transition-transform duration-200 ${
-                      showCancelConfirm ? 'rotate-180' : ''
-                    }`}
+                    className={`transition-transform duration-200 ${showCancelConfirm ? 'rotate-180' : ''
+                      }`}
                   />
                 </button>
 
@@ -897,9 +883,8 @@ const OrderDetailsPage = ({
                 </span>
                 <ChevronDown
                   size={14}
-                  className={`text-gray-400 transition-transform duration-200 ${
-                    isTxExpanded ? 'rotate-180' : ''
-                  }`}
+                  className={`text-gray-400 transition-transform duration-200 ${isTxExpanded ? 'rotate-180' : ''
+                    }`}
                 />
               </button>
 
@@ -945,20 +930,20 @@ const OrderDetailsPage = ({
 
                       {(order.status === 'SHIPPED' ||
                         order.status === 'DELIVERED') && (
-                        <div className="flex items-start gap-3">
-                          <div className="mt-1.5 w-2 h-2 rounded-full bg-blue-500 shrink-0" />
-                          <div>
-                            <p className="text-xs font-semibold text-gray-900">
-                              {t('timelineShipped')}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {order.trackingNumber
-                                ? t('timelineTracking', { number: order.trackingNumber })
-                                : t('timelineNoTracking')}
-                            </p>
+                          <div className="flex items-start gap-3">
+                            <div className="mt-1.5 w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+                            <div>
+                              <p className="text-xs font-semibold text-gray-900">
+                                {t('timelineShipped')}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {order.trackingNumber
+                                  ? t('timelineTracking', { number: order.trackingNumber })
+                                  : t('timelineNoTracking')}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
                       {order.status === 'DELIVERED' && (
                         <div className="flex items-start gap-3">
