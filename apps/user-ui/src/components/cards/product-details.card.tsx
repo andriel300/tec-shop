@@ -401,11 +401,10 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                 {product.images.map((image, index) => (
                   <button
                     key={index}
-                    className={`flex-shrink-0 w-16 h-16 rounded-md border-2 overflow-hidden transition ${
-                      activeImage === index
+                    className={`flex-shrink-0 w-16 h-16 rounded-md border-2 overflow-hidden transition ${activeImage === index
                         ? 'border-brand-primary'
                         : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                      }`}
                     onClick={() => setActiveImage(index)}
                   >
                     <Image
@@ -496,11 +495,10 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                               onClick={() =>
                                 handleAttributeChange(attribute.name, value)
                               }
-                              className={`relative w-10 h-10 rounded-full border-2 transition-all ${
-                                isSelected
+                              className={`relative w-10 h-10 rounded-full border-2 transition-all ${isSelected
                                   ? 'border-brand-primary ring-2 ring-brand-primary ring-offset-2 scale-110'
                                   : 'border-gray-300 hover:border-gray-400 hover:scale-105'
-                              }`}
+                                }`}
                               style={{ backgroundColor: value.toLowerCase() }}
                               title={value}
                               aria-label={t('selectColor', { color: value })}
@@ -530,11 +528,10 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                             onClick={() =>
                               handleAttributeChange(attribute.name, value)
                             }
-                            className={`px-3 py-1.5 text-sm font-medium rounded-lg border-2 transition ${
-                              isSelected
+                            className={`px-3 py-1.5 text-sm font-medium rounded-lg border-2 transition ${isSelected
                                 ? 'border-brand-primary bg-brand-primary text-white'
                                 : 'border-gray-300 bg-white text-gray-700 hover:border-brand-primary hover:text-brand-primary'
-                            }`}
+                              }`}
                           >
                             {value}
                           </button>
@@ -557,9 +554,8 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                 {t('description')}
               </h3>
               <div
-                className={`prose prose-sm prose-slate max-w-none ${
-                  !showFullDescription ? 'line-clamp-3' : ''
-                }`}
+                className={`prose prose-sm prose-slate max-w-none ${!showFullDescription ? 'line-clamp-3' : ''
+                  }`}
                 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.description) }}
               />
               {product.description.length > 150 && (
@@ -649,23 +645,22 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                   onClick={handleAddToCart}
                   disabled={Boolean(
                     variantAttributes &&
-                      variantAttributes.length > 0 &&
-                      !selectedVariant
+                    variantAttributes.length > 0 &&
+                    !selectedVariant
                   )}
-                  className={`flex-1 flex items-center justify-center gap-2 font-semibold px-4 py-2.5 rounded-lg transition text-sm disabled:opacity-50 disabled:cursor-not-allowed ${
-                    isInCart
+                  className={`flex-1 flex items-center justify-center gap-2 font-semibold px-4 py-2.5 rounded-lg transition text-sm disabled:opacity-50 disabled:cursor-not-allowed ${isInCart
                       ? 'bg-green-600 hover:bg-green-700 text-white'
                       : 'bg-brand-primary hover:bg-brand-primary-dark text-white'
-                  }`}
+                    }`}
                 >
                   <ShoppingCart size={18} />
                   {variantAttributes &&
-                  variantAttributes.length > 0 &&
-                  !selectedVariant
+                    variantAttributes.length > 0 &&
+                    !selectedVariant
                     ? t('selectOptions')
                     : isInCart
-                    ? t('removeFromCart')
-                    : t('addToCart')}
+                      ? t('removeFromCart')
+                      : t('addToCart')}
                 </button>
                 <button
                   className="bg-white rounded-lg p-2.5 shadow-lg hover:bg-gray-100 transition"
@@ -676,11 +671,10 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                 >
                   <Heart
                     size={20}
-                    className={`${
-                      isWishListed
+                    className={`${isWishListed
                         ? 'fill-red-500 text-red-500'
                         : 'text-gray-700'
-                    } hover:text-red-500 transition`}
+                      } hover:text-red-500 transition`}
                   />
                 </button>
               </div>
@@ -719,7 +713,7 @@ const ProductDetailsCard = ({ product, setOpen }: ProductDetailsCardProps) => {
                     <div className="flex items-center gap-1.5">
                       <StarRating value={shop.rating ?? 0} readonly size="sm" />
                       <span className="text-xs text-gray-600">
-                        {t('orders', { count: shop.totalOrders })}
+                        {t('orders', { count: shop.totalOrders ?? 0 })}
                       </span>
                     </div>
                   </div>
