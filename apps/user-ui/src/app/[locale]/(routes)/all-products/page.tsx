@@ -6,7 +6,7 @@ import { createLogger } from '@tec-shop/next-logger';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../../../lib/api/client';
 import { Link } from '../../../../i18n/navigation';
-import React, { Suspense, useEffect, useRef } from 'react';
+import React, { Suspense, useCallback, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations, useMessages } from 'next-intl';
 import nextDynamic from 'next/dynamic';
@@ -117,7 +117,7 @@ const ProductsPage = () => {
     return colorMap[lowerColorName] || '#cccccc';
   };
 
-  const updateURL = () => {
+  const updateURL = useCallback(() => {
     const params = new URLSearchParams(window.location.search);
     params.set('priceRange', priceRange.join(','));
     if (selectedCategoryIds.length > 0) {
@@ -129,9 +129,9 @@ const ProductsPage = () => {
     params.set('colors', selectedColors.join(','));
     params.set('sizes', selectedSizes.join(','));
     window.history.pushState(null, '', `?${params.toString()}`);
-  };
+  }, [priceRange, selectedCategoryIds, selectedColors, selectedSizes, page]);
 
-  const fetchFilteredProducts = async () => {
+  const fetchFilteredProducts = useCallback(async () => {
     setIsProductLoading(true);
     try {
       const query = new URLSearchParams();
@@ -179,7 +179,7 @@ const ProductsPage = () => {
     } finally {
       setIsProductLoading(false);
     }
-  };
+  }, [priceRange, selectedCategoryIds, selectedColors, selectedSizes, page, sortBy]);
 
   useEffect(() => {
     updateURL();
@@ -191,6 +191,8 @@ const ProductsPage = () => {
     selectedSizes,
     page,
     sortBy,
+    updateURL,
+    fetchFilteredProducts
   ]);
 
   const { data: categories, isLoading: isCategoriesLoading } = useQuery({
@@ -312,9 +314,8 @@ const ProductsPage = () => {
               >
                 <span>{t('categories')}</span>
                 <ChevronDown
-                  className={`w-5 h-5 transition-transform duration-200 ${
-                    isCategoriesOpen ? 'rotate-180' : ''
-                  }`}
+                  className={`w-5 h-5 transition-transform duration-200 ${isCategoriesOpen ? 'rotate-180' : ''
+                    }`}
                 />
               </button>
 
@@ -360,9 +361,8 @@ const ProductsPage = () => {
               >
                 <span>{t('colors')}</span>
                 <ChevronDown
-                  className={`w-5 h-5 transition-transform duration-200 ${
-                    isColorsOpen ? 'rotate-180' : ''
-                  }`}
+                  className={`w-5 h-5 transition-transform duration-200 ${isColorsOpen ? 'rotate-180' : ''
+                    }`}
                 />
               </button>
 
@@ -382,11 +382,10 @@ const ProductsPage = () => {
                             title={colorName}
                             aria-label={`${isSelected ? 'Remove' : 'Add'} ${colorName} filter`}
                             aria-pressed={isSelected}
-                            className={`w-7 h-7 rounded-full border-2 transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${
-                              isSelected
-                                ? 'border-blue-600 scale-110 shadow-md'
-                                : 'border-gray-200 hover:border-gray-400 hover:scale-105'
-                            }`}
+                            className={`w-7 h-7 rounded-full border-2 transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${isSelected
+                              ? 'border-blue-600 scale-110 shadow-md'
+                              : 'border-gray-200 hover:border-gray-400 hover:scale-105'
+                              }`}
                             style={{ backgroundColor: getColorCode(colorName) }}
                           />
                         );
@@ -407,9 +406,8 @@ const ProductsPage = () => {
               >
                 <span>{t('sizes')}</span>
                 <ChevronDown
-                  className={`w-5 h-5 transition-transform duration-200 ${
-                    isSizesOpen ? 'rotate-180' : ''
-                  }`}
+                  className={`w-5 h-5 transition-transform duration-200 ${isSizesOpen ? 'rotate-180' : ''
+                    }`}
                 />
               </button>
 
@@ -658,11 +656,10 @@ const ProductsPage = () => {
                       <button
                         key={p}
                         onClick={() => setPage(p)}
-                        className={`w-8 h-8 rounded border text-sm transition-colors ${
-                          page === p
-                            ? 'bg-blue-600 border-blue-600 text-white'
-                            : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
-                        }`}
+                        className={`w-8 h-8 rounded border text-sm transition-colors ${page === p
+                          ? 'bg-blue-600 border-blue-600 text-white'
+                          : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
+                          }`}
                       >
                         {p}
                       </button>

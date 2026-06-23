@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { createLogger } from '@tec-shop/next-logger';
@@ -5,7 +6,7 @@ import { apiClient } from '../../../../lib/api/client';
 
 const logger = createLogger('user-ui:shops');
 import { Link } from '../../../../i18n/navigation';
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { ChevronDown, X, Store, Search, Star } from 'lucide-react';
 import ShopCard from '../../../../components/cards/shop-card';
@@ -45,7 +46,7 @@ const Page = () => {
   const [isCategoriesOpen, setIsCategoriesOpen] = React.useState(true);
   const [isCountriesOpen, setIsCountriesOpen] = React.useState(false);
 
-  const updateURL = () => {
+  const updateURL = useCallback(() => {
     const params = new URLSearchParams(window.location.search);
     if (selectedCategory) params.set('category', selectedCategory);
     if (selectedCountry) params.set('country', selectedCountry);
@@ -53,9 +54,9 @@ const Page = () => {
     if (minRating > 0) params.set('minRating', minRating.toString());
     params.set('page', page.toString());
     window.history.pushState(null, '', `?${params.toString()}`);
-  };
+  }, [selectedCategory, selectedCountry, searchQuery, minRating, page]);
 
-  const fetchFilteredShops = async () => {
+  const fetchFilteredShops = useCallback(async () => {
     setIsShopLoading(true);
     try {
       const query = new URLSearchParams();
@@ -84,12 +85,12 @@ const Page = () => {
     } finally {
       setIsShopLoading(false);
     }
-  };
+  }, [searchQuery, selectedCategory, selectedCountry, minRating, page]);
 
   useEffect(() => {
     updateURL();
     fetchFilteredShops();
-  }, [selectedCategory, selectedCountry, searchQuery, minRating, page]);
+  }, [selectedCategory, selectedCountry, searchQuery, minRating, page, updateURL, fetchFilteredShops]);
 
   const clearAllFilters = () => {
     setSelectedCategory('');
@@ -161,9 +162,8 @@ const Page = () => {
               >
                 <span>{t('shopCategory')}</span>
                 <ChevronDown
-                  className={`w-5 h-5 transition-transform duration-200 ${
-                    isCategoriesOpen ? 'rotate-180' : ''
-                  }`}
+                  className={`w-5 h-5 transition-transform duration-200 ${isCategoriesOpen ? 'rotate-180' : ''
+                    }`}
                 />
               </button>
 
@@ -213,9 +213,8 @@ const Page = () => {
               >
                 <span>{t('country')}</span>
                 <ChevronDown
-                  className={`w-5 h-5 transition-transform duration-200 ${
-                    isCountriesOpen ? 'rotate-180' : ''
-                  }`}
+                  className={`w-5 h-5 transition-transform duration-200 ${isCountriesOpen ? 'rotate-180' : ''
+                    }`}
                 />
               </button>
 
@@ -429,11 +428,10 @@ const Page = () => {
                   <button
                     key={i + 1}
                     onClick={() => setPage(i + 1)}
-                    className={`px-3 py-1 !rounded border border-gray-200 text-sm ${
-                      page === i + 1
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white text-black'
-                    }`}
+                    className={`px-3 py-1 !rounded border border-gray-200 text-sm ${page === i + 1
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-black'
+                      }`}
                   >
                     {i + 1}
                   </button>

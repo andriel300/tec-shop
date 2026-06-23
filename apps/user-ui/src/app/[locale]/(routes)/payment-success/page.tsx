@@ -61,7 +61,7 @@ const PaymentSuccessPage = () => {
     };
 
     processPayment();
-  }, [sessionId, t]);
+  }, [queryClient, sessionId, t]);
 
   if (loading) {
     return (

@@ -27,7 +27,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const displayPrice = product.salePrice || product.price;
   const hasDiscount = product.salePrice && product.salePrice < product.price;
   const discountPercent = hasDiscount
-    ? Math.round(((product.price - product.salePrice!) / product.price) * 100)
+    ? Math.round(((product.price - (product.salePrice ?? 0)) / product.price) * 100)
     : undefined;
   const [open, setOpen] = useState(false);
 

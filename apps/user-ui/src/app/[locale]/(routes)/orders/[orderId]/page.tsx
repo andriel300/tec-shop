@@ -132,7 +132,7 @@ const Page = () => {
     } finally {
       setConfirming(false);
     }
-  }, [order]);
+  }, [order, t]);
 
   if (loading) {
     return (
@@ -211,9 +211,8 @@ const Page = () => {
             <div
               className="absolute top-5 left-[5%] h-1 bg-green-500 rounded-full transition-all duration-500"
               style={{
-                width: `${
-                  (currentStatusIndex / (ORDER_STEPS.length - 1)) * 90
-                }%`,
+                width: `${(currentStatusIndex / (ORDER_STEPS.length - 1)) * 90
+                  }%`,
               }}
             />
 
@@ -231,13 +230,12 @@ const Page = () => {
                   >
                     {/* Circle */}
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 z-10 ${
-                        isCompleted
+                      className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 z-10 ${isCompleted
                           ? 'bg-green-500 border-green-500 text-white'
                           : isCurrent
-                          ? 'bg-blue-500 border-blue-500 text-white'
-                          : 'bg-white border-gray-300 text-gray-400'
-                      }`}
+                            ? 'bg-blue-500 border-blue-500 text-white'
+                            : 'bg-white border-gray-300 text-gray-400'
+                        }`}
                     >
                       {isCompleted ? (
                         <Check size={20} strokeWidth={3} />
@@ -247,13 +245,12 @@ const Page = () => {
                     </div>
                     {/* Label */}
                     <span
-                      className={`mt-3 text-xs font-medium text-center max-w-[80px] ${
-                        isCompleted
+                      className={`mt-3 text-xs font-medium text-center max-w-[80px] ${isCompleted
                           ? 'text-green-600'
                           : isCurrent
-                          ? 'text-blue-600'
-                          : 'text-gray-400'
-                      }`}
+                            ? 'text-blue-600'
+                            : 'text-gray-400'
+                        }`}
                     >
                       {stepLabels[step.key]}
                     </span>
@@ -432,13 +429,12 @@ const Page = () => {
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">{t('paymentStatus')}</span>
               <span
-                className={`text-sm font-medium px-2 py-1 rounded-full ${
-                  order.paymentStatus === 'COMPLETED'
+                className={`text-sm font-medium px-2 py-1 rounded-full ${order.paymentStatus === 'COMPLETED'
                     ? 'bg-green-100 text-green-700'
                     : order.paymentStatus === 'FAILED'
-                    ? 'bg-red-100 text-red-700'
-                    : 'bg-yellow-100 text-yellow-700'
-                }`}
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-yellow-100 text-yellow-700'
+                  }`}
               >
                 {order.paymentStatus}
               </span>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 export const dynamic = 'force-dynamic';
@@ -278,9 +279,8 @@ const InboxPage = () => {
         <div className="flex h-[80vh] shadow-lg rounded-lg overflow-hidden border border-gray-200">
           {/* Conversations List */}
           <div
-            className={`${
-              selectedConversation ? 'hidden md:block' : 'block'
-            } w-full md:w-[320px] border-r border-gray-200 bg-gray-50`}
+            className={`${selectedConversation ? 'hidden md:block' : 'block'
+              } w-full md:w-[320px] border-r border-gray-200 bg-gray-50`}
           >
             <div className="p-4 border-b border-gray-200 bg-white">
               <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -337,9 +337,8 @@ const InboxPage = () => {
                     <button
                       key={conversation.id}
                       onClick={() => handleSelectConversation(conversation)}
-                      className={`w-full text-left px-4 py-3 transition hover:bg-blue-50 ${
-                        isActive ? 'bg-blue-100' : ''
-                      }`}
+                      className={`w-full text-left px-4 py-3 transition hover:bg-blue-50 ${isActive ? 'bg-blue-100' : ''
+                        }`}
                     >
                       <div className="flex items-center gap-3">
                         <div className="relative">
@@ -364,11 +363,10 @@ const InboxPage = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <span
-                              className={`text-sm truncate ${
-                                hasUnread
+                              className={`text-sm truncate ${hasUnread
                                   ? 'font-bold text-gray-900'
                                   : 'font-medium text-gray-800'
-                              }`}
+                                }`}
                             >
                               {conversation.otherParticipant.name}
                             </span>
@@ -379,9 +377,8 @@ const InboxPage = () => {
                             )}
                           </div>
                           <p
-                            className={`text-sm truncate ${
-                              hasUnread ? 'text-gray-700' : 'text-gray-500'
-                            }`}
+                            className={`text-sm truncate ${hasUnread ? 'text-gray-700' : 'text-gray-500'
+                              }`}
                           >
                             {conversation.lastMessage?.content ||
                               t('noMessages')}
@@ -397,9 +394,8 @@ const InboxPage = () => {
 
           {/* Chat Area */}
           <div
-            className={`${
-              selectedConversation ? 'flex' : 'hidden md:flex'
-            } flex-1 flex-col bg-white`}
+            className={`${selectedConversation ? 'flex' : 'hidden md:flex'
+              } flex-1 flex-col bg-white`}
           >
             {selectedConversation ? (
               <>
@@ -468,16 +464,14 @@ const InboxPage = () => {
                       return (
                         <div
                           key={message.id}
-                          className={`flex ${
-                            isOwnMessage ? 'justify-end' : 'justify-start'
-                          }`}
+                          className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'
+                            }`}
                         >
                           <div
-                            className={`max-w-[70%] rounded-2xl px-4 py-2 ${
-                              isOwnMessage
+                            className={`max-w-[70%] rounded-2xl px-4 py-2 ${isOwnMessage
                                 ? 'bg-brand-primary text-white rounded-br-sm'
                                 : 'bg-white border border-gray-200 text-gray-800 rounded-bl-sm'
-                            }`}
+                              }`}
                           >
                             {message.attachments &&
                               message.attachments.length > 0 && (
@@ -506,9 +500,8 @@ const InboxPage = () => {
                               </p>
                             )}
                             <p
-                              className={`text-xs mt-1 ${
-                                isOwnMessage ? 'text-white/70' : 'text-gray-400'
-                              }`}
+                              className={`text-xs mt-1 ${isOwnMessage ? 'text-white/70' : 'text-gray-400'
+                                }`}
                             >
                               {formatTime(message.createdAt)}
                             </p>

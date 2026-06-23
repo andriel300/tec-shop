@@ -151,7 +151,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
         fileInputRef.current.value = '';
       }
     },
-    [attachments.length, maxAttachments, maxFileSize]
+    [attachments.length, maxAttachments, maxFileSize, t]
   );
 
   const removeAttachment = useCallback((index: number) => {

@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 const logger = createLogger('user-ui:offers');
 import { apiClient } from '../../../../lib/api/client';
 import { Link } from '../../../../i18n/navigation';
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { Range } from 'react-range';
 import { ChevronDown, X, Tag } from 'lucide-react';
 import ProductCard from '../../../../components/cards/product-card';
@@ -91,7 +91,7 @@ const Page = () => {
     return colorMap[lowerColorName] || '#cccccc';
   };
 
-  const updateURL = () => {
+  const updateURL = useCallback(() => {
     const params = new URLSearchParams(window.location.search);
     params.set('priceRange', priceRange.join(','));
     params.set('categories', selectedCategories.join(','));
@@ -99,9 +99,15 @@ const Page = () => {
     params.set('colors', selectedColors.join(','));
     params.set('sizes', selectedSizes.join(','));
     window.history.pushState(null, '', `?${params.toString()}`);
-  };
+  }, [
+    priceRange,
+    selectedCategories,
+    page,
+    selectedColors,
+    selectedSizes,
+  ]);
 
-  const fetchFilteredProducts = async () => {
+  const fetchFilteredProducts = useCallback(async () => {
     setIsProductLoading(true);
     try {
       const query = new URLSearchParams();
@@ -152,7 +158,14 @@ const Page = () => {
     } finally {
       setIsProductLoading(false);
     }
-  };
+  }, [
+    priceRange,
+    selectedCategories,
+    selectedColors,
+    selectedSizes,
+    page,
+    sortBy,
+  ]);
 
   useEffect(() => {
     updateURL();
@@ -164,6 +177,8 @@ const Page = () => {
     selectedSizes,
     page,
     sortBy,
+    updateURL,
+    fetchFilteredProducts
   ]);
 
   const { data: categories, isLoading: isCategoriesLoading } = useQuery({
@@ -317,9 +332,8 @@ const Page = () => {
               >
                 <span>{t('categories')}</span>
                 <ChevronDown
-                  className={`w-5 h-5 transition-transform duration-200 ${
-                    isCategoriesOpen ? 'rotate-180' : ''
-                  }`}
+                  className={`w-5 h-5 transition-transform duration-200 ${isCategoriesOpen ? 'rotate-180' : ''
+                    }`}
                 />
               </button>
 
@@ -365,9 +379,8 @@ const Page = () => {
               >
                 <span>{t('filterByColor')}</span>
                 <ChevronDown
-                  className={`w-5 h-5 transition-transform duration-200 ${
-                    isColorsOpen ? 'rotate-180' : ''
-                  }`}
+                  className={`w-5 h-5 transition-transform duration-200 ${isColorsOpen ? 'rotate-180' : ''
+                    }`}
                 />
               </button>
 
@@ -412,9 +425,8 @@ const Page = () => {
               >
                 <span>{t('filterBySize')}</span>
                 <ChevronDown
-                  className={`w-5 h-5 transition-transform duration-200 ${
-                    isSizesOpen ? 'rotate-180' : ''
-                  }`}
+                  className={`w-5 h-5 transition-transform duration-200 ${isSizesOpen ? 'rotate-180' : ''
+                    }`}
                 />
               </button>
 
@@ -638,11 +650,10 @@ const Page = () => {
                   <button
                     key={i + 1}
                     onClick={() => setPage(i + 1)}
-                    className={`px-3 py-1 !rounded border border-gray-200 text-sm ${
-                      page === i + 1
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white text-black'
-                    }`}
+                    className={`px-3 py-1 !rounded border border-gray-200 text-sm ${page === i + 1
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-black'
+                      }`}
                   >
                     {i + 1}
                   </button>

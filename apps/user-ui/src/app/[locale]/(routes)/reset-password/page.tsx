@@ -28,7 +28,12 @@ function ResetPasswordContent() {
     error: tokenError,
   } = useQuery({
     queryKey: ['validate-reset-token', token],
-    queryFn: () => validateResetToken({ token: token! }),
+    queryFn: () => {
+      if (!token) {
+        throw new Error('Token is required');
+      }
+      return validateResetToken({ token });
+    },
     enabled: !!token,
     retry: false,
   });
