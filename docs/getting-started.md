@@ -161,3 +161,33 @@ kind delete cluster --name tec-shop
 | Admin UI          | http://localhost:3002            |
 | API Gateway       | http://localhost:8080            |
 | API Documentation | http://localhost:8080/api-docs   |
+
+---
+
+## Workflow D — Mono-API (alternative to microservices)
+
+Runs the **mono-api** — a single NestJS application that consolidates all backend
+endpoints (auth, user, seller, admin, orders, products, categories, brands) into
+one container. Useful for simplified local development or lower-resource deployments.
+
+Requires a single PostgreSQL database for the mono Prisma schema — set `DATABASE_URL`
+in `.env`. Redis is auto-configured via the Docker compose file.
+
+```bash
+# First run: build and start (takes a few minutes)
+pnpm mono:up:build
+
+# Subsequent runs
+pnpm mono:up
+pnpm mono:logs
+pnpm mono:down
+```
+
+The mono-api replaces: `auth-service`, `user-service`, `seller-service`,
+`product-service`, `order-service`, `admin-service`, and `api-gateway` —
+all consolidated into one process on port 8080. Frontend UIs remain unchanged.
+
+> **Note:** WebSocket services (chatting, logger) and event-driven services
+> (notification, recommendation, kafka-service) are not included in the mono-api.
+> Run them separately or use the full microservices stack (Workflow A / B) if you
+> need those features.

@@ -1,0 +1,191 @@
+version: "3.9"
+
+# Standalone mono-api development stack.
+# Runs the mono-api (single NestJS monolith) + infrastructure (Redis, Kafka)
+# + frontend UIs — no per-service microservices needed.
+#
+# Prerequisites (run once from project root):
+#   1. Copy .env.example to .env and fill required secrets
+#   2. ./generate-certs.sh  (mTLS certificates)
+#
+# Usage (from infrastructure/docker/):
+#   docker compose -f docker-compose.mono.yml up --build
+#   docker compose -f docker-compose.mono.yml down -v
+#
+# Service URLs:
+#   mono-api    http://localhost:8080
+#   user-ui     http://localhost:3000
+#   seller-ui   http://localhost:3001
+#   admin-ui    http://localhost:3002
+#   Kafka UI    http://localhost:8090
+#
+# Databases: configure DATABASE_URL in .env (mono Prisma schema DB).
+
+networks:
+  tec-shop-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+  kafka-data:
+  zookeeper-data:
+  zookeeper-logs:
+
+services:
+  # ─── Infrastructure ─────────────────────────────────────────────────────────
+
+  redis:
+    image: redis:7-alpine
+    container_name: tec-shop-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: tec-shop-zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ["CMD-SHELL", "echo srvr | nc localhost 2181 | grep -q Mode"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: tec-shop-kafka
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_DELETE_TOPIC_ENABLE: "true"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ─── Mono-API ──────────────────────────────────────────────────────────────
+
+  mono-api:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/services/mono-api.Dockerfile
+    container_name: tec-shop-mono-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - ../../.env
+    environment:
+      NODE_ENV: development
+      PORT: 8080
+      REDIS_URL: redis://redis:6379
+      CORS_ORIGINS: "http://localhost:3000,http://localhost:3001,http://localhost:3002"
+      FRONTEND_URL: "http://localhost:3000"
+      SELLER_UI_URL: "http://localhost:3001"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - tec-shop-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ─── Frontends ─────────────────────────────────────────────────────────────
+
+  user-ui:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/services/user-ui.Dockerfile
+    container_name: tec-shop-user-ui
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - ../../.env
+    environment:
+      NODE_ENV: production
+      BACKEND_URL: http://mono-api:8080
+    depends_on:
+      mono-api:
+        condition: service_healthy
+    networks:
+      - tec-shop-network
+
+  seller-ui:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/services/seller-ui.Dockerfile
+    container_name: tec-shop-seller-ui
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    env_file:
+      - ../../.env
+    environment:
+      NODE_ENV: production
+      BACKEND_URL: http://mono-api:8080
+    depends_on:
+      mono-api:
+        condition: service_healthy
+    networks:
+      - tec-shop-network
+
+  admin-ui:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/services/admin-ui.Dockerfile
+    container_name: tec-shop-admin-ui
+    restart: unless-stopped
+    ports:
+      - "3002:3000"
+    env_file:
+      - ../../.env
+    environment:
+      NODE_ENV: production
+      BACKEND_URL: http://mono-api:8080
+    depends_on:
+      mono-api:
+        condition: service_healthy
+    networks:
+      - tec-shop-network

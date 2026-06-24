@@ -1,6 +1,6 @@
 # Deployment
 
-Three deployment targets are supported. All use the same multi-stage Dockerfiles in `infrastructure/docker/services/`.
+Three deployment targets are supported, plus a mono-api alternative that consolidates backend services into a single container. All use multi-stage Dockerfiles in `infrastructure/docker/services/`.
 
 ## Workflow B — Docker Compose
 
