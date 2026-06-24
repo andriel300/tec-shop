@@ -158,6 +158,9 @@
     },
     {
       "path": "./libs/prisma-schemas/mono-schema"
+    },
+    {
+      "path": "./libs/prisma-clients/mono-client"
     }
   ]
 }

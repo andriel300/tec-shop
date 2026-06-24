@@ -19,28 +19,28 @@ datasource db {
 // ============================================
 
 model Category {
-  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
   name        String
-  slug        String     @unique
+  slug        String  @unique
   description String?
 
   // Hierarchical categories
-  parentId    String?    @db.ObjectId
-  parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  children    Category[] @relation("CategoryTree")
+  parentId String?    @db.ObjectId
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children Category[] @relation("CategoryTree")
 
   // Category-specific attributes definition
   // e.g., { "brand": { "required": true, "type": "select" }, "warranty": { "required": false, "type": "text" } }
-  attributes  Json?
+  attributes Json?
 
-  image       String?
-  isActive    Boolean    @default(true)
-  position    Int        @default(0)
+  image    String?
+  isActive Boolean @default(true)
+  position Int     @default(0)
 
-  products    Product[]
+  products Product[]
 
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([parentId])
   @@index([isActive])
@@ -51,18 +51,18 @@ model Category {
 // ============================================
 
 model Brand {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  name        String    @unique
-  slug        String    @unique
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  name        String  @unique
+  slug        String  @unique
   description String?
   logo        String?
   website     String?
-  isActive    Boolean   @default(true)
+  isActive    Boolean @default(true)
 
-  products    Product[]
+  products Product[]
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([isActive])
 }
@@ -72,33 +72,33 @@ model Brand {
 // ============================================
 
 model Product {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
   // Reference to seller-service Shop (cross-service reference)
-  shopId      String   @db.ObjectId
+  shopId String @db.ObjectId
 
   // Basic Information
   name        String
-  description String   // Rich text (HTML)
+  description String // Rich text (HTML)
 
   // Category & Brand
-  categoryId  String   @db.ObjectId
-  category    Category @relation(fields: [categoryId], references: [id])
-  brandId     String?  @db.ObjectId
-  brand       Brand?   @relation(fields: [brandId], references: [id])
+  categoryId String   @db.ObjectId
+  category   Category @relation(fields: [categoryId], references: [id])
+  brandId    String?  @db.ObjectId
+  brand      Brand?   @relation(fields: [brandId], references: [id])
 
   // Product Type
   productType ProductType @default(SIMPLE)
 
   // Pricing (for simple products, variants have their own pricing)
-  price       Float
-  salePrice   Float?
+  price     Float
+  salePrice Float?
 
   // Stock (for simple products)
-  stock       Int      @default(0)
+  stock Int @default(0)
 
   // Images stored as array of file paths
-  images      String[] // e.g., ["/uploads/product-123-0.jpg"]
+  images String[] // e.g., ["/uploads/product-123-0.jpg"]
 
   // Product Variants (for variable products)
   hasVariants Boolean          @default(false)
@@ -106,51 +106,51 @@ model Product {
 
   // Dynamic Attributes (category-specific)
   // e.g., { "warranty": "1 year", "material": "Cotton", "color": "Red" }
-  attributes  Json?
+  attributes Json?
 
   // Shipping Information
-  shipping    Json?    // { weight, dimensions: { length, width, height }, freeShipping, shippingClass }
+  shipping Json? // { weight, dimensions: { length, width, height }, freeShipping, shippingClass }
 
   // SEO
-  seo         Json?    // { title, description, slug, keywords }
-  slug        String?  @unique
+  seo  Json? // { title, description, slug, keywords }
+  slug String? @unique
 
   // Inventory
-  inventory   Json?    // { sku, trackInventory, lowStockThreshold, allowBackorders, stockStatus }
+  inventory Json? // { sku, trackInventory, lowStockThreshold, allowBackorders, stockStatus }
 
   // Additional Fields
-  warranty    String?
-  tags        String[] @default([])
-  youtubeUrl  String?  // YouTube embed URL for product video
+  warranty   String?
+  tags       String[] @default([])
+  youtubeUrl String? // YouTube embed URL for product video
 
   // Discount Code (optional - references seller-service DiscountCode)
   discountCodeId String? @db.ObjectId // Cross-service reference to DiscountCode
 
   // Status
-  status      ProductStatus    @default(DRAFT)
+  status      ProductStatus     @default(DRAFT)
   visibility  ProductVisibility @default(PUBLIC)
   publishDate DateTime?
 
   // Flags
-  isActive    Boolean  @default(true)
-  isFeatured  Boolean  @default(false)
+  isActive   Boolean @default(true)
+  isFeatured Boolean @default(false)
 
   // Sales metrics
-  views       Int      @default(0)
-  sales       Int      @default(0)
+  views Int @default(0)
+  sales Int @default(0)
 
   // Rating aggregates (denormalized for performance)
-  averageRating Float @default(0)   // Calculated average (0-5)
-  ratingCount   Int   @default(0)   // Total number of ratings
+  averageRating Float @default(0) // Calculated average (0-5)
+  ratingCount   Int   @default(0) // Total number of ratings
 
   // Relations
-  ratings     ProductRating[]
+  ratings ProductRating[]
 
   // Soft delete (for 24-hour recovery window)
-  deletedAt   DateTime?
+  deletedAt DateTime?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([shopId])
   @@index([categoryId])
@@ -167,29 +167,29 @@ model Product {
 // ============================================
 
 model ProductVariant {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  productId   String   @db.ObjectId
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  productId String  @db.ObjectId
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
-  sku         String   @unique
+  sku String @unique
 
   // Variant attributes (e.g., { "size": "M", "color": "Red" })
-  attributes  Json
+  attributes Json
 
   // Pricing
-  price       Float
-  salePrice   Float?
+  price     Float
+  salePrice Float?
 
   // Stock
-  stock       Int      @default(0)
+  stock Int @default(0)
 
   // Image (optional, specific to this variant)
-  image       String?
+  image String?
 
-  isActive    Boolean  @default(true)
+  isActive Boolean @default(true)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([productId])
   @@index([isActive])
@@ -200,30 +200,30 @@ model ProductVariant {
 // ============================================
 
 model ProductRating {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  productId   String   @db.ObjectId
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  userId      String   @db.ObjectId  // References auth-service User.id
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  productId String  @db.ObjectId
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String  @db.ObjectId // References auth-service User.id
 
-  rating      Int      // 1-5 stars (validated in DTO)
+  rating Int // 1-5 stars (validated in DTO)
 
   // Review fields (optional -- bare star ratings still valid)
-  title       String?
-  content     String?
-  images      String[] @default([])
+  title   String?
+  content String?
+  images  String[] @default([])
 
   // Reviewer snapshot (avoids cross-service calls on read)
   reviewerName   String?
   reviewerAvatar String?
 
   // Seller reply
-  sellerResponse    String?
-  sellerResponseAt  DateTime?
+  sellerResponse   String?
+  sellerResponseAt DateTime?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@unique([productId, userId])  // One rating per user per product
+  @@unique([productId, userId]) // One rating per user per product
   @@index([productId])
   @@index([userId])
   @@index([rating])
@@ -234,19 +234,19 @@ model ProductRating {
 // ============================================
 
 enum ProductType {
-  SIMPLE      // Single product, no variants
-  VARIABLE    // Product with variants (size, color, etc.)
-  DIGITAL     // Digital/downloadable product
+  SIMPLE // Single product, no variants
+  VARIABLE // Product with variants (size, color, etc.)
+  DIGITAL // Digital/downloadable product
 }
 
 enum ProductStatus {
-  DRAFT       // Not published yet
-  PUBLISHED   // Live and visible
-  SCHEDULED   // Scheduled for future publish
+  DRAFT // Not published yet
+  PUBLISHED // Live and visible
+  SCHEDULED // Scheduled for future publish
 }
 
 enum ProductVisibility {
-  PUBLIC              // Visible to everyone
-  PRIVATE             // Only visible to shop owner
-  PASSWORD_PROTECTED  // Requires password to view
+  PUBLIC // Visible to everyone
+  PRIVATE // Only visible to shop owner
+  PASSWORD_PROTECTED // Requires password to view
 }

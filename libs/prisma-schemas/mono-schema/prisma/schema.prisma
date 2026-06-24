@@ -583,3 +583,52 @@ model PaymentSession {
   @@index([status])
   @@index([expiresAt])
 }
+
+// ============================================================================
+// Chat Domain
+// ============================================================================
+
+model ChatConversation {
+  id            String            @id @default(auto()) @map("_id") @db.ObjectId
+  isGroup       Boolean           @default(false)
+  name          String?
+  creatorId     String
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  participants  ChatParticipant[]
+  messages      ChatMessage[]
+}
+
+model ChatParticipant {
+  id              String           @id @default(auto()) @map("_id") @db.ObjectId
+  conversationId  String           @db.ObjectId
+  conversation    ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId          String?          @db.ObjectId
+  sellerId        String?          @db.ObjectId
+  lastSeenAt      DateTime?
+  isOnline        Boolean          @default(false)
+  unreadCount     Int              @default(0)
+  muted           Boolean          @default(false)
+  joinedAt        DateTime         @default(now())
+
+  @@index([conversationId])
+  @@index([userId])
+  @@index([sellerId])
+}
+
+model ChatMessage {
+  id              String           @id @default(auto()) @map("_id") @db.ObjectId
+  conversationId  String           @db.ObjectId
+  conversation    ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId        String           @db.ObjectId
+  senderType      String
+  content         String?
+  attachments     Json[]           @default([])
+  status          String           @default("sent")
+  metadata        Json?
+  createdAt       DateTime         @default(now())
+
+  @@index([conversationId])
+  @@index([createdAt])
+}

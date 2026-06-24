@@ -83,7 +83,7 @@ export const useChatSocket = ({
       const wsProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
       return `${wsProtocol}//${window.location.host}`;
     }
-    return process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:6007';
+    return process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:8080';
   }, []);
 
   // Fetch WebSocket token
@@ -133,7 +133,7 @@ export const useChatSocket = ({
     // Create socket connection with auth
     const socket = io(wsUrl, {
       auth: { token },
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,

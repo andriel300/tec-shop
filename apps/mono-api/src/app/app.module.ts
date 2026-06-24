@@ -22,6 +22,7 @@ import { CategoryModule } from './category/category.module';
 import { DiscountModule } from './discount/discount.module';
 import { EventModule } from './event/event.module';
 import { PublicModule } from './public/public.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -117,6 +118,7 @@ import { PublicModule } from './public/public.module';
     DiscountModule,
     EventModule,
     PublicModule,
+    ChatModule,
     HealthModule,
   ],
   controllers: [AppController],

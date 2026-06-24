@@ -24,14 +24,14 @@ model Seller {
   isVerified  Boolean @default(false)
 
   // Stripe Connect fields
-  stripeAccountId        String?           @unique // Stripe Connect account ID
-  stripeOnboardingStatus StripeStatus      @default(NOT_STARTED)
-  stripeDetailsSubmitted Boolean           @default(false)
-  stripePayoutsEnabled   Boolean           @default(false)
-  stripeChargesEnabled   Boolean           @default(false)
-  stripeOnboardingUrl    String?           // Current onboarding URL
-  stripeRequirements     Json?             // Required fields from Stripe
-  stripeLastUpdated      DateTime?         // Last webhook update
+  stripeAccountId        String?      @unique // Stripe Connect account ID
+  stripeOnboardingStatus StripeStatus @default(NOT_STARTED)
+  stripeDetailsSubmitted Boolean      @default(false)
+  stripePayoutsEnabled   Boolean      @default(false)
+  stripeChargesEnabled   Boolean      @default(false)
+  stripeOnboardingUrl    String? // Current onboarding URL
+  stripeRequirements     Json? // Required fields from Stripe
+  stripeLastUpdated      DateTime? // Last webhook update
 
   // Business info
   shop Shop?
@@ -52,14 +52,14 @@ model Shop {
   sellerId String @unique @db.ObjectId
   seller   Seller @relation(fields: [sellerId], references: [id])
 
-  businessName String
-  slug         String? // URL-friendly identifier derived from businessName
-  bio          String?
-  description  String? // Deprecated in favor of bio
-  category     String
-  address      String
-  openingHours String
-  website      String?
+  businessName   String
+  slug           String? // URL-friendly identifier derived from businessName
+  bio            String?
+  description    String? // Deprecated in favor of bio
+  category       String
+  address        String
+  openingHours   String
+  website        String?
   socialLinks    Json[]
   returnPolicy   String?
   shippingPolicy String?
@@ -79,53 +79,53 @@ model Shop {
 }
 
 enum StripeStatus {
-  NOT_STARTED     // Seller hasn't started Stripe onboarding
-  PENDING         // Account created, onboarding in progress
-  INCOMPLETE      // Onboarding started but missing information
-  COMPLETE        // Fully onboarded and can accept payments
-  RESTRICTED      // Account restricted due to issues
-  REJECTED        // Account rejected by Stripe
+  NOT_STARTED // Seller hasn't started Stripe onboarding
+  PENDING // Account created, onboarding in progress
+  INCOMPLETE // Onboarding started but missing information
+  COMPLETE // Fully onboarded and can accept payments
+  RESTRICTED // Account restricted due to issues
+  REJECTED // Account rejected by Stripe
 }
 
 enum DiscountType {
-  PERCENTAGE   // Percentage off (e.g., 10% off)
+  PERCENTAGE // Percentage off (e.g., 10% off)
   FIXED_AMOUNT // Fixed amount off (e.g., $5 off)
   FREE_SHIPPING // Free shipping
 }
 
 model DiscountCode {
-  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
   // Seller relation
-  sellerId      String       @db.ObjectId
-  seller        Seller       @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  sellerId String @db.ObjectId
+  seller   Seller @relation(fields: [sellerId], references: [id], onDelete: Cascade)
 
   // Basic info
-  publicName    String       // Display name for customers (e.g., "Summer Sale")
-  code          String       @unique // The actual discount code (e.g., "SUMMER2025")
-  description   String?      // Optional description
+  publicName  String // Display name for customers (e.g., "Summer Sale")
+  code        String  @unique // The actual discount code (e.g., "SUMMER2025")
+  description String? // Optional description
 
   // Discount configuration
   discountType  DiscountType
-  discountValue Float        // Percentage (0-100) or fixed amount
+  discountValue Float // Percentage (0-100) or fixed amount
 
   // Usage limits
-  usageLimit    Int?         // Max total uses (null = unlimited)
-  usageCount    Int          @default(0) // Current usage count
-  maxUsesPerCustomer Int?    // Max uses per customer (null = unlimited)
+  usageLimit         Int? // Max total uses (null = unlimited)
+  usageCount         Int  @default(0) // Current usage count
+  maxUsesPerCustomer Int? // Max uses per customer (null = unlimited)
 
   // Validity period
-  startDate     DateTime     @default(now())
-  endDate       DateTime?    // null = no expiration
+  startDate DateTime  @default(now())
+  endDate   DateTime? // null = no expiration
 
   // Conditions
-  minimumPurchase Float?     // Minimum order value required (null = no minimum)
+  minimumPurchase Float? // Minimum order value required (null = no minimum)
 
   // Status
-  isActive      Boolean      @default(true)
+  isActive Boolean @default(true)
 
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([sellerId])
   @@index([isActive])
@@ -134,25 +134,25 @@ model DiscountCode {
 }
 
 enum NotificationType {
-  INFO      // General information
-  SUCCESS   // Success message
-  WARNING   // Warning message
-  ERROR     // Error message
-  ORDER     // Order-related notification
-  PRODUCT   // Product-related notification
-  SHOP      // Shop-related notification
-  SYSTEM    // System notification
+  INFO // General information
+  SUCCESS // Success message
+  WARNING // Warning message
+  ERROR // Error message
+  ORDER // Order-related notification
+  PRODUCT // Product-related notification
+  SHOP // Shop-related notification
+  SYSTEM // System notification
 }
 
 model Notification {
-  id       String           @id @default(auto()) @map("_id") @db.ObjectId
-  sellerId String           @db.ObjectId
-  seller   Seller           @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  sellerId String @db.ObjectId
+  seller   Seller @relation(fields: [sellerId], references: [id], onDelete: Cascade)
 
-  title    String
-  message  String
-  type     NotificationType @default(INFO)
-  isRead   Boolean          @default(false)
+  title   String
+  message String
+  type    NotificationType @default(INFO)
+  isRead  Boolean          @default(false)
 
   // Optional metadata (e.g., orderId, productId for navigation)
   metadata Json?
@@ -166,36 +166,36 @@ model Notification {
 }
 
 enum EventStatus {
-  DRAFT      // Event created but not published
-  SCHEDULED  // Event scheduled for future
-  ACTIVE     // Event currently running
-  COMPLETED  // Event has ended
-  CANCELLED  // Event cancelled
+  DRAFT // Event created but not published
+  SCHEDULED // Event scheduled for future
+  ACTIVE // Event currently running
+  COMPLETED // Event has ended
+  CANCELLED // Event cancelled
 }
 
 model Event {
-  id     String      @id @default(auto()) @map("_id") @db.ObjectId
-  shopId String      @db.ObjectId
-  shop   Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  shopId String @db.ObjectId
+  shop   Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   // Event details
-  title        String
-  description  String
-  bannerImage  String?       // URL to event banner image
+  title       String
+  description String
+  bannerImage String? // URL to event banner image
 
   // Event timing
-  startDate    DateTime
-  endDate      DateTime
+  startDate DateTime
+  endDate   DateTime
 
   // Event status
-  status       EventStatus   @default(DRAFT)
-  isActive     Boolean       @default(true)
+  status   EventStatus @default(DRAFT)
+  isActive Boolean     @default(true)
 
   // Event metadata (e.g., associated products, discount codes)
-  metadata     Json?
+  metadata Json?
 
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([shopId])
   @@index([status])

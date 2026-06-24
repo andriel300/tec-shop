@@ -32,7 +32,7 @@
       "path": "../../libs/shared/redis-client/tsconfig.lib.json"
     },
     {
-      "path": "../../libs/prisma-clients/mono-client"
+      "path": "../../libs/prisma-clients/mono-client/tsconfig.lib.json"
     }
   ]
 }
