@@ -46,57 +46,57 @@ The project is managed using the Kanban methodology via Jira, with tasks tracked
 
 ## Backend
 
-- **Framework**: NestJS 11 with TypeScript — API gateway (HTTP, port 8080) is the only public-facing service; all others communicate over TCP with mutual TLS
-- **Databases**: MongoDB via Prisma (auth, user, seller, product, notification, logger, chatting, analytics — separate schema + generated client per service); PostgreSQL via Prisma + Neon (order schema only, for financial integrity)
-- **Caching & Sessions**: Redis (`ioredis`) via shared `@tec-shop/redis-client`
-- **Message Broker**: Apache Kafka for async analytics and notification events; `kafka-service` is the sole consumer
-- **Authentication**: JWT with Passport (`passport-jwt`) — access tokens (15 min) + refresh tokens (7–30 days) as httpOnly cookies; Google OAuth 2.0 via custom TCP RPC (`auth-google-login` message pattern)
-- **Background Jobs**: BullMQ (backed by Redis) — recommendation model training, async dispatch
-- **Payments**: Stripe (Checkout Sessions, Connect onboarding, webhooks)
-- **Real-Time**: Socket.IO for chat (`chatting-service`, port 6007 WS) and live notifications
-- **File Uploads**: ImageKit CDN via shared `@tec-shop/imagekit`
-- **Logging**: Structured JSON logging with `nestjs-pino` + Pino across all services
-- **Observability**: OpenTelemetry distributed tracing + Prometheus metrics (per-service HTTP at ports 9001–9010) + Sentry error monitoring
-- **Resilience**: Circuit breaker (Opossum) wrapping all gateway→service TCP calls + 3-tier rate limiting (`ConditionalThrottlerGuard`)
-- **Documentation**: Swagger / OpenAPI at `/api-docs`
-- **Machine Learning**: TensorFlow.js collaborative filtering model for product recommendations, trained asynchronously via BullMQ
+- **Framework**: NestJS 11 with TypeScript. API gateway (port 8080) is the only public HTTP surface; all internal services communicate over TCP with mutual TLS.
+- **Databases**: MongoDB via Prisma (auth, user, seller, product, notification, logger, chatting, analytics) with separate schema and generated client per service. PostgreSQL via Prisma + Neon exclusively for the order schema.
+- **Caching & Sessions**: Redis (`ioredis`) via shared `@tec-shop/redis-client`.
+- **Message Broker**: Apache Kafka for async analytics and notification events. `kafka-service` is the sole consumer.
+- **Authentication**: JWT with `passport-jwt` (15 min access + 7–30 day refresh tokens, httpOnly cookies). Google OAuth 2.0 via custom TCP RPC (`auth-google-login`).
+- **Background Jobs**: BullMQ backed by Redis for recommendation training and async dispatch.
+- **Payments**: Stripe (Checkout Sessions, Connect onboarding, webhooks).
+- **Real-Time**: Socket.IO for chat and live notifications (`chatting-service`, port 6007 WS).
+- **File Uploads**: ImageKit CDN via shared `@tec-shop/imagekit`.
+- **Logging**: Structured JSON logging with `nestjs-pino` across all services.
+- **Observability**: OpenTelemetry distributed tracing, Prometheus metrics (per-service on ports 9001–9010), Sentry error monitoring.
+- **Resilience**: Opossum circuit breaker wrapping every gateway TCP call. Three-tier rate limiting via `ConditionalThrottlerGuard`.
+- **Documentation**: Swagger / OpenAPI at `/api-docs`.
+- **Machine Learning**: TensorFlow.js collaborative filtering trained asynchronously via BullMQ.
 
 ## Frontend
 
-- **Framework**: Next.js 16 with React 19
-- **Styling**: Tailwind CSS with custom design tokens per app + `class-variance-authority` for variant management
-- **State Management**: TanStack Query (server state) + Zustand with persist middleware (client state, cart/wishlist)
-- **Forms**: TanStack Form + Zod validation
-- **Internationalization**: `next-intl` v4 with URL-based locale routing (`/en/`, `/ptbr/`)
-- **UI Components**: Custom-built with Tailwind — one Radix primitive (`@radix-ui/react-checkbox`) + Lucide icons; everything else (Button, Input, Select, Modal, Alert) hand-rolled from native HTML elements
-- **Animations**: Framer Motion (checkbox, section transitions)
-- **Charts**: Recharts (seller dashboard) + React-ApexCharts (admin dashboard)
-- **Carousel**: Embla Carousel (hero section)
-- **Rich Text Editing**: TipTap (seller/admin product descriptions)
-- **File Uploads**: ImageKit CDN integration
-- **Notifications**: Sonner toast messages
+- **Framework**: Next.js 16 with React 19.
+- **Styling**: Tailwind CSS with per-app design tokens. `class-variance-authority` for component variants.
+- **State Management**: TanStack Query (server state). Zustand with persist middleware (client state, cart/wishlist).
+- **Forms**: TanStack Form with Zod validation.
+- **Internationalization**: `next-intl` v4 with URL-based locale routing (`/en/`, `/ptbr/`).
+- **UI Components**: Custom Tailwind components. One Radix primitive (`@radix-ui/react-checkbox`) and Lucide icons. Button, Input, Select, Modal, Alert all hand-rolled from native HTML elements.
+- **Animations**: Framer Motion.
+- **Charts**: Recharts (seller dashboard). React-ApexCharts (admin dashboard).
+- **Carousel**: Embla Carousel (hero section).
+- **Rich Text Editing**: TipTap (seller and admin product descriptions).
+- **File Uploads**: ImageKit CDN.
+- **Notifications**: Sonner toast messages.
 
 ## Infrastructure
 
-- **Monorepo**: Nx workspace with module boundary enforcement (ESLint)
-- **Testing**: Jest with per-service test suites
-- **Linting**: ESLint with TypeScript and Nx boundary rules
-- **DevOps**: Docker multi-stage builds, Kubernetes + Helm chart
-- **Observability**: Prometheus + Grafana (metrics), OpenTelemetry (tracing), Sentry (error tracking)
-- **Load Testing**: k6 with baseline / stress / soak scenarios
-- **Package Management**: pnpm workspaces
+- **Monorepo**: Nx workspace with ESLint module boundary enforcement.
+- **Testing**: Jest with per-service test suites.
+- **Linting**: ESLint with TypeScript strict rules and Nx boundary rules.
+- **DevOps**: Docker multi-stage builds, Kubernetes, Helm charts.
+- **Observability**: Prometheus and Grafana (metrics), OpenTelemetry (distributed tracing), Sentry (error tracking).
+- **Load Testing**: k6 with baseline, stress, and soak scenarios.
+- **Package Management**: pnpm workspaces.
 
 ## Security
 
-- **Mutual TLS (mTLS)**: Certificate-based service-to-service authentication over TCP
-- **JWT Authentication**: Stateless access + refresh token rotation with httpOnly cookies
-- **HMAC Inter-Service Auth**: `SERVICE_MASTER_SECRET`-derived signatures with constant-time comparison (`timingSafeEqual`)
-- **Role-Based Access Control**: `ADMIN`, `SELLER`, `CUSTOMER` roles enforced via `RolesGuard`
-- **Rate Limiting**: Three-tier throttling (short / medium / long), environment-aware limits, bypass with `LOAD_TEST=true`
-- **Security Headers**: Helmet (CSP, HSTS, XSS protection)
-- **Input Validation**: class-validator + class-transformer DTOs
-- **Password Security**: argon2id hashing
-- **Token Blacklisting**: Redis-backed refresh token revocation
+- **Mutual TLS**: Certificate-based service-to-service authentication over TCP.
+- **JWT Authentication**: Stateless access tokens (15 min) with refresh token rotation (7–30 days), httpOnly cookies.
+- **HMAC Inter-Service Auth**: `SERVICE_MASTER_SECRET`-derived signatures verified via `timingSafeEqual`.
+- **Role-Based Access Control**: `ADMIN`, `SELLER`, `CUSTOMER` roles enforced through `RolesGuard`.
+- **Rate Limiting**: Three tiers (short, medium, long) with environment-aware defaults and `LOAD_TEST=true` bypass.
+- **Security Headers**: Helmet (CSP, HSTS, XSS protection).
+- **Input Validation**: class-validator and class-transformer DTOs.
+- **Password Security**: argon2id hashing.
+- **Token Blacklisting**: Redis-backed refresh token revocation.
 
 ---
 
