@@ -7,7 +7,14 @@
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=flat-square&logo=kubernetes&logoColor=white)
 ![Kafka](https://img.shields.io/badge/Kafka-231F20?style=flat-square&logo=apachekafka&logoColor=white)
 
-A modern, secure, and scalable multi-vendor e-commerce platform built with a microservices architecture. Demonstrates enterprise-grade patterns including mutual TLS, real-time communication, collaborative filtering recommendations, and event-driven analytics.
+Multi-vendor e-commerce platform:
+1 API gateway + 8 backend microservices (TCP, NestJS) + 2 real-time WebSocket services + 1 Kafka consumer.
+
+Serving 3 Next.js frontends (customer storefront, seller dashboard, admin panel).
+
+Built with NestJS, Next.js, MongoDB, PostgreSQL, Kafka, and Redis.
+
+Implements mutual TLS service mesh, event-driven analytics via Kafka, collaborative filtering recommendations with TensorFlow.js, and real-time chat over Socket.IO.
 
 ![TecShop Demo](GitVisuals/tecshop.gif)
 
